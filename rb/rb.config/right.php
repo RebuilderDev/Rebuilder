@@ -3138,6 +3138,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         $('.rb_section_box').removeClass('ui-sortable-handle');
         $('.flex_box').removeClass('ui-sortable');
         $('.rb_section_box').removeClass('ui-sortable');
+        $('.rb-sec-label').hide();
 
 
         edit_css_close();

@@ -2746,7 +2746,7 @@ if($mod_type == "del_sec") { //섹션삭제
     <button type="button" class="main_rb_bg font-B" id="edit_css_btn" onclick="edit_css_sec_open(this)" data-layout="<?php echo $set_layout ?>" data-id="<?php echo $set_id ?>">CSS 라이브 커스텀</button>
     <div class="cb"></div>
     <button type="button" class="rb_config_reload mt-5 font-B" onclick="executeAjax_section();">저장</button>
-    <button type="button" class="rb_config_close mt-5 font-B" onclick="toggleSideOptions_close()">닫기</button>
+    <button type="button" class="rb_config_close mt-5 font-B" onclick="toggleSideOptions_close()">취소</button>
     <div class="cb"></div>
 </ul>
 
