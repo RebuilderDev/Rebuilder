@@ -1566,7 +1566,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                 <option value="widget">위젯</option>
                 <option value="banner">배너</option>
                 <option value="poll">투표</option>
-                <?php if(defined('_SHOP_')) { // 영카트?>
+                <?php if (defined('G5_USE_SHOP') && G5_USE_SHOP) { ?>
                 <option value="item">상품</option>
                 <option value="item_tab">상품(탭)</option>
                 <?php } ?>

@@ -196,15 +196,6 @@ foreach ($layouts as $layout_no) {
                            <?php if(isset($row_mod['md_radius']) && $row_mod['md_radius'] > 0) { ?>border-radius:<?php echo $row_mod['md_radius'] ?>px; <?php } ?>
                             <?php if(!empty($row_mod['md_box_shadow'])) { ?>box-shadow: 0 2px <?php echo $row_mod['md_box_shadow_w'] ?>px <?php echo $row_mod['md_box_shadow_c'] ?>; <?php } ?>
                             <?php if(!empty($row_mod['md_banner_bg'])) { ?>background-color:<?php echo $row_mod['md_banner_bg'] ?>; <?php } ?>
-
-                            <?php if(IS_MOBILE()) { ?>
-                           <?php if(isset($row_mod['md_padding_lr_mo']) && $row_mod['md_padding_lr_mo'] != '') { ?>padding-left:<?php echo $row_mod['md_padding_lr_mo'] ?>px; padding-right:<?php echo $row_mod['md_padding_lr_mo'] ?>px; <?php } ?>
-                           <?php if(isset($row_mod['md_padding_tb_mo']) && $row_mod['md_padding_tb_mo'] != '') { ?>padding-top:<?php echo $row_mod['md_padding_tb_mo'] ?>px; padding-bottom:<?php echo $row_mod['md_padding_tb_mo'] ?>px; <?php } ?>
-                           <?php } else { ?>
-                           <?php if(isset($row_mod['md_padding_lr_pc']) && $row_mod['md_padding_lr_pc'] != '') { ?>padding-left:<?php echo $row_mod['md_padding_lr_pc'] ?>px; padding-right:<?php echo $row_mod['md_padding_lr_pc'] ?>px; <?php } ?>
-                           <?php if(isset($row_mod['md_padding_tb_pc']) && $row_mod['md_padding_tb_pc'] != '') { ?>padding-top:<?php echo $row_mod['md_padding_tb_pc'] ?>px; padding-bottom:<?php echo $row_mod['md_padding_tb_pc'] ?>px; <?php } ?>
-                           <?php } ?>
-
                            ">
                         <?php
                             $tab_list_clean = addslashes($row_mod['md_tab_list']);
@@ -222,15 +213,6 @@ foreach ($layouts as $layout_no) {
                            <?php if(isset($row_mod['md_radius']) && $row_mod['md_radius'] > 0) { ?>border-radius:<?php echo $row_mod['md_radius'] ?>px; <?php } ?>
                            <?php if(!empty($row_mod['md_box_shadow'])) { ?>box-shadow: 0 2px <?php echo $row_mod['md_box_shadow_w'] ?>px <?php echo $row_mod['md_box_shadow_c'] ?>; <?php } ?>
                            <?php if(!empty($row_mod['md_banner_bg'])) { ?>background-color:<?php echo $row_mod['md_banner_bg'] ?>; <?php } ?>
-
-                           <?php if(IS_MOBILE()) { ?>
-                           <?php if(isset($row_mod['md_padding_lr_mo']) && $row_mod['md_padding_lr_mo'] != '') { ?>padding-left:<?php echo $row_mod['md_padding_lr_mo'] ?>px; padding-right:<?php echo $row_mod['md_padding_lr_mo'] ?>px; <?php } ?>
-                           <?php if(isset($row_mod['md_padding_tb_mo']) && $row_mod['md_padding_tb_mo'] != '') { ?>padding-top:<?php echo $row_mod['md_padding_tb_mo'] ?>px; padding-bottom:<?php echo $row_mod['md_padding_tb_mo'] ?>px; <?php } ?>
-                           <?php } else { ?>
-                           <?php if(isset($row_mod['md_padding_lr_pc']) && $row_mod['md_padding_lr_pc'] != '') { ?>padding-left:<?php echo $row_mod['md_padding_lr_pc'] ?>px; padding-right:<?php echo $row_mod['md_padding_lr_pc'] ?>px; <?php } ?>
-                           <?php if(isset($row_mod['md_padding_tb_pc']) && $row_mod['md_padding_tb_pc'] != '') { ?>padding-top:<?php echo $row_mod['md_padding_tb_pc'] ?>px; padding-bottom:<?php echo $row_mod['md_padding_tb_pc'] ?>px; <?php } ?>
-                           <?php } ?>
-
                            ">
                             <?php echo '<?php @include (G5_PATH . "/rb/' . $row_mod['md_widget'] . '/widget.php"); ?>'; ?>
                         </div>
@@ -254,14 +236,6 @@ foreach ($layouts as $layout_no) {
                            <?php if(!empty($row_mod['md_box_shadow'])) { ?>box-shadow: 0 2px <?php echo $row_mod['md_box_shadow_w'] ?>px <?php echo $row_mod['md_box_shadow_c'] ?>; <?php } ?>
                            <?php if(!empty($row_mod['md_banner_bg'])) { ?>background-color:<?php echo $row_mod['md_banner_bg'] ?>; <?php } ?>
 
-                           <?php if(IS_MOBILE()) { ?>
-                           <?php if(isset($row_mod['md_padding_lr_mo']) && $row_mod['md_padding_lr_mo'] != '') { ?>padding-left:<?php echo $row_mod['md_padding_lr_mo'] ?>px; padding-right:<?php echo $row_mod['md_padding_lr_mo'] ?>px; <?php } ?>
-                           <?php if(isset($row_mod['md_padding_tb_mo']) && $row_mod['md_padding_tb_mo'] != '') { ?>padding-top:<?php echo $row_mod['md_padding_tb_mo'] ?>px; padding-bottom:<?php echo $row_mod['md_padding_tb_mo'] ?>px; <?php } ?>
-                           <?php } else { ?>
-                           <?php if(isset($row_mod['md_padding_lr_pc']) && $row_mod['md_padding_lr_pc'] != '') { ?>padding-left:<?php echo $row_mod['md_padding_lr_pc'] ?>px; padding-right:<?php echo $row_mod['md_padding_lr_pc'] ?>px; <?php } ?>
-                           <?php if(isset($row_mod['md_padding_tb_pc']) && $row_mod['md_padding_tb_pc'] != '') { ?>padding-top:<?php echo $row_mod['md_padding_tb_pc'] ?>px; padding-bottom:<?php echo $row_mod['md_padding_tb_pc'] ?>px; <?php } ?>
-                           <?php } ?>
-
                            ">
                             <?php echo '<?php echo rb_banners("' . $row_mod['md_banner'] . '", "' . $row_mod['md_banner_id'] . '", "' . $row_mod['md_banner_skin'] . '", "' . $row_mod['md_order_banner'] . '"); ?>'; ?>
                         </div>
@@ -284,7 +258,50 @@ foreach ($layouts as $layout_no) {
                            <?php if(isset($row_mod['md_radius']) && $row_mod['md_radius'] > 0) { ?>border-radius:<?php echo $row_mod['md_radius'] ?>px; <?php } ?>
                            <?php if(!empty($row_mod['md_box_shadow'])) { ?>box-shadow: 0 2px <?php echo $row_mod['md_box_shadow_w'] ?>px <?php echo $row_mod['md_box_shadow_c'] ?>; <?php } ?>
                            <?php if(!empty($row_mod['md_banner_bg'])) { ?>background-color:<?php echo $row_mod['md_banner_bg'] ?>; <?php } ?>
+                           ">
+                            <?php echo '<?php echo poll("' . $row_mod['md_poll'] . '", "' . $row_mod['md_poll_id'] . '"); ?>'; ?>
+                        </div>
+                    <?php } ?>
 
+
+                    <?php if(isset($row_mod['md_type']) && $row_mod['md_type'] == "item") { ?>
+                    <?php
+                    $code = "";
+                    $code .= "\n<?php\n";
+                    $code .= "if(isset(\$row_mod['md_soldout_hidden']) && \$row_mod['md_soldout_hidden'] == 1) {\n";
+                    $code .= "\$item_where = \" where it_use = '1' and it_stock_qty > 0 and it_soldout = 0\";\n";
+                    $code .= "} else { \n";
+                    $code .= "\$item_where = \" where it_use = '1'\";\n";
+                    $code .= "}\n";
+                    $code .= "if(isset(\$row_mod['md_module']) && \$row_mod['md_module'] > 0) {\n";
+                    $code .= "    \$item_where .= \" and it_type\".\$row_mod['md_module'].\" = '1' \";\n";
+                    $code .= "}\n";
+                    $code .= "if(isset(\$row_mod['md_sca']) && \$row_mod['md_sca']) {\n";
+                    $code .= "\$item_where .= \" AND (ca_id = '\".\$row_mod['md_sca'].\"' OR ca_id LIKE '\".\$row_mod['md_sca'].\"%') \";\n";
+                    $code .= "}\n";
+                    $code .= "if(isset(\$row_mod['md_order']) && \$row_mod['md_order']) {\n";
+                    $code .= "if(isset(\$row_mod['md_soldout_asc']) && \$row_mod['md_soldout_asc'] == 1) {\n";
+                    $code .= "    \$item_order = \" order by it_soldout asc, \" . \$row_mod['md_order'];\n";
+                    $code .= "} else { \n";
+                    $code .= "    \$item_order = \" order by \" . \$row_mod['md_order'];\n";
+                    $code .= "}\n";
+                    $code .= "} else { \n";
+                    $code .= "if(isset(\$row_mod['md_soldout_asc']) && \$row_mod['md_soldout_asc'] == 1) {\n";
+                    $code .= "    \$item_order = \" order by it_soldout asc, it_id desc\";\n";
+                    $code .= "} else { \n";
+                    $code .= "    \$item_order = \" order by it_id desc\";\n";
+                    $code .= "}\n";
+                    $code .= "}\n";
+                    $code .= "\$item_limit = \" limit \" . \$row_mod['md_cnt'];\n";
+                    $code .= "\$item_sql = \" select * from {\$g5['g5_shop_item_table']} \" . \$item_where . \" \" . \$item_order . \" \" . \$item_limit;\n";
+                    ?>
+                    <div class="rb-module-wrap module_item_wrap md_arrow_<?php echo isset($row_mod['md_arrow_type']) ? $row_mod['md_arrow_type'] : ''; ?>"
+                        style="
+                           <?php if(empty($row_mod['md_height']) || isset($row_mod['md_height']) && $row_mod['md_height'] == "auto") { ?>height:auto;<?php } else { ?>height:<?php echo $row_mod['md_height'] ?>px;<?php } ?>
+                           <?php if(!empty($row_mod['md_border_color'])) { ?>border-color:<?php echo $row_mod['md_border_color'] ?>; <?php } ?>
+                           <?php if(isset($row_mod['md_radius']) && $row_mod['md_radius'] > 0) { ?>border-radius:<?php echo $row_mod['md_radius'] ?>px; <?php } ?>
+                           <?php if(!empty($row_mod['md_box_shadow'])) { ?>box-shadow: 0 2px <?php echo $row_mod['md_box_shadow_w'] ?>px <?php echo $row_mod['md_box_shadow_c'] ?>; <?php } ?>
+                           <?php if(!empty($row_mod['md_banner_bg'])) { ?>background-color:<?php echo $row_mod['md_banner_bg'] ?>; <?php } ?>
                            <?php if(IS_MOBILE()) { ?>
                            <?php if(isset($row_mod['md_padding_lr_mo']) && $row_mod['md_padding_lr_mo'] != '') { ?>padding-left:<?php echo $row_mod['md_padding_lr_mo'] ?>px; padding-right:<?php echo $row_mod['md_padding_lr_mo'] ?>px; <?php } ?>
                            <?php if(isset($row_mod['md_padding_tb_mo']) && $row_mod['md_padding_tb_mo'] != '') { ?>padding-top:<?php echo $row_mod['md_padding_tb_mo'] ?>px; padding-bottom:<?php echo $row_mod['md_padding_tb_mo'] ?>px; <?php } ?>
@@ -293,9 +310,187 @@ foreach ($layouts as $layout_no) {
                            <?php if(isset($row_mod['md_padding_tb_pc']) && $row_mod['md_padding_tb_pc'] != '') { ?>padding-top:<?php echo $row_mod['md_padding_tb_pc'] ?>px; padding-bottom:<?php echo $row_mod['md_padding_tb_pc'] ?>px; <?php } ?>
                            <?php } ?>
                            ">
-                            <?php echo '<?php echo poll("' . $row_mod['md_poll'] . '", "' . $row_mod['md_poll_id'] . '"); ?>'; ?>
-                        </div>
+                    <?php
+                    $code .= "\$list = new item_list();\n";
+                    $code .= "\$list->set_img_size(300, 300);\n";
+                    $code .= "\$list->set_list_skin(G5_SHOP_SKIN_PATH.'/'.\$row_mod['md_skin']);\n";
+                    $code .= "\$list->set_view('it_cust_price', true);\n";
+                    $code .= "\$list->set_view('it_price', true);\n";
+                    $code .= "\$list->set_view('sns', true);\n";
+                    $code .= "\$list->set_view('md_table', \$rb_module_table);\n";
+                    $code .= "\$list->set_view('md_id', \$row_mod['md_id']);\n";
+                    $code .= "\$list->set_query(\$item_sql);\n";
+                    $code .= "echo \$list->run();\n";
+                    $code .= "?>\n";
+                    echo $code;
+                    ?>
+                    </div>
+                <?php } ?>
+
+
+                <?php if(isset($row_mod['md_type']) && $row_mod['md_type'] == "item_tab") { ?>
+
+
+                <div class="rb-module-wrap module_item_wrap md_arrow_<?php echo isset($row_mod['md_arrow_type']) ? $row_mod['md_arrow_type'] : ''; ?>"
+                        style="
+                           <?php if(empty($row_mod['md_height']) || isset($row_mod['md_height']) && $row_mod['md_height'] == "auto") { ?>height:auto;<?php } else { ?>height:<?php echo $row_mod['md_height'] ?>px;<?php } ?>
+                           <?php if(!empty($row_mod['md_border_color'])) { ?>border-color:<?php echo $row_mod['md_border_color'] ?>; <?php } ?>
+                           <?php if(isset($row_mod['md_radius']) && $row_mod['md_radius'] > 0) { ?>border-radius:<?php echo $row_mod['md_radius'] ?>px; <?php } ?>
+                           <?php if(!empty($row_mod['md_box_shadow'])) { ?>box-shadow: 0 2px <?php echo $row_mod['md_box_shadow_w'] ?>px <?php echo $row_mod['md_box_shadow_c'] ?>; <?php } ?>
+                           <?php if(!empty($row_mod['md_banner_bg'])) { ?>background-color:<?php echo $row_mod['md_banner_bg'] ?>; <?php } ?>
+                           <?php if(IS_MOBILE()) { ?>
+                           <?php if(isset($row_mod['md_padding_lr_mo']) && $row_mod['md_padding_lr_mo'] != '') { ?>padding-left:<?php echo $row_mod['md_padding_lr_mo'] ?>px; padding-right:<?php echo $row_mod['md_padding_lr_mo'] ?>px; <?php } ?>
+                           <?php if(isset($row_mod['md_padding_tb_mo']) && $row_mod['md_padding_tb_mo'] != '') { ?>padding-top:<?php echo $row_mod['md_padding_tb_mo'] ?>px; padding-bottom:<?php echo $row_mod['md_padding_tb_mo'] ?>px; <?php } ?>
+                           <?php } else { ?>
+                           <?php if(isset($row_mod['md_padding_lr_pc']) && $row_mod['md_padding_lr_pc'] != '') { ?>padding-left:<?php echo $row_mod['md_padding_lr_pc'] ?>px; padding-right:<?php echo $row_mod['md_padding_lr_pc'] ?>px; <?php } ?>
+                           <?php if(isset($row_mod['md_padding_tb_pc']) && $row_mod['md_padding_tb_pc'] != '') { ?>padding-top:<?php echo $row_mod['md_padding_tb_pc'] ?>px; padding-bottom:<?php echo $row_mod['md_padding_tb_pc'] ?>px; <?php } ?>
+                           <?php } ?>
+                           ">
+
+                <?php
+                // md_item_tab_list를 배열로 변환
+                $tab_list = [];
+                if (!empty($row_mod['md_item_tab_list'])) {
+                    $tab_list = json_decode($row_mod['md_item_tab_list'], true);
+                    if (!is_array($tab_list)) $tab_list = [];
+                }
+
+                $item_subject = $row_mod['md_title']; //타이틀
+
+                ?>
+
+                <div class="rb_item_po_rels">
+
+                <!-- { -->
+                <ul class="bbs_main_wrap_tit" style="display:<?php echo (isset($row_mod['md_title_hide']) && $row_mod['md_title_hide'] == '1') ? 'none' : 'block'; ?>">
+
+                    <li class="bbs_main_wrap_tit_l">
+                        <!-- 타이틀 { -->
+                        <a href="javascript:void(0);">
+                            <h2 class="<?php echo isset($row_mod['md_title_font']) ? $row_mod['md_title_font'] : 'font-B'; ?>" style="color:<?php echo isset($row_mod['md_title_color']) ? $row_mod['md_title_color'] : '#25282b'; ?>; font-size:<?php echo isset($row_mod['md_title_size']) ? $row_mod['md_title_size'] : '20'; ?>px; "><?php echo $item_subject ?></h2>
+                        </a>
+                        <!-- } -->
+                    </li>
+
+                    <div class="cb"></div>
+                </ul>
+                <!-- } -->
+
+                <nav class="rb_item_tab_nav swiper-container swiper-container-tab-item-<?php echo $row_mod['md_id']; ?>">
+                <ul class="rb_tab_nav swiper-wrapper rb_tab_nav_<?php echo $row_mod['md_id']; ?>">
+                    <?php foreach ($tab_list as $idx => $sca) { ?>
+                        <li class="swiper-slide <?php echo $idx==0?'on':'';?>" data-tab="tab_<?php echo $sca; ?>">
+                            <a href="javascript:void(0);"><?php echo get_category_name($sca); ?></a>
+                        </li>
                     <?php } ?>
+                </ul>
+                </nav>
+
+                <script>
+                    $(document).ready(function() {
+                        setTimeout(function() {
+
+                            var swiper = new Swiper('.swiper-container-tab-item-<?php echo $row_mod['md_id']; ?>', {
+                                slidesPerView: 'auto',
+                                spaceBetween: 5,
+                                touchRatio: 1,
+                                observer: true,
+                                observeParents: true
+                            });
+
+                        }, 50);
+                    });
+                </script>
+
+                <?php
+                $idx = 0;
+                foreach ($tab_list as $tab_sca) {
+                    $code = "";
+                    $code .= "<?php\n";
+                    $code .= "if(isset(\$row_mod['md_soldout_hidden']) && \$row_mod['md_soldout_hidden'] == 1) {\n";
+                    $code .= "\$item_where = \" where it_use = '1' and it_stock_qty > 0 and it_soldout = 0\";\n";
+                    $code .= "} else { \n";
+                    $code .= "\$item_where = \" where it_use = '1'\";\n";
+                    $code .= "}\n";
+                    $code .= "if(isset(\$row_mod['md_module']) && \$row_mod['md_module'] > 0) {\n";
+                    $code .= "    \$item_where .= \" and it_type\".\$row_mod['md_module'].\" = '1' \";\n";
+                    $code .= "}\n";
+                    $code .= "\$item_where .= \" AND (
+                        ca_id = '{$tab_sca}' OR ca_id LIKE '{$tab_sca}%'
+                        OR ca_id2 = '{$tab_sca}' OR ca_id2 LIKE '{$tab_sca}%'
+                        OR ca_id3 = '{$tab_sca}' OR ca_id3 LIKE '{$tab_sca}%'
+                    ) \";\n";
+                    $code .= "if(isset(\$row_mod['md_order']) && \$row_mod['md_order']) {\n";
+                    $code .= "if(isset(\$row_mod['md_soldout_asc']) && \$row_mod['md_soldout_asc'] == 1) {\n";
+                    $code .= "    \$item_order = \" order by it_soldout asc, \" . \$row_mod['md_order'];\n";
+                    $code .= "} else { \n";
+                    $code .= "    \$item_order = \" order by \" . \$row_mod['md_order'];\n";
+                    $code .= "}\n";
+                    $code .= "} else { \n";
+                    $code .= "if(isset(\$row_mod['md_soldout_asc']) && \$row_mod['md_soldout_asc'] == 1) {\n";
+                    $code .= "    \$item_order = \" order by it_soldout asc, it_id desc\";\n";
+                    $code .= "} else { \n";
+                    $code .= "    \$item_order = \" order by it_id desc\";\n";
+                    $code .= "}\n";
+                    $code .= "}\n";
+                    $code .= "\$item_limit = \" limit \" . \$row_mod['md_cnt'];\n";
+                    $code .= "\$item_sql = \" select * from {\$g5['g5_shop_item_table']} \" . \$item_where . \" \" . \$item_order . \" \" . \$item_limit;\n";
+                    //$code .= "echo \$item_sql;\n";
+                    ?>
+
+                    <div class="module_item_wrap_inner <?php echo $idx==0 ? 'rb-item-tab-visible' : 'rb-item-tab-hidden'; ?>" data-tab-content="tab_<?php echo $tab_sca; ?>" data-tab-group="tabgroup_<?php echo $row_mod['md_id']; ?>">
+
+                    <?php
+                    if($tab_sca) {
+                        $links_url = shop_category_url($tab_sca); //링크
+                    ?>
+
+                    <button type="button" class="more_btn more_btn_item_tabs" onclick="location.href='<?php echo $links_url ?>';" style="display:<?php echo (isset($row_mod['md_title_hide']) && $row_mod['md_title_hide'] == '1') ? 'none' : 'block'; ?>">전체보기</button>
+                    <?php } ?>
+
+                    <?php
+                    $code .= "\$list = new item_list();\n";
+                    $code .= "\$list->set_img_size(300, 300);\n";
+                    $code .= "\$list->set_list_skin(G5_SHOP_SKIN_PATH.'/'.\$row_mod['md_item_tab_skin']);\n";
+                    $code .= "\$list->set_view('it_cust_price', true);\n";
+                    $code .= "\$list->set_view('it_price', true);\n";
+                    $code .= "\$list->set_view('sns', true);\n";
+                    $code .= "\$list->set_view('md_table', \$rb_module_table);\n";
+                    $code .= "\$list->set_view('md_id', \$row_mod['md_id']);\n";
+                    $code .= "\$list->set_query(\$item_sql);\n";
+                    $code .= "echo \$list->run();\n";
+                    $code .= "?>\n";
+                    echo $code;
+                    ?>
+                    </div>
+                    <?php $idx++; } ?>
+                </div>
+                </div>
+
+                <script>
+                        $(function(){
+                            $('.rb_tab_nav').each(function(){
+                                var $nav = $(this);
+                                var groupId = $nav.attr('class').match(/rb_tab_nav_([^\s]+)/)[1];
+
+                                $nav.find('li').on('click', function(){
+                                    var tab = $(this).data('tab');
+                                    $nav.find('li').removeClass('on');
+                                    $(this).addClass('on');
+
+                                    // 숨김 처리 (display:none 대신 클래스 변경)
+                                    $('.module_item_wrap_inner[data-tab-group="tabgroup_' + groupId + '"]')
+                                        .removeClass('rb-item-tab-visible').addClass('rb-item-tab-hidden');
+                                    $('.module_item_wrap_inner[data-tab-group="tabgroup_' + groupId + '"][data-tab-content="'+tab+'"]')
+                                        .removeClass('rb-item-tab-hidden').addClass('rb-item-tab-visible');
+                                });
+                            });
+                        });
+                </script>
+                <?php } ?>
+
+
+
 
                     <?php if ($is_admin) { ?>
                         <span class="admin_ov">

@@ -404,7 +404,7 @@ if($mod_type == "del_sec") { //섹션삭제
                 <option value="widget" <?php if (isset($md_type) && $md_type == "widget") { ?>selected<?php } ?>>위젯</option>
                 <option value="banner" <?php if (isset($md_type) && $md_type == "banner") { ?>selected<?php } ?>>배너</option>
                 <option value="poll" <?php if (isset($md_type) && $md_type == "poll") { ?>selected<?php } ?>>투표</option>
-                <?php if($is_shop == 1) { // 영카트?>
+                <?php if (defined('G5_USE_SHOP') && G5_USE_SHOP) { ?>
                 <option value="item" <?php if (isset($md_type) && $md_type == "item") { ?>selected<?php } ?>>상품</option>
                 <option value="item_tab" <?php if (isset($md_type) && $md_type == "item_tab") { ?>selected<?php } ?>>상품(탭)</option>
                 <?php } ?>
@@ -650,7 +650,7 @@ if($mod_type == "del_sec") { //섹션삭제
         </ul>
 
         <?php
-                      if($is_shop == 1) {
+                      if (defined('G5_USE_SHOP') && G5_USE_SHOP) {
                           // 분류리스트
                             $category_select = '';
                             $sql = " select * from {$g5['g5_shop_category_table']} ";
@@ -689,7 +689,7 @@ if($mod_type == "del_sec") { //섹션삭제
 
                 // --- 초기 복원 ---
                 const savedList = $('#md_item_tab_list').val();
-                if (savedList && savedList.startsWith('[')) {
+                if ($('#md_type').val() === 'item_tab' && savedList && savedList.startsWith('[')) {
                     try {
                         const parsed = JSON.parse(savedList);
                         if (Array.isArray(parsed)) {
@@ -711,6 +711,11 @@ if($mod_type == "del_sec") { //섹션삭제
 
                 // --- 선택 시 ---
                 $('#md_sca_shop').on('change', function() {
+                    // // 상품(탭) 타입이 아닐 때는 태그를 만들지 않는다
+                    if ($('#md_type').val() !== 'item_tab') {
+                        return;
+                    }
+
                     const value = $(this).val();
                     const text = $(this).find('option:selected').text().trim();
 
@@ -1848,7 +1853,7 @@ if($mod_type == "del_sec") { //섹션삭제
 
 
         <?php
-            if($is_shop == 1) {
+            if (defined('G5_USE_SHOP') && G5_USE_SHOP) {
         ?>
 
         <ul class="rb_config_sec selected_item selected_select">

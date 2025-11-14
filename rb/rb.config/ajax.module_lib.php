@@ -100,10 +100,11 @@ if ($action === 'list') {
       FROM {$table}
       WHERE 1 ";
     if ($md_theme !== '')  $q .= " AND md_theme = '".rb_sql_escape($md_theme)."' ";
-
+    /*
     if ($is_shop_mode !== '1') {
         $q .= " AND (md_type IS NULL OR TRIM(md_type) = '' OR LOWER(TRIM(md_type)) NOT IN ('item','item_tab')) ";
     }
+    */
 
     // md_layout 필터는 사용하지 않음
     $q .= " ORDER BY lib_id DESC ";
