@@ -815,7 +815,7 @@ select#ct_send_cost {width: 150px;}
 /* } */
 
 /* 2.2.4.1 { */
-.rb_shop_list5 .list_wish_int {top:3px !important; right:10px !important;}
+#smb_my_wish .rb_shop_list5 .list_wish_int {top:3px !important; right:10px !important;}
 #smb_my_list .wish_new_chk_box {top:0px !important; right:40px !important;}
 /* } */
 
@@ -1068,7 +1068,7 @@ select#ct_send_cost {width: 150px;}
     .rb_shop_list5 {padding-bottom: 0px; padding-top: 0px;}
     .rb_shop_list4 .swiper-slide {padding: 0px !important;}
     .rb_shop_list5 .swiper-slide {padding: 0px !important;}
-    .rb_shop_list5 .list_wish_int {top:0px; right:0px;}
+    #smb_my_wish .rb_shop_list5 .list_wish_int {top:0px; right:0px;}
     .rb_item_tab_nav {margin-bottom: 20px;}
     .rb-module-wrap {height:auto !important;}
     .rb_module_wide {padding-left: 0px !important; padding-right: 0px !important;}
