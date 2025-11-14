@@ -251,21 +251,41 @@ if ($is_member) { // 회원이라면 로그인 중이라는 메세지를 출력�
 
 <?php if (!empty($rb_builder['bu_load'])) { ?>
 
+    <?php if(isset($rb_builder['bu_load']) && $rb_builder['bu_load'] == 2) { ?>
 
-    <!-- 로더 시작 { -->
-    <div id="loadings">
-        <div id="loadings_spin"></div>
-    </div>
+    <?php if (defined("_INDEX_")) { ?>
+        <!-- 로더 시작 { -->
+        <div id="loadings">
+            <div id="loadings_spin"></div>
+        </div>
 
-    <script>
+        <script>
 
-        // DOM을 포함한 페이지가 준비가 되면 사라집니다.
-        $(window).on("load", function() {
-            $('#loadings').delay(1000).fadeOut(500);
-        });
+            // DOM을 포함한 페이지가 준비가 되면 사라집니다.
+            $(window).on("load", function() {
+                $('#loadings').delay(500).fadeOut(500);
+            });
 
-    </script>
-    <!-- } -->
+        </script>
+        <!-- } -->
+    <?php } ?>
+
+    <?php } else { ?>
+        <!-- 로더 시작 { -->
+        <div id="loadings">
+            <div id="loadings_spin"></div>
+        </div>
+
+        <script>
+
+            // DOM을 포함한 페이지가 준비가 되면 사라집니다.
+            $(window).on("load", function() {
+                $('#loadings').delay(500).fadeOut(500);
+            });
+
+        </script>
+        <!-- } -->
+    <?php } ?>
 
 
 <?php } ?>

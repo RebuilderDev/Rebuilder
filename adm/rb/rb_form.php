@@ -338,7 +338,9 @@ $pg_anchor = '<ul class="anchor">
                         <th scope="row">사용여부</th>
                         <td colspan="3">
                         <?php echo help('사용시 로딩 스피너를 표기하며<br>DOM을 포함한 모든 페이지가 준비 되면 사라집니다.') ?>
-                        <input type="checkbox" name="bu_load" value="1" id="bu_load" <?php echo isset($bu['bu_load']) && $bu['bu_load'] ? 'checked' : ''; ?>> <label for="bu_load">사용</label>
+                        <input type="radio" name="bu_load" value="" id="bu_load0" <?php echo empty($bu['bu_load']) || $bu['bu_load'] == '' ? 'checked' : ''; ?>> <label for="bu_load0">사용안함</label>
+                        <input type="radio" name="bu_load" value="1" id="bu_load1" <?php echo isset($bu['bu_load']) && $bu['bu_load'] == 1 ? 'checked' : ''; ?>> <label for="bu_load1">전체 사용</label>
+                        <input type="radio" name="bu_load" value="2" id="bu_load2" <?php echo isset($bu['bu_load']) && $bu['bu_load'] == 2 ? 'checked' : ''; ?>> <label for="bu_load2">메인만 사용</label>
                         </td>
                     </tr>
 
