@@ -253,14 +253,386 @@ $ca = isset($_GET['ca']) ? $_GET['ca'] : '';
                 <div class="cb"></div>
             </ul>
         </div>
+
+        <?php if(isset($rb_builder['bu_mini_use1']) && $rb_builder['bu_mini_use1'] == 1) { ?>
+        <?php
+        // // 최근 7일 배열 준비 (오늘 포함)
+        $dates = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $dates[] = date('Y-m-d', strtotime("-{$i} days"));
+        }
+
+        // // 초기 카운터 0으로 세팅
+        $post_counts    = array_fill(0, count($dates), 0); // 글
+        $comment_counts = array_fill(0, count($dates), 0); // 댓글
+
+        // // g5_board_new 테이블 기준으로 글/댓글 구분
+        // // - wr_id = wr_parent : 원글
+        // // - wr_id != wr_parent : 댓글
+        $bn_table = isset($g5['board_new_table']) ? $g5['board_new_table'] : G5_TABLE_PREFIX.'board_new';
+
+        // // 조회 시작일 계산
+        $from_dt = $dates[0] . ' 00:00:00';
+
+        $sql = "
+            SELECT DATE(bn_datetime) AS ymd,
+                   SUM(CASE WHEN wr_id = wr_parent THEN 1 ELSE 0 END) AS posts,
+                   SUM(CASE WHEN wr_id <> wr_parent THEN 1 ELSE 0 END) AS comments
+            FROM {$bn_table}
+            WHERE bn_datetime >= '{$from_dt}' and mb_id = '{$mb['mb_id']}'
+            GROUP BY DATE(bn_datetime)
+            ORDER BY ymd
+        ";
+        $res = sql_query($sql);
+
+        // // 결과를 날짜 인덱스에 매핑
+        $idx_map = array_flip($dates);
+        while ($row = sql_fetch_array($res)) {
+            $ymd = $row['ymd'];
+            if (isset($idx_map[$ymd])) {
+                $i = $idx_map[$ymd];
+                $post_counts[$i]    = (int)$row['posts'];
+                $comment_counts[$i] = (int)$row['comments'];
+            }
+        }
+        ?>
+
+        <div class="minihome_charts">
+            <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+            <div class="rb_chart rb_chart_div1">
+                <li class="bbs_main_wrap_tit_l">
+                    <h2 class="font-B font-18">최근 게시물 현황</h2>
+                </li>
+                <li class="bbs_main_wrap_tit_r mt-20">
+                    <button type="button" class="more_btn" onclick="location.href='<?php echo G5_BBS_URL ?>/search.php?stx=<?php echo $mb['mb_id'] ?>&sfl=mb_id&sop=and';">더보기</button>
+                </li>
+                <div class="cb"></div>
+                <div id="rb-chart1" class="font-R"></div>
+            </div>
+
+            <div class="cb"></div>
+
+            <script>
+                // // 숫자 포맷
+                function numberWithCommas(x) {
+                    try {
+                        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                    } catch (e) {
+                        return x;
+                    }
+                }
+
+                // // PHP → JS 데이터 주입
+                const categories = <?php echo json_encode($dates, JSON_UNESCAPED_UNICODE); ?>;
+                const postSeries = <?php echo json_encode(array_map('intval', $post_counts)); ?>;
+                const cmtSeries = <?php echo json_encode(array_map('intval', $comment_counts)); ?>;
+
+
+                // 글/댓글 최대값 계산
+                const postMax = (postSeries.length ? Math.max.apply(null, postSeries) : 0);
+                const cmtMax  = (cmtSeries.length  ? Math.max.apply(null, cmtSeries)  : 0);
+                const overallMax = Math.max(1, postMax, cmtMax); // 모두 0이면 1로 최소 높이 확보
+
+
+                const mainColor = '<?php echo isset($rb_config['co_color']) ? $rb_config['co_color'] : '#7b5cff'; ?>';
+                const subColor = '#b989ff';
+
+                const options1 = {
+                    chart: {
+                        type: 'line',
+                        height: 260,
+                        toolbar: {
+                            show: false
+                        }
+                    },
+                    series: [{
+                            name: '글',
+                            data: postSeries
+                        },
+                        {
+                            name: '댓글',
+                            data: cmtSeries
+                        }
+                    ],
+                    xaxis: {
+                        categories: categories,
+                        labels: {
+                            style: {
+                                fontSize: '11px',
+                                colors: '#000'
+                            },
+                            formatter: (val) => String(val).replace(/^\d{4}-/, '') // YYYY- 제거 → MM-DD
+                        },
+                        axisBorder: {
+                            show: false
+                        },
+                        axisTicks: {
+                            show: false
+                        }
+                    },
+
+                    yaxis: {
+                      min: 0,
+                      max: overallMax,              // ← 게시물·댓글 중 최대치로 상한 고정
+                      tickAmount: 6,                // // 선택: 눈금 수
+                      labels: {
+                        show: false,
+                        style: { fontSize:'11px', colors:'#000' },
+                        formatter: (val) => numberWithCommas(val)
+                      },
+                      axisBorder: { show:false },
+                      axisTicks:  { show:false }
+                    },
+
+                    // 라인 스타일
+                    stroke: {
+                        width: [2, 2],
+                        curve: 'smooth'
+                    },
+                    markers: {
+                        size: 0,
+                        hover: {
+                            size: 5
+                        }
+                    },
+
+                    // 값 라벨
+                    dataLabels: {
+                        enabled: true,
+                        background: {
+                            enabled: false
+                        },
+                        offsetY: -6,
+                        style: {
+                            fontSize: '11px',
+                            colors: ['#000']
+                        },
+                        formatter: (val) => val ? numberWithCommas(val) + '건' : ''
+                    },
+
+                    colors: [mainColor, subColor],
+                    tooltip: {
+                        shared: true,
+                        intersect: false,
+                        y: {
+                            formatter: (val) => numberWithCommas(val) + '건'
+                        },
+                        style: {
+                            fontSize: '11px'
+                        }
+                    },
+                    grid: {
+                        show: true,
+                        borderColor: '#e5e5ef',
+                        strokeDashArray: 3,
+                        yaxis: {
+                            lines: {
+                                show: true
+                            }
+                        },
+                        xaxis: {
+                            lines: {
+                                show: false
+                            }
+                        }
+                    },
+                    legend: {
+                        show: true,
+                        fontSize: '11px'
+                    }
+                };
+
+                const chart1 = new ApexCharts(document.querySelector("#rb-chart1"), options1);
+                chart1.render();
+            </script>
+        </div>
+        <?php } ?>
+
+        <?php if(isset($rb_builder['bu_mini_use2']) && $rb_builder['bu_mini_use2'] == 1) { ?>
+        <?php if (($config['cf_admin'] ?? '') !== ($mb['mb_id'] ?? '')) { ?>
+        <?php
+            // // 기준 회원
+            $target_mb_id = $mb['mb_id'];
+
+            // // 최근 7일(오늘 포함) 레이블/데이터
+            $day_labels  = [];
+            $day_points  = [];
+
+            // // 6일 전 ~ 오늘(0일 전)까지
+            for ($i = 6; $i >= 0; $i--) {
+                $ts = strtotime("-{$i} day");                  // 0: 오늘, 6: 6일 전
+                $ds = date('Y-m-d 00:00:00', $ts);            // 시작 시각
+                $de = date('Y-m-d 23:59:59', $ts);            // 종료 시각
+
+                // // 레이블: MM-DD
+                $day_labels[] = date('m-d', $ts);
+
+                // // 해당 일자 획득 포인트 합계 (사용/차감 포인트는 제외: po_point > 0 만 합산)
+                $sql_day = "
+                    SELECT
+                        SUM(IF(po_point > 0, po_point, 0)) AS total_points
+                    FROM {$g5['point_table']}
+                    WHERE mb_id = '".sql_real_escape_string($target_mb_id)."'
+                      AND po_datetime >= '{$ds}'
+                      AND po_datetime <= '{$de}'
+                ";
+                $row_day = sql_fetch($sql_day);
+                $day_points[] = (int)($row_day['total_points'] ?? 0);
+            }
+            // // ===== /최근 7일 집계 끝 =====
+        ?>
+        <div class="minihome_charts">
+            <div class="rb_chart rb_chart_div1">
+                <li class="bbs_main_wrap_tit_l">
+                    <h2 class="font-B font-18">최근 포인트 획득</h2>
+                </li>
+                <li class="bbs_main_wrap_tit_r mt-20">
+
+                </li>
+                <div class="cb"></div>
+                <div id="rb-chart2" class="font-R"></div>
+            </div>
+            <div class="cb"></div>
+
+            <script>
+                // // PHP → JS 데이터 주입 (최근 7일)
+                const weekCats = <?php echo json_encode($day_labels, JSON_UNESCAPED_UNICODE); ?>;
+                const weekVals = <?php echo json_encode(array_map('intval', $day_points)); ?>;
+
+                // // 색상: 차트1과 톤 맞춤
+                const mainColor2 = '<?php echo $rb_config['co_color'] ?? "#7b5cff"; ?>';
+
+                // // y축 스케일 계산
+                // // STEP: 기본 간격, MAX_TICKS: 최대 눈금 개수
+                const BASE_STEP  = 1000;
+                const MAX_TICKS  = 8;
+
+                let rawMax = weekVals.length ? Math.max.apply(null, weekVals) : 0;
+                if (rawMax <= 0) {
+                    rawMax = BASE_STEP * 2;   // // 데이터 없을 때 기본값
+                }
+
+                let step  = BASE_STEP;
+                // // 눈금 개수가 MAX_TICKS를 넘지 않도록 STEP을 2배씩 키움
+                while (Math.ceil(rawMax / step) > MAX_TICKS) {
+                    step *= 2;
+                }
+
+                const ticks = Math.ceil(rawMax / step);   // // 실제 눈금 개수 (MAX_TICKS 이내)
+                const yMax  = ticks * step;              // // y축 최댓값
+
+
+                const options2 = {
+                    chart: {
+                        type: 'bar',
+                        height: 260,
+                        toolbar: {
+                            show: false
+                        }
+                    },
+                    series: [{
+                        name: '포인트',
+                        data: weekVals
+                    }],
+                    xaxis: {
+                        categories: weekCats,
+                        labels: {
+                            style: {
+                                fontSize: '11px',
+                                colors: '#000'
+                            }
+                        },
+                        axisBorder: {
+                            show: false
+                        },
+                        axisTicks: {
+                            show: false
+                        }
+                    },
+                    yaxis: {
+                      min: 0,
+                      max: yMax,              // // 동적 상한
+                      tickAmount: ticks,      // // 과도하게 많지 않은 눈금 개수
+                      decimalsInFloat: 0,
+                      labels: {
+                        style: { fontSize: '11px', colors: '#000' },
+                        formatter: (val) => numberWithCommas(val)
+                      },
+                      axisBorder: { show: false },
+                      axisTicks:  { show: false }
+                    },
+                    plotOptions: {
+                        bar: {
+                            columnWidth: '35%',
+                            borderRadius: 6,
+                            borderRadiusApplication: 'end',
+                            borderRadiusWhenStacked: 'last',
+                            dataLabels: {
+                                position: 'top'
+                            }
+                        }
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        offsetY: -20,
+                        style: {
+                            fontSize: '11px',
+                            colors: ['#000']
+                        },
+                        formatter: (val) => val ? numberWithCommas(val) + '점' : ''
+                    },
+                    colors: [mainColor2],
+                    tooltip: {
+                        y: {
+                            formatter: (val) => numberWithCommas(val) + '점'
+                        },
+                        style: {
+                            fontSize: '12px'
+                        }
+                    },
+                    grid: {
+                        show: true,
+                        borderColor: '#e5e5ef',
+                        strokeDashArray: 3,
+                        yaxis: {
+                            lines: {
+                                show: true
+                            }
+                        },
+                        xaxis: {
+                            lines: {
+                                show: false
+                            }
+                        }
+                    },
+                    legend: {
+                        show: false
+                    }
+                };
+
+                const chart2 = new ApexCharts(document.querySelector("#rb-chart2"), options2);
+                chart2.render();
+            </script>
+
+        </div>
+        <?php } ?>
+        <?php } ?>
+
+        <?php if(empty($rb_builder['bu_mini_use3']) || $rb_builder['bu_mini_use3'] == 0) { ?>
+        <style>
+            .main_latest_inc {display: none;}
+        </style>
+        <?php } ?>
+
         <?php } ?>
 
         <?php if($ca == "bbs" || $ca == "") { ?>
-        <div>
+        <div <?php if($ca == "") { ?>class="main_latest_inc"<?php } ?>>
 
             <ul class="cont_info_wrap cont_info_wrap_mmt">
                 <?php
-                    $sql_commons = " from {$g5['board_new_table']} a, {$g5['board_table']} b where a.bo_table = b.bo_table and a.wr_id = a.wr_parent and a.mb_id = '{$mb['mb_id']}' order by a.bn_id desc ";
+                    $sql_commons = " from {$g5['board_new_table']} a, {$g5['board_table']} b where a.bo_table = b.bo_table and a.wr_id = a.wr_parent and a.mb_id = '{$mb['mb_id']}' and b.bo_use_search = '1' order by a.bn_id desc ";
 
                     if($ca == "bbs") {
 

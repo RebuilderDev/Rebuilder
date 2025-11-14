@@ -64,6 +64,12 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
     $bu_load = isset($_POST['bu_load']) && is_numeric($_POST['bu_load']) ? (int)$_POST['bu_load'] : 0;
     $bu_systemmsg_use = isset($_POST['bu_systemmsg_use']) && is_numeric($_POST['bu_systemmsg_use']) ? (int)$_POST['bu_systemmsg_use'] : 0;
 
+    $bu_mini_use1 = isset($_POST['bu_mini_use1']) && is_numeric($_POST['bu_mini_use1']) ? (int)$_POST['bu_mini_use1'] : 0;
+    $bu_mini_use2 = isset($_POST['bu_mini_use2']) && is_numeric($_POST['bu_mini_use2']) ? (int)$_POST['bu_mini_use2'] : 0;
+    $bu_mini_use3 = isset($_POST['bu_mini_use3']) && is_numeric($_POST['bu_mini_use3']) ? (int)$_POST['bu_mini_use3'] : 0;
+    $bu_mini_use4 = isset($_POST['bu_mini_use4']) && is_numeric($_POST['bu_mini_use4']) ? (int)$_POST['bu_mini_use4'] : 0;
+    $bu_mini_use5 = isset($_POST['bu_mini_use5']) && is_numeric($_POST['bu_mini_use5']) ? (int)$_POST['bu_mini_use5'] : 0;
+
     if($cnt['cnt'] > 0) {
             $sql = " update rb_builder
                 set bu_load = '{$bu_load}',
@@ -97,6 +103,11 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
                     bu_sns8 = '{$_POST['bu_sns8']}',
                     bu_sns9 = '{$_POST['bu_sns9']}',
                     bu_sns10 = '{$_POST['bu_sns10']}',
+                    bu_mini_use1 = '{$bu_mini_use1}',
+                    bu_mini_use2 = '{$bu_mini_use2}',
+                    bu_mini_use3 = '{$bu_mini_use3}',
+                    bu_mini_use4 = '{$bu_mini_use4}',
+                    bu_mini_use5 = '{$bu_mini_use5}',
                     bu_viewport = '{$_POST['bu_viewport']}',
                     bu_systemmsg_use = '{$bu_systemmsg_use}',
                     bu_datetime = '".G5_TIME_YMDHIS."' ";
@@ -135,6 +146,11 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
                     bu_sns8 = '{$_POST['bu_sns8']}',
                     bu_sns9 = '{$_POST['bu_sns9']}',
                     bu_sns10 = '{$_POST['bu_sns10']}',
+                    bu_mini_use1 = '{$bu_mini_use1}',
+                    bu_mini_use2 = '{$bu_mini_use2}',
+                    bu_mini_use3 = '{$bu_mini_use3}',
+                    bu_mini_use4 = '{$bu_mini_use4}',
+                    bu_mini_use5 = '{$bu_mini_use5}',
                     bu_viewport = '{$_POST['bu_viewport']}',
                     bu_systemmsg_use = '{$bu_systemmsg_use}',
                     bu_datetime = '".G5_TIME_YMDHIS."' ";
@@ -224,6 +240,11 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
             `bu_sns8` varchar(255) NOT NULL DEFAULT '' COMMENT '',
             `bu_sns9` varchar(255) NOT NULL DEFAULT '' COMMENT '',
             `bu_sns10` varchar(255) NOT NULL DEFAULT '' COMMENT '',
+            `bu_mini_use1` int(4) NOT NULL DEFAULT 1 COMMENT '',
+            `bu_mini_use2` int(4) NOT NULL DEFAULT 1 COMMENT '',
+            `bu_mini_use3` int(4) NOT NULL DEFAULT 1 COMMENT '',
+            `bu_mini_use4` int(4) NOT NULL DEFAULT 0 COMMENT '',
+            `bu_mini_use5` int(4) NOT NULL DEFAULT 0 COMMENT '',
             `bu_viewport` varchar(10) NOT NULL,
             `bu_datetime` datetime NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT '등록일시(변경일시)'
           ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ", true);

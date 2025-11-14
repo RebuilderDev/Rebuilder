@@ -486,6 +486,18 @@
 .bbs_main_wrap_thumb_con dd:hover {border:1px solid #ccc !important;}
 .bbs_main_wrap_thumb_con dd.no_data {margin-top: 0px;}
 
+
+.minihome_charts .rb_chart {border-radius: 10px;padding: 0px 7px;margin-top: 20px;border: 1px solid #eee;}
+.minihome_charts .rb_chart .bbs_main_wrap_tit_l {padding-left: 13px;}
+.minihome_charts .rb_chart .bbs_main_wrap_tit_r {padding-right: 13px;}
+.minihome_charts .rb_chart_div1 {}
+.minihome_charts .rb_chart_div2 {float: left;width: 48%;}
+.minihome_charts .rb_chart_div3 {float: right;width: 48%;}
+.minihome_charts .rb_chart h2 {padding: 0;margin-top: 0;padding-top: 20px;}
+.minihome_charts .apexcharts-text tspan {font-family: "font-R";}
+.minihome_charts .apexcharts-xaxistooltip-text {font-size: 11px !important;}
+
+
 @media all and (max-width:1024px) {
     .rb_prof {padding-left: 20px; padding-right: 20px;}
     .rb_prof .rb_prof_btn {right:20px;}
@@ -499,4 +511,10 @@
     .rb_prof_tab .cont_info_wrap_r dd:nth-child(1) {padding-left: 0px;}
     .rb_prof .rb_prof_btn {top:3px;}
     .bbs_main_wrap_thumb_con dd {min-height: auto;}
+
+    .minihome_charts .rb_chart_div2 {width: 100%;float: none;}
+    .minihome_charts .rb_chart_div3 {width: 100%;float: none;}
+    .minihome_charts .rb_prof_partner .tbl_wrap {overflow-x: auto;}
+    .minihome_charts .rb_prof_partner .tbl_wrap table {width: 100%}
+    .minihome_charts .rb_prof_partner .tbl_head01 {margin-top: 0;}
 }

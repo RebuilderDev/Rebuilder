@@ -27,6 +27,7 @@ $pg_anchor = '<ul class="anchor">
     <li><a href="#anc_rb3">로딩인디케이터</a></li>
     <li><a href="#anc_rb6">시스템메세지</a></li>
     <li><a href="#anc_rb5">모바일설정</a></li>
+    <li><a href="#anc_rb7">미니홈설정</a></li>
     <li><a href="#anc_rb4">운영채널</a></li>
 </ul>';
 ?>
@@ -401,6 +402,36 @@ $pg_anchor = '<ul class="anchor">
                         <input type="text" name="bu_viewport" value="<?php echo isset($bu['bu_viewport']) ? get_sanitize_input($bu['bu_viewport']) : ''; ?>" id="bu_viewport" class="frm_input" size="10">
                         </td>
                     </tr>
+
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="anc_rb7">
+        <h2 class="h2_frm">미니홈설정</h2>
+        <?php echo $pg_anchor ?>
+
+        <div class="tbl_frm01 tbl_wrap">
+            <table>
+                <colgroup>
+                    <col class="grid_4">
+                    <col>
+                    <col class="grid_4">
+                    <col>
+                </colgroup>
+                <tbody>
+
+                    <tr>
+                        <th scope="row">미니홈 메인설정</th>
+                        <td colspan="3">
+                        <?php echo help('미니홈 메인에 표기할 컨텐츠를 지정할 수 있습니다.<br>포인트 현황은 획득한 포인트만 기준으로 하며 관리자의 경우 제외 됩니다.') ?>
+                        <input type="checkbox" name="bu_mini_use1" value="1" id="bu_mini_use1" <?php echo isset($bu['bu_mini_use1']) && $bu['bu_mini_use1'] ? 'checked' : ''; ?>> <label for="bu_mini_use1">게시물/댓글 현황</label>
+                        <input type="checkbox" name="bu_mini_use2" value="1" id="bu_mini_use2" <?php echo isset($bu['bu_mini_use2']) && $bu['bu_mini_use2'] ? 'checked' : ''; ?>> <label for="bu_mini_use2">포인트 획득 현황</label>
+                        <input type="checkbox" name="bu_mini_use3" value="1" id="bu_mini_use3" <?php echo isset($bu['bu_mini_use3']) && $bu['bu_mini_use3'] ? 'checked' : ''; ?>> <label for="bu_mini_use3">사용자 최신글</label>
+                        </td>
+                    </tr>
+
 
                 </tbody>
             </table>
