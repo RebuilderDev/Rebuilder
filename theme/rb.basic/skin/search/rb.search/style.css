@@ -96,14 +96,13 @@ box-shadow:inset 0 2px 5px rgb(33, 135, 202)}
 
 
 
-.rb_serch_skin #bo_cate {margin-bottom: 0px; margin-top: 30px; display: flex;}
+.rb_serch_skin #bo_cate {margin-bottom: 0px; margin-top: 30px; display: flex; border-bottom: 1px solid #eee;}
 .rb_serch_skin #bo_cate #sch_res_board {flex:1; position: relative;}
 .rb_serch_skin #bo_cate a {display: inline-flex; padding: 0px 20px; border:0px; font-size: 16px; color:#000; background-color: transparent; line-height: 56px; position: relative;}
 .rb_serch_skin #bo_cate a:first-child {padding-left: 0px;}
 .rb_serch_skin #bo_cate a:hover {background-color: transparent; font-family:'font-B',sans-serif;}
 .rb_serch_skin #bo_cate .sch_on {background-color: transparent; font-weight: normal; box-shadow: none; color:#AA20FF; border:0px; font-family:'font-B',sans-serif;}
 .rb_serch_skin #bo_cate li {padding: 0px; display: inline-block;}
-.rb_serch_skin #bo_cate #sch_res_board:before {content: "";bottom: 0;position: absolute;width: 100%;margin: 0;height: 1px;background-color: rgba(0, 0, 0, .1);}
 .rb_serch_skin #bo_cate .sch_on::after {content: "";position: absolute;bottom: 0;right: 20px;left: 0px;height: 2px;background-color: currentColor;}
 .rb_serch_skin .no_data {border-top:1px solid #ddd;}
 
