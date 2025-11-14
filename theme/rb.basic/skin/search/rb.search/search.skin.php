@@ -158,7 +158,7 @@ add_stylesheet('<link rel="stylesheet" href="'.$search_skin_url.'/style.css">', 
             for ($i=0; $i<count($list[$idx]) && $k<$rows; $i++, $k++) {
                 if ($list[$idx][$i]['wr_is_comment'])
                 {
-                    $comment_def = '<span class="cmt_def">댓글</span> ';
+                    $comment_def = '<span class="cmt_def color-999 font-R">(댓글)</span> ';
                     $comment_href = '#c_'.$list[$idx][$i]['wr_id'];
                 }
                 else
