@@ -1550,7 +1550,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         <ul class="rb-sh-side-lib-top-tit font-B">라이브러리<br><span class="font-R">저장된 모듈 목록 입니다.</span></ul>
         <ul class="rb-sh-side-lib-top-btn">
             <button type="button" id="lib_close_btn" onclick="lib_close();">
-                <img src="https://demo.rebuilder.co.kr/rb/rb.config/image/icon_close.svg">
+                <img src="<?php echo G5_URL ?>/rb/rb.config/image/icon_close.svg">
             </button>
         </ul>
     </div>
