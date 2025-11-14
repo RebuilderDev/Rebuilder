@@ -106,15 +106,23 @@ $listall = '<a href="'.$_SERVER['SCRIPT_NAME'].'" class="ov_listall">전체목�
     <?php
     for ($i=0; $rowss=sql_fetch_array($result_is); $i++) {
 
-        $mbx1 = isset($rowss['me_send_mb_id']) ? get_member($rowss['me_send_mb_id']) : '';
-        $mbx2 = isset($rowss['me_recv_mb_id']) ? get_member($rowss['me_recv_mb_id']) : '';
+        $mbx1 = !empty($rowss['me_send_mb_id']) ? (get_member(trim((string)$rowss['me_send_mb_id'])) ?: []) : [];
+        $mbx2 = !empty($rowss['me_recv_mb_id']) ? (get_member(trim((string)$rowss['me_recv_mb_id'])) ?: []) : [];
+
         $name1 = isset($mbx1['mb_nick']) ? get_text($mbx1['mb_nick']) : '';
         $name2 = isset($mbx2['mb_nick']) ? get_text($mbx2['mb_nick']) : '';
 
-        $mb_nick1 = get_sideview($mbx1['mb_id'], get_text($mbx1['mb_nick']), $mbx1['mb_email'], $mbx1['mb_homepage']);
-        $mb_nick2 = get_sideview($mbx2['mb_id'], get_text($mbx2['mb_nick']), $mbx2['mb_email'], $mbx2['mb_homepage']);
+        $mb_nick1 = (isset($mbx1['mb_id']) && $mbx1['mb_id'] !== '')
+            ? get_sideview($mbx1['mb_id'], get_text($mbx1['mb_nick'] ?? ''), $mbx1['mb_email'] ?? '', $mbx1['mb_homepage'] ?? '')
+            : '<span style="color:#777">대상없음</span>';
+
+        $mb_nick2 = (isset($mbx2['mb_id']) && $mbx2['mb_id'] !== '')
+            ? get_sideview($mbx2['mb_id'], get_text($mbx2['mb_nick'] ?? ''), $mbx2['mb_email'] ?? '', $mbx2['mb_homepage'] ?? '')
+            : '<span style="color:#777">대상없음</span>';
+
 
         $bg = 'bg'.($i%2);
+
      ?>
     <tr style="background-color:#fff;">
 
