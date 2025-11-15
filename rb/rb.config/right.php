@@ -3211,8 +3211,6 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
 
 
-
-    //모듈설정
     function set_module_send(element) {
 
         // // 모듈 위치가 변경된 후 아직 저장 전이면 설정 진입 막기
@@ -3222,52 +3220,27 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
             return;
         }
 
-        // 기준 엘리먼트: 항상 해당 모듈(Box)
-        var $box = $(element).closest('.rb_layout_box');
-        var $fx  = $box.closest('.flex_box');
-
-        // 레이아웃 / 제목 / ID
-        var set_layout = String(
-            $box.attr('data-layout') ||
-            $fx.attr('data-layout') ||
-            ''
-        ).trim();
-
-        var set_title = String($box.attr('data-title') || '').trim();
-        var set_id    = String($box.attr('data-id') || '').trim();
+        // 부모 요소의 값을 가져옴
+        var $fx = $(element).closest('.flex_box');
+        var set_layout = String($fx.attr('data-layout') || '').trim();
+        var set_title = String($(element).closest('.rb_layout_box').attr('data-title') || '');
+        var set_id = String($(element).closest('.rb_layout_box').attr('data-id') || '');
         var theme_name = '<?php echo $rb_core['theme']; ?>';
-        var mod_type   = '2';
+        var mod_type = '2';
 
-        if (!set_layout || !set_id) {
-            console.warn('set_module_send: 잘못된 모듈 선택', {
-                layout: set_layout,
-                id: set_id
-            });
-            return;
-        }
-
+        //섹션의 데이터를 비운다
         $('input[name="sec_layout"]').val('');
         $('input[name="sec_theme"]').val('');
         $('input[name="sec_id"]').val('');
 
-        var $sec = $box.closest('.rb_section_box');
+        // 섹션 안에서 눌렀을 때 섹션 키 전달
+        var $sec = $(element).closest('.rb_section_box');
         var md_sec_key = '';
         var md_sec_uid = '';
-
         if ($sec.length) {
-            md_sec_key = String(
-                $box.attr('data-sec-key') ||
-                $fx.attr('data-sec-key') ||
-                $sec.attr('data-sec-key') ||
-                ''
-            ).trim();
-
-            md_sec_uid = String(
-                $box.attr('data-sec-uid') ||
-                $fx.attr('data-sec-uid') ||
-                $sec.attr('data-sec-uid') ||
-                ''
-            ).trim();
+            // flex_box에 이미 복사돼 있으면 그 값을 우선 사용
+            md_sec_key = String(($fx.attr('data-sec-key') || $sec.attr('data-sec-key') || '')).trim();
+            md_sec_uid = String(($fx.attr('data-sec-uid') || $sec.attr('data-sec-uid') || '')).trim();
         }
 
         $.ajax({
@@ -3287,7 +3260,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                 md_sec_uid: md_sec_uid
             },
             success: function(response) {
-                $('#inq_res').html(response);
+                $("#inq_res").html(response);
                 toggleSideOptions_open_mod();
                 toggleSideOptions_open();
             },
