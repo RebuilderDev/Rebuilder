@@ -1,4 +1,93 @@
 /* 레이아웃 CSS */
-@media all and (max-width:1024px) {
+
+/* =========================
+ * rb 3차 GNB 드롭다운 전용
+ * ========================= */
+
+/* 2차 li 컨테이너 (position 필요) */
+.cbp-hrmenu .rb-gnb-depth2 .rb-gnb-sub-item {
+  position: relative;
+}
+
+/* 2차 링크: 텍스트 + 오른쪽 화살표 정렬 */
+.cbp-hrmenu .rb-gnb-sub-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* 2차 텍스트 span 정렬 */
+.cbp-hrmenu .rb-gnb-sub-link > span:first-child {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 화살표 아이콘 영역 */
+.cbp-hrmenu .rb-gnb-sub-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+/* 화살표 SVG 크기 & 위치 */
+.cbp-hrmenu .rb-gnb-sub-arrow svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  transform: translateY(0.5px); /* 살짝 위아래 보정 */
+}
+
+/* hover 시 화살표 강조 */
+.cbp-hrmenu .rb-gnb-sub-item.has-children:hover .rb-gnb-sub-arrow {
+  opacity: 1;
+}
+
+/* 3차 플라이아웃 박스 */
+.cbp-hrmenu .rb-gnb-sub-3depth {
+  position: absolute;
+  top: 35px;
+  left: calc(100% - 33px);
+  margin-left: 8px;              /* 2차와 살짝 간격 */
+  min-width: 160px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(6px);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+  z-index: 999;
+  overflow: hidden;
+}
+
+/* 3차 항목 스타일 */
+.cbp-hrmenu .rb-gnb-sub-3depth a {
+  display: block;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #4b5563;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.cbp-hrmenu .rb-gnb-sub-3depth a:hover {
+  background: #f3f4f6;
+  color: var(--rb-main-color, #09244B);
+}
+
+/* 2차 아이템 hover 시 3차 열기 */
+.cbp-hrmenu .rb-gnb-sub-item.has-children:hover > .rb-gnb-sub-3depth {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+
+@media all and (max-width:1024px) { 
     .gnb_wrap .inner {padding-left: 0px !important; padding-right: 0px !important;}
 }

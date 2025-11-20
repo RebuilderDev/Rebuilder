@@ -53,19 +53,19 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         <div class="sh-side-options-item-container"><img src="<?php echo G5_URL ?>/rb/rb.config/image/icon_setting.svg"></div>
     </a>
 
-
+    
     <a class="sh-side-options-item sh-accent-color mobule_set_btn" onclick="toggleSideOptions();" data-tooltip="모듈설정" data-tooltip-pos="top">
         <div class="sh-side-options-item-container"><img src="<?php echo G5_URL ?>/rb/rb.config/image/icon_mod.svg"></div>
     </a>
-
+    
     <a href="javascript:void(0);" class="sh-side-options-item sh-accent-color" id="saveOrderButton" data-tooltip="현재순서 저장" data-tooltip-pos="top">
         <div class="sh-side-options-item-container" style="height:38px;">
-
+        
             <svg width="22" height="22" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M10.7749 0.391876C16.2979 0.391876 20.7749 4.86888 20.7749 10.3919C20.7749 15.9149 16.2979 20.3919 10.7749 20.3919C5.2519 20.3919 0.774902 15.9149 0.774902 10.3919C0.774902 4.86888 5.2519 0.391876 10.7749 0.391876ZM14.3099 6.77288L9.3599 11.7229L7.2399 9.60188C7.14706 9.50897 7.03682 9.43525 6.91549 9.38494C6.79416 9.33464 6.6641 9.30872 6.53276 9.30867C6.26749 9.30858 6.01304 9.41387 5.8254 9.60138C5.63776 9.78888 5.53229 10.0433 5.5322 10.3085C5.53211 10.5738 5.63739 10.8282 5.8249 11.0159L8.5829 13.7739C8.68505 13.8761 8.80634 13.9571 8.93983 14.0125C9.07332 14.0678 9.21641 14.0962 9.3609 14.0962C9.5054 14.0962 9.64848 14.0678 9.78197 14.0125C9.91547 13.9571 10.0368 13.8761 10.1389 13.7739L15.7249 8.18788C15.9125 8.00024 16.018 7.74574 16.018 7.48038C16.018 7.21501 15.9125 6.96052 15.7249 6.77288C15.5373 6.58524 15.2828 6.47982 15.0174 6.47982C14.752 6.47982 14.4975 6.58524 14.3099 6.77288Z" fill="#00d6ee"/>
             </svg>
 
-
+        
         </div>
     </a>
 
@@ -259,7 +259,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                                     gap
                                 </li>
                                 <li class="rows_inp_r mt-5">
-                                    <input type="checkbox" name="co_gap_mo" id="co_gap_mo" class="magic-checkbox" value="1" <?php if (isset($rb_core['gap_mo']) && $rb_core['gap_mo'] == "1") { ?>checked<?php } ?>><label for="co_gap_mo">Gap 적용</label>
+                                    <input type="checkbox" name="co_gap_mo" id="co_gap_mo" class="magic-checkbox" value="1" <?php if (isset($rb_core['gap_mo']) && $rb_core['gap_mo'] == "1") { ?>checked<?php } ?>><label for="co_gap_mo">Gap 적용</label>　
                                 </li>
                                 <div class="cb"></div>
 
@@ -293,8 +293,8 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                         <div class="config_wrap">
                             <ul>
 
-                                <input type="radio" name="co_menu_shop" id="co_menu_shop_1" class="magic-radio mod_send" value="0" <?php if (isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == "" || isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == "0") { ?>checked<?php } ?>><label for="co_menu_shop_1">기본</label>
-                                <input type="radio" name="co_menu_shop" id="co_menu_shop_2" class="magic-radio mod_send" value="1" <?php if (isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == "1") { ?>checked<?php } ?>><label for="co_menu_shop_2">카테고리</label>
+                                <input type="radio" name="co_menu_shop" id="co_menu_shop_1" class="magic-radio mod_send" value="0" <?php if (isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == "" || isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == "0") { ?>checked<?php } ?>><label for="co_menu_shop_1">기본</label>　
+                                <input type="radio" name="co_menu_shop" id="co_menu_shop_2" class="magic-radio mod_send" value="1" <?php if (isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == "1") { ?>checked<?php } ?>><label for="co_menu_shop_2">카테고리</label>　
                                 <input type="radio" name="co_menu_shop" id="co_menu_shop_3" class="magic-radio mod_send" value="2" <?php if (isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == "2") { ?>checked<?php } ?>><label for="co_menu_shop_3">카테고리+기본</label>
 
                             </ul>
@@ -444,6 +444,26 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
                     </ul>
 
+                    <?php if (!defined("_SHOP_")) { ?>
+                    <ul class="rb_config_sec">
+                        <h6 class="font-B">출력 메뉴 세트 설정</h6>
+                        <h6 class="font-R rb_config_sub_txt">
+                            현재 레이아웃에서 사용할 메뉴세트를 설정할 수 있습니다.<br>
+                            <a href="<?php echo G5_ADMIN_URL; ?>/rb/rb_menu_list.php" target="_blank" class="font-B main_color">메뉴 설정 바로가기</a>
+                        </h6>
+
+                        <div class="config_wrap">
+                            <ul>
+                                <select class="select w100 mod_send" name="co_menu_set">
+                                    <option value="">메뉴 세트 선택</option>
+                                        <?php echo rb_menu_set_list($rb_config['menu_set']); ?>
+                                    </select>
+                                </select>
+                            </ul>
+                        </div>
+                    </ul>
+                    <?php } ?>
+
                     <?php if (!defined("_INDEX_")) { ?>
                     <ul class="rb_config_sec" <?php if(defined('_SHOP_')) { // 영카트?>style="display:block !important;" <?php } else { ?>style="display:none !important;" <?php } ?>>
 
@@ -456,8 +476,8 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                             <ul class="rows_inp_lr mt-10">
 
                                 <li class="rows_inp_r mt-5">
-                                    <input type="radio" name="co_sidemenu_shop" id="co_sidemenu_shop_1" class="magic-radio mod_send" value="" <?php if (isset($rb_core['sidemenu_shop']) && $rb_core['sidemenu_shop'] == "") { ?>checked<?php } ?>><label for="co_sidemenu_shop_1">없음</label>
-                                    <input type="radio" name="co_sidemenu_shop" id="co_sidemenu_shop_2" class="magic-radio mod_send" value="left" <?php if (isset($rb_core['sidemenu_shop']) && $rb_core['sidemenu_shop'] == "left") { ?>checked<?php } ?>><label for="co_sidemenu_shop_2">좌측</label>
+                                    <input type="radio" name="co_sidemenu_shop" id="co_sidemenu_shop_1" class="magic-radio mod_send" value="" <?php if (isset($rb_core['sidemenu_shop']) && $rb_core['sidemenu_shop'] == "") { ?>checked<?php } ?>><label for="co_sidemenu_shop_1">없음</label>　
+                                    <input type="radio" name="co_sidemenu_shop" id="co_sidemenu_shop_2" class="magic-radio mod_send" value="left" <?php if (isset($rb_core['sidemenu_shop']) && $rb_core['sidemenu_shop'] == "left") { ?>checked<?php } ?>><label for="co_sidemenu_shop_2">좌측</label>　
                                     <input type="radio" name="co_sidemenu_shop" id="co_sidemenu_shop_3" class="magic-radio mod_send" value="right" <?php if (isset($rb_core['sidemenu_shop']) && $rb_core['sidemenu_shop'] == "right") { ?>checked<?php } ?>><label for="co_sidemenu_shop_3">우측</label>
                                 </li>
 
@@ -596,8 +616,8 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                             <ul class="rows_inp_lr mt-10">
 
                                 <li class="rows_inp_r mt-5">
-                                    <input type="radio" name="co_sidemenu" id="co_sidemenu_1" class="magic-radio mod_send" value="" <?php if (isset($rb_core['sidemenu']) && $rb_core['sidemenu'] == "") { ?>checked<?php } ?>><label for="co_sidemenu_1">없음</label>
-                                    <input type="radio" name="co_sidemenu" id="co_sidemenu_2" class="magic-radio mod_send" value="left" <?php if (isset($rb_core['sidemenu']) && $rb_core['sidemenu'] == "left") { ?>checked<?php } ?>><label for="co_sidemenu_2">좌측</label>
+                                    <input type="radio" name="co_sidemenu" id="co_sidemenu_1" class="magic-radio mod_send" value="" <?php if (isset($rb_core['sidemenu']) && $rb_core['sidemenu'] == "") { ?>checked<?php } ?>><label for="co_sidemenu_1">없음</label>　
+                                    <input type="radio" name="co_sidemenu" id="co_sidemenu_2" class="magic-radio mod_send" value="left" <?php if (isset($rb_core['sidemenu']) && $rb_core['sidemenu'] == "left") { ?>checked<?php } ?>><label for="co_sidemenu_2">좌측</label>　
                                     <input type="radio" name="co_sidemenu" id="co_sidemenu_3" class="magic-radio mod_send" value="right" <?php if (isset($rb_core['sidemenu']) && $rb_core['sidemenu'] == "right") { ?>checked<?php } ?>><label for="co_sidemenu_3">우측</label>
                                 </li>
 
@@ -762,7 +782,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                                     <input type="hidden" name="s_code" id="s_code" value="<?php echo $rb_page_urls; ?>">
 
                                     <input type="radio" name="s_use" id="s_use_0" class="magic-radio" value="0" <?php echo ($sidebar_hidden == 0 ? 'checked' : ''); ?>>
-                                    <label for="s_use_0">노출</label>
+                                    <label for="s_use_0">노출</label>　
 
                                     <input type="radio" name="s_use" id="s_use_1" class="magic-radio" value="1" <?php echo ($sidebar_hidden == 1 ? 'checked' : ''); ?>>
                                     <label for="s_use_1">미노출</label>
@@ -808,10 +828,10 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                                     <input type="hidden" name="v_code" id="v_code" value="<?php echo $rb_page_urls ?>">
 
                                     <input type="radio" name="v_use" id="v_use_0" class="magic-radio" value="0" <?php if (!isset($rb_v_info['v_use']) || intval($rb_v_info['v_use']) === 0) { ?>checked<?php } ?>>
-                                    <label for="v_use_0">없음</label>
+                                    <label for="v_use_0">없음</label>　
 
                                     <input type="radio" name="v_use" id="v_use_1" class="magic-radio" value="1" <?php if (isset($rb_v_info['v_use']) && intval($rb_v_info['v_use']) === 1) { ?>checked<?php } ?>>
-                                    <label for="v_use_1">사용</label>
+                                    <label for="v_use_1">사용</label>　
 
                                     <?php if(isset($cate_id) && $cate_id) { // 영카트?>
                                     <input type="radio" name="v_use" id="v_use_2" class="magic-radio" value="2" <?php if (isset($rb_v_info['v_use']) && intval($rb_v_info['v_use']) === 2) { ?>checked<?php } ?>>
@@ -940,8 +960,8 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                                     </li>
 
                                     <li class="rows_inp_r mt-5 font-12">
-                                        <input type="radio" name="co_topvisual_border" id="co_topvisual_border_0" class="magic-radio mod_send" value="0" <?php if (isset($rb_v_info['topvisual_border']) && $rb_v_info['topvisual_border'] == "0") { ?>checked<?php } ?>><label for="co_topvisual_border_0">없음</label>
-                                        <input type="radio" name="co_topvisual_border" id="co_topvisual_border_1" class="magic-radio mod_send" value="1" <?php if (isset($rb_v_info['topvisual_border']) && $rb_v_info['topvisual_border'] == "1") { ?>checked<?php } ?>><label for="co_topvisual_border_1">점선</label>
+                                        <input type="radio" name="co_topvisual_border" id="co_topvisual_border_0" class="magic-radio mod_send" value="0" <?php if (isset($rb_v_info['topvisual_border']) && $rb_v_info['topvisual_border'] == "0") { ?>checked<?php } ?>><label for="co_topvisual_border_0">없음</label>　
+                                        <input type="radio" name="co_topvisual_border" id="co_topvisual_border_1" class="magic-radio mod_send" value="1" <?php if (isset($rb_v_info['topvisual_border']) && $rb_v_info['topvisual_border'] == "1") { ?>checked<?php } ?>><label for="co_topvisual_border_1">점선</label>　
                                         <input type="radio" name="co_topvisual_border" id="co_topvisual_border_2" class="magic-radio mod_send" value="2" <?php if (isset($rb_v_info['topvisual_border']) && $rb_v_info['topvisual_border'] == "2") { ?>checked<?php } ?>><label for="co_topvisual_border_2">실선</label>
                                     </li>
 
@@ -1166,8 +1186,8 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
                                 <ul class="config_wrap_flex">
                                     <li class="rows_inp_r mt-5">
-                                        <input type="radio" name="co_topvisual_m_align" id="co_topvisual_m_align1" class="magic-radio mod_send" value="left" <?php if (isset($rb_v_info['topvisual_m_align']) && $rb_v_info['topvisual_m_align'] == "left") { ?>checked<?php } ?>><label for="co_topvisual_m_align1">좌측</label>
-                                        <input type="radio" name="co_topvisual_m_align" id="co_topvisual_m_align2" class="magic-radio mod_send" value="center" <?php if (isset($rb_v_info['topvisual_m_align']) && $rb_v_info['topvisual_m_align'] == "center") { ?>checked<?php } ?>><label for="co_topvisual_m_align2">중앙</label>
+                                        <input type="radio" name="co_topvisual_m_align" id="co_topvisual_m_align1" class="magic-radio mod_send" value="left" <?php if (isset($rb_v_info['topvisual_m_align']) && $rb_v_info['topvisual_m_align'] == "left") { ?>checked<?php } ?>><label for="co_topvisual_m_align1">좌측</label>　
+                                        <input type="radio" name="co_topvisual_m_align" id="co_topvisual_m_align2" class="magic-radio mod_send" value="center" <?php if (isset($rb_v_info['topvisual_m_align']) && $rb_v_info['topvisual_m_align'] == "center") { ?>checked<?php } ?>><label for="co_topvisual_m_align2">중앙</label>　
                                         <input type="radio" name="co_topvisual_m_align" id="co_topvisual_m_align3" class="magic-radio mod_send" value="right" <?php if (isset($rb_v_info['topvisual_m_align']) && $rb_v_info['topvisual_m_align'] == "right") { ?>checked<?php } ?>><label for="co_topvisual_m_align3">우측</label>
                                     </li>
                                 </ul>
@@ -1219,8 +1239,8 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
                                 <ul class="config_wrap_flex">
                                     <li class="rows_inp_r mt-5">
-                                        <input type="radio" name="co_topvisual_s_align" id="co_topvisual_s_align1" class="magic-radio mod_send" value="left" <?php if (isset($rb_v_info['topvisual_s_align']) && $rb_v_info['topvisual_s_align'] == "left") { ?>checked<?php } ?>><label for="co_topvisual_s_align1">좌측</label>
-                                        <input type="radio" name="co_topvisual_s_align" id="co_topvisual_s_align2" class="magic-radio mod_send" value="center" <?php if (isset($rb_v_info['topvisual_s_align']) && $rb_v_info['topvisual_s_align'] == "center") { ?>checked<?php } ?>><label for="co_topvisual_s_align2">중앙</label>
+                                        <input type="radio" name="co_topvisual_s_align" id="co_topvisual_s_align1" class="magic-radio mod_send" value="left" <?php if (isset($rb_v_info['topvisual_s_align']) && $rb_v_info['topvisual_s_align'] == "left") { ?>checked<?php } ?>><label for="co_topvisual_s_align1">좌측</label>　
+                                        <input type="radio" name="co_topvisual_s_align" id="co_topvisual_s_align2" class="magic-radio mod_send" value="center" <?php if (isset($rb_v_info['topvisual_s_align']) && $rb_v_info['topvisual_s_align'] == "center") { ?>checked<?php } ?>><label for="co_topvisual_s_align2">중앙</label>　
                                         <input type="radio" name="co_topvisual_s_align" id="co_topvisual_s_align3" class="magic-radio mod_send" value="right" <?php if (isset($rb_v_info['topvisual_s_align']) && $rb_v_info['topvisual_s_align'] == "right") { ?>checked<?php } ?>><label for="co_topvisual_s_align3">우측</label>
                                     </li>
                                 </ul>
@@ -2120,7 +2140,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                 $('.mobule_set_btn').css('display', 'none');
                 if ($btn.hasClass('rb-row-up')) moveRowByMarker($flex, markerIdx, -1);
                 if ($btn.hasClass('rb-row-down')) moveRowByMarker($flex, markerIdx, +1);
-
+                
             });
         }
 
@@ -3148,7 +3168,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
     //섹션설정
     function set_section_send(element) {
-
+        
         var $saveBtn = $('#saveOrderButton');
         if ($saveBtn.length && $saveBtn.css('display') === 'block') {
             alert('섹션 위치의 변경이 있습니다. 먼저 저장해주세요.');
@@ -3210,9 +3230,9 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
     }
 
 
-
+    
     function set_module_send(element) {
-
+        
         // // 모듈 위치가 변경된 후 아직 저장 전이면 설정 진입 막기
         var $saveBtn = $('#saveOrderButton');
         if ($saveBtn.length && $saveBtn.css('display') === 'block') {
@@ -3478,6 +3498,8 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         var co_padding_btm_shop = $('input[name="co_padding_btm_shop"]').val();
         var co_padding_btm_sub_shop = $('input[name="co_padding_btm_sub_shop"]').val();
 
+        var co_menu_set = $('select[name="co_menu_set"]').val();
+
         <?php if(defined('_SHOP_')) { // 영카트?>
         var co_menu_shop = $('input[name="co_menu_shop"]:checked').val();
         <?php } else { ?>
@@ -3614,6 +3636,8 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                 "co_sidemenu_padding_shop": co_sidemenu_padding_shop,
                 "co_sidemenu_hide": co_sidemenu_hide,
                 "co_sidemenu_hide_shop": co_sidemenu_hide_shop,
+
+                "co_menu_set": co_menu_set,
 
                 "mod_type": mod_type,
             },
@@ -3883,7 +3907,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         var sec_con_width = $('input[name="sec_con_width"]:checked').val();
         var sec_padding_pc = $('input[name="sec_padding_pc"]').val();
         var sec_padding_mo = $('input[name="sec_padding_mo"]').val();
-
+        
         var sec_padding = $('input[name="sec_padding"]').val();
         var sec_padding_lr_pc = $('input[name="sec_padding_lr_pc"]').val();
         var sec_padding_lr_mo = $('input[name="sec_padding_lr_mo"]').val();
@@ -3894,7 +3918,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         var sec_margin_top_mo = $('input[name="sec_margin_top_mo"]').val();
         var sec_margin_btm_pc = $('input[name="sec_margin_btm_pc"]').val();
         var sec_margin_btm_mo = $('input[name="sec_margin_btm_mo"]').val();
-
+        
         // 여분필드
         var sec_1 = $('input[name="sec_1"]').val();
         var sec_2 = $('input[name="sec_2"]').val();
@@ -3964,7 +3988,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                     "sec_con_width": sec_con_width,
                     "sec_padding_pc": sec_padding_pc,
                     "sec_padding_mo": sec_padding_mo,
-
+                    
                     "sec_padding": sec_padding,
                     "sec_padding_lr_pc": sec_padding_lr_pc,
                     "sec_padding_lr_mo": sec_padding_lr_mo,
@@ -3975,7 +3999,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                     "sec_margin_top_mo": sec_margin_top_mo,
                     "sec_margin_btm_pc": sec_margin_btm_pc,
                     "sec_margin_btm_mo": sec_margin_btm_mo,
-
+                    
                     // 여분필드
                     "sec_1": sec_1,
                     "sec_2": sec_2,
@@ -4123,13 +4147,13 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         <?php } else { ?>
         var layout_name = '<?php echo $rb_core['layout'] ?>';
         <?php } ?>
-
+        
         // 일괄설정 항목
         var md_cb_batch = $('input[name="md_cb_batch"]').val();
         var md_border_batch = $('input[name="md_border_batch"]').val();
         var md_shadow_batch = $('input[name="md_shadow_batch"]').val();
-        var md_margin_batch = $('input[name="md_margin_batch"]').val();
-        var md_padding_batch = $('input[name="md_padding_batch"]').val();
+        var md_margin_batch = $('input[name="md_margin_batch"]').val();    
+        var md_padding_batch = $('input[name="md_padding_batch"]').val();    
 
         var md_wide_is = $('input[name="md_wide_is"]:checked').val();
         var md_border = $('input[name="md_border"]:checked').val();
@@ -4214,7 +4238,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
         var md_item_tab_list = $('input[name="md_item_tab_list"]').val();
         var md_item_tab_skin = $('select[name="md_item_tab_skin"]').val();
-
+        
         // 여분필드
         var md_1 = $('input[name="md_1"]').val();
         var md_2 = $('input[name="md_2"]').val();
@@ -4226,7 +4250,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         var md_8 = $('input[name="md_8"]').val();
         var md_9 = $('input[name="md_9"]').val();
         var md_10 = $('input[name="md_10"]').val();
-
+        
 
         if (md_title == "") {
             alert('모듈 타이틀을 입력해주세요.');
