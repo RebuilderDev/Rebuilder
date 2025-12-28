@@ -5536,6 +5536,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
         rbRestoreCssSaveBtn(); // 복구
         rbRestoreTopTit(); // 복구
+        lib_close(); // 복구
 
         var $reset = $('#css_reset_btn');
         if ($reset.is(':visible')) $reset.attr('data-hidden-by', 'widget');
