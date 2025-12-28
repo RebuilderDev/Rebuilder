@@ -15,6 +15,7 @@ $it = array(
 'it_name'=>'',
 'it_level'=>1,
 'it_level_opt'=>1,
+'it_types'=>0,
 'it_basic'=>'',
 'it_order'=>0,
 'it_type1'=>0,
@@ -67,6 +68,19 @@ $it = array(
 'it_mobile_head_html'=>'',
 'it_mobile_tail_html'=>'',
 );
+
+$columns_to_add = [
+    'it_types' => 'INT(4) NOT NULL DEFAULT 0'
+];
+
+foreach ($columns_to_add as $column => $attributes) {
+    // 컬럼이 있는지 확인
+    $column_check = sql_query("SHOW COLUMNS FROM {$g5['g5_shop_item_table']} LIKE '{$column}'", false);
+    if (!sql_num_rows($column_check)) {
+        // 컬럼 추가
+        sql_query("ALTER TABLE {$g5['g5_shop_item_table']} ADD {$column} {$attributes}", true);
+    }
+}
 
 for($i=0;$i<=10;$i++){
     $it['it_'.$i.'_subj'] = '';
@@ -370,6 +384,21 @@ if(!sql_query(" select it_skin from {$g5['g5_shop_item_table']} limit 1", false)
                 <label for="chk_all_it_level">전체적용</label>
             </td>
         </tr>
+
+        <tr id="it_types_sel">
+            <th scope="row"><label for="it_skin">상품타입</label></th>
+            <td colspan="3">
+                <input type="radio" name="it_types" value="0" id="it_types0" <?php echo ($it['it_types'] == 0) ? "checked" : ""; ?>> <label for="it_types0">일반</label>
+                <?php if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) { ?>
+                <input type="radio" name="it_types" value="1" id="it_types1" <?php echo ($it['it_types'] == 1) ? "checked" : ""; ?>> <label for="it_types1">예약</label>
+                <?php } ?>
+                <?php if(isset($rb_item_con['con_is']) && $rb_item_con['con_is'] == 1) { ?>
+                <input type="radio" name="it_types" value="2" id="it_types2" <?php echo ($it['it_types'] == 2) ? "checked" : ""; ?>> <label for="it_types3">파일</label>
+                <?php } ?>
+
+            </td>
+        </tr>
+
         <tr>
             <th scope="row"><label for="it_name">상품명</label></th>
             <td colspan="2">

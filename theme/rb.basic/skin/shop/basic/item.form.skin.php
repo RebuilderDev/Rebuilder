@@ -237,10 +237,13 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_SHOP_CSS_URL.'/style.css">', 0
 	                    $sc_method = '주문시 결제';
 	            }
 	            ?>
+	            <?php if($it['it_types'] < 1) { ?>
 	            <tr>
 	                <th><?php echo $ct_send_cost_label; ?></th>
 	                <td><?php echo $sc_method; ?></td>
 	            </tr>
+	            <?php } ?>
+
 	            <?php if($it['it_buy_min_qty'] > 0) { ?>
 	            <tr>
 	                <th>최소구매수량</th>

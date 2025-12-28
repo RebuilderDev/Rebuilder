@@ -51,6 +51,15 @@ if($is_kakaopay_use) {
         $goods = $goods_it_id = "";
         $goods_count = -1;
 
+        // it_opt_opt 컬럼 존재 여부 체크
+        $has_it_opt_opt = false;
+        $chk = sql_fetch(" SHOW COLUMNS FROM {$g5['g5_shop_item_table']} LIKE 'it_opt_opt' ");
+        if (is_array($chk) && isset($chk['Field']) && $chk['Field'] === 'it_opt_opt') {
+            $has_it_opt_opt = true;
+        }
+
+        $select_it_opt_opt = $has_it_opt_opt ? ", b.it_opt_opt AS it_opt_opt" : "";
+
         // $s_cart_id 로 현재 장바구니 자료 쿼리
         $sql = " select a.ct_id,
                         a.it_id,
@@ -65,6 +74,7 @@ if($is_kakaopay_use) {
                         b.ca_id2,
                         b.ca_id3,
                         b.it_notax
+                        {$select_it_opt_opt}
                    from {$g5['g5_shop_cart_table']} a left join {$g5['g5_shop_item_table']} b on ( a.it_id = b.it_id )
                   where a.od_id = '$s_cart_id'
                     and a.ct_select = '1' ";
@@ -86,13 +96,33 @@ if($is_kakaopay_use) {
 
         for ($i=0; $row=sql_fetch_array($result); $i++)
         {
-            // 합계금액 계산
-            $sql = " select SUM(IF(io_type = 1, (io_price * ct_qty), ((ct_price + io_price) * ct_qty))) as price,
-                            SUM(ct_point * ct_qty) as point,
-                            SUM(ct_qty) as qty
-                        from {$g5['g5_shop_cart_table']}
-                        where it_id = '{$row['it_id']}'
-                          and od_id = '$s_cart_id' ";
+
+            // 예약 관련
+            if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                $resv = sql_fetch("SELECT * FROM {$g5['g5_shop_cart_table']} WHERE ct_id = '{$row['ct_id']}' ");
+            }
+
+            // 합계금액 계산 (예약상품일 경우 합계방식 변경)
+            $price_calc = "((ct_price + io_price) * ct_qty)";
+            if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($resv['ct_types']) && $resv['ct_types'] == 1) {
+
+                // it_opt_opt==1 일때만 인원추가금에 ct_qty(일수) 곱
+                $is_opt_opt = (isset($row['it_opt_opt']) && (int)$row['it_opt_opt'] === 1) ? 1 : 0;
+                $mul_qty = $is_opt_opt ? " * ct_qty" : "";
+
+                $price_calc = "((ct_price + io_price) * ct_qty +
+                               (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0){$mul_qty}) +
+                               (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0){$mul_qty}) +
+                               (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0){$mul_qty}))";
+            }
+
+            $sql = "SELECT SUM(IF(io_type = 1, (io_price * ct_qty), $price_calc)) AS price,
+                           SUM(ct_point * ct_qty) AS point,
+                           SUM(ct_qty) AS qty
+                    FROM {$g5['g5_shop_cart_table']}
+                    WHERE it_id = '{$row['it_id']}'
+                      AND od_id = '$s_cart_id'";
+
             $sum = sql_fetch($sql);
 
             if (!$goods)
@@ -196,6 +226,12 @@ if($is_kakaopay_use) {
                 if($sendcost == 0)
                     $ct_send_cost = '무료';
             }
+
+            if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                if(isset($resv['ct_types']) && $resv['ct_types'] == 1) {
+                    $ct_send_cost = '-';
+                }
+            }
         ?>
 
         <tr>
@@ -214,11 +250,36 @@ if($is_kakaopay_use) {
                     <?php echo $it_name; ?>
                     <?php echo $cp_button; ?>
 
+                    <?php
+                        //예약정보 로드
+                        if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                            if(isset($resv['ct_types']) && $resv['ct_types'] == 1) {
+                                include (G5_PATH.'/rb/rb.mod/reservation/info.inc.php');
+                            }
+                        }
+                    ?>
+
                  </div>
             </td>
             <td class="td_num"><?php echo number_format($sum['qty']); ?></td>
-            <td class="td_numbig  text_right"><?php echo number_format($row['ct_price']); ?></td>
-            <td class="td_numbig  text_right"><span class="total_price"><?php echo number_format($sell_price); ?></span></td>
+            <td class="td_numbig text_right">
+                <?php echo number_format($row['ct_price']); ?>
+            </td>
+            <td class="td_numbig text_right">
+
+                <?php
+                    //예약정보 로드
+                    if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                        if(isset($resv['ct_types']) && $resv['ct_types'] == 1) {
+                            include (G5_PATH.'/rb/rb.mod/reservation/info_pri.inc.php');
+                        } else {
+                            echo '<span class="total_price">'.number_format($sell_price).'</span>';
+                        }
+                    } else {
+                        echo '<span class="total_price">'.number_format($sell_price).'</span>';
+                    }
+                ?>
+            </td>
             <td class="td_numbig  text_right"><?php echo number_format($point); ?></td>
             <td class="td_dvr"><?php echo $ct_send_cost; ?></td>
         </tr>

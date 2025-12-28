@@ -355,6 +355,7 @@ $check_sanitize_keys = array(
 'it_type5',             // 상품유형(할인)
 'it_level',             // 접근레벨
 'it_level_opt',             // 접근레벨 옵션
+'it_types',             // 상품타입
 );
 
 foreach( $check_sanitize_keys as $key ){
@@ -375,6 +376,7 @@ $sql_common = " ca_id               = '$ca_id',
                 it_name             = '$it_name',
                 it_level            = '$it_level',
                 it_level_opt        = '$it_level_opt',
+                it_types            = '$it_types',
                 it_maker            = '$it_maker',
                 it_origin           = '$it_origin',
                 it_brand            = '$it_brand',

@@ -34,6 +34,15 @@ include_once('./_head.php');
         $tot_sell_price = 0;
         $send_cost = 0;
 
+        // it_opt_opt 컬럼 존재 여부 체크
+        $has_it_opt_opt = false;
+        $chk = sql_fetch(" SHOW COLUMNS FROM {$g5['g5_shop_item_table']} LIKE 'it_opt_opt' ");
+        if (is_array($chk) && isset($chk['Field']) && $chk['Field'] === 'it_opt_opt') {
+            $has_it_opt_opt = true;
+        }
+
+        $select_it_opt_opt = $has_it_opt_opt ? ", b.it_opt_opt AS it_opt_opt" : "";
+
         // $s_cart_id 로 현재 장바구니 자료 쿼리
         $sql = " select a.ct_id,
                         a.it_id,
@@ -47,6 +56,7 @@ include_once('./_head.php');
                         b.ca_id,
                         b.ca_id2,
                         b.ca_id3
+                        {$select_it_opt_opt}
                    from {$g5['g5_shop_cart_table']} a left join {$g5['g5_shop_item_table']} b on ( a.it_id = b.it_id )
                   where a.od_id = '$s_cart_id' ";
         $sql .= " group by a.it_id ";
@@ -57,13 +67,33 @@ include_once('./_head.php');
 
         for ($i=0; $row=sql_fetch_array($result); $i++)
         {
-            // 합계금액 계산
-            $sql = " select SUM(IF(io_type = 1, (io_price * ct_qty), ((ct_price + io_price) * ct_qty))) as price,
-                            SUM(ct_point * ct_qty) as point,
-                            SUM(ct_qty) as qty
-                        from {$g5['g5_shop_cart_table']}
-                        where it_id = '{$row['it_id']}'
-                          and od_id = '$s_cart_id' ";
+
+            // 예약 관련
+            if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                $resv = sql_fetch("SELECT * FROM {$g5['g5_shop_cart_table']} WHERE ct_id = '{$row['ct_id']}' ");
+            }
+
+            // 합계금액 계산 (예약상품일 경우 합계방식 변경)
+            $price_calc = "((ct_price + io_price) * ct_qty)";
+            if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($resv['ct_types']) && $resv['ct_types'] == 1) {
+
+                // it_opt_opt==1 일때만 인원추가금에 ct_qty(일수) 곱
+                $is_opt_opt = (isset($row['it_opt_opt']) && (int)$row['it_opt_opt'] === 1) ? 1 : 0;
+                $mul_qty = $is_opt_opt ? " * ct_qty" : "";
+
+                $price_calc = "((ct_price + io_price) * ct_qty +
+                               (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0){$mul_qty}) +
+                               (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0){$mul_qty}) +
+                               (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0){$mul_qty}))";
+            }
+
+            $sql = "SELECT SUM(IF(io_type = 1, (io_price * ct_qty), $price_calc)) AS price,
+                           SUM(ct_point * ct_qty) AS point,
+                           SUM(ct_qty) AS qty
+                    FROM {$g5['g5_shop_cart_table']}
+                    WHERE it_id = '{$row['it_id']}'
+                      AND od_id = '$s_cart_id'";
+
             $sum = sql_fetch($sql);
 
             if ($i==0) { // 계속쇼핑
@@ -77,8 +107,18 @@ include_once('./_head.php');
             $it_name = $a1 . stripslashes($row['it_name']) . $a2;
             $it_options = print_item_options($row['it_id'], $s_cart_id);
             if($it_options) {
-                $mod_options = '<div class="sod_option_btn"><button type="button" class="mod_options">선택사항수정</button></div>';
+                if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                    if(isset($resv['ct_types']) && $resv['ct_types'] == 1) {
+                        $mod_options = '';
+                    } else {
+                        $mod_options = '<div class="sod_option_btn"><button type="button" class="mod_options">선택사항수정</button></div>';
+                    }
+                } else {
+                    $mod_options = '<div class="sod_option_btn"><button type="button" class="mod_options">선택사항수정</button></div>';
+                }
+
                 $it_name .= '<div class="sod_opt">'.$it_options.'</div>';
+
             }
 
             // 배송비
@@ -103,6 +143,12 @@ include_once('./_head.php');
                     $ct_send_cost = '무료';
             }
 
+            if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                if(isset($resv['ct_types']) && $resv['ct_types'] == 1) {
+                    $ct_send_cost = '-';
+                }
+            }
+
             $point      = $sum['point'];
             $sell_price = $sum['price'];
         ?>
@@ -119,10 +165,33 @@ include_once('./_head.php');
                     <input type="hidden" name="it_id[<?php echo $i; ?>]" value="<?php echo $row['it_id']; ?>">
                     <input type="hidden" name="it_name[<?php echo $i; ?>]" value="<?php echo get_text($row['it_name']); ?>">
                     <?php echo $it_name.$mod_options; ?>
+                    <?php
+                        //예약정보 로드
+                        if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                            if(isset($resv['ct_types']) && $resv['ct_types'] == 1) {
+                                include (G5_PATH.'/rb/rb.mod/reservation/info.inc.php');
+                            }
+                        }
+                    ?>
                 </div>
             </td>
             <td class="td_num"><?php echo number_format($sum['qty']); ?></td>
-            <td class="td_numbig"><?php echo number_format($row['ct_price']); ?></td>
+            <td class="td_numbig text_right">
+            <?php
+                //예약정보 로드
+                if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                    if(isset($resv['ct_types']) && $resv['ct_types'] == 1) {
+                        include (G5_PATH.'/rb/rb.mod/reservation/info_pri.inc.php');
+                    } else {
+                        echo number_format($row['ct_price']);
+                    }
+                } else {
+                    echo number_format($row['ct_price']);
+                }
+            ?>
+
+
+            </td>
             <td class="td_numbig"><?php echo number_format($point); ?></td>
             <td class="td_dvr"><?php echo $ct_send_cost; ?></td>
             <td class="td_numbig text_right"><span id="sell_price_<?php echo $i; ?>" class="total_prc"><?php echo number_format($sell_price); ?></span></td>

@@ -96,9 +96,28 @@ $i_send_coupon  = isset($_POST['od_send_coupon']) ? abs((int) $_POST['od_send_co
 $i_temp_point = isset($_POST['od_temp_point']) ? (int) $_POST['od_temp_point'] : 0;
 
 // 주문금액이 상이함
-$sql = " select SUM(IF(io_type = 1, (io_price * ct_qty), ((ct_price + io_price) * ct_qty))) as od_price,
-              COUNT(distinct it_id) as cart_count
+if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) { //예약상품일 경우 합계방식을 변경함
+    $sql = " SELECT
+            SUM(
+                IF(io_type = 1,
+                    (COALESCE(io_price, 0) * COALESCE(ct_qty, 1)),
+                    ((COALESCE(ct_price, 0) + COALESCE(io_price, 0)) * COALESCE(ct_qty, 1))
+                    + (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0) * IF(COALESCE(ct_opt_opt,0) = 1, COALESCE(ct_qty,1), 1))
+                    + (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0) * IF(COALESCE(ct_opt_opt,0) = 1, COALESCE(ct_qty,1), 1))
+                    + (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0) * IF(COALESCE(ct_opt_opt,0) = 1, COALESCE(ct_qty,1), 1))
+                )
+            ) AS od_price,
+            COUNT(DISTINCT it_id) AS cart_count
+        FROM {$g5['g5_shop_cart_table']}
+        WHERE od_id = '$tmp_cart_id'
+        AND ct_select = '1' ";
+} else {
+    $sql = " select SUM(IF(io_type = 1, (io_price * ct_qty), ((ct_price + io_price) * ct_qty))) as od_price,
+        COUNT(distinct it_id) as cart_count
             from {$g5['g5_shop_cart_table']} where od_id = '$tmp_cart_id' and ct_select = '1' ";
+}
+
+
 $row = sql_fetch($sql);
 $tot_ct_price = $row['od_price'];
 $cart_count = $row['cart_count'];
@@ -212,9 +231,13 @@ if($is_member) {
     $tot_cp_price = $tot_it_cp_price + $tot_od_cp_price;
 }
 
-if ((int)($row['od_price'] - $tot_cp_price) !== $i_price) {
-    if(function_exists('add_order_post_log')) add_order_post_log('쿠폰금액 최종 계산 Error.');
-    die("Error.");
+if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) { //예약이라면 통과
+
+} else {
+    if ((int)($row['od_price'] - $tot_cp_price) !== $i_price) {
+        if(function_exists('add_order_post_log')) add_order_post_log('쿠폰금액 최종 계산 Error.');
+        die("Error.");
+    }
 }
 
 // 배송비가 상이함

@@ -7,6 +7,18 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_SHOP_CSS_URL.'/style.css">', 0
 
 <script src="<?php echo G5_JS_URL; ?>/viewimageresize.js"></script>
 
+<?php
+if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+    if(isset($it['it_types']) && $it['it_types'] == 1) {
+        if (!$it['it_use']) {
+        } else if ($it['it_tel_inq']) {
+        } else {
+            include_once(G5_THEME_PATH.'/skin/shop/basic/reservation.skin.php');
+        }
+    }
+}
+?>
+
 <?php if ($default['de_rel_list_use']) { ?>
 <!-- 관련상품 시작 { -->
 <section id="sit_rel" class="<?php if(!$default['de_mobile_rel_list_use']) { ?>pc<?php } ?>">

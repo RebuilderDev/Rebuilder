@@ -24,19 +24,12 @@ if($od['od_pg'] == 'lg') {
         $st_count1 = $st_count2 = 0;
         $custom_cancel = false;
 
-        if(isset($pa['pa_is']) && $pa['pa_is'] == 1) {
-        $sql = " select it_id, it_name, ct_send_cost, it_sc_type, ct_partner
+        $sql = " select *
                     from {$g5['g5_shop_cart_table']}
                     where od_id = '$od_id'
                     group by it_id
                     order by ct_id ";
-        } else {
-        $sql = " select it_id, it_name, ct_send_cost, it_sc_type
-                    from {$g5['g5_shop_cart_table']}
-                    where od_id = '$od_id'
-                    group by it_id
-                    order by ct_id ";
-        }
+
         $result = sql_query($sql);
         ?>
 
@@ -61,29 +54,36 @@ if($od['od_pg'] == 'lg') {
 	            for($i=0; $row=sql_fetch_array($result); $i++) {
 	                $image = rb_it_image($row['it_id'], 55, 55);
 
-                    if(isset($pa['pa_is']) && $pa['pa_is'] == 1) {
-                        $sql = " select ct_id, it_name, ct_option, ct_qty, ct_price, ct_point, ct_status, io_type, io_price, ct_partner
+                    $sql = " select *
                                     from {$g5['g5_shop_cart_table']}
                                     where od_id = '$od_id'
                                       and it_id = '{$row['it_id']}'
                                     order by io_type asc, ct_id asc ";
-                        $res = sql_query($sql);
-                    } else {
-                        $sql = " select ct_id, it_name, ct_option, ct_qty, ct_price, ct_point, ct_status, io_type, io_price
-                                    from {$g5['g5_shop_cart_table']}
-                                    where od_id = '$od_id'
-                                      and it_id = '{$row['it_id']}'
-                                    order by io_type asc, ct_id asc ";
-                        $res = sql_query($sql);
-                    }
+                    $res = sql_query($sql);
+
 	                $rowspan = sql_num_rows($res) + 1;
 
-	                // 합계금액 계산
-	                $sql = " select SUM(IF(io_type = 1, (io_price * ct_qty), ((ct_price + io_price) * ct_qty))) as price,
-	                                SUM(ct_qty) as qty
-	                            from {$g5['g5_shop_cart_table']}
-	                            where it_id = '{$row['it_id']}'
-	                              and od_id = '$od_id' ";
+
+                    // 합계금액 계산 (예약상품일 경우 합계방식 변경)
+                    $price_calc = "((ct_price + io_price) * ct_qty)";
+                    if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($row['ct_types']) && $row['ct_types'] == 1) {
+
+                        // it_opt_opt==1 일때만 인원추가금에 ct_qty(일수) 곱
+                        $is_opt_opt = (isset($row['ct_opt_opt']) && (int)$row['ct_opt_opt'] === 1) ? 1 : 0;
+                        $mul_qty = $is_opt_opt ? " * ct_qty" : "";
+
+                        $price_calc = "((ct_price + io_price) * ct_qty +
+                                       (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0){$mul_qty}) +
+                                       (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0){$mul_qty}) +
+                                       (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0){$mul_qty}))";
+                    }
+
+                    $sql = "SELECT SUM(IF(io_type = 1, (io_price * ct_qty), $price_calc)) AS price,
+                                   SUM(ct_qty) AS qty
+                            FROM {$g5['g5_shop_cart_table']}
+                            WHERE it_id = '{$row['it_id']}'
+                              AND od_id = '$od_id'";
+
 	                $sum = sql_fetch($sql);
 
 	                // 배송비
@@ -108,6 +108,12 @@ if($od['od_pg'] == 'lg') {
 	                        $ct_send_cost = '무료';
 	                }
 
+                    if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                        if(isset($row['ct_types']) && $row['ct_types'] == 1) {
+                            $ct_send_cost = '-';
+                        }
+                    }
+
                     if(isset($pa['pa_is']) && $pa['pa_is'] == 1) {
                         if(isset($row['ct_partner']) && $row['ct_partner']) {
                             $pm = get_member($row['ct_partner']);
@@ -123,7 +129,34 @@ if($od['od_pg'] == 'lg') {
 	                    else
 	                        $opt_price = $opt['ct_price'] + $opt['io_price'];
 
-	                    $sell_price = $opt_price * $opt['ct_qty'];
+                        if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                            if(isset($opt['ct_types']) && $opt['ct_types'] == 1) {
+
+                                $sell_price_re = $opt_price * $opt['ct_qty'];
+                                $sell_price_re2 = $sell_price_re;
+
+                                $is_opt_opt = (isset($opt['ct_opt_opt']) && (int)$opt['ct_opt_opt'] === 1) ? 1 : 0;
+                                $mul_qty = $is_opt_opt ? $opt['ct_qty'] : "1";
+
+                                $ct_user_pri1_p = $opt['ct_user_pri1'] * $opt['ct_user_qty1'] * $mul_qty;
+                                $ct_user_pri2_p = $opt['ct_user_pri2'] * $opt['ct_user_qty2'] * $mul_qty;
+                                $ct_user_pri3_p = $opt['ct_user_pri3'] * $opt['ct_user_qty3'] * $mul_qty;
+
+                                $ct_user_pri_p = $ct_user_pri1_p + $ct_user_pri2_p + $ct_user_pri3_p;
+
+                                if($opt['io_type']) {
+                                    $sell_price = $opt_price * $opt['ct_qty'];
+                                } else {
+                                    $sell_price = $sell_price_re2 + $ct_user_pri_p;
+                                }
+
+                            } else {
+                                $sell_price = $opt_price * $opt['ct_qty'];
+                            }
+                        } else {
+                            $sell_price = $opt_price * $opt['ct_qty'];
+                        }
+
 	                    $point = $opt['ct_point'] * $opt['ct_qty'];
 
 	                    if($k == 0) {
@@ -136,12 +169,34 @@ if($od['od_pg'] == 'lg') {
 		                	<a href="<?php echo shop_item_url($row['it_id']); ?>"><?php echo $row['it_name']; ?></a><br>
 		                	<div class="sod_opt"><?php echo get_text($opt['ct_option']); ?></div>
 	                	</div>
+	                	<?php
+                        //예약정보 로드
+                        if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                            if(isset($opt['ct_types']) && $opt['ct_types'] == 1) {
+                                $resv = sql_fetch ( " select * from {$g5['g5_shop_cart_table']} where ct_id = '{$opt['ct_id']}' and io_type = '0' " );
+                                include (G5_PATH.'/rb/rb.mod/reservation/info.inc.php');
+                            }
+                        }
+                        ?>
 	                </td>
 	                <td headers="th_itqty" class="td_mngsmall"><?php echo number_format($opt['ct_qty']); ?></td>
 	                <td headers="th_itprice" class="td_numbig text_right"><?php echo number_format($opt_price); ?></td>
 	                <td headers="th_itpt" class="td_numbig text_right"><?php echo number_format($point); ?></td>
 	                <td headers="th_itsd" class="td_dvr"><?php echo $ct_send_cost; ?></td>
-	                <td headers="th_itsum" class="td_numbig text_right"><?php echo number_format($sell_price); ?></td>
+	                <td headers="th_itsum" class="td_numbig text_right">
+	                   <?php
+                            //예약정보 로드
+                            if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                                if(isset($opt['ct_types']) && $opt['ct_types'] == 1) {
+                                    include (G5_PATH.'/rb/rb.mod/reservation/info_pri.inc.php');
+                                } else {
+                                    echo '<span class="total_price">'.number_format($sell_price).'</span>';
+                                }
+                            } else {
+                                echo '<span class="total_price">'.number_format($sell_price).'</span>';
+                            }
+                        ?>
+	                </td>
 	                <td headers="th_itst" class="td_mngsmall"><?php echo $opt['ct_status']; ?></td>
 	                <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
 	                <td headers="th_partner" class="td_mngsmall"><?php echo $partnmer_nick; ?></td>

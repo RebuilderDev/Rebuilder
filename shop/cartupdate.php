@@ -286,17 +286,43 @@ else // 장바구니에 담기
         // 장바구니에 Insert
         $comma = '';
 
-        /* 코어수정 리빌더 20241014 { */
-        if(isset($it['it_partner']) && $it['it_partner']) {
-            $sql = " INSERT INTO {$g5['g5_shop_cart_table']}
-                        ( od_id, mb_id, it_id, it_name, it_sc_type, it_sc_method, it_sc_price, it_sc_minimum, it_sc_qty, ct_status, ct_price, ct_point, ct_point_use, ct_stock_use, ct_option, ct_qty, ct_notax, io_id, io_type, io_price, ct_time, ct_ip, ct_send_cost, ct_direct, ct_select, ct_select_time, ct_partner )
-                    VALUES ";
-        } else {
-            $sql = " INSERT INTO {$g5['g5_shop_cart_table']}
-                        ( od_id, mb_id, it_id, it_name, it_sc_type, it_sc_method, it_sc_price, it_sc_minimum, it_sc_qty, ct_status, ct_price, ct_point, ct_point_use, ct_stock_use, ct_option, ct_qty, ct_notax, io_id, io_type, io_price, ct_time, ct_ip, ct_send_cost, ct_direct, ct_select, ct_select_time )
-                    VALUES ";
+        $columns = [
+            "od_id", "mb_id", "it_id", "it_name", "it_sc_type", "it_sc_method",
+            "it_sc_price", "it_sc_minimum", "it_sc_qty", "ct_status", "ct_price",
+            "ct_point", "ct_point_use", "ct_stock_use", "ct_option", "ct_qty",
+            "ct_notax", "io_id", "io_type", "io_price", "ct_time", "ct_ip",
+            "ct_send_cost", "ct_direct", "ct_select", "ct_select_time"
+        ];
+
+        // 예약
+        if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+            if (isset($it['it_types']) && $it['it_types'] == 1) {
+                $columns[] = "ct_types";
+                $columns[] = "ct_opt_opt";
+                $columns[] = "ct_date_s";
+                $columns[] = "ct_date_e";
+                $columns[] = "ct_date_d";
+                $columns[] = "ct_date_t";
+                $columns[] = "ct_user_txt1";
+                $columns[] = "ct_user_txt2";
+                $columns[] = "ct_user_txt3";
+                $columns[] = "ct_user_qty1";
+                $columns[] = "ct_user_qty2";
+                $columns[] = "ct_user_qty3";
+                $columns[] = "ct_user_pri1";
+                $columns[] = "ct_user_pri2";
+                $columns[] = "ct_user_pri3";
+            }
         }
-        /* } */
+
+        // 입점
+        if (isset($it['it_partner']) && $it['it_partner']) {
+            $columns[] = "ct_partner";
+        }
+
+            // SQL 쿼리 구성
+            $sql = "INSERT INTO {$g5['g5_shop_cart_table']} (" . implode(", ", $columns) . ") VALUES ";
+
 
         for($k=0; $k<$opt_count; $k++) {
             $io_id = isset($_POST['io_id'][$it_id][$k]) ? preg_replace(G5_OPTION_ID_FILTER, '', $_POST['io_id'][$it_id][$k]) : '';
@@ -375,13 +401,58 @@ else // 장바구니에 담기
             $io_value = sql_real_escape_string(strip_tags($io_value));
             $remote_addr = get_real_client_ip();
 
-            /* 코어수정 리빌더 20241014 { */
-            if(isset($it['it_partner']) && $it['it_partner']) {
-                $sql .= $comma."( '$tmp_cart_id', '{$member['mb_id']}', '{$it['it_id']}', '".addslashes($it['it_name'])."', '{$it['it_sc_type']}', '{$it['it_sc_method']}', '{$it['it_sc_price']}', '{$it['it_sc_minimum']}', '{$it['it_sc_qty']}', '쇼핑', '{$it['it_price']}', '$point', '0', '0', '$io_value', '$ct_qty', '{$it['it_notax']}', '$io_id', '$io_type', '$io_price', '".G5_TIME_YMDHIS."', '$remote_addr', '$ct_send_cost', '$sw_direct', '$ct_select', '$ct_select_time', '{$it['it_partner']}' )";
-            } else {
-                $sql .= $comma."( '$tmp_cart_id', '{$member['mb_id']}', '{$it['it_id']}', '".addslashes($it['it_name'])."', '{$it['it_sc_type']}', '{$it['it_sc_method']}', '{$it['it_sc_price']}', '{$it['it_sc_minimum']}', '{$it['it_sc_qty']}', '쇼핑', '{$it['it_price']}', '$point', '0', '0', '$io_value', '$ct_qty', '{$it['it_notax']}', '$io_id', '$io_type', '$io_price', '".G5_TIME_YMDHIS."', '$remote_addr', '$ct_send_cost', '$sw_direct', '$ct_select', '$ct_select_time' )";
+            $values = [
+                "'$tmp_cart_id'", "'{$member['mb_id']}'", "'{$it['it_id']}'", "'".addslashes($it['it_name'])."'",
+                "'{$it['it_sc_type']}'", "'{$it['it_sc_method']}'", "'{$it['it_sc_price']}'", "'{$it['it_sc_minimum']}'",
+                "'{$it['it_sc_qty']}'", "'쇼핑'", "'{$it['it_price']}'", "'$point'", "'0'", "'0'", "'$io_value'",
+                "'$ct_qty'", "'{$it['it_notax']}'", "'$io_id'", "'$io_type'", "'$io_price'", "'".G5_TIME_YMDHIS."'",
+                "'$remote_addr'", "'$ct_send_cost'", "'$sw_direct'", "'$ct_select'", "'$ct_select_time'"
+            ];
+
+            // 예약
+            if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                if (isset($it['it_types']) && $it['it_types'] == 1) {
+
+                    $ct_types = isset($_POST['ct_types']) ? trim(strip_tags($_POST['ct_types'])) : '';
+                    $ct_opt_opt = isset($_POST['ct_opt_opt']) ? trim(strip_tags($_POST['ct_opt_opt'])) : '';
+                    $ct_date_s = isset($_POST['ct_date_s']) ? trim(strip_tags($_POST['ct_date_s'])) : '';
+                    $ct_date_e = isset($_POST['ct_date_e']) ? trim(strip_tags($_POST['ct_date_e'])) : '';
+                    $ct_date_d = isset($_POST['ct_date_d']) ? trim(strip_tags($_POST['ct_date_d'])) : '';
+                    $ct_date_t = isset($_POST['ct_date_t']) ? trim(strip_tags($_POST['ct_date_t'])) : '';
+                    $ct_user_txt1 = isset($_POST['ct_user_txt1']) ? trim(strip_tags($_POST['ct_user_txt1'])) : '';
+                    $ct_user_txt2 = isset($_POST['ct_user_txt2']) ? trim(strip_tags($_POST['ct_user_txt2'])) : '';
+                    $ct_user_txt3 = isset($_POST['ct_user_txt3']) ? trim(strip_tags($_POST['ct_user_txt3'])) : '';
+                    $ct_user_qty1 = isset($_POST['ct_user_qty1']) ? trim(strip_tags($_POST['ct_user_qty1'])) : '';
+                    $ct_user_qty2 = isset($_POST['ct_user_qty2']) ? trim(strip_tags($_POST['ct_user_qty2'])) : '';
+                    $ct_user_qty3 = isset($_POST['ct_user_qty3']) ? trim(strip_tags($_POST['ct_user_qty3'])) : '';
+                    $ct_user_pri1 = isset($_POST['ct_user_pri1']) ? trim(strip_tags($_POST['ct_user_pri1'])) : '';
+                    $ct_user_pri2 = isset($_POST['ct_user_pri2']) ? trim(strip_tags($_POST['ct_user_pri2'])) : '';
+                    $ct_user_pri3 = isset($_POST['ct_user_pri3']) ? trim(strip_tags($_POST['ct_user_pri3'])) : '';
+
+                    $values[] = "'$ct_types'";
+                    $values[] = "'$ct_opt_opt'";
+                    $values[] = "'$ct_date_s'";
+                    $values[] = "'$ct_date_e'";
+                    $values[] = "'$ct_date_d'";
+                    $values[] = "'$ct_date_t'";
+                    $values[] = "'$ct_user_txt1'";
+                    $values[] = "'$ct_user_txt2'";
+                    $values[] = "'$ct_user_txt3'";
+                    $values[] = "'$ct_user_qty1'";
+                    $values[] = "'$ct_user_qty2'";
+                    $values[] = "'$ct_user_qty3'";
+                    $values[] = "'$ct_user_pri1'";
+                    $values[] = "'$ct_user_pri2'";
+                    $values[] = "'$ct_user_pri3'";
+                }
             }
-            /* } */
+
+            // 입점
+            if (isset($it['it_partner']) && $it['it_partner']) {
+                $values[] = "'{$it['it_partner']}'";
+            }
+
+            $sql .= $comma."( ".implode(", ", $values)." )";
 
             $comma = ' , ';
             $ct_count++;

@@ -63,32 +63,14 @@ if($default['de_escrow_use'])
 $qstr = "$qstr1&amp;sort1=$sort1&amp;sort2=$sort2&amp;page=$page";
 
 // 상품목록
-if(isset($pa['pa_is']) && $pa['pa_is'] == 1) {
-    $sql = " select it_id,
-                    it_name,
-                    ct_partner,
-                    cp_price,
-                    ct_notax,
-                    ct_send_cost,
-                    it_sc_type
+
+    $sql = " select *
                from {$g5['g5_shop_cart_table']}
               where od_id = '{$od['od_id']}'
               group by it_id
               order by ct_id ";
     $result = sql_query($sql);
-} else {
-    $sql = " select it_id,
-                    it_name,
-                    cp_price,
-                    ct_notax,
-                    ct_send_cost,
-                    it_sc_type
-               from {$g5['g5_shop_cart_table']}
-              where od_id = '{$od['od_id']}'
-              group by it_id
-              order by ct_id ";
-    $result = sql_query($sql);
-}
+
 // 주소 참고항목 필드추가
 if(!isset($od['od_addr3'])) {
     sql_query(" ALTER TABLE `{$g5['g5_shop_order_table']}`
@@ -176,7 +158,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                 <label for="sit_select_all" class="sound_only">주문 상품 전체</label>
                 <input type="checkbox" id="sit_select_all">
             </th>
-            <th scope="col">옵션항목</th>
+            <th scope="col">옵션정보</th>
             <th scope="col">상태</th>
             <th scope="col">수량</th>
             <th scope="col">판매가</th>
@@ -189,9 +171,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
 
             <!-- 20241018 리빌더 추가 { -->
             <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
-            <th scope="col">운송장번호</th>
-            <th scope="col">배송사</th>
-            <th scope="col">배송일시</th>
+            <th scope="col" colspan="3">배송정보</th>
             <?php } ?>
             <!-- } -->
 
@@ -210,22 +190,15 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
             }
 
             // 상품의 옵션정보
-            if(isset($pa['pa_is']) && $pa['pa_is'] == 1) {
-                $sql = " select ct_partner, ct_id, it_id, ct_price, ct_point, ct_qty, ct_option, ct_status, cp_price, ct_stock_use, ct_point_use, ct_send_cost, io_type, io_price, ct_delivery_company, ct_invoice, ct_invoice_time
+                $sql = " select *
                         from {$g5['g5_shop_cart_table']}
                         where od_id = '{$od['od_id']}'
                           and it_id = '{$row['it_id']}'
                         order by io_type asc, ct_id asc ";
                 $res = sql_query($sql);
-            } else {
-                $sql = " select ct_id, it_id, ct_price, ct_point, ct_qty, ct_option, ct_status, cp_price, ct_stock_use, ct_point_use, ct_send_cost, io_type, io_price
-                        from {$g5['g5_shop_cart_table']}
-                        where od_id = '{$od['od_id']}'
-                          and it_id = '{$row['it_id']}'
-                        order by io_type asc, ct_id asc ";
-                $res = sql_query($sql);
-            }
-            $rowspan = sql_num_rows($res);
+            $rowspan = sql_num_rows($res);;
+
+
 
             // 합계금액 계산
             $sql = " select SUM(IF(io_type = 1, (io_price * ct_qty), ((ct_price + io_price) * ct_qty))) as price,
@@ -257,6 +230,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                     $ct_send_cost = '무료';
             }
 
+
             for($k=0; $opt=sql_fetch_array($res); $k++) {
                 if($opt['io_type'])
                     $opt_price = $opt['io_price'];
@@ -264,7 +238,45 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                     $opt_price = $opt['ct_price'] + $opt['io_price'];
 
                 // 소계
-                $ct_price['stotal'] = $opt_price * $opt['ct_qty'];
+
+                if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($opt['ct_types']) && $opt['ct_types'] == 1) {
+
+
+                            // // 옵션 합계 계산
+                            $opt_opt   = (isset($opt['ct_opt_opt']) && (int)$opt['ct_opt_opt'] === 1) ? 1 : 0;
+                            $date_d    = (isset($opt['ct_date_d']) && (int)$opt['ct_date_d'] > 0) ? (int)$opt['ct_date_d'] : 0;
+
+                            $u_pri1 = isset($opt['ct_user_pri1']) ? (int)$opt['ct_user_pri1'] : 0;
+                            $u_qty1 = isset($opt['ct_user_qty1']) ? (int)$opt['ct_user_qty1'] : 0;
+
+                            $u_pri2 = isset($opt['ct_user_pri2']) ? (int)$opt['ct_user_pri2'] : 0;
+                            $u_qty2 = isset($opt['ct_user_qty2']) ? (int)$opt['ct_user_qty2'] : 0;
+
+                            $u_pri3 = isset($opt['ct_user_pri3']) ? (int)$opt['ct_user_pri3'] : 0;
+                            $u_qty3 = isset($opt['ct_user_qty3']) ? (int)$opt['ct_user_qty3'] : 0;
+
+                            $mul_days = ($opt_opt === 1 && $date_d > 0) ? $date_d : 1;
+
+                            $opt_sum = 0;
+                            $opt_sum += ($u_pri1 * $u_qty1) * $mul_days;
+                            $opt_sum += ($u_pri2 * $u_qty2) * $mul_days;
+                            $opt_sum += ($u_pri3 * $u_qty3) * $mul_days;
+
+
+                            if ($opt_sum > 0) {
+                                $ct_price_opt = $opt_price * $opt['ct_qty'];
+                                $ct_price['stotal'] = $ct_price_opt + $opt_sum;
+                            } else {
+                                $ct_price['stotal'] = $opt_price * $opt['ct_qty'];
+                            }
+
+
+
+
+                } else {
+                    $ct_price['stotal'] = $opt_price * $opt['ct_qty'];
+                }
+
                 $ct_point['stotal'] = $opt['ct_point'] * $opt['ct_qty'];
             ?>
             <tr>
@@ -284,6 +296,113 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                 </td>
                 <?php } ?>
                 <td class="td_left">
+
+                    <?php if(isset($opt['ct_types']) && $opt['ct_types'] == 1) { ?>
+
+                    <?php if($k == 0) { ?>
+
+                        <div class="tbl_head01 tbl_wrap" style="width:300px">
+
+
+                            <table>
+                            <colgroup>
+                                <col style="width:40%;">
+                                <col style="width:20%;">
+                                <col style="width:20%;">
+                                <col style="width:20%;">
+                            </colgroup>
+                            <thead>
+                            <tr>
+                                <th colspan="4">
+                                    <strong class="" style="display:block; text-align:center; color:#ff0000;">
+                                    <?php if(isset($opt['ct_date_e']) && $opt['ct_date_e'] == '0000-00-00') { ?>
+                                        <?php echo $opt['ct_date_s'] ?> (<?php echo $opt['ct_date_d'] ?>일)
+                                    <?php } else { ?>
+                                        <?php echo $opt['ct_date_s'] ?> ~ <?php echo $opt['ct_date_e'] ?> (<?php echo $opt['ct_date_d'] ?>일)
+                                    <?php } ?>
+                                    </strong>
+                                </th>
+                            </tr>
+                            <tr>
+                                <th scope="col">항목</th>
+                                <th scope="col">금액</th>
+                                <th scope="col">수량</th>
+                                <th scope="col">합계</th>
+                            </tr>
+
+
+                            </thead>
+                            <tbody>
+
+
+
+
+                            <?php if(isset($opt['ct_user_txt1']) && $opt['ct_user_txt1']) { ?>
+                            <?php
+                                if(isset($opt['ct_opt_opt']) && $opt['ct_opt_opt'] == 1) {
+                                    $tot1 = $opt['ct_user_qty1'] * $opt['ct_user_pri1'] * $opt['ct_date_d'];
+                                } else {
+                                    $tot1 = $opt['ct_user_qty1'] * $opt['ct_user_pri1'];
+                                }
+
+                            ?>
+                            <tr <?php if(isset($opt['ct_user_qty1']) && $opt['ct_user_qty1'] < 1) { ?>style="opacity:0.3"<?php } ?>>
+                                <td nowrap><?php echo $opt['ct_user_txt1'] ?></td>
+                                <td nowrap><?php echo number_format($opt['ct_user_pri1']); ?></td>
+                                <td nowrap><?php echo $opt['ct_user_qty1'] ?></td>
+
+                                <td nowrap><?php echo number_format($tot1); ?></td>
+                            </tr>
+                            <?php } ?>
+
+                            <?php if(isset($opt['ct_user_txt2']) && $opt['ct_user_txt2']) { ?>
+                            <?php
+                                if(isset($opt['ct_opt_opt']) && $opt['ct_opt_opt'] == 1) {
+                                    $tot2 = $opt['ct_user_qty2'] * $opt['ct_user_pri2'] * $opt['ct_date_d'];
+                                } else {
+                                    $tot2 = $opt['ct_user_qty2'] * $opt['ct_user_pri2'];
+                                }
+                            ?>
+                            <tr <?php if(isset($opt['ct_user_qty2']) && $opt['ct_user_qty2'] < 1) { ?>style="opacity:0.3"<?php } ?>>
+                                <td nowrap><?php echo $opt['ct_user_txt2'] ?></td>
+                                <td nowrap><?php echo number_format($opt['ct_user_pri2']); ?></td>
+                                <td nowrap><?php echo $opt['ct_user_qty2'] ?></td>
+
+                                <td nowrap><?php echo number_format($tot2); ?></td>
+                            </tr>
+                            <?php } ?>
+
+                            <?php if(isset($opt['ct_user_txt3']) && $opt['ct_user_txt3']) { ?>
+                            <?php
+                                if(isset($opt['ct_opt_opt']) && $opt['ct_opt_opt'] == 1) {
+                                    $tot3 = $opt['ct_user_qty3'] * $opt['ct_user_pri3'] * $opt['ct_date_d'];
+                                } else {
+                                    $tot3 = $opt['ct_user_qty3'] * $opt['ct_user_pri3'];
+                                }
+                            ?>
+                            <tr <?php if(isset($opt['ct_user_qty3']) && $opt['ct_user_qty3'] < 1) { ?>style="opacity:0.3"<?php } ?>>
+                                <td nowrap><?php echo $opt['ct_user_txt3'] ?></td>
+                                <td nowrap><?php echo number_format($opt['ct_user_pri3']); ?></td>
+                                <td nowrap><?php echo $opt['ct_user_qty3'] ?></td>
+
+                                <td nowrap><?php echo number_format($tot3); ?></td>
+                            </tr>
+                            <?php } ?>
+
+                            <?php if(isset($opt['ct_date_t']) && $opt['ct_date_t']) { ?>
+                            <tr>
+                                <td nowrap colspan="4"><?php echo $opt['ct_date_t'] ?></td>
+                            </tr>
+                            <?php } ?>
+
+                            </tbody>
+                            </table>
+                        </div>
+
+                    <?php } ?>
+
+                <?php } ?>
+
                     <label for="ct_chk_<?php echo $chk_cnt; ?>" class="sound_only"><?php echo get_text($opt['ct_option']); ?></label>
                     <input type="checkbox" name="ct_chk[<?php echo $chk_cnt; ?>]" id="ct_chk_<?php echo $chk_cnt; ?>" value="<?php echo $chk_cnt; ?>" class="sct_sel_<?php echo $i; ?>">
                     <input type="hidden" name="ct_id[<?php echo $chk_cnt; ?>]" value="<?php echo $opt['ct_id']; ?>">
@@ -295,47 +414,58 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                     <input type="text" name="ct_qty[<?php echo $chk_cnt; ?>]" id="ct_qty_<?php echo $chk_cnt; ?>" value="<?php echo $opt['ct_qty']; ?>" required class="frm_input required" size="5">
                 </td>
                 <td class="td_num_right "><?php echo number_format($opt_price); ?></td>
-                <td class="td_num_right"><?php echo number_format($ct_price['stotal']); ?></td>
+                <td class="td_num_right">
+                <?php echo number_format($ct_price['stotal']); ?>
+                </td>
                 <td class="td_num_right"><?php echo number_format($opt['cp_price']); ?></td>
                 <td class=" td_num_right"><?php echo number_format($ct_point['stotal']); ?></td>
                 <td class="td_sendcost_by"><?php echo $ct_send_cost; ?></td>
                 <td class="td_mngsmall"><?php echo get_yn($opt['ct_point_use']); ?></td>
                 <td class="td_mngsmall"><?php echo get_yn($opt['ct_stock_use']); ?></td>
 
-                <!-- 20241018 리빌더 추가 { -->
-                <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
-                <td class=""><input type="text" name="ct_invoice[<?php echo $chk_cnt; ?>]" value="<?php echo $opt['ct_invoice']; ?>" id="ct_invoice_<?php echo $chk_cnt; ?>" class="frm_input"></td>
 
-                <td class="">
-                    <input type="text" name="ct_delivery_company[<?php echo $chk_cnt; ?>]" id="ct_delivery_company_<?php echo $chk_cnt; ?>" value="<?php echo $opt['ct_delivery_company']; ?>" class="frm_input" style="width:60%;">
+                <?php if(isset($opt['ct_types']) && $opt['ct_types'] == 1) { ?>
 
-                    <input type="checkbox" id="ct_delivery_chk_<?php echo $chk_cnt; ?>" value="<?php echo $default['de_delivery_company']; ?>" onclick="chk_delivery_company_<?php echo $chk_cnt; ?>()">
-                    <label for="ct_delivery_chk_<?php echo $chk_cnt; ?>">기본</label>
+                    <td colspan="3">-</td>
 
-                    <script>
-                    function chk_delivery_company_<?php echo $chk_cnt; ?>()
-                    {
-                        var chk_<?php echo $chk_cnt; ?> = document.getElementById("ct_delivery_chk_<?php echo $chk_cnt; ?>");
-                        var company_<?php echo $chk_cnt; ?> = document.getElementById("ct_delivery_company_<?php echo $chk_cnt; ?>");
-                        company_<?php echo $chk_cnt; ?>.value = chk_<?php echo $chk_cnt; ?>.checked ? chk_<?php echo $chk_cnt; ?>.value : company_<?php echo $chk_cnt; ?>.defaultValue;
-                    }
-                    </script>
-                </td>
+                <?php } else { ?>
 
-                <td class="">
-                    <input type="text" name="ct_invoice_time[<?php echo $chk_cnt; ?>]" id="ct_invoice_time_<?php echo $chk_cnt; ?>" value="<?php echo is_null_time($opt['ct_invoice_time']) ? "" : $opt['ct_invoice_time']; ?>" class="frm_input" maxlength="19" style="width:60%;">
-                    <input type="checkbox" id="ct_invoice_chk_<?php echo $chk_cnt; ?>" value="<?php echo date("Y-m-d H:i:s", G5_SERVER_TIME); ?>" onclick="chk_invoice_time_<?php echo $chk_cnt; ?>()">
-                    <label for="ct_invoice_chk_<?php echo $chk_cnt; ?>">현재</label>
+                    <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
 
-                    <script>
-                    function chk_invoice_time_<?php echo $chk_cnt; ?>()
-                    {
-                        var chk_<?php echo $chk_cnt; ?> = document.getElementById("ct_invoice_chk_<?php echo $chk_cnt; ?>");
-                        var time_<?php echo $chk_cnt; ?> = document.getElementById("ct_invoice_time_<?php echo $chk_cnt; ?>");
-                        time_<?php echo $chk_cnt; ?>.value = chk_<?php echo $chk_cnt; ?>.checked ? chk_<?php echo $chk_cnt; ?>.value : time_<?php echo $chk_cnt; ?>.defaultValue;
-                    }
-                    </script>
-                </td>
+                    <td class=""><input type="text" name="ct_invoice[<?php echo $chk_cnt; ?>]" value="<?php echo $opt['ct_invoice']; ?>" id="ct_invoice_<?php echo $chk_cnt; ?>" class="frm_input" placeholder="운송장번호"></td>
+
+                    <td class="">
+                        <input type="text" name="ct_delivery_company[<?php echo $chk_cnt; ?>]" id="ct_delivery_company_<?php echo $chk_cnt; ?>" value="<?php echo $opt['ct_delivery_company']; ?>" class="frm_input" style="width:60%;" placeholder="배송사">
+
+                        <input type="checkbox" id="ct_delivery_chk_<?php echo $chk_cnt; ?>" value="<?php echo $default['de_delivery_company']; ?>" onclick="chk_delivery_company_<?php echo $chk_cnt; ?>()">
+                        <label for="ct_delivery_chk_<?php echo $chk_cnt; ?>">기본</label>
+
+                        <script>
+                        function chk_delivery_company_<?php echo $chk_cnt; ?>()
+                        {
+                            var chk_<?php echo $chk_cnt; ?> = document.getElementById("ct_delivery_chk_<?php echo $chk_cnt; ?>");
+                            var company_<?php echo $chk_cnt; ?> = document.getElementById("ct_delivery_company_<?php echo $chk_cnt; ?>");
+                            company_<?php echo $chk_cnt; ?>.value = chk_<?php echo $chk_cnt; ?>.checked ? chk_<?php echo $chk_cnt; ?>.value : company_<?php echo $chk_cnt; ?>.defaultValue;
+                        }
+                        </script>
+                    </td>
+
+                    <td class="">
+                        <input type="text" name="ct_invoice_time[<?php echo $chk_cnt; ?>]" id="ct_invoice_time_<?php echo $chk_cnt; ?>" value="<?php echo is_null_time($opt['ct_invoice_time']) ? "" : $opt['ct_invoice_time']; ?>" class="frm_input" maxlength="19" style="width:60%;" placeholder="배송일시">
+                        <input type="checkbox" id="ct_invoice_chk_<?php echo $chk_cnt; ?>" value="<?php echo date("Y-m-d H:i:s", G5_SERVER_TIME); ?>" onclick="chk_invoice_time_<?php echo $chk_cnt; ?>()">
+                        <label for="ct_invoice_chk_<?php echo $chk_cnt; ?>">현재</label>
+
+                        <script>
+                        function chk_invoice_time_<?php echo $chk_cnt; ?>()
+                        {
+                            var chk_<?php echo $chk_cnt; ?> = document.getElementById("ct_invoice_chk_<?php echo $chk_cnt; ?>");
+                            var time_<?php echo $chk_cnt; ?> = document.getElementById("ct_invoice_time_<?php echo $chk_cnt; ?>");
+                            time_<?php echo $chk_cnt; ?>.value = chk_<?php echo $chk_cnt; ?>.checked ? chk_<?php echo $chk_cnt; ?>.value : time_<?php echo $chk_cnt; ?>.defaultValue;
+                        }
+                        </script>
+                    </td>
+
+                    <?php } ?>
                 <?php } ?>
                 <!-- } -->
 
@@ -425,7 +555,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
         $s_receipt_way .= "+포인트";
     ?>
 
-    <strong class="sodr_nonpay">미수금 <?php echo display_price($od['od_misu']); ?></strong>
+    <strong class="sodr_nonpay" style="border:0px;">미수금 <?php echo display_price($od['od_misu']); ?></strong>
     <div class="tbl_head01 tbl_wrap">
 
 
