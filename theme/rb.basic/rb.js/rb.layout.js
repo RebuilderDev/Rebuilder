@@ -97,7 +97,6 @@ $(document).ready(function () {
         return s ? ('?' + s) : '';
     }
 
-
     window._GET = getGETFromRewrite();
 
     function processFlexBoxesOnce($scope, callback) {
@@ -147,9 +146,13 @@ $(document).ready(function () {
                 flexBoxes.each(function () {
                     var $box = $(this);
                     var lay = String($box.attr('data-layout') || '').trim();
+
                     if (res[lay] !== undefined) {
                         $box.html(res[lay]);
                         $box.data('layout-loaded', true); // 성공 후에 표시
+
+                        // // HTML 들어오자마자 해당 영역 슬라이더 즉시 초기화
+                        if (typeof initializeAllSliders === "function") initializeAllSliders($box);
                     }
                 });
 
@@ -193,12 +196,23 @@ $(document).ready(function () {
 
     // 2회 로드 패턴 유지
     processFlexBoxesOnce($('body'), function () {
-        processFlexBoxesOnce($('body'), function () {
-            setTimeout(function () {
-                if (typeof initializeAllSliders === "function") initializeAllSliders();
-                if (typeof initializeCalendar === "function") initializeCalendar();
-            }, 50);
-        });
+        // // 아직 로딩 안된 flex_box가 남아있을 때만 2회차
+        if ($('.flex_box').filter(function(){ return !$(this).data('layout-loaded'); }).length) {
+            processFlexBoxesOnce($('body'), done);
+        } else {
+            done();
+        }
+
+        function done() {
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    if (typeof initializeAllSliders === "function") initializeAllSliders($(document));
+                    if (typeof initializeCalendar === "function") initializeCalendar();
+                    var root = document.getElementById('rb_layout_root');
+                    if (root) root.classList.add('is_ready');
+                });
+            });
+        }
     });
 });
 
@@ -223,6 +237,13 @@ function setupResponsiveSlider($rb_slider) {
         const swap = $rb_slider.data(isMobile ? 'mo-swap' : 'pc-swap') == 1;
         const slidesPerView = rows * cols;
 
+        // // 슬라이드 전환 속도(ms)
+        // // 우선순위: data-mo-speed / data-pc-speed > data-speed > 기본값 400
+        const speed =
+            parseInt($rb_slider.data(isMobile ? 'mo-speed' : 'pc-speed'), 10) ||
+            parseInt($rb_slider.data('speed'), 10) ||
+            400;
+
         // 슬라이드 재구성 및 간격 설정
         configureSlides($rb_slider, slidesPerView, cols, gap);
 
@@ -237,6 +258,10 @@ function setupResponsiveSlider($rb_slider) {
             spaceBetween: gap,
             resistanceRatio: 0,
             touchRatio: swap ? 1 : 0,
+
+            // // 전환 속도
+            speed: speed,
+
             autoplay: $rb_slider.data('autoplay') == 1 ? {
                 delay: parseInt($rb_slider.data('autoplay-time'), 10) || 3000,
                 disableOnInteraction: false,
