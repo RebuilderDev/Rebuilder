@@ -4187,6 +4187,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
             var md_swiper_is = $('#md_swiper_is_shop:checked').val();
             var md_auto_is = $('#md_auto_is_shop:checked').val();
             var md_auto_time = $('#md_auto_time_shop').val();
+            var md_speed = $('#md_speed_shop').val();
         } else {
             var md_subject_is = $('#md_subject_is:checked').val();
             var md_thumb_is = $('#md_thumb_is:checked').val();
@@ -4201,6 +4202,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
             var md_swiper_is = $('#md_swiper_is:checked').val();
             var md_auto_is = $('#md_auto_is:checked').val();
             var md_auto_time = $('#md_auto_time').val();
+            var md_speed = $('#md_speed').val();
         }
 
 
@@ -4392,6 +4394,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                     "md_swiper_is": md_swiper_is,
                     "md_auto_is": md_auto_is,
                     "md_auto_time": md_auto_time,
+                    "md_speed": md_speed,
                     "md_border": md_border,
                     "md_border_width": md_border_width,
                     "md_border_color": md_border_color,

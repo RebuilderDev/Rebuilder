@@ -214,6 +214,7 @@ if($mod_type == "del_sec") { //섹션삭제
                 $md_swiper_is = !empty($rb_module['md_swiper_is']) ? $rb_module['md_swiper_is'] : '';
                 $md_auto_is = !empty($rb_module['md_auto_is']) ? $rb_module['md_auto_is'] : '';
                 $md_auto_time = !empty($rb_module['md_auto_time']) ? $rb_module['md_auto_time'] : '';
+                $md_speed = !empty($rb_module['md_speed']) ? $rb_module['md_speed'] : '';
                 $md_order = !empty($rb_module['md_order']) ? $rb_module['md_order'] : '';
                 $md_order_latest = !empty($rb_module['md_order_latest']) ? $rb_module['md_order_latest'] : '';
                 $md_order_banner = !empty($rb_module['md_order_banner']) ? $rb_module['md_order_banner'] : '';
@@ -1916,7 +1917,7 @@ if($mod_type == "del_sec") { //섹션삭제
                 </div>
             </h6>
             <h6 class="font-R rb_config_sub_txt">
-                출력되는 모듈 내부 각 오프젝트 사이의<br>
+                출력되는 모듈 내부 각 오브젝트 사이의<br>
                 간격을 설정할 수 있습니다.
             </h6>
 
@@ -1964,6 +1965,21 @@ if($mod_type == "del_sec") { //섹션삭제
             <div class="config_wrap">
                 <input type="checkbox" name="md_auto_is" id="md_auto_is_shop" class="magic-checkbox" value="1" <?php if(isset($md_auto_is) && $md_auto_is == 1) { ?>checked<?php } ?>><label for="md_auto_is_shop">자동롤링 사용</label>
                 <input type="number" name="md_auto_time" id="md_auto_time_shop" class="input w30 h40 text-center" value="<?php echo !empty($md_auto_time) ? $md_auto_time : ''; ?>" placeholder="밀리초" autocomplete="off">　<span>3000=3초</span>
+            </div>
+
+            <div class="config_wrap">
+
+                <ul class="rows_inp_lr mt-10">
+                    <li class="rows_inp_l rows_inp_l_span">
+                        <span class="font-B">스와이프 속도</span><br>
+                        0~1000 권장
+                    </li>
+                    <li class="rows_inp_r">
+                        <input type="number" name="md_speed" id="md_speed_shop" class="input w40 h40 text-center" value="<?php echo (isset($md_speed) && $md_speed !== '') ? $md_speed : '0'; ?>" placeholder="속도" autocomplete="off">　<span>0=모션제거</span>
+                    </li>
+                    <div class="cb"></div>
+                </ul>
+
             </div>
 
 
@@ -2072,7 +2088,7 @@ if($mod_type == "del_sec") { //섹션삭제
         </div>
     </h6>
     <h6 class="font-R rb_config_sub_txt">
-        출력되는 모듈 내부 각 오프젝트 사이의<br>
+        출력되는 모듈 내부 각 오브젝트 사이의<br>
         간격을 설정할 수 있습니다.
     </h6>
     <div class="config_wrap">
@@ -2119,6 +2135,19 @@ if($mod_type == "del_sec") { //섹션삭제
     <div class="config_wrap">
         <input type="checkbox" name="md_auto_is" id="md_auto_is" class="magic-checkbox" value="1" <?php if(isset($md_auto_is) && $md_auto_is == 1) { ?>checked<?php } ?>><label for="md_auto_is">자동롤링 사용</label>
         <input type="number" name="md_auto_time" id="md_auto_time" class="input w30 h40 text-center" value="<?php echo !empty($md_auto_time) ? $md_auto_time : ''; ?>" placeholder="밀리초" autocomplete="off">　<span>3000=3초</span>
+    </div>
+
+    <div class="config_wrap">
+        <ul class="rows_inp_lr mt-10">
+            <li class="rows_inp_l rows_inp_l_span">
+                <span class="font-B">스와이프 속도</span><br>
+                0~1000 권장
+            </li>
+            <li class="rows_inp_r">
+                <input type="number" name="md_speed" id="md_speed" class="input w40 h40 text-center" value="<?php echo (isset($md_speed) && $md_speed !== '') ? $md_speed : '0'; ?>" placeholder="속도" autocomplete="off">　<span>0=모션제거</span>
+            </li>
+            <div class="cb"></div>
+        </ul>
     </div>
 </ul>
 

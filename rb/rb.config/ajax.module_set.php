@@ -56,6 +56,7 @@ $md_gap_mo = isset($_POST['md_gap_mo']) ? $_POST['md_gap_mo'] : '20';
 $md_swiper_is = isset($_POST['md_swiper_is']) ? $_POST['md_swiper_is'] : '';
 $md_auto_is = isset($_POST['md_auto_is']) ? $_POST['md_auto_is'] : '';
 $md_auto_time = isset($_POST['md_auto_time']) ? $_POST['md_auto_time'] : '';
+$md_speed = isset($_POST['md_speed']) ? $_POST['md_speed'] : '0';
 $md_module = isset($_POST['md_module']) ? $_POST['md_module'] : '';
 $md_soldout_hidden = isset($_POST['md_soldout_hidden']) ? $_POST['md_soldout_hidden'] : '';
 $md_soldout_asc = isset($_POST['md_soldout_asc']) ? $_POST['md_soldout_asc'] : '';
@@ -318,6 +319,7 @@ if (isset($is_height) && $is_height == "1") {
                 md_swiper_is = '{$md_swiper_is}',
                 md_auto_is = '{$md_auto_is}',
                 md_auto_time = '{$md_auto_time}',
+                md_speed = '{$md_speed}',
                 md_module = '{$md_module}',
                 md_soldout_hidden = '{$md_soldout_hidden}',
                 md_soldout_asc = '{$md_soldout_asc}',
@@ -422,6 +424,7 @@ if (isset($is_height) && $is_height == "1") {
                 md_swiper_is = '{$md_swiper_is}',
                 md_auto_is = '{$md_auto_is}',
                 md_auto_time = '{$md_auto_time}',
+                md_speed = '{$md_speed}',
                 md_module = '{$md_module}',
                 md_soldout_hidden = '{$md_soldout_hidden}',
                 md_soldout_asc = '{$md_soldout_asc}',
