@@ -1223,7 +1223,7 @@ if($mod_type == "del_sec") { //섹션삭제
                         <li class="rows_inp_r">
 
                             <div class="color_set_wrap square none_inp_cl" style="position: relative;">
-                                <input type="text" class="coloris" name="md_banner_bg" id="md_banner_bg" value="<?php echo !empty($md_banner_bg) ? $md_banner_bg : '#FFFFFF'; ?>" style="width:25px !important;"> 배경컬러
+                                <input type="text" class="coloris" name="md_banner_bg" id="md_banner_bg" value="<?php echo !empty($md_banner_bg) ? $md_banner_bg : '#FFFFFF00'; ?>" style="width:25px !important;"> 배경컬러
                             </div>
 
 
