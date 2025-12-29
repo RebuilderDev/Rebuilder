@@ -29,7 +29,7 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
             </li>
             <li>
                 <span>아이디</span>
-                <input type="text" name="mb_id" id="login_id" required class="input required" maxLength="20" placeholder="아이디">
+                <input type="text" name="mb_id" id="login_id" required class="input required" maxLength="20" placeholder="아이디" autofocus>
             </li>
             <li>
                 <span>비밀번호</span>
