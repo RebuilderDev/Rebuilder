@@ -1591,7 +1591,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         margin: 0, // margin
         swatchesOnly: false, // 색상 견본만 표시여부
         alpha: true, // 알파(투명) 활성여부
-        theme: 'polaroid', // default, large, polaroid, pill
+        //theme: 'polaroid', // default, large, polaroid, pill
         themeMode: 'Light', // dark, Light
         focusInput: true, // 색상코드 Input에 포커스 여부
         selectInput: true, // 선택기가 열릴때 색상값을 select 여부
@@ -1610,10 +1610,17 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
             '#00A3FF',
             '#8ED100',
             '#FF5A5A',
-            '#25282B'
+            '#25282B',
+            '<?php echo isset($rb_config['co_color']) ? $rb_config['co_color'] : '#25282B'; ?>',
+            '#FFFFFF00',
+            '#FFFFFF',
         ]
     });
+
 </script>
+
+
+
 
 <script type="text/javascript">
     Coloris({
@@ -1624,7 +1631,10 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
             '#00A3FF',
             '#8ED100',
             '#FF5A5A',
-            '#25282B'
+            '#25282B',
+            '<?php echo isset($rb_config['co_color']) ? $rb_config['co_color'] : '#25282B'; ?>',
+            '#FFFFFF00',
+            '#FFFFFF',
         ]
     });
 </script>
