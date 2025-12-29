@@ -210,11 +210,9 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_SHOP_URL.'/rb.layout_hd/
             <div class="rows_gnb_wrap">
                 <div class="inner row_gnbs" style="width:<?php echo $tb_width_inner ?>; <?php echo $tb_width_padding ?>">
                     <nav id="cbp-hrmenu" class="cbp-hrmenu pc">
-
-
                         <ul>
 
-                        <?php if (isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == 1 || isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == 2) { ?>
+                        <?php if (isset($rb_core['menu_shop']) && ($rb_core['menu_shop'] == 1 || $rb_core['menu_shop'] == 2)) { ?>
 
                             <?php
                             $mshop_ca_res1 = sql_query(get_mshop_category('', 2));
@@ -228,36 +226,58 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_SHOP_URL.'/rb.layout_hd/
                                     for($k=0; $mshop_ca_row2=sql_fetch_array($mshop_ca_res2); $k++) {
                                         if($k == 0)
                                             echo '<div class="cbp-hrsub"><div class="cbp-hrsub-inner"><div><!--<h4 class="font-B">그룹</h4>--><ul>'.PHP_EOL;
-                                    ?>
-                                        <li><a href="<?php echo shop_category_url($mshop_ca_row2['ca_id']); ?>"><?php echo get_text($mshop_ca_row2['ca_name']); ?></a></li>
-                                    <?php
+
+                                        echo '<li>';
+
+                                        echo '<a href="'.shop_category_url($mshop_ca_row2['ca_id']).'">'.get_text($mshop_ca_row2['ca_name']).'</a>';
+
+                                        // // 3차 카테고리
+                                        $mshop_ca_res3 = sql_query(get_mshop_category($mshop_ca_row2['ca_id'], 6));
+                                        $s = 0;
+                                        while($mshop_ca_row3 = sql_fetch_array($mshop_ca_res3)) {
+
+                                            if ($s == 0) {
+                                                echo '<i><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></i><dl class="cbp-hrsub-3">'.PHP_EOL;
+                                            }
+
+                                            echo '<dd><a href="'.shop_category_url($mshop_ca_row3['ca_id']).'">'.get_text($mshop_ca_row3['ca_name']).'</a></dd>'.PHP_EOL;
+
+                                            $s++;
+                                        }
+
+                                        if($s > 0) {
+                                            echo '</dl>'.PHP_EOL;
+                                        }
+
+                                        echo '</li>'.PHP_EOL;
                                     }
 
                                     if($k > 0)
-                                        echo '</div></div></div>'.PHP_EOL;
+                                        echo '</ul></div></div></div>'.PHP_EOL;
                                     ?>
                                 </li>
                             <?php } ?>
 
-                            <?php if ($j == 0) {  ?>
-                            <li><a href="javascript:void(0);">등록된 카테고리가 없습니다.</a></li>
+                            <?php if ($j == 0) { ?>
+                                <li><a href="javascript:void(0);">등록된 카테고리가 없습니다.</a></li>
                             <?php } ?>
 
                         <?php } ?>
 
 
 
-                        <?php if (isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == 2 || isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == 0 || isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == "") { ?>
+                        <?php if (isset($rb_core['menu_shop']) && ($rb_core['menu_shop'] == 2 || $rb_core['menu_shop'] == 0 || $rb_core['menu_shop'] == "")) { ?>
 
                             <?php
                             if(IS_MOBILE()) {
-                                $menu_datas = get_menu_db(1, true);
+                                $menu_datas = rb_menu_db_3d(1, true);
                             } else {
-                                $menu_datas = get_menu_db(0, true);
+                                $menu_datas = rb_menu_db_3d(0, true);
                             }
 
-                            $gnb_zindex = 999; // gnb_1dli z-index 값 설정용
+                            $gnb_zindex = 999;
                             $i = 0;
+
                             foreach ($menu_datas as $row) {
                                 if (empty($row)) continue;
 
@@ -274,7 +294,8 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_SHOP_URL.'/rb.layout_hd/
                                     <a href="<?php echo $row['me_link']; ?>" target="_<?php echo $row['me_target']; ?>" class="font-B"><?php echo $row['me_name'] ?></a>
                                     <?php
                                     $k = 0;
-                                    foreach ((array) $row['sub'] as $row2) {
+
+                                    foreach ((array)$row['sub'] as $row2) {
                                         if (empty($row2)) continue;
 
                                         // 2차 메뉴 권한 체크
@@ -288,9 +309,40 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_SHOP_URL.'/rb.layout_hd/
 
                                         if ($k == 0)
                                             echo '<div class="cbp-hrsub"><div class="cbp-hrsub-inner"><div><!--<h4 class="font-B">그룹</h4>--><ul>' . PHP_EOL;
-                                    ?>
-                                        <li><a href="<?php echo $row2['me_link']; ?>" target="_<?php echo $row2['me_target']; ?>"><?php echo $row2['me_name'] ?></a></li>
-                                    <?php
+
+                                        echo '<li>';
+                                        echo '<a href="'.$row2['me_link'].'" target="_'.$row2['me_target'].'">'.$row2['me_name'].'</a>';
+
+                                        // // 3차 메뉴 출력
+                                        $j = 0;
+                                        if (!empty($row2['sub']) && is_array($row2['sub'])) {
+                                            foreach ((array)$row2['sub'] as $row3) {
+                                                if (empty($row3)) continue;
+
+                                                // 3차 메뉴 권한 체크
+                                                if (!$is_admin && isset($row3['me_level']) && $row3['me_level'] > 0) {
+                                                    if (isset($row3['me_level_opt']) && $row3['me_level_opt'] == 2) {
+                                                        if ($row3['me_level'] != $member['mb_level']) continue;
+                                                    } else {
+                                                        if ($row3['me_level'] > $member['mb_level']) continue;
+                                                    }
+                                                }
+
+                                                if ($j == 0) {
+                                                    echo '<i><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></i><dl class="cbp-hrsub-3">'.PHP_EOL;
+                                                }
+
+                                                echo '<dd><a href="'.$row3['me_link'].'" target="_'.$row3['me_target'].'">'.$row3['me_name'].'</a></dd>'.PHP_EOL;
+                                                $j++;
+                                            }
+
+                                            if ($j > 0) {
+                                                echo '</dl>'.PHP_EOL;
+                                            }
+                                        }
+
+                                        echo '</li>'.PHP_EOL;
+
                                         $k++;
                                     }
 
@@ -310,77 +362,71 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_SHOP_URL.'/rb.layout_hd/
                         <?php } ?>
 
 
-                        <li class="gnb_all_menu">
-                            <a href="#" class="font-R">전체분류 보기</a>
-                            <div class="cbp-hrsub">
-                                <div class="cbp-hrsub-inner">
-                                    <?php
-                                    $k = 0;
-                                    foreach($mshop_categories as $cate1){
-                                        if( empty($cate1) ) continue;
 
-                                        $mshop_ca_row1 = $cate1['text'];
-                                        //if($i == 0)
-                                            //echo '<ul class="cate">'.PHP_EOL;
-                                    ?>
-                                    <div>
-                                        <h4 class="font-B" onclick="location.href='<?php echo $mshop_ca_row1['url']; ?>';"><?php echo get_text($mshop_ca_row1['ca_name']); ?></h4>
+                            <li class="gnb_all_menu">
+                                <a href="#" class="font-R">전체분류 보기</a>
+                                <div class="cbp-hrsub">
+                                    <div class="cbp-hrsub-inner">
                                         <?php
-                                        $h=0;
-                                        foreach($cate1 as $key=>$cate2){
-                                            if( empty($cate2) || $key === 'text' ) continue;
+                                        $k = 0;
+                                        foreach($mshop_categories as $cate1){
+                                            if( empty($cate1) ) continue;
 
-                                            $mshop_ca_row2 = $cate2['text'];
-                                            if($h == 0)
-                                                echo '<ul>'.PHP_EOL;
+                                            $mshop_ca_row1 = $cate1['text'];
                                         ?>
+                                        <div>
+                                            <h4 class="font-B" onclick="location.href='<?php echo $mshop_ca_row1['url']; ?>';"><?php echo get_text($mshop_ca_row1['ca_name']); ?></h4>
+                                            <?php
+                                            $h=0;
+                                            foreach($cate1 as $key=>$cate2){
+                                                if( empty($cate2) || $key === 'text' ) continue;
 
-                                            <li>
-                                            <a href="<?php echo $mshop_ca_row2['url']; ?>" class="<?php if($ca_id == $mshop_ca_row2['ca_id']) { ?>dp2_active<?php } ?>"><?php echo get_text($mshop_ca_row2['ca_name']); ?></a>
-                                                <?php
-                                                $s=0;
-                                                foreach($cate2 as $key=>$cate3){
-                                                    if( empty($cate3) || $key === 'text' ) continue;
+                                                $mshop_ca_row2 = $cate2['text'];
+                                                if($h == 0)
+                                                    echo '<ul>'.PHP_EOL;
+                                            ?>
+                                                <li>
+                                                    <a href="<?php echo $mshop_ca_row2['url']; ?>" class="<?php if($ca_id == $mshop_ca_row2['ca_id']) { ?>dp2_active<?php } ?>"><?php echo get_text($mshop_ca_row2['ca_name']); ?></a>
+                                                    <?php
+                                                    $s=0;
+                                                    foreach($cate2 as $key=>$cate3){
+                                                        if( empty($cate3) || $key === 'text' ) continue;
 
-                                                    $mshop_ca_row3 = $cate3['text'];
-                                                    if($s == 0)
-                                                        echo '<dl>'.PHP_EOL;
-                                                ?>
-                                                <dd><a href="<?php echo $mshop_ca_row3['url']; ?>" class="font-R <?php if($ca_id == $mshop_ca_row3['ca_id']) { ?>dp3_active<?php } ?>"><?php echo get_text($mshop_ca_row3['ca_name']); ?></a></dd>
-                                                <?php
-                                                $s++;
-                                                }
+                                                        $mshop_ca_row3 = $cate3['text'];
+                                                        if($s == 0)
+                                                            echo '<dl>'.PHP_EOL;
+                                                    ?>
+                                                        <dd><a href="<?php echo $mshop_ca_row3['url']; ?>" class="font-R <?php if($ca_id == $mshop_ca_row3['ca_id']) { ?>dp3_active<?php } ?>"><?php echo get_text($mshop_ca_row3['ca_name']); ?></a></dd>
+                                                    <?php
+                                                        $s++;
+                                                    }
 
-                                                if($s > 0)
-                                                    echo '<dd class="dp3_none"><a href="javascript:void(0);" class="font-R"></a></dd></dl>'.PHP_EOL;
-                                                ?>
-                                            </li>
+                                                    if($s > 0)
+                                                        echo '<dd class="dp3_none"><a href="javascript:void(0);" class="font-R"></a></dd></dl>'.PHP_EOL;
+                                                    ?>
+                                                </li>
+                                            <?php
+                                                $h++;
+                                            }
+
+                                            if($h > 0)
+                                                echo '</ul>'.PHP_EOL;
+                                            ?>
+                                        </div>
                                         <?php
-                                        $h++;
+                                            $k++;
                                         }
 
-                                        if($h > 0)
-                                            echo '</ul>'.PHP_EOL;
+                                        if($k == 0)
+                                            echo '등록된 분류가 없습니다.'.PHP_EOL;
                                         ?>
                                     </div>
-                                    <?php
-                                    $k++;
-                                    }   // end for
-
-                                    if($k == 0)
-                                        echo '등록된 분류가 없습니다.'.PHP_EOL;
-                                    ?>
                                 </div>
-
-
-                            </div>
-                        </li>
-
+                            </li>
 
                         </ul>
-
-
                     </nav>
+
                 </div>
             </div>
 

@@ -1700,3 +1700,76 @@ if (array_key_exists($current_urls, $redirect_map)) {
     header('Location: ' . $redirect_urls);
     exit; // 리다이렉트 후 스크립트 실행 중지
 }
+
+// 3뎁스 함수
+function rb_menu_db_3d($use_mobile=0, $is_cache=false){
+    global $g5;
+
+    static $cache = array();
+
+    // // 캐시 훅(유지)
+    $cache = run_replace('rb_menu_db_3d_cache', $cache, $use_mobile, $is_cache);
+
+    $key = md5($use_mobile . '_3d');
+
+    if ($is_cache && isset($cache[$key])) {
+        return $cache[$key];
+    }
+
+    $where = $use_mobile ? "me_mobile_use = '1'" : "me_use = '1'";
+
+    // // 데이터 훅(유지)
+    if (!($cache[$key] = run_replace('rb_menu_db_3d', array(), $use_mobile))) {
+
+        // // 1차
+        $sql = " select *
+                from {$g5['menu_table']}
+                where $where
+                and length(me_code) = '2'
+                order by me_order, me_id ";
+        $result = sql_query($sql, false);
+
+        for ($i=0; $row=sql_fetch_array($result); $i++) {
+
+            $row['ori_me_link'] = $row['me_link'];
+            $row['me_link'] = short_url_clean($row['me_link']);
+            $row['sub'] = array();
+            $cache[$key][$i] = $row;
+
+            // // 2차
+            $sql2 = " select *
+                    from {$g5['menu_table']}
+                    where $where
+                    and length(me_code) = '4'
+                    and substring(me_code, 1, 2) = '{$row['me_code']}'
+                    order by me_order, me_id ";
+            $result2 = sql_query($sql2);
+
+            for ($k=0; $row2=sql_fetch_array($result2); $k++) {
+
+                $row2['ori_me_link'] = $row2['me_link'];
+                $row2['me_link'] = short_url_clean($row2['me_link']);
+                $row2['sub'] = array();
+                $cache[$key][$i]['sub'][$k] = $row2;
+
+                // // 3차
+                $sql3 = " select *
+                        from {$g5['menu_table']}
+                        where $where
+                        and length(me_code) = '6'
+                        and substring(me_code, 1, 4) = '{$row2['me_code']}'
+                        order by me_order, me_id ";
+                $result3 = sql_query($sql3);
+
+                for ($j=0; $row3=sql_fetch_array($result3); $j++) {
+                    $row3['ori_me_link'] = $row3['me_link'];
+                    $row3['me_link'] = short_url_clean($row3['me_link']);
+                    $cache[$key][$i]['sub'][$k]['sub'][$j] = $row3;
+                }
+            }
+        }
+    }
+
+    return $cache[$key];
+}
+

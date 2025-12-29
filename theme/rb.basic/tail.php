@@ -89,70 +89,144 @@ if(G5_COMMUNITY_USE === false) {
 
 
     <ul>
+    <?php
+    if(IS_MOBILE()) {
+        $menu_datas = rb_menu_db_3d(1, true);
+    } else {
+        $menu_datas = rb_menu_db_3d(0, true);
+    }
 
+    $gnb_zindex = 999;
+    $i = 0;
 
-        <?php
-                        if(IS_MOBILE()) {
-                            $menu_datas = get_menu_db(1, true);
-                        } else {
-                            $menu_datas = get_menu_db(0, true);
-                        }
+    foreach ($menu_datas as $row) {
+        if (empty($row)) continue;
 
-                        $gnb_zindex = 999;
-                        $i = 0;
-                        foreach ($menu_datas as $row) {
-                            if (empty($row)) continue;
+        // 1차 메뉴 권한 체크
+        if (!$is_admin && isset($row['me_level']) && $row['me_level'] > 0) {
+            if (isset($row['me_level_opt']) && $row['me_level_opt'] == 2) {
+                if ($row['me_level'] != $member['mb_level']) continue;
+            } else {
+                if ($row['me_level'] > $member['mb_level']) continue;
+            }
+        }
 
-                            // 1차 메뉴 권한 체크
-                            if (!$is_admin && isset($row['me_level']) && $row['me_level'] > 0) {
-                                if (isset($row['me_level_opt']) && $row['me_level_opt'] == 2) {
-                                    if ($row['me_level'] != $member['mb_level']) continue;
-                                } else {
-                                    if ($row['me_level'] > $member['mb_level']) continue;
-                                }
-                            }
+        $has_sub2 = (isset($row['sub']) && is_array($row['sub']) && count($row['sub']) > 0);
+        $add_arr = $has_sub2 ? 'add_arr_svg' : '';
+        $add_arr_btn = $has_sub2 ? '<button type="button" class="add_arr_btn" aria-label="서브메뉴 열기"></button>' : '';
+    ?>
+        <li class="<?php echo $add_arr; ?>">
+            <a href="<?php echo $row['me_link']; ?>" target="_<?php echo $row['me_target']; ?>" class="font-B"><?php echo $row['me_name']; ?></a>
+            <?php echo $add_arr_btn; ?>
 
-                            $add_arr = (isset($row['sub']) && $row['sub']) ? 'add_arr_svg' : '';
-                            $add_arr_btn = (isset($row['sub']) && $row['sub']) ? '<button type="button" class="add_arr_btn"></button>' : '';
-                        ?>
-        <li class="<?php echo $add_arr ?>">
-            <a href="<?php echo $row['me_link']; ?>" target="_<?php echo $row['me_target']; ?>" class="font-B"><?php echo $row['me_name'] ?></a>
-            <?php echo $add_arr_btn ?>
             <?php
-                                $k = 0;
-                                foreach ((array) $row['sub'] as $row2) {
-                                    if (empty($row2)) continue;
+            $k = 0;
+            foreach ((array)$row['sub'] as $row2) {
+                if (empty($row2)) continue;
 
-                                    // 2차 메뉴 권한 체크
-                                    if (!$is_admin && isset($row2['me_level']) && $row2['me_level'] > 0) {
-                                        if (isset($row2['me_level_opt']) && $row2['me_level_opt'] == 2) {
-                                            if ($row2['me_level'] != $member['mb_level']) continue;
-                                        } else {
-                                            if ($row2['me_level'] > $member['mb_level']) continue;
-                                        }
-                                    }
+                // 2차 메뉴 권한 체크
+                if (!$is_admin && isset($row2['me_level']) && $row2['me_level'] > 0) {
+                    if (isset($row2['me_level_opt']) && $row2['me_level_opt'] == 2) {
+                        if ($row2['me_level'] != $member['mb_level']) continue;
+                    } else {
+                        if ($row2['me_level'] > $member['mb_level']) continue;
+                    }
+                }
 
-                                    if ($k == 0)
-                                        echo '<div class="cbp-hrsub"><div class="cbp-hrsub-inner"><div><!--<h4 class="font-B">그룹</h4>--><ul>' . PHP_EOL;
-                                ?>
-        <li><a href="<?php echo $row2['me_link']; ?>" target="_<?php echo $row2['me_target']; ?>"><?php echo $row2['me_name'] ?></a></li>
-        <?php
-                                    $k++;
-                                }
+                if ($k == 0) {
+                    echo '<div class="cbp-hrsub"><div class="cbp-hrsub-inner"><div><ul>' . PHP_EOL;
+                }
 
-                                if ($k > 0)
-                                    echo '</ul></div></div></div>' . PHP_EOL;
-                                ?>
-        </li>
-        <?php
-                            $i++;
+                // // 2차 li 시작
+                echo '<li class="rb-btm-2d">';
+
+                echo '<a href="'.$row2['me_link'].'" target="_'.$row2['me_target'].'">'.$row2['me_name'].'</a>';
+
+                // // 3차 출력(있으면)
+                $j = 0;
+                if (!empty($row2['sub']) && is_array($row2['sub'])) {
+                    foreach ((array)$row2['sub'] as $row3) {
+                        if (empty($row3)) continue;
+
+                        // 3차 메뉴 권한 체크
+                        if (!$is_admin && isset($row3['me_level']) && $row3['me_level'] > 0) {
+                            if (isset($row3['me_level_opt']) && $row3['me_level_opt'] == 2) {
+                                if ($row3['me_level'] != $member['mb_level']) continue;
+                            } else {
+                                if ($row3['me_level'] > $member['mb_level']) continue;
+                            }
                         }
-                        ?>
 
+                        if ($j == 0) {
+                            // // 3차 토글 버튼(2차 클릭 시 열리게)
+                            echo '<button type="button" class="rb-btm-3d-toggle" aria-label="3차 메뉴 열기"></button>';
+                            echo '<ul class="cbp-hrsub-3">' . PHP_EOL;
+                        }
+
+                        echo '<li><a href="'.$row3['me_link'].'" target="_'.$row3['me_target'].'">'.$row3['me_name'].'</a></li>' . PHP_EOL;
+                        $j++;
+                    }
+
+                    if ($j > 0) {
+                        echo '</ul>' . PHP_EOL;
+                    }
+                }
+
+                echo '</li>' . PHP_EOL; // // 2차 li 끝
+                $k++;
+            }
+
+            if ($k > 0) {
+                echo '</ul></div></div></div>' . PHP_EOL;
+            }
+            ?>
+        </li>
+    <?php
+        $i++;
+    }
+    ?>
     </ul>
 
 
+
 </nav>
+
+<script>
+(function () {
+    // // 캡처 단계에서 3차 토글 먼저 처리 (기존 btm 스크립트 간섭 차단)
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('#cbp-hrmenu-btm .rb-btm-3d-toggle');
+        if (!btn) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        var li = btn.closest('li.rb-btm-2d') || btn.closest('li');
+        if (!li) return;
+
+        var panel = li.querySelector(':scope > .cbp-hrsub-3') || li.querySelector('.cbp-hrsub-3');
+        if (!panel) return;
+
+        // // 토글
+        var isOpen = panel.style.display === 'block' || panel.offsetParent !== null;
+        if (isOpen) {
+            panel.style.display = 'none';
+            li.classList.remove('rb-3d-open');
+        } else {
+            // // 형제 3차 닫기(원하면 제거 가능)
+            var sibs = li.parentElement ? li.parentElement.children : [];
+            for (var i = 0; i < sibs.length; i++) {
+                sibs[i].classList.remove('rb-3d-open');
+                var p = sibs[i].querySelector('.cbp-hrsub-3');
+                if (p) p.style.display = 'none';
+            }
+
+            panel.style.display = 'block';
+            li.classList.add('rb-3d-open');
+        }
+    }, true); // true = capture
+})();
+</script>
 
 
 <!-- } -->

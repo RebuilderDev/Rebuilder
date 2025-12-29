@@ -74,189 +74,232 @@ $admin = get_admin("super");
                             <li class="user_prof_bg_info font-B">Guest</li>
                         <?php } ?>
                     </div>
+
                     <div class="user_prof">
                         <?php if($is_member) { ?>
-                        <a href="<?php echo G5_BBS_URL ?>/member_confirm.php?url=<?php echo G5_BBS_URL ?>/register_form.php" class="font-B"><?php echo get_member_profile_img($member['mb_id']); ?></a>
+                            <a href="<?php echo G5_BBS_URL ?>/member_confirm.php?url=<?php echo G5_BBS_URL ?>/register_form.php" class="font-B"><?php echo get_member_profile_img($member['mb_id']); ?></a>
                         <?php } else { ?>
-                        <?php echo get_member_profile_img($member['mb_id']); ?>
+                            <?php echo get_member_profile_img($member['mb_id']); ?>
                         <?php } ?>
                     </div>
+
                     <div class="user_prof_btns">
-                        <li class="">
+                        <li>
                             <?php if($is_member) { ?>
-                            <button type="button" alt="로그아웃" class="btn_round" onclick="location.href='<?php echo G5_BBS_URL ?>/logout.php';">로그아웃</button>
-                            <button type="button" alt="마이페이지" class="btn_round arr_bg font-B" onclick="location.href='<?php echo G5_SHOP_URL; ?>/mypage.php';">My</button>
+                                <button type="button" alt="로그아웃" class="btn_round" onclick="location.href='<?php echo G5_BBS_URL ?>/logout.php';">로그아웃</button>
+                                <button type="button" alt="마이페이지" class="btn_round arr_bg font-B" onclick="location.href='<?php echo G5_SHOP_URL; ?>/mypage.php';">My</button>
                             <?php } else { ?>
-                            <button type="button" alt="로그인" class="btn_round" onclick="location.href='<?php echo G5_BBS_URL ?>/login.php';">로그인</button>
-                            <button type="button" alt="회원가입" class="btn_round arr_bg font-B" onclick="location.href='<?php echo G5_BBS_URL ?>/register.php';">회원가입</button>
+                                <button type="button" alt="로그인" class="btn_round" onclick="location.href='<?php echo G5_BBS_URL ?>/login.php';">로그인</button>
+                                <button type="button" alt="회원가입" class="btn_round arr_bg font-B" onclick="location.href='<?php echo G5_BBS_URL ?>/register.php';">회원가입</button>
                             <?php } ?>
                         </li>
                     </div>
 
-
                     <ul>
 
-
-                    <?php if (isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == 1 || isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == 2) { ?>
+                        <?php if ((isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == 1) || (isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == 2)) { ?>
 
                             <?php
+                            // // 1차 카테고리
                             $mshop_ca_res1 = sql_query(get_mshop_category('', 2));
                             for($y=0; $mshop_ca_row1=sql_fetch_array($mshop_ca_res1); $y++) {
 
-                                // 2차 카테고리 유무 확인
-                                $has_sub = false;
-                                $tmp_res = sql_query(get_mshop_category($mshop_ca_row1['ca_id'], 4));
-                                if (sql_num_rows($tmp_res) > 0) $has_sub = true;
-                                sql_free_result($tmp_res);
+                                // // 2차 유무
+                                $tmp_res2 = sql_query(get_mshop_category($mshop_ca_row1['ca_id'], 4));
+                                $has_2d = (sql_num_rows($tmp_res2) > 0);
+                                sql_free_result($tmp_res2);
 
-                                $add_arr = $has_sub ? 'add_arr_svg' : '';
-                                $add_arr_btn = $has_sub ? '<button type="button" class="add_arr_btn"></button>' : '';
-
+                                $add_arr = $has_2d ? 'add_arr_svg' : '';
+                                $add_arr_btn = $has_2d ? '<button type="button" class="add_arr_btn" aria-label="서브메뉴 열기"></button>' : '';
                             ?>
-                                <li class="<?php echo $add_arr ?>">
+                                <li class="<?php echo $add_arr; ?>">
                                     <a href="<?php echo shop_category_url($mshop_ca_row1['ca_id']); ?>" class="font-B"><?php echo get_text($mshop_ca_row1['ca_name']); ?></a>
-                                    <?php echo $add_arr_btn ?>
+                                    <?php echo $add_arr_btn; ?>
+
                                     <?php
+                                    // // 2차 카테고리 출력
                                     $mshop_ca_res2 = sql_query(get_mshop_category($mshop_ca_row1['ca_id'], 4));
+                                    $u = 0;
 
-                                    for($u=0; $mshop_ca_row2=sql_fetch_array($mshop_ca_res2); $u++) {
-                                        if($u == 0)
-                                            echo '<div class="cbp-hrsub"><div class="cbp-hrsub-inner"><div><!--<h4 class="font-B">그룹</h4>--><ul>'.PHP_EOL;
-                                    ?>
-                                        <li><a href="<?php echo shop_category_url($mshop_ca_row2['ca_id']); ?>"><?php echo get_text($mshop_ca_row2['ca_name']); ?></a></li>
-                                    <?php
+                                    while($mshop_ca_row2 = sql_fetch_array($mshop_ca_res2)) {
+
+                                        if($u == 0) {
+                                            echo '<div class="cbp-hrsub"><div class="cbp-hrsub-inner"><div><ul>'.PHP_EOL;
+                                        }
+
+                                        // // 3차 유무 체크
+                                        $tmp_res3 = sql_query(get_mshop_category($mshop_ca_row2['ca_id'], 6));
+                                        $has_3d = (sql_num_rows($tmp_res3) > 0);
+                                        sql_free_result($tmp_res3);
+
+                                        echo '<li class="rb-btm-2d'.($has_3d ? ' rb-has-3d' : '').'">';
+                                        echo '<a href="'.shop_category_url($mshop_ca_row2['ca_id']).'">'.get_text($mshop_ca_row2['ca_name']).'</a>';
+
+                                        // // 3차 있으면 버튼 + ul
+                                        if ($has_3d) {
+                                            echo '<button type="button" class="rb-btm-3d-toggle" aria-label="3차 메뉴 열기"></button>';
+                                            echo '<ul class="cbp-hrsub-3">'.PHP_EOL;
+
+                                            $mshop_ca_res3 = sql_query(get_mshop_category($mshop_ca_row2['ca_id'], 6));
+                                            while($mshop_ca_row3 = sql_fetch_array($mshop_ca_res3)) {
+                                                echo '<li><a href="'.shop_category_url($mshop_ca_row3['ca_id']).'">'.get_text($mshop_ca_row3['ca_name']).'</a></li>'.PHP_EOL;
+                                            }
+                                            sql_free_result($mshop_ca_res3);
+
+                                            echo '</ul>'.PHP_EOL;
+                                        }
+
+                                        echo '</li>'.PHP_EOL;
+
+                                        $u++;
                                     }
+                                    sql_free_result($mshop_ca_res2);
 
-                                    if($u > 0)
-                                        echo '</div></div></div>'.PHP_EOL;
+                                    if($u > 0) {
+                                        echo '</ul></div></div></div>'.PHP_EOL;
+                                    }
                                     ?>
                                 </li>
-
                             <?php } ?>
 
+                        <?php } ?>
 
-                    <?php } ?>
+                        <?php if ((isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == 2) || (isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == 0) || (isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == "")) { ?>
 
-
-
-                    <?php if (isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == 2 || isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == 0 || isset($rb_core['menu_shop']) && $rb_core['menu_shop'] == "") { ?>
-
-
-                        <?php
-                        if(IS_MOBILE()) {
-                            $menu_datas = get_menu_db(1, true);
-                        } else {
-                            $menu_datas = get_menu_db(0, true);
-                        }
-
-                        $gnb_zindex = 999;
-                        $i = 0;
-                        foreach ($menu_datas as $row) {
-                            if (empty($row)) continue;
-
-                            // 1차 메뉴 권한 체크
-                            if (!$is_admin && isset($row['me_level']) && $row['me_level'] > 0) {
-                                if (isset($row['me_level_opt']) && $row['me_level_opt'] == 2) {
-                                    if ($row['me_level'] != $member['mb_level']) continue;
-                                } else {
-                                    if ($row['me_level'] > $member['mb_level']) continue;
-                                }
+                            <?php
+                            // // 기존 get_menu_db 대신 3차 지원 함수 사용
+                            if(IS_MOBILE()) {
+                                $menu_datas = rb_menu_db_3d(1, true);
+                            } else {
+                                $menu_datas = rb_menu_db_3d(0, true);
                             }
 
-                            $add_arr = (isset($row['sub']) && $row['sub']) ? 'add_arr_svg' : '';
-                            $add_arr_btn = (isset($row['sub']) && $row['sub']) ? '<button type="button" class="add_arr_btn"></button>' : '';
-                        ?>
-                            <li class="<?php echo $add_arr ?>">
-                                <a href="<?php echo $row['me_link']; ?>" target="_<?php echo $row['me_target']; ?>" class="font-B"><?php echo $row['me_name'] ?></a>
-                                <?php echo $add_arr_btn ?>
-                                <?php
-                                $k = 0;
-                                foreach ((array) $row['sub'] as $row2) {
-                                    if (empty($row2)) continue;
+                            $gnb_zindex = 999;
+                            $i = 0;
 
-                                    // 2차 메뉴 권한 체크
-                                    if (!$is_admin && isset($row2['me_level']) && $row2['me_level'] > 0) {
-                                        if (isset($row2['me_level_opt']) && $row2['me_level_opt'] == 2) {
-                                            if ($row2['me_level'] != $member['mb_level']) continue;
-                                        } else {
-                                            if ($row2['me_level'] > $member['mb_level']) continue;
+                            foreach ($menu_datas as $row) {
+                                if (empty($row)) continue;
+
+                                // 1차 메뉴 권한 체크
+                                if (!$is_admin && isset($row['me_level']) && $row['me_level'] > 0) {
+                                    if (isset($row['me_level_opt']) && $row['me_level_opt'] == 2) {
+                                        if ($row['me_level'] != $member['mb_level']) continue;
+                                    } else {
+                                        if ($row['me_level'] > $member['mb_level']) continue;
+                                    }
+                                }
+
+                                $has_sub2 = (isset($row['sub']) && is_array($row['sub']) && count($row['sub']) > 0);
+                                $add_arr = $has_sub2 ? 'add_arr_svg' : '';
+                                $add_arr_btn = $has_sub2 ? '<button type="button" class="add_arr_btn" aria-label="서브메뉴 열기"></button>' : '';
+                            ?>
+                                <li class="<?php echo $add_arr; ?>">
+                                    <a href="<?php echo $row['me_link']; ?>" target="_<?php echo $row['me_target']; ?>" class="font-B"><?php echo $row['me_name']; ?></a>
+                                    <?php echo $add_arr_btn; ?>
+
+                                    <?php
+                                    $k = 0;
+                                    foreach ((array)$row['sub'] as $row2) {
+                                        if (empty($row2)) continue;
+
+                                        // 2차 메뉴 권한 체크
+                                        if (!$is_admin && isset($row2['me_level']) && $row2['me_level'] > 0) {
+                                            if (isset($row2['me_level_opt']) && $row2['me_level_opt'] == 2) {
+                                                if ($row2['me_level'] != $member['mb_level']) continue;
+                                            } else {
+                                                if ($row2['me_level'] > $member['mb_level']) continue;
+                                            }
                                         }
+
+                                        if ($k == 0) {
+                                            echo '<div class="cbp-hrsub"><div class="cbp-hrsub-inner"><div><ul>' . PHP_EOL;
+                                        }
+
+                                        // // 3차 유무(출력될 것 기준)
+                                        $has_3d = (!empty($row2['sub']) && is_array($row2['sub']) && count($row2['sub']) > 0);
+
+                                        echo '<li class="rb-btm-2d'.($has_3d ? ' rb-has-3d' : '').'">';
+                                        echo '<a href="'.$row2['me_link'].'" target="_'.$row2['me_target'].'">'.$row2['me_name'].'</a>';
+
+                                        if ($has_3d) {
+                                            echo '<button type="button" class="rb-btm-3d-toggle" aria-label="3차 메뉴 열기"></button>';
+                                            echo '<ul class="cbp-hrsub-3">' . PHP_EOL;
+
+                                            foreach ((array)$row2['sub'] as $row3) {
+                                                if (empty($row3)) continue;
+
+                                                // 3차 메뉴 권한 체크
+                                                if (!$is_admin && isset($row3['me_level']) && $row3['me_level'] > 0) {
+                                                    if (isset($row3['me_level_opt']) && $row3['me_level_opt'] == 2) {
+                                                        if ($row3['me_level'] != $member['mb_level']) continue;
+                                                    } else {
+                                                        if ($row3['me_level'] > $member['mb_level']) continue;
+                                                    }
+                                                }
+
+                                                echo '<li><a href="'.$row3['me_link'].'" target="_'.$row3['me_target'].'">'.$row3['me_name'].'</a></li>' . PHP_EOL;
+                                            }
+
+                                            echo '</ul>' . PHP_EOL;
+                                        }
+
+                                        echo '</li>' . PHP_EOL;
+
+                                        $k++;
                                     }
 
-                                    if ($k == 0)
-                                        echo '<div class="cbp-hrsub"><div class="cbp-hrsub-inner"><div><!--<h4 class="font-B">그룹</h4>--><ul>' . PHP_EOL;
-                                ?>
-                                    <li><a href="<?php echo $row2['me_link']; ?>" target="_<?php echo $row2['me_target']; ?>"><?php echo $row2['me_name'] ?></a></li>
-                                <?php
-                                    $k++;
-                                }
-
-                                if ($k > 0)
-                                    echo '</ul></div></div></div>' . PHP_EOL;
-                                ?>
-                            </li>
-                        <?php
-                            $i++;
-                        }
-                        ?>
-
-                    <?php } ?>
-
-
-                    <?php /* 쇼핑몰 분류 사용시
-                        $i = 0;
-                        foreach($mshop_categories as $cate1){
-                            if( empty($cate1) ) continue;
-
-                            $mshop_ca_row1 = $cate1['text'];
-
-                            // 2차 분류가 있는지 확인
-                            $has_subcategory = false;
-                            foreach($cate1 as $key=>$cate2){
-                                if( empty($cate2) || $key === 'text' ) continue;
-                                $has_subcategory = true;
-                                break;
+                                    if ($k > 0) {
+                                        echo '</ul></div></div></div>' . PHP_EOL;
+                                    }
+                                    ?>
+                                </li>
+                            <?php
+                                $i++;
                             }
-
-                            $add_arr = $has_subcategory ? 'add_arr_svg' : '';
-                            $add_arr_btn = $has_subcategory ? '<button type="button" class="add_arr_btn"></button>' : '';
-                    ?>
-                    <li class="<?php echo $add_arr ?>">
-                        <a href="<?php echo $mshop_ca_row1['url']; ?>" class="font-B"><?php echo get_text($mshop_ca_row1['ca_name']); ?></a>
-                        <?php echo $add_arr_btn ?>
-
-                        <?php
-                            $j=0;
-                            foreach($cate1 as $key=>$cate2){
-                                if( empty($cate2) || $key === 'text' ) continue;
-
-                                $mshop_ca_row2 = $cate2['text'];
-                                if($j == 0)
-                                    echo '<div class="cbp-hrsub"><div class="cbp-hrsub-inner"><div><!--<h4 class="font-B">그룹</h4>--><ul>'.PHP_EOL;
-                        ?>
-
-                            <li><a href="<?php echo $mshop_ca_row2['url']; ?>"><?php echo get_text($mshop_ca_row2['ca_name']); ?></a></li>
-
-                        <?php
-                            $j++;
-                            }
-
-                            if($j > 0)
-                                echo '</ul></div></div></div>'.PHP_EOL;
                             ?>
 
-                    </li>
-
-                    <?php
-                        $i++;
-                        }   // end for
-                    ?>
-
-                    */ ?>
+                        <?php } ?>
 
                     </ul>
                 </nav>
                 <!-- } -->
+
+                <script>
+                (function () {
+                    // // 캡처 단계에서 3차 토글 먼저 처리 (기존 btm 스크립트 간섭 차단)
+                    document.addEventListener('click', function (e) {
+                        var btn = e.target.closest('#cbp-hrmenu-btm .rb-btm-3d-toggle');
+                        if (!btn) return;
+
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        var li = btn.closest('li.rb-btm-2d') || btn.closest('li');
+                        if (!li) return;
+
+                        var panel = li.querySelector(':scope > .cbp-hrsub-3') || li.querySelector('.cbp-hrsub-3');
+                        if (!panel) return;
+
+                        // // 토글
+                        var isOpen = panel.style.display === 'block' || panel.offsetParent !== null;
+                        if (isOpen) {
+                            panel.style.display = 'none';
+                            li.classList.remove('rb-3d-open');
+                        } else {
+                            // // 형제 3차 닫기(원하면 제거 가능)
+                            var sibs = li.parentElement ? li.parentElement.children : [];
+                            for (var i = 0; i < sibs.length; i++) {
+                                sibs[i].classList.remove('rb-3d-open');
+                                var p = sibs[i].querySelector('.cbp-hrsub-3');
+                                if (p) p.style.display = 'none';
+                            }
+
+                            panel.style.display = 'block';
+                            li.classList.add('rb-3d-open');
+                        }
+                    }, true); // true = capture
+                })();
+                </script>
 
 
 

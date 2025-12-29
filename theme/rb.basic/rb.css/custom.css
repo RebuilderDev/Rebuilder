@@ -823,6 +823,35 @@ select#ct_send_cost {width: 150px;}
 .rb_module_wide{width: 100vw; margin-left: min(0px, calc(50% - 50vw));margin-right: min(0px, calc(50% - 50vw));left: auto; right: auto; transform: none;}
 /* } */
 
+/* 2.2.5 { */
+#cbp-hrmenu-btm .cbp-hrsub-3{display: none;margin-top: 0px;padding-left: 0px; margin-bottom: 0px;}
+#cbp-hrmenu-btm li.rb-btm-2d.rb-3d-open > .cbp-hrsub-3{display: block; background-color: #f9f9f9; padding-top: 20px; padding-bottom: 20px;}
+#cbp-hrmenu-btm .cbp-hrsub-3 > li > a{display: block;padding: 5px 0 !important;font-family: 'font-R'; font-size: 13px;}
+#cbp-hrmenu-btm .rb-btm-3d-toggle{width: 20px;height: 20px;border: 0;background: transparent;cursor: pointer;}
+#cbp-hrmenu-btm .cbp-hrsub-inner > div > ul > li.rb-btm-2d a {padding-top: 8px; padding-bottom: 8px;}
+#cbp-hrmenu-btm .rb-btm-3d-toggle{
+    width: 50px;
+    height: 32px;
+    border: 0;
+    padding: 0;
+    background-color: transparent;
+    background-image: url('../rb.img/icon/arr_down.svg');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 10px 10px;
+    cursor: pointer;
+
+    /* // 버튼 위치(원하는대로 조절) */
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    opacity: 0.4;
+}
+
+#cbp-hrmenu-btm .rb-3d-open > .rb-btm-3d-toggle{background-image: url('../rb.img/icon/arr_up.svg');}
+#cbp-hrmenu-btm .cbp-hrsub-inner > div > ul > li.rb-btm-2d{position: relative;padding-right: 0px;}
+
+/* } */
 
 @media all and (max-width:1024px){
 

@@ -183,15 +183,16 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout_hd/'.$rb
                         <ul>
                         <?php
                         if(IS_MOBILE()) {
-                            $menu_datas = get_menu_db(1, true);
+                            $menu_datas = rb_menu_db_3d(1, true);
                         } else {
-                            $menu_datas = get_menu_db(0, true);
+                            $menu_datas = rb_menu_db_3d(0, true);
                         }
 
-                        $gnb_zindex = 999; // gnb_1dli z-index 값 설정용
+                        $gnb_zindex = 999;
                         $i = 0;
-                        foreach ($menu_datas as $row) {
-                            if (empty($row)) continue;
+
+                        foreach($menu_datas as $row) {
+                            if(empty($row)) continue;
 
                             // 1차 메뉴 권한 체크
                             if (!$is_admin && isset($row['me_level']) && $row['me_level'] > 0) {
@@ -206,8 +207,9 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout_hd/'.$rb
                                 <a href="<?php echo $row['me_link']; ?>" target="_<?php echo $row['me_target']; ?>" class="font-B"><?php echo $row['me_name'] ?></a>
                                 <?php
                                 $k = 0;
-                                foreach ((array) $row['sub'] as $row2) {
-                                    if (empty($row2)) continue;
+
+                                foreach((array)$row['sub'] as $row2) {
+                                    if(empty($row2)) continue;
 
                                     // 2차 메뉴 권한 체크
                                     if (!$is_admin && isset($row2['me_level']) && $row2['me_level'] > 0) {
@@ -218,16 +220,52 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout_hd/'.$rb
                                         }
                                     }
 
-                                    if ($k == 0)
-                                        echo '<div class="cbp-hrsub"><div class="cbp-hrsub-inner"><div><!--<h4 class="font-B">그룹</h4>--><ul>' . PHP_EOL;
-                                ?>
-                                    <li><a href="<?php echo $row2['me_link']; ?>" target="_<?php echo $row2['me_target']; ?>"><?php echo $row2['me_name'] ?></a></li>
-                                <?php
+                                    if($k == 0)
+                                        echo '<div class="cbp-hrsub"><div class="cbp-hrsub-inner"><div><ul>'.PHP_EOL;
+
+                                    // // 2차 출력 시작
+                                    echo '<li>';
+
+                                    echo '<a href="'.$row2['me_link'].'" target="_'.$row2['me_target'].'">'.$row2['me_name'].'</a>';
+
+                                    // // 3차가 있으면 하위 ul 추가
+                                    $j = 0;
+                                    if (!empty($row2['sub']) && is_array($row2['sub'])) {
+
+                                        foreach ((array)$row2['sub'] as $row3) {
+                                            if (empty($row3)) continue;
+
+                                            // 3차 메뉴 권한 체크
+                                            if (!$is_admin && isset($row3['me_level']) && $row3['me_level'] > 0) {
+                                                if (isset($row3['me_level_opt']) && $row3['me_level_opt'] == 2) {
+                                                    if ($row3['me_level'] != $member['mb_level']) continue;
+                                                } else {
+                                                    if ($row3['me_level'] > $member['mb_level']) continue;
+                                                }
+                                            }
+
+                                            if ($j == 0) {
+                                                echo '<i><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></i><dl class="cbp-hrsub-3">'.PHP_EOL;
+                                            }
+
+                                            echo '<dd><a href="'.$row3['me_link'].'" target="_'.$row3['me_target'].'">'.$row3['me_name'].'</a></dd>'.PHP_EOL;
+
+                                            $j++;
+                                        }
+
+                                        if ($j > 0) {
+                                            echo '</dl>'.PHP_EOL;
+                                        }
+                                    }
+
+                                    echo '</li>'.PHP_EOL;
+                                    // // 2차 출력 끝
+
                                     $k++;
                                 }
 
-                                if ($k > 0)
-                                    echo '</ul></div></div></div>' . PHP_EOL;
+                                if($k > 0)
+                                    echo '</ul></div></div></div>'.PHP_EOL;
                                 ?>
                             </li>
                         <?php
@@ -240,6 +278,78 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout_hd/'.$rb
                         <?php } ?>
                         </ul>
                     </nav>
+
+                    <script>
+                    (function () {
+                        var lastRect = null;
+                        var lastOpenEl = null;
+
+                        function getRect(el) {
+                            if (!el) return null;
+                            return el.getBoundingClientRect();
+                        }
+
+                        // // hover 들어갈 때: "이전 위치"에서 출발시켜서 현재 위치로 이동
+                        $(document).on('mouseenter', '#cbp-hrmenu .cbp-hrsub-inner > div > ul > li', function () {
+                            var $li = $(this);
+                            var $panel = $li.children('.cbp-hrsub-3');
+
+                            if (!$panel.length) return;
+
+                            // // 현재 타겟 위치(열렸을 때 최종 위치의 rect)
+                            // // 패널이 absolute라서, 일단 보이게 만든 뒤 rect를 잡는 게 안전
+                            $panel.addClass('rb-anim-prep');
+
+                            // // 강제 reflow
+                            $panel[0].offsetWidth;
+
+                            var curRect = getRect($panel[0]);
+
+                            // // 이전 패널 좌표가 있으면: 그 지점에서 시작하도록 translate를 걸어줌
+                            if (lastRect && curRect) {
+                                var dx = lastRect.left - curRect.left;
+                                var dy = lastRect.top - curRect.top;
+
+                                // // 시작점 세팅(이전 위치에서 출발)
+                                $panel.css({
+                                    transition: 'none',
+                                    transform: 'translate3d(' + dx + 'px,' + dy + 'px,0)',
+                                    opacity: 0
+                                });
+
+                                // // reflow 후 트랜지션 복원 + 최종 위치로
+                                $panel[0].offsetWidth;
+
+                                $panel.css({
+                                    transition: '',
+                                    transform: '',
+                                    opacity: ''
+                                });
+                            }
+
+                            // // 현재 열린 패널 기록
+                            lastOpenEl = $panel[0];
+                        });
+
+                        // // hover 나갈 때: 마지막 열린 패널 위치를 저장
+                        $(document).on('mouseleave', '#cbp-hrmenu .cbp-hrsub-inner > div > ul > li', function () {
+                            var $panel = $(this).children('.cbp-hrsub-3');
+                            if (!$panel.length) return;
+
+                            // // 닫히기 직전 rect 저장
+                            var r = getRect($panel[0]);
+                            if (r) lastRect = r;
+                        });
+
+                        // // 1차 메뉴가 닫힐 때도 마지막 위치 저장(안전)
+                        $(document).on('mouseleave', '#cbp-hrmenu > ul > li', function () {
+                            if (lastOpenEl) {
+                                var r = getRect(lastOpenEl);
+                                if (r) lastRect = r;
+                            }
+                        });
+                    })();
+                    </script>
                 </div>
             </div>
 

@@ -30,6 +30,7 @@ if (!sql_query(" DESCRIBE {$g5['menu_table']} ", false)) {
     );
 }
 
+// // 기존처럼 me_id 정렬 유지(표기 방식 유지)
 $sql = " select * from {$g5['menu_table']} order by me_id ";
 $result = sql_query($sql);
 
@@ -39,6 +40,11 @@ require_once './admin.head.php';
 $colspan = 9;
 $sub_menu_info = '';
 ?>
+
+<style>
+/* // 3차만 한 단계 더 들여쓰기 */
+#menulist td.td_category.sub_menu_class_3 { padding-left: 40px !important; background-position: 20px 15px;}
+</style>
 
 <div class="local_desc01 local_desc">
     <p>
@@ -50,8 +56,6 @@ $sub_menu_info = '';
 
 <form name="fmenulist" id="fmenulist" method="post" action="./menu_list_update.php" onsubmit="return fmenulist_submit(this);">
     <input type="hidden" name="token" value="">
-
-
 
     <div id="menulist" class="tbl_head01 tbl_wrap">
         <table>
@@ -72,26 +76,42 @@ $sub_menu_info = '';
                 <?php
                 for ($i = 0; $row = sql_fetch_array($result); $i++) {
                     $bg = 'bg' . ($i % 2);
+
+                    $me_code = isset($row['me_code']) ? trim((string)$row['me_code']) : '';
+                    $me_len = strlen($me_code);
+
                     $sub_menu_class = '';
-                    if (strlen($row['me_code']) == 4) {
+                    $sub_menu_info = '';
+                    $sub_menu_ico = '';
+
+                    // // 2차
+                    if ($me_len == 4) {
                         $sub_menu_class = ' sub_menu_class';
+                        $sub_menu_info = '<span class="sound_only">' . $row['me_name'] . '의 서브</span>';
+                        $sub_menu_ico = '<span class="sub_menu_ico"></span>';
+                    }
+
+                    // // 3차
+                    if ($me_len == 6) {
+                        $sub_menu_class = ' sub_menu_class sub_menu_class_3';
                         $sub_menu_info = '<span class="sound_only">' . $row['me_name'] . '의 서브</span>';
                         $sub_menu_ico = '<span class="sub_menu_ico"></span>';
                     }
 
                     $search  = array('"', "'");
                     $replace = array('&#034;', '&#039;');
-                    $me_name = str_replace($search, $replace, $row['me_name']);
+                    $me_name = str_replace($search, $replace, (string)$row['me_name']);
                 ?>
-                    <tr class="<?php echo $bg; ?> menu_list menu_group_<?php echo substr($row['me_code'], 0, 2); ?>">
+                    <tr class="<?php echo $bg; ?> menu_list menu_group_<?php echo substr($me_code, 0, 2); ?>">
                         <td class="td_category<?php echo $sub_menu_class; ?>">
-                            <input type="hidden" name="code[]" value="<?php echo substr($row['me_code'], 0, 2) ?>">
+                            <?php echo $sub_menu_ico; ?>
+                            <input type="hidden" name="code[]" value="<?php echo get_sanitize_input($me_code); ?>">
                             <label for="me_name_<?php echo $i; ?>" class="sound_only"><?php echo $sub_menu_info; ?> 메뉴<strong class="sound_only"> 필수</strong></label>
                             <input type="text" name="me_name[]" value="<?php echo get_sanitize_input($me_name); ?>" id="me_name_<?php echo $i; ?>" required class="required tbl_input full_input">
                         </td>
                         <td>
                             <label for="me_link_<?php echo $i; ?>" class="sound_only">링크<strong class="sound_only"> 필수</strong></label>
-                            <input type="text" name="me_link[]" value="<?php echo $row['me_link'] ?>" id="me_link_<?php echo $i; ?>" required class="required tbl_input full_input">
+                            <input type="text" name="me_link[]" value="<?php echo get_sanitize_input((string)$row['me_link']); ?>" id="me_link_<?php echo $i; ?>" required class="required tbl_input full_input">
                         </td>
                         <td class="td_mng">
                             <label for="me_target_<?php echo $i; ?>" class="sound_only">새창</label>
@@ -102,7 +122,7 @@ $sub_menu_info = '';
                         </td>
                         <td class="td_num">
                             <label for="me_order_<?php echo $i; ?>" class="sound_only">순서</label>
-                            <input type="text" name="me_order[]" value="<?php echo $row['me_order'] ?>" id="me_order_<?php echo $i; ?>" class="tbl_input" size="5">
+                            <input type="text" name="me_order[]" value="<?php echo get_sanitize_input((string)$row['me_order']); ?>" id="me_order_<?php echo $i; ?>" class="tbl_input" size="5">
                         </td>
                         <td class="td_mng">
                             <label for="me_use_<?php echo $i; ?>" class="sound_only">PC사용</label>
@@ -120,18 +140,18 @@ $sub_menu_info = '';
                         </td>
                         <td class="td_num">
                             <label for="me_level_<?php echo $i; ?>" class="sound_only">권한</label>
-                            <?php echo get_member_level_select('me_level[]', 1, $member['mb_level'], $row['me_level']) ?>
+                            <?php echo get_member_level_select('me_level[]', 1, $member['mb_level'], $row['me_level']); ?>
                         </td>
                         <td class="td_mng" style="min-width:150px;">
                             <label for="me_level_opt_<?php echo $i; ?>" class="sound_only">옵션</label>
-                            <select id="me_level_opt" name="me_level_opt[]">
-                            <option value="1" <?php if (isset($row['me_level_opt']) && $row['me_level_opt'] == "1") { ?>selected<?php } ?>>레벨 부터 접근가능</option>
-                            <option value="2" <?php if (isset($row['me_level_opt']) && $row['me_level_opt'] == "2") { ?>selected<?php } ?>>레벨만 접근가능</option>
+                            <select id="me_level_opt_<?php echo $i; ?>" name="me_level_opt[]">
+                                <option value="1" <?php if (isset($row['me_level_opt']) && $row['me_level_opt'] == "1") { ?>selected<?php } ?>>레벨 부터 접근가능</option>
+                                <option value="2" <?php if (isset($row['me_level_opt']) && $row['me_level_opt'] == "2") { ?>selected<?php } ?>>레벨만 접근가능</option>
                             </select>
                         </td>
 
                         <td class="td_mng">
-                            <?php if (strlen($row['me_code']) == 2) { ?>
+                            <?php if ($me_len == 2 || $me_len == 4) { ?>
                                 <button type="button" class="btn_add_submenu btn_03 ">추가</button>
                             <?php } ?>
                             <button type="button" class="btn_del_menu btn_02">삭제</button>
@@ -156,83 +176,91 @@ $sub_menu_info = '';
 </form>
 
 <script>
-    $(function() {
-        $(document).on("click", ".btn_add_submenu", function() {
-            var code = $(this).closest("tr").find("input[name='code[]']").val().substr(0, 2);
-            add_submenu(code);
-        });
-
-        $(document).on("click", ".btn_del_menu", function() {
-            if (!confirm("메뉴를 삭제하시겠습니까?\n메뉴 삭제후 메뉴설정의 확인 버튼을 눌러 메뉴를 저장해 주세요."))
-                return false;
-
-            var $tr = $(this).closest("tr");
-            if ($tr.find("td.sub_menu_class").length > 0) {
-                $tr.remove();
-            } else {
-                var code = $(this).closest("tr").find("input[name='code[]']").val().substr(0, 2);
-                $("tr.menu_group_" + code).remove();
-            }
-
-            if ($("#menulist tr.menu_list").length < 1) {
-                var list = "<tr id=\"empty_menu_list\"><td colspan=\"<?php echo $colspan; ?>\" class=\"empty_table\">자료가 없습니다.</td></tr>\n";
-                $("#menulist table tbody").append(list);
-            } else {
-                $("#menulist tr.menu_list").each(function(index) {
-                    $(this).removeClass("bg0 bg1")
-                        .addClass("bg" + (index % 2));
-                });
-            }
-        });
+$(function() {
+    $(document).on("click", ".btn_add_submenu", function() {
+        // // 기존 substr(0,2) 제거: 부모코드(2자리/4자리) 그대로 넘김
+        var code = String($(this).closest("tr").find("input[name='code[]']").val() || "");
+        if (!code) return false;
+        add_submenu(code);
     });
 
-    function add_menu() {
-        var max_code = base_convert(0, 10, 36);
-        $("#menulist tr.menu_list").each(function() {
-            var me_code = $(this).find("input[name='code[]']").val().substr(0, 2);
-            if (max_code < me_code)
-                max_code = me_code;
-        });
+    $(document).on("click", ".btn_del_menu", function() {
+        if (!confirm("메뉴를 삭제하시겠습니까?\n메뉴 삭제후 메뉴설정의 확인 버튼을 눌러 메뉴를 저장해 주세요."))
+            return false;
 
-        var url = "./menu_form.php?code=" + max_code + "&new=new";
-        window.open(url, "add_menu", "left=100,top=100,width=550,height=650,scrollbars=yes,resizable=yes");
-        return false;
-    }
+        var $tr = $(this).closest("tr");
+        var code = String($tr.find("input[name='code[]']").val() || "");
+        var len = code.length;
 
-    function add_submenu(code) {
-        var url = "./menu_form.php?code=" + code;
-        window.open(url, "add_menu", "left=100,top=100,width=550,height=650,scrollbars=yes,resizable=yes");
-        return false;
-    }
-
-    function base_convert(number, frombase, tobase) {
-        //  discuss at: http://phpjs.org/functions/base_convert/
-        // original by: Philippe Baumann
-        // improved by: Rafał Kukawski (http://blog.kukawski.pl)
-        //   example 1: base_convert('A37334', 16, 2);
-        //   returns 1: '101000110111001100110100'
-
-        return parseInt(number + '', frombase | 0)
-            .toString(tobase | 0);
-    }
-
-    function fmenulist_submit(f) {
-
-        var me_links = document.getElementsByName('me_link[]');
-        var reg = /^javascript/;
-
-        for (i = 0; i < me_links.length; i++) {
-
-            if (reg.test(me_links[i].value)) {
-
-                alert('링크에 자바스크립트문을 입력할수 없습니다.');
-                me_links[i].focus();
-                return false;
-            }
+        if (!code) {
+            $tr.remove();
+            return false;
         }
 
-        return true;
+        // // 1차(2) 삭제: 하위 전부(prefix)
+        // // 2차(4) 삭제: 하위(3차) 전부(prefix)
+        // // 3차(6) 삭제: 자기만
+        if (len === 2 || len === 4) {
+            $("#menulist tr.menu_list").each(function() {
+                var c = String($(this).find("input[name='code[]']").val() || "");
+                if (c && c.indexOf(code) === 0) {
+                    $(this).remove();
+                }
+            });
+        } else {
+            $tr.remove();
+        }
+
+        if ($("#menulist tr.menu_list").length < 1) {
+            var list = "<tr id=\"empty_menu_list\"><td colspan=\"<?php echo $colspan; ?>\" class=\"empty_table\">자료가 없습니다.</td></tr>\n";
+            $("#menulist table tbody").append(list);
+        } else {
+            $("#menulist tr.menu_list").each(function(index) {
+                $(this).removeClass("bg0 bg1").addClass("bg" + (index % 2));
+            });
+        }
+    });
+});
+
+function add_menu() {
+    var max_code = base_convert(0, 10, 36);
+
+    $("#menulist tr.menu_list").each(function() {
+        var c = String($(this).find("input[name='code[]']").val() || "");
+        if (c.length === 2) {
+            if (max_code < c) max_code = c;
+        }
+    });
+
+    var url = "./menu_form.php?code=" + max_code + "&new=new";
+    window.open(url, "add_menu", "left=100,top=100,width=550,height=650,scrollbars=yes,resizable=yes");
+    return false;
+}
+
+function add_submenu(code) {
+    var url = "./menu_form.php?code=" + encodeURIComponent(code);
+    window.open(url, "add_menu", "left=100,top=100,width=550,height=650,scrollbars=yes,resizable=yes");
+    return false;
+}
+
+function base_convert(number, frombase, tobase) {
+    return parseInt(number + '', frombase | 0).toString(tobase | 0);
+}
+
+function fmenulist_submit(f) {
+    var me_links = document.getElementsByName('me_link[]');
+    var reg = /^javascript/;
+
+    for (i = 0; i < me_links.length; i++) {
+        if (reg.test(me_links[i].value)) {
+            alert('링크에 자바스크립트문을 입력할수 없습니다.');
+            me_links[i].focus();
+            return false;
+        }
     }
+
+    return true;
+}
 </script>
 
 <?php

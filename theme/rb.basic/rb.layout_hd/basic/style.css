@@ -2,3 +2,42 @@
 @media all and (max-width:1024px) {
     .gnb_wrap .inner {padding-left: 0px !important; padding-right: 0px !important;}
 }
+
+.cbp-hrmenu .cbp-hrsub-inner > div {min-width: 140px;}
+.cbp-hrmenu .cbp-hrsub {margin-left: -30px;}
+#cbp-hrmenu .cbp-hrsub .cbp-hrsub-inner > div > ul > li{position: relative; min-height:32.2px;}
+#cbp-hrmenu .cbp-hropen .cbp-hrsub {padding-left: 30px; padding-right: 30px; padding-top: 20px; padding-bottom: 20px;}
+.cbp-hrmenu .cbp-hrsub-inner > div i {position: absolute; top:-5px; right:-5px; opacity: 0.5; transition: transform 220ms ease, opacity 220ms ease;}
+#cbp-hrmenu .cbp-hrsub .cbp-hrsub-inner > div > ul > li:hover i {opacity: 0;}
+.cbp-hrmenu .cbp-hrsub-inner > div a {padding-right: 20px;}
+
+#cbp-hrmenu .cbp-hrsub-3{
+    display: block;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    position: absolute;
+    left: 90%;
+    top: -10px;
+
+    background-color: #fff;
+    min-width: 120px;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.05);
+
+    transform: translate3d(0, 6px, 0);
+    transition: transform 220ms ease, opacity 220ms ease;
+    z-index: 9
+}
+
+#cbp-hrmenu .cbp-hrsub > .cbp-hrsub-inner ul > li:hover > .cbp-hrsub-3{
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate3d(0, 0, 0);
+}
+
+#cbp-hrmenu .cbp-hrsub > .cbp-hrsub-inner ul > li:hover > .cbp-hrsub-3 a {padding-top: 4px; padding-bottom: 4px; font-family: 'font-R'; font-size: 13px; padding-right: 0px;}
+#cbp-hrmenu .cbp-hrsub > .cbp-hrsub-inner ul > li:hover {position: relative;}
