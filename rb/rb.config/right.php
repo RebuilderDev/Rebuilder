@@ -4529,10 +4529,24 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
     // 엔터를 <br>로만 강제
     $('#rb-css-editor').on('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            document.execCommand('insertHTML', false, '<br>\n');
-        }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+
+        var range = sel.getRangeAt(0);
+        range.deleteContents();
+
+        var br = document.createElement('br');
+        range.insertNode(br);
+
+        // // 커서를 <br> 뒤로 이동
+        range.setStartAfter(br);
+        range.setEndAfter(br);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
     });
 
     // 붙여넣기: 항상 텍스트만, 줄바꿈은 <br>로
