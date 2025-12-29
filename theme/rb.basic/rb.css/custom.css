@@ -1096,6 +1096,12 @@ select#ct_send_cost {width: 150px;}
     .rb_module_wide {margin-left: 0px; margin-right:0px;}
     /* } */
 
+    /* 2.2.5 { */
+    #sit_buy .sit_buy_inner {
+        padding-bottom: 0px;
+    }
+    /* } */
+
 }
 
 @media all and (max-width:512px){
