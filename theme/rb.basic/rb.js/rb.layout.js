@@ -1,5 +1,71 @@
 $(document).ready(function () {
 
+    function rbGetAosConfigsSafe() {
+        var cfgs = window.RB_AOS_CONFIGS || {};
+        return {
+            general: cfgs.general || { use: 0 }
+        };
+    }
+
+    function rbHasAnyAosValue(cfg) {
+        if (!cfg) return false;
+        // // 마켓과 동일: aos가 있어야만 적용
+        if (cfg.aos === null || cfg.aos === undefined) return false;
+        if (String(cfg.aos).trim() === '') return false;
+        return true;
+    }
+
+    // // 일반 JS는 무조건 general만 사용
+    function rbPickGeneralConfig() {
+        var cfg = rbGetAosConfigsSafe().general;
+        if (!cfg || cfg.use !== 1) return null;
+        if (!rbHasAnyAosValue(cfg)) return null;
+        return cfg;
+    }
+
+    function rbSetAttrIfMissing(el, name, val) {
+        if (!el || el.nodeType !== 1) return;
+        if (el.hasAttribute(name)) return;
+        if (val === null || val === undefined) return;
+        var s = String(val);
+        if (s === '') return;
+        el.setAttribute(name, s);
+    }
+
+    function rbApplyAosFillOnly(el) {
+        var cfg = rbPickGeneralConfig();
+        if (!cfg) return;
+
+        rbSetAttrIfMissing(el, 'data-aos', cfg.aos);
+        rbSetAttrIfMissing(el, 'data-aos-offset', cfg.offset);
+        rbSetAttrIfMissing(el, 'data-aos-delay', cfg.delay);
+        rbSetAttrIfMissing(el, 'data-aos-duration', cfg.duration);
+        rbSetAttrIfMissing(el, 'data-aos-easing', cfg.easing);
+        rbSetAttrIfMissing(el, 'data-aos-mirror', cfg.mirror);
+        rbSetAttrIfMissing(el, 'data-aos-once', cfg.once);
+        rbSetAttrIfMissing(el, 'data-aos-anchor-placement', cfg.anchorPlacement);
+    }
+
+    function rbApplyAosToTargets(scope) {
+        var root = scope || document;
+        var els = root.querySelectorAll('.rb_section_title, .rb_layout_box');
+        if (!els || !els.length) return;
+        els.forEach(function (el) {
+            rbApplyAosFillOnly(el);
+        });
+    }
+
+    function rbAosRefresh() {
+        // // use=0이면 refresh도 안 함 (마켓과 동일)
+        if (!rbPickGeneralConfig()) return;
+
+        if (window.AOS && typeof AOS.refreshHard === 'function') AOS.refreshHard();
+        else if (window.AOS && typeof AOS.refresh === 'function') AOS.refresh();
+    }
+
+    rbApplyAosToTargets(document);
+    rbAosRefresh();
+
     function getBasePathFromG5() {
         try {
             var u = new URL(typeof g5_url === 'string' ? g5_url : '/', window.location.origin);
@@ -149,6 +215,10 @@ $(document).ready(function () {
 
                     if (res[lay] !== undefined) {
                         $box.html(res[lay]);
+
+                        rbApplyAosToTargets($box[0]);
+                        rbAosRefresh();
+
                         $box.data('layout-loaded', true); // 성공 후에 표시
 
                         // // HTML 들어오자마자 해당 영역 슬라이더 즉시 초기화
@@ -158,6 +228,9 @@ $(document).ready(function () {
 
                 // 로드 후: 키(sec_uid) 일치 모듈만 섹션으로 이동
                 packModulesIntoSectionsOnce();
+
+                rbApplyAosToTargets(document);
+                rbAosRefresh();
 
                 if (callback) callback();
             },

@@ -60,6 +60,29 @@ if($mod_type == 1) { //환경설정
     $co_sidemenu_padding_shop = !empty($_POST['co_sidemenu_padding_shop']) ? $_POST['co_sidemenu_padding_shop'] : '0';
     $co_sidemenu_hide = !empty($_POST['co_sidemenu_hide']) ? $_POST['co_sidemenu_hide'] : '0';
     $co_sidemenu_hide_shop = !empty($_POST['co_sidemenu_hide_shop']) ? $_POST['co_sidemenu_hide_shop'] : '0';
+
+    // AOS(일반)
+    $rb_aos_use = isset($_POST['rb_aos_use']) ? (int)$_POST['rb_aos_use'] : 0;
+    $rb_aos_motion = isset($_POST['rb_aos_motion']) ? trim((string)$_POST['rb_aos_motion']) : '';
+    $rb_aos_offset = isset($_POST['rb_aos_offset']) ? trim((string)$_POST['rb_aos_offset']) : '';
+    $rb_aos_delay = isset($_POST['rb_aos_delay']) ? trim((string)$_POST['rb_aos_delay']) : '';
+    $rb_aos_duration = isset($_POST['rb_aos_duration']) ? trim((string)$_POST['rb_aos_duration']) : '';
+    $rb_aos_easing = isset($_POST['rb_aos_easing']) ? trim((string)$_POST['rb_aos_easing']) : '';
+    $rb_aos_mirror = isset($_POST['rb_aos_mirror']) ? (int)$_POST['rb_aos_mirror'] : 0;
+    $rb_aos_once = isset($_POST['rb_aos_once']) ? (int)$_POST['rb_aos_once'] : 0;
+    $rb_aos_anchor_placement = isset($_POST['rb_aos_anchor_placement']) ? trim((string)$_POST['rb_aos_anchor_placement']) : '';
+
+    // AOS(마켓)
+    $rb_aos_use_shop = isset($_POST['rb_aos_use_shop']) ? (int)$_POST['rb_aos_use_shop'] : 0;
+    $rb_aos_motion_shop = isset($_POST['rb_aos_motion_shop']) ? trim((string)$_POST['rb_aos_motion_shop']) : '';
+    $rb_aos_offset_shop = isset($_POST['rb_aos_offset_shop']) ? trim((string)$_POST['rb_aos_offset_shop']) : '';
+    $rb_aos_delay_shop = isset($_POST['rb_aos_delay_shop']) ? trim((string)$_POST['rb_aos_delay_shop']) : '';
+    $rb_aos_duration_shop = isset($_POST['rb_aos_duration_shop']) ? trim((string)$_POST['rb_aos_duration_shop']) : '';
+    $rb_aos_easing_shop = isset($_POST['rb_aos_easing_shop']) ? trim((string)$_POST['rb_aos_easing_shop']) : '';
+    $rb_aos_mirror_shop = isset($_POST['rb_aos_mirror_shop']) ? (int)$_POST['rb_aos_mirror_shop'] : 0;
+    $rb_aos_once_shop = isset($_POST['rb_aos_once_shop']) ? (int)$_POST['rb_aos_once_shop'] : 0;
+    $rb_aos_anchor_placement_shop = isset($_POST['rb_aos_anchor_placement_shop']) ? trim((string)$_POST['rb_aos_anchor_placement_shop']) : '';
+
 }
 
 if($mod_type == 2) { //모듈설정
@@ -101,6 +124,86 @@ if($mod_type == "del_sec") { //섹션삭제
             $sql = " update rb_config set co_layout = '{$co_layout}', co_layout_hd = '{$co_layout_hd}', co_layout_ft = '{$co_layout_ft}', co_layout_shop = '{$co_layout_shop}', co_layout_hd_shop = '{$co_layout_hd_shop}', co_layout_ft_shop = '{$co_layout_ft_shop}', co_color = '{$co_color}', co_header = '{$co_header}', co_main_bg = '{$co_main_bg}', co_sub_bg = '{$co_sub_bg}', co_gap_mo = '{$co_gap_mo}', co_font = '{$co_font}', co_gap_pc = '{$co_gap_pc}', co_inner_padding_pc = '{$co_inner_padding_pc}', co_sub_width = '{$co_sub_width}', co_main_width = '{$co_main_width}', co_tb_width = '{$co_tb_width}', co_padding_top = '{$co_padding_top}', co_padding_top_sub = '{$co_padding_top_sub}', co_padding_top_shop = '{$co_padding_top_shop}', co_padding_top_sub_shop = '{$co_padding_top_sub_shop}', co_padding_btm = '{$co_padding_btm}', co_padding_btm_sub = '{$co_padding_btm_sub}', co_padding_btm_shop = '{$co_padding_btm_shop}', co_padding_btm_sub_shop = '{$co_padding_btm_sub_shop}', co_menu_shop = '{$co_menu_shop}', co_sidemenu_padding = '{$co_sidemenu_padding}', co_sidemenu_padding_shop = '{$co_sidemenu_padding_shop}', co_sidemenu_hide = '{$co_sidemenu_hide}', co_sidemenu_hide_shop = '{$co_sidemenu_hide_shop}', co_side_skin = '{$co_side_skin}', co_side_skin_shop = '{$co_side_skin_shop}', co_sidemenu = '{$co_sidemenu}', co_sidemenu_shop = '{$co_sidemenu_shop}', co_sidemenu_width = '{$co_sidemenu_width}', co_sidemenu_width_shop = '{$co_sidemenu_width_shop}', co_datetime = '".G5_TIME_YMDHIS."', co_ip = '{$_SERVER['REMOTE_ADDR']}' ";
             sql_query($sql);
             }
+
+            // AOS
+            if ($rb_aos_exists) {
+
+            // // 공통 저장 함수(UPDATE or INSERT) - ON DUPLICATE KEY 미사용
+            if (!function_exists('rb_aos_save_row')) {
+                function rb_aos_save_row($table, $type, $use, $aos, $offset, $delay, $duration, $easing, $mirror, $once, $anchor) {
+                    $type_esc = sql_real_escape_string((string)$type);
+
+                    $use = (int)$use;
+                    $mirror = (int)$mirror;
+                    $once = (int)$once;
+
+                    $aos_esc = sql_real_escape_string((string)$aos);
+                    $offset_esc = sql_real_escape_string((string)$offset);
+                    $delay_esc = sql_real_escape_string((string)$delay);
+                    $duration_esc = sql_real_escape_string((string)$duration);
+                    $easing_esc = sql_real_escape_string((string)$easing);
+                    $anchor_esc = sql_real_escape_string((string)$anchor);
+
+                    $exists = sql_fetch("SELECT ra_type FROM `{$table}` WHERE ra_type='{$type_esc}' LIMIT 1", false);
+
+                    if ($exists && isset($exists['ra_type'])) {
+                        $sql_u = "
+                            UPDATE `{$table}` SET
+                                ra_use = '{$use}',
+                                ra_aos = '{$aos_esc}',
+                                ra_offset = '{$offset_esc}',
+                                ra_delay = '{$delay_esc}',
+                                ra_duration = '{$duration_esc}',
+                                ra_easing = '{$easing_esc}',
+                                ra_mirror = '{$mirror}',
+                                ra_once = '{$once}',
+                                ra_anchor_placement = '{$anchor_esc}',
+                                ra_updated_at = '".G5_TIME_YMDHIS."'
+                            WHERE ra_type = '{$type_esc}'
+                        ";
+                        sql_query($sql_u);
+                    } else {
+                        $sql_i = "
+                            INSERT INTO `{$table}`
+                                (ra_type, ra_use, ra_aos, ra_offset, ra_delay, ra_duration, ra_easing, ra_mirror, ra_once, ra_anchor_placement, ra_updated_at)
+                            VALUES
+                                ('{$type_esc}', '{$use}', '{$aos_esc}', '{$offset_esc}', '{$delay_esc}', '{$duration_esc}', '{$easing_esc}', '{$mirror}', '{$once}', '{$anchor_esc}', '".G5_TIME_YMDHIS."')
+                        ";
+                        sql_query($sql_i);
+                    }
+                }
+            }
+
+            // // 일반용 저장 (ra_type = general)
+            rb_aos_save_row(
+                $rb_aos_tbl,
+                'general',
+                $rb_aos_use,
+                $rb_aos_motion,
+                $rb_aos_offset,
+                $rb_aos_delay,
+                $rb_aos_duration,
+                $rb_aos_easing,
+                $rb_aos_mirror,
+                $rb_aos_once,
+                $rb_aos_anchor_placement
+            );
+
+            // // 마켓용 저장 (ra_type = market)
+            rb_aos_save_row(
+                $rb_aos_tbl,
+                'market',
+                $rb_aos_use_shop,
+                $rb_aos_motion_shop,
+                $rb_aos_offset_shop,
+                $rb_aos_delay_shop,
+                $rb_aos_duration_shop,
+                $rb_aos_easing_shop,
+                $rb_aos_mirror_shop,
+                $rb_aos_once_shop,
+                $rb_aos_anchor_placement_shop
+            );
+        }
 
             $data = array(
                 'co_color' => $co_color,

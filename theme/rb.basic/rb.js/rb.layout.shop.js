@@ -1,5 +1,78 @@
 $(document).ready(function () {
 
+    function rbGetAosConfigsSafe() {
+        var cfgs = window.RB_AOS_CONFIGS || {};
+        return {
+            market: cfgs.market || { use: 0 }
+        };
+    }
+
+    // // 최소 조건: data-aos 값이 있어야만 적용
+    function rbHasAnyAosValue(cfg) {
+        if (!cfg) return false;
+        if (cfg.aos === null || cfg.aos === undefined) return false;
+        if (String(cfg.aos).trim() === '') return false;
+        return true;
+    }
+
+    // // 마켓 AOS enable 여부(캐시)
+    var RB_AOS_MARKET_ENABLED = null;
+    function rbIsAosEnabledMarket() {
+        if (RB_AOS_MARKET_ENABLED !== null) return RB_AOS_MARKET_ENABLED;
+        var cfg = rbGetAosConfigsSafe().market || {};
+        RB_AOS_MARKET_ENABLED = !!(cfg.use === 1 && rbHasAnyAosValue(cfg));
+        return RB_AOS_MARKET_ENABLED;
+    }
+
+    // // 마켓 JS는 무조건 market만 사용
+    function rbPickMarketConfig() {
+        if (!rbIsAosEnabledMarket()) return null;
+        return rbGetAosConfigsSafe().market;
+    }
+
+    function rbSetAttrIfMissing(el, name, val) {
+        if (!el || el.nodeType !== 1) return;
+        if (el.hasAttribute(name)) return;
+        if (val === null || val === undefined) return;
+        var s = String(val);
+        if (s === '') return;
+        el.setAttribute(name, s);
+    }
+
+    function rbApplyAosFillOnly(el) {
+        var cfg = rbPickMarketConfig();
+        if (!cfg) return;
+
+        rbSetAttrIfMissing(el, 'data-aos', cfg.aos);
+        rbSetAttrIfMissing(el, 'data-aos-offset', cfg.offset);
+        rbSetAttrIfMissing(el, 'data-aos-delay', cfg.delay);
+        rbSetAttrIfMissing(el, 'data-aos-duration', cfg.duration);
+        rbSetAttrIfMissing(el, 'data-aos-easing', cfg.easing);
+        rbSetAttrIfMissing(el, 'data-aos-mirror', cfg.mirror);
+        rbSetAttrIfMissing(el, 'data-aos-once', cfg.once);
+        rbSetAttrIfMissing(el, 'data-aos-anchor-placement', cfg.anchorPlacement);
+    }
+
+    function rbApplyAosToTargets(scope) {
+        if (!rbIsAosEnabledMarket()) return;
+        var root = scope || document;
+        var els = root.querySelectorAll('.rb_section_title, .rb_layout_box');
+        if (!els || !els.length) return;
+        els.forEach(function (el) {
+            rbApplyAosFillOnly(el);
+        });
+    }
+
+    function rbAosRefresh() {
+        if (!rbIsAosEnabledMarket()) return;
+        if (window.AOS && typeof AOS.refreshHard === 'function') AOS.refreshHard();
+        else if (window.AOS && typeof AOS.refresh === 'function') AOS.refresh();
+    }
+
+    // // 최초 1회 (use=0이면 내부에서 return)
+    rbApplyAosToTargets(document);
+    rbAosRefresh();
+
     function getBasePathFromG5() {
         try {
             var u = new URL(typeof g5_url === 'string' ? g5_url : '/', window.location.origin);
@@ -149,6 +222,10 @@ $(document).ready(function () {
 
                     if (res[lay] !== undefined) {
                         $box.html(res[lay]);
+
+                        rbApplyAosToTargets($box[0]);
+                        rbAosRefresh();
+
                         $box.data('layout-loaded', true);
 
                         // // HTML 들어오자마자 해당 영역 슬라이더 즉시 초기화
@@ -158,6 +235,9 @@ $(document).ready(function () {
 
                 // 로드 후: 키(sec_uid) 일치 모듈만 섹션으로 이동
                 packModulesIntoSectionsOnce();
+
+                rbApplyAosToTargets(document);
+                rbAosRefresh();
 
                 if (callback) callback();
             },

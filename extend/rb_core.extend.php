@@ -9,6 +9,7 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 //error_reporting(E_ALL);
 
 define('RB_VER',  '2.2.4.2'); // 버전
+define('RB_TABLE_PREFIX', 'rb_'); // 리빌더 접두사
 
 /*********************************************/
 
@@ -1773,3 +1774,94 @@ function rb_menu_db_3d($use_mobile=0, $is_cache=false){
     return $cache[$key];
 }
 
+
+// AOS
+$rb_aos_tbl = RB_TABLE_PREFIX.'aos';
+$rb_aos_exists = false;
+
+$tbl_esc = sql_real_escape_string($rb_aos_tbl);
+$row_aos = sql_fetch("SHOW TABLES LIKE '{$tbl_esc}'", false);
+if ($row_aos) $rb_aos_exists = true;
+
+if (!function_exists('rb_aos_row_map')) {
+    function rb_aos_row_map($row) {
+        if (!is_array($row) || empty($row)) return array();
+
+        return array(
+            'use' => isset($row['ra_use']) ? (int)$row['ra_use'] : 0,
+            'aos' => isset($row['ra_aos']) ? (string)$row['ra_aos'] : '',
+            'offset' => isset($row['ra_offset']) ? (string)$row['ra_offset'] : '',
+            'delay' => isset($row['ra_delay']) ? (string)$row['ra_delay'] : '',
+            'duration' => isset($row['ra_duration']) ? (string)$row['ra_duration'] : '',
+            'easing' => isset($row['ra_easing']) ? (string)$row['ra_easing'] : '',
+            'mirror' => isset($row['ra_mirror']) ? (string)$row['ra_mirror'] : '',
+            'once' => isset($row['ra_once']) ? (string)$row['ra_once'] : '',
+            'anchor_placement' => isset($row['ra_anchor_placement']) ? (string)$row['ra_anchor_placement'] : ''
+        );
+    }
+}
+
+// 결과 배열(없으면 빈배열)
+$rb_aos = array();       // 일반용
+$rb_aos_shop = array();  // 마켓용
+
+// use 기본은 0 (데이터 없으면 미사용)
+$rb_aos_use = 0;
+$rb_aos_use_shop = 0;
+
+// 값 변수는 기본 빈값(데이터 없으면 빈값 유지)
+$rb_aos_motion = '';
+$rb_aos_offset = '';
+$rb_aos_delay = '';
+$rb_aos_duration = '';
+$rb_aos_easing = '';
+$rb_aos_mirror = '';
+$rb_aos_once = '';
+$rb_aos_anchor = '';
+
+$rb_aos_motion_shop = '';
+$rb_aos_offset_shop = '';
+$rb_aos_delay_shop = '';
+$rb_aos_duration_shop = '';
+$rb_aos_easing_shop = '';
+$rb_aos_mirror_shop = '';
+$rb_aos_once_shop = '';
+$rb_aos_anchor_shop = '';
+
+if ($rb_aos_exists) {
+    // // 일반용
+    $row_general = sql_fetch("SELECT * FROM `{$rb_aos_tbl}` WHERE ra_type='general' LIMIT 1", false);
+    if (is_array($row_general) && !empty($row_general)) {
+        $rb_aos = rb_aos_row_map($row_general);
+    }
+
+    // // 마켓용
+    $row_market = sql_fetch("SELECT * FROM `{$rb_aos_tbl}` WHERE ra_type='market' LIMIT 1", false);
+    if (is_array($row_market) && !empty($row_market)) {
+        $rb_aos_shop = rb_aos_row_map($row_market);
+    }
+
+    // // use만 기본 0에서 덮기
+    $rb_aos_use = isset($rb_aos['use']) ? (int)$rb_aos['use'] : 0;
+    $rb_aos_use_shop = isset($rb_aos_shop['use']) ? (int)$rb_aos_shop['use'] : 0;
+
+    // // 값은 "DB에 값이 있을 때만" 변수에 세팅 (없으면 빈값 유지)
+    if (isset($rb_aos['aos']) && trim((string)$rb_aos['aos']) !== '') $rb_aos_motion = trim((string)$rb_aos['aos']);
+    if (isset($rb_aos['offset']) && (string)$rb_aos['offset'] !== '') $rb_aos_offset = (string)$rb_aos['offset'];
+    if (isset($rb_aos['delay']) && (string)$rb_aos['delay'] !== '') $rb_aos_delay = (string)$rb_aos['delay'];
+    if (isset($rb_aos['duration']) && (string)$rb_aos['duration'] !== '') $rb_aos_duration = (string)$rb_aos['duration'];
+    if (isset($rb_aos['easing']) && trim((string)$rb_aos['easing']) !== '') $rb_aos_easing = trim((string)$rb_aos['easing']);
+    if (isset($rb_aos['mirror']) && (string)$rb_aos['mirror'] !== '') $rb_aos_mirror = (string)$rb_aos['mirror'];
+    if (isset($rb_aos['once']) && (string)$rb_aos['once'] !== '') $rb_aos_once = (string)$rb_aos['once'];
+    if (isset($rb_aos['anchor_placement']) && trim((string)$rb_aos['anchor_placement']) !== '') $rb_aos_anchor = trim((string)$rb_aos['anchor_placement']);
+
+    if (isset($rb_aos_shop['aos']) && trim((string)$rb_aos_shop['aos']) !== '') $rb_aos_motion_shop = trim((string)$rb_aos_shop['aos']);
+    if (isset($rb_aos_shop['offset']) && (string)$rb_aos_shop['offset'] !== '') $rb_aos_offset_shop = (string)$rb_aos_shop['offset'];
+    if (isset($rb_aos_shop['delay']) && (string)$rb_aos_shop['delay'] !== '') $rb_aos_delay_shop = (string)$rb_aos_shop['delay'];
+    if (isset($rb_aos_shop['duration']) && (string)$rb_aos_shop['duration'] !== '') $rb_aos_duration_shop = (string)$rb_aos_shop['duration'];
+    if (isset($rb_aos_shop['easing']) && trim((string)$rb_aos_shop['easing']) !== '') $rb_aos_easing_shop = trim((string)$rb_aos_shop['easing']);
+    if (isset($rb_aos_shop['mirror']) && (string)$rb_aos_shop['mirror'] !== '') $rb_aos_mirror_shop = (string)$rb_aos_shop['mirror'];
+    if (isset($rb_aos_shop['once']) && (string)$rb_aos_shop['once'] !== '') $rb_aos_once_shop = (string)$rb_aos_shop['once'];
+    if (isset($rb_aos_shop['anchor_placement']) && trim((string)$rb_aos_shop['anchor_placement']) !== '') $rb_aos_anchor_shop = trim((string)$rb_aos_shop['anchor_placement']);
+}
+?>

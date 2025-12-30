@@ -444,6 +444,360 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
                     </ul>
 
+
+                    <ul class="rb_config_sec">
+                        <h6 class="font-B">
+                        <?php if (defined('_SHOP_')) { // 영카트?>마켓 <?php } ?>AOS 설정
+                                <div class="rb-help" data-open="false">
+                                    <button type="button" class="rb-help-btn" data-img="<?php echo G5_URL ?>/rb/rb.config/image/guide/help-img-aos.gif" data-txt="페이지를 스크롤할 때, 각 모듈을 부드럽게 나타나게 하거나(fade), 위로 올라오거나(slide), 확대(zoom), 뒤집힘(flip) 등의 효과를 줄 수 있어요." data-title="AOS 설정 이란?" data-alt="미리보기" aria-expanded="false">
+                                        <svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>
+                                            <g fill='none'>
+                                                <path d='M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z' />
+                                                <path fill='#DDDDDDFF' d='M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2m0 14a1 1 0 1 0 0 2 1 1 0 0 0 0-2m0-9.5a3.625 3.625 0 0 0-3.625 3.625 1 1 0 1 0 2 0 1.625 1.625 0 1 1 2.23 1.51c-.676.27-1.605.962-1.605 2.115V14a1 1 0 1 0 2 0c0-.244.05-.366.261-.47l.087-.04A3.626 3.626 0 0 0 12 6.5' />
+                                            </g>
+                                        </svg>
+                                    </button>
+                                    <aside role="tooltip" class="rb-help-pop" aria-hidden="true"></aside>
+                                </div>
+                        </h6>
+                        <h6 class="font-R rb_config_sub_txt">
+                            모듈에 AOS를 일괄 적용 합니다.<br>
+                            AOS는 메인, 그룹, 일반(co_id) 페이지에 적용 되며,<br>
+                            일반/마켓 별도 설정이 가능합니다.
+                        </h6>
+
+                        <div <?php if(defined('_SHOP_')) { // 영카트?>style="display:block !important;" <?php } else { ?>style="display:none !important;" <?php } ?>>
+
+                            <?php
+                            // 표시용 기본값(화면에만 채움) - 마켓용
+                            $view_rb_aos_motion_shop = ($rb_aos_motion_shop !== '' ? $rb_aos_motion_shop : 'fade-up');
+                            $view_rb_aos_offset_shop = ($rb_aos_offset_shop !== '' ? $rb_aos_offset_shop : '-200');
+                            $view_rb_aos_delay_shop = ($rb_aos_delay_shop !== '' ? $rb_aos_delay_shop : '50');
+                            $view_rb_aos_duration_shop = ($rb_aos_duration_shop !== '' ? $rb_aos_duration_shop : '500');
+                            $view_rb_aos_easing_shop = ($rb_aos_easing_shop !== '' ? $rb_aos_easing_shop : 'ease-in-out-cubic');
+                            $view_rb_aos_anchor_shop = ($rb_aos_anchor_shop !== '' ? $rb_aos_anchor_shop : 'top-center');
+
+                            // // 체크박스 표시용 기본값(화면에만)
+                            // // DB 값이 ''(미저장) 이면: mirror=true(체크), once=false(미체크)
+                            $view_rb_aos_mirror_shop = ($rb_aos_mirror_shop === '' ? 1 : (int)$rb_aos_mirror_shop);
+                            $view_rb_aos_once_shop = ($rb_aos_once_shop === '' ? 0 : (int)$rb_aos_once_shop);
+                            ?>
+
+
+                            <div class="config_wrap">
+
+                                <ul class="rows_inp_lr ">
+                                    <li class="rows_inp_l rows_inp_l_span">
+                                        <span class="font-B">사용여부</span><br>
+                                        AOS
+                                    </li>
+                                    <li class="rows_inp_r mt-5">
+                                        <input type="radio" name="rb_aos_use_shop" id="rb_aos_use_shop_0" class="magic-radio" value="0" <?php echo ($rb_aos_use_shop === 0 ? 'checked' : ''); ?>>
+                                        <label for="rb_aos_use_shop_0">사용안함</label>
+                                        <input type="radio" name="rb_aos_use_shop" id="rb_aos_use_shop_1" class="magic-radio" value="1" <?php echo ($rb_aos_use_shop === 1 ? 'checked' : ''); ?>>
+                                        <label for="rb_aos_use_shop_1">사용함</label>
+                                    </li>
+
+                                    <div class="cb"></div>
+                                </ul>
+
+                                <ul class="rows_inp_lr mt-5">
+                                    <li class="rows_inp_l rows_inp_l_span">
+                                        <span class="font-B">모션타입</span><br>
+                                        data-aos
+                                    </li>
+                                    <li class="rows_inp_r mt-5">
+                                        <select id="rb_aos_motion_shop" name="rb_aos_motion_shop" class="select select_tiny w50">
+                                            <option value="" <?php echo ($view_rb_aos_motion_shop === '' ? 'selected' : ''); ?>>모션선택</option>
+                                            <option value="" disabled>──── Fade ────</option>
+                                            <option value="fade" <?php echo ($view_rb_aos_motion_shop === 'fade' ? 'selected' : ''); ?>>fade</option>
+                                            <option value="fade-up" <?php echo ($view_rb_aos_motion_shop === 'fade-up' ? 'selected' : ''); ?>>fade-up</option>
+                                            <option value="fade-down" <?php echo ($view_rb_aos_motion_shop === 'fade-down' ? 'selected' : ''); ?>>fade-down</option>
+                                            <option value="fade-left" <?php echo ($view_rb_aos_motion_shop === 'fade-left' ? 'selected' : ''); ?>>fade-left</option>
+                                            <option value="fade-right" <?php echo ($view_rb_aos_motion_shop === 'fade-right' ? 'selected' : ''); ?>>fade-right</option>
+                                            <option value="fade-up-right" <?php echo ($view_rb_aos_motion_shop === 'fade-up-right' ? 'selected' : ''); ?>>fade-up-right</option>
+                                            <option value="fade-up-left" <?php echo ($view_rb_aos_motion_shop === 'fade-up-left' ? 'selected' : ''); ?>>fade-up-left</option>
+                                            <option value="fade-down-right" <?php echo ($view_rb_aos_motion_shop === 'fade-down-right' ? 'selected' : ''); ?>>fade-down-right</option>
+                                            <option value="fade-down-left" <?php echo ($view_rb_aos_motion_shop === 'fade-down-left' ? 'selected' : ''); ?>>fade-down-left</option>
+                                            <option value="" disabled>──── Flip ────</option>
+                                            <option value="flip-up" <?php echo ($view_rb_aos_motion_shop === 'flip-up' ? 'selected' : ''); ?>>flip-up</option>
+                                            <option value="flip-down" <?php echo ($view_rb_aos_motion_shop === 'flip-down' ? 'selected' : ''); ?>>flip-down</option>
+                                            <option value="flip-left" <?php echo ($view_rb_aos_motion_shop === 'flip-left' ? 'selected' : ''); ?>>flip-left</option>
+                                            <option value="flip-right" <?php echo ($view_rb_aos_motion_shop === 'flip-right' ? 'selected' : ''); ?>>flip-right</option>
+                                            <option value="" disabled>──── Zoom In ────</option>
+                                            <option value="zoom-in" <?php echo ($view_rb_aos_motion_shop === 'zoom-in' ? 'selected' : ''); ?>>zoom-in</option>
+                                            <option value="zoom-in-up" <?php echo ($view_rb_aos_motion_shop === 'zoom-in-up' ? 'selected' : ''); ?>>zoom-in-up</option>
+                                            <option value="zoom-in-down" <?php echo ($view_rb_aos_motion_shop === 'zoom-in-down' ? 'selected' : ''); ?>>zoom-in-down</option>
+                                            <option value="zoom-in-left" <?php echo ($view_rb_aos_motion_shop === 'zoom-in-left' ? 'selected' : ''); ?>>zoom-in-left</option>
+                                            <option value="zoom-in-right" <?php echo ($view_rb_aos_motion_shop === 'zoom-in-right' ? 'selected' : ''); ?>>zoom-in-right</option>
+                                            <option value="" disabled>──── Zoom Out ────</option>
+                                            <option value="zoom-out" <?php echo ($view_rb_aos_motion_shop === 'zoom-out' ? 'selected' : ''); ?>>zoom-out</option>
+                                            <option value="zoom-out-up" <?php echo ($view_rb_aos_motion_shop === 'zoom-out-up' ? 'selected' : ''); ?>>zoom-out-up</option>
+                                            <option value="zoom-out-down" <?php echo ($view_rb_aos_motion_shop === 'zoom-out-down' ? 'selected' : ''); ?>>zoom-out-down</option>
+                                            <option value="zoom-out-left" <?php echo ($view_rb_aos_motion_shop === 'zoom-out-left' ? 'selected' : ''); ?>>zoom-out-left</option>
+                                            <option value="zoom-out-right" <?php echo ($view_rb_aos_motion_shop === 'zoom-out-right' ? 'selected' : ''); ?>>zoom-out-right</option>
+                                        </select>
+                                    </li>
+
+                                    <div class="cb"></div>
+                                </ul>
+
+                                <input type="hidden" class="tiny_input" name="rb_aos_offset_shop" value="-300">
+                                <input type="hidden" class="tiny_input" name="rb_aos_easing_shop" value="ease">
+                                <input type="hidden" class="tiny_input" name="rb_aos_mirror_shop" value="0">
+                                <input type="hidden" class="tiny_input" name="rb_aos_anchor_placement_shop" value="top-center">
+
+                                <ul class="rows_inp_lr mt-10">
+                                    <li class="rows_inp_l rows_inp_l_span">
+                                        <span class="font-B">지연시간</span><br>
+                                        data-aos-delay
+                                    </li>
+                                    <li class="rows_inp_r mt-15">
+                                        <div id="rb_aos_delay_shop_range" class="rb_range_item"></div>
+                                        <input type="hidden" id="rb_aos_delay_shop" class="co_range_send" name="rb_aos_delay_shop" value="<?php echo htmlspecialchars($view_rb_aos_delay_shop, ENT_QUOTES, 'UTF-8'); ?>">
+                                    </li>
+
+                                    <script type="text/javascript">
+                                        $("#rb_aos_delay_shop_range").slider({
+                                            range: "min",
+                                            min: 0,
+                                            max: 1000,
+                                            value: <?php echo htmlspecialchars($view_rb_aos_delay_shop, ENT_QUOTES, 'UTF-8'); ?>,
+                                            step: 50,
+                                            slide: function(e, ui) {
+                                                $("#rb_aos_delay_shop_range .ui-slider-handle").html(ui.value);
+                                                $("#rb_aos_delay_shop").val(ui.value); // hidden input에 값 업데이트
+                                            }
+                                        });
+
+                                        $("#rb_aos_delay_shop_range .ui-slider-handle").html("<?php echo htmlspecialchars($view_rb_aos_delay_shop, ENT_QUOTES, 'UTF-8'); ?>");
+                                        $("#rb_aos_delay_shop").val("<?php echo htmlspecialchars($view_rb_aos_delay_shop, ENT_QUOTES, 'UTF-8'); ?>"); // 초기값 설정
+                                    </script>
+                                    <div class="cb"></div>
+                                </ul>
+
+                                <ul class="rows_inp_lr mt-10">
+                                    <li class="rows_inp_l rows_inp_l_span">
+                                        <span class="font-B">모션속도</span><br>
+                                        data-aos-duration
+                                    </li>
+                                    <li class="rows_inp_r mt-15">
+                                        <div id="rb_aos_duration_shop_range" class="rb_range_item"></div>
+                                        <input type="hidden" id="rb_aos_duration_shop" class="co_range_send" name="rb_aos_duration_shop" value="<?php echo htmlspecialchars($view_rb_aos_duration_shop, ENT_QUOTES, 'UTF-8'); ?>">
+                                    </li>
+
+                                    <script type="text/javascript">
+                                        $("#rb_aos_duration_shop_range").slider({
+                                            range: "min",
+                                            min: 0,
+                                            max: 1000,
+                                            value: <?php echo htmlspecialchars($view_rb_aos_duration_shop, ENT_QUOTES, 'UTF-8'); ?>,
+                                            step: 50,
+                                            slide: function(e, ui) {
+                                                $("#rb_aos_duration_shop_range .ui-slider-handle").html(ui.value);
+                                                $("#rb_aos_duration_shop").val(ui.value); // hidden input에 값 업데이트
+                                            }
+                                        });
+
+                                        $("#rb_aos_duration_shop_range .ui-slider-handle").html("<?php echo htmlspecialchars($view_rb_aos_duration_shop, ENT_QUOTES, 'UTF-8'); ?>");
+                                        $("#rb_aos_duration_shop").val("<?php echo htmlspecialchars($view_rb_aos_duration_shop, ENT_QUOTES, 'UTF-8'); ?>"); // 초기값 설정
+                                    </script>
+                                    <div class="cb"></div>
+                                </ul>
+
+
+
+                                <ul class="rows_inp_lr mt-5">
+                                    <li class="rows_inp_l rows_inp_l_span">
+                                        <span class="font-B">옵션</span><br>
+                                        data-aos-once
+                                    </li>
+                                    <li class="rows_inp_r mt-5">
+                                        <input type="checkbox" name="rb_aos_once_shop" id="rb_aos_once_shop" class="magic-checkbox" value="1" <?php echo ($view_rb_aos_once_shop === 1 ? 'checked' : ''); ?>>
+                                        <label for="rb_aos_once_shop">스크롤시 최초 1회만 적용</label>
+                                    </li>
+
+                                    <div class="cb"></div>
+                                </ul>
+
+
+                            </div>
+
+
+                        </div>
+
+                        <div <?php if(defined('_SHOP_')) { // 영카트?>style="display:none !important;" <?php } else { ?>style="display:block !important;" <?php } ?>>
+
+                            <?php
+                            // 표시용 기본값(화면에만 채움)
+                            $view_rb_aos_motion = ($rb_aos_motion !== '' ? $rb_aos_motion : 'fade-up');
+                            $view_rb_aos_offset = ($rb_aos_offset !== '' ? $rb_aos_offset : '-200');
+                            $view_rb_aos_delay = ($rb_aos_delay !== '' ? $rb_aos_delay : '50');
+                            $view_rb_aos_duration = ($rb_aos_duration !== '' ? $rb_aos_duration : '500');
+                            $view_rb_aos_easing = ($rb_aos_easing !== '' ? $rb_aos_easing : 'ease-in-out-cubic');
+                            $view_rb_aos_anchor = ($rb_aos_anchor !== '' ? $rb_aos_anchor : 'top-center');
+
+                            // // 체크박스 표시용 기본값(화면에만)
+                            // // DB 값이 ''(미저장) 이면: mirror=true(체크), once=false(미체크)
+                            $view_rb_aos_mirror = ($rb_aos_mirror === '' ? 1 : (int)$rb_aos_mirror);
+                            $view_rb_aos_once = ($rb_aos_once === '' ? 0 : (int)$rb_aos_once);
+                            ?>
+
+                            <div class="config_wrap">
+
+                                <ul class="rows_inp_lr ">
+                                    <li class="rows_inp_l rows_inp_l_span">
+                                        <span class="font-B">사용여부</span><br>
+                                        AOS
+                                    </li>
+                                    <li class="rows_inp_r mt-5">
+                                        <input type="radio" name="rb_aos_use" id="rb_aos_use_0" class="magic-radio" value="0" <?php echo ($rb_aos_use === 0 ? 'checked' : ''); ?>>
+                                        <label for="rb_aos_use_0">사용안함</label>
+                                        <input type="radio" name="rb_aos_use" id="rb_aos_use_1" class="magic-radio" value="1" <?php echo ($rb_aos_use === 1 ? 'checked' : ''); ?>>
+                                        <label for="rb_aos_use_1">사용함</label>
+                                    </li>
+
+                                    <div class="cb"></div>
+                                </ul>
+
+                                <ul class="rows_inp_lr mt-5">
+                                    <li class="rows_inp_l rows_inp_l_span">
+                                        <span class="font-B">모션타입</span><br>
+                                        data-aos
+                                    </li>
+                                    <li class="rows_inp_r mt-5">
+                                        <select id="rb_aos_motion" name="rb_aos_motion" class="select select_tiny w50">
+                                            <option value="" <?php echo ($view_rb_aos_motion === '' ? 'selected' : ''); ?>>모션선택</option>
+                                            <option value="" disabled>──── Fade ────</option>
+                                            <option value="fade" <?php echo ($view_rb_aos_motion === 'fade' ? 'selected' : ''); ?>>fade</option>
+                                            <option value="fade-up" <?php echo ($view_rb_aos_motion === 'fade-up' ? 'selected' : ''); ?>>fade-up</option>
+                                            <option value="fade-down" <?php echo ($view_rb_aos_motion === 'fade-down' ? 'selected' : ''); ?>>fade-down</option>
+                                            <option value="fade-left" <?php echo ($view_rb_aos_motion === 'fade-left' ? 'selected' : ''); ?>>fade-left</option>
+                                            <option value="fade-right" <?php echo ($view_rb_aos_motion === 'fade-right' ? 'selected' : ''); ?>>fade-right</option>
+                                            <option value="fade-up-right" <?php echo ($view_rb_aos_motion === 'fade-up-right' ? 'selected' : ''); ?>>fade-up-right</option>
+                                            <option value="fade-up-left" <?php echo ($view_rb_aos_motion === 'fade-up-left' ? 'selected' : ''); ?>>fade-up-left</option>
+                                            <option value="fade-down-right" <?php echo ($view_rb_aos_motion === 'fade-down-right' ? 'selected' : ''); ?>>fade-down-right</option>
+                                            <option value="fade-down-left" <?php echo ($view_rb_aos_motion === 'fade-down-left' ? 'selected' : ''); ?>>fade-down-left</option>
+                                            <option value="" disabled>──── Flip ────</option>
+                                            <option value="flip-up" <?php echo ($view_rb_aos_motion === 'flip-up' ? 'selected' : ''); ?>>flip-up</option>
+                                            <option value="flip-down" <?php echo ($view_rb_aos_motion === 'flip-down' ? 'selected' : ''); ?>>flip-down</option>
+                                            <option value="flip-left" <?php echo ($view_rb_aos_motion === 'flip-left' ? 'selected' : ''); ?>>flip-left</option>
+                                            <option value="flip-right" <?php echo ($view_rb_aos_motion === 'flip-right' ? 'selected' : ''); ?>>flip-right</option>
+                                            <option value="" disabled>──── Zoom In ────</option>
+                                            <option value="zoom-in" <?php echo ($view_rb_aos_motion === 'zoom-in' ? 'selected' : ''); ?>>zoom-in</option>
+                                            <option value="zoom-in-up" <?php echo ($view_rb_aos_motion === 'zoom-in-up' ? 'selected' : ''); ?>>zoom-in-up</option>
+                                            <option value="zoom-in-down" <?php echo ($view_rb_aos_motion === 'zoom-in-down' ? 'selected' : ''); ?>>zoom-in-down</option>
+                                            <option value="zoom-in-left" <?php echo ($view_rb_aos_motion === 'zoom-in-left' ? 'selected' : ''); ?>>zoom-in-left</option>
+                                            <option value="zoom-in-right" <?php echo ($view_rb_aos_motion === 'zoom-in-right' ? 'selected' : ''); ?>>zoom-in-right</option>
+                                            <option value="" disabled>──── Zoom Out ────</option>
+                                            <option value="zoom-out" <?php echo ($view_rb_aos_motion === 'zoom-out' ? 'selected' : ''); ?>>zoom-out</option>
+                                            <option value="zoom-out-up" <?php echo ($view_rb_aos_motion === 'zoom-out-up' ? 'selected' : ''); ?>>zoom-out-up</option>
+                                            <option value="zoom-out-down" <?php echo ($view_rb_aos_motion === 'zoom-out-down' ? 'selected' : ''); ?>>zoom-out-down</option>
+                                            <option value="zoom-out-left" <?php echo ($view_rb_aos_motion === 'zoom-out-left' ? 'selected' : ''); ?>>zoom-out-left</option>
+                                            <option value="zoom-out-right" <?php echo ($view_rb_aos_motion === 'zoom-out-right' ? 'selected' : ''); ?>>zoom-out-right</option>
+                                        </select>
+                                    </li>
+
+                                    <div class="cb"></div>
+                                </ul>
+
+                                <input type="hidden" class="tiny_input" name="rb_aos_offset" value="-300">
+                                <input type="hidden" class="tiny_input" name="rb_aos_easing" value="ease">
+                                <input type="hidden" class="tiny_input" name="rb_aos_mirror" value="0">
+                                <input type="hidden" class="tiny_input" name="rb_aos_anchor_placement" value="top-center">
+
+                                <ul class="rows_inp_lr mt-10">
+                                    <li class="rows_inp_l rows_inp_l_span">
+                                        <span class="font-B">지연시간</span><br>
+                                        data-aos-delay
+                                    </li>
+                                    <li class="rows_inp_r mt-15">
+                                        <div id="rb_aos_delay_range" class="rb_range_item"></div>
+                                        <input type="hidden" id="rb_aos_delay" class="co_range_send" name="rb_aos_delay" value="<?php echo htmlspecialchars($view_rb_aos_delay, ENT_QUOTES, 'UTF-8'); ?>">
+                                    </li>
+
+                                    <script type="text/javascript">
+                                        $("#rb_aos_delay_range").slider({
+                                            range: "min",
+                                            min: 0,
+                                            max: 1000,
+                                            value: <?php echo htmlspecialchars($view_rb_aos_delay, ENT_QUOTES, 'UTF-8'); ?>,
+                                            step: 50,
+                                            slide: function(e, ui) {
+                                                $("#rb_aos_delay_range .ui-slider-handle").html(ui.value);
+                                                $("#rb_aos_delay").val(ui.value); // hidden input에 값 업데이트
+                                            }
+                                        });
+
+                                        $("#rb_aos_delay_range .ui-slider-handle").html("<?php echo htmlspecialchars($view_rb_aos_delay, ENT_QUOTES, 'UTF-8'); ?>");
+                                        $("#rb_aos_delay").val("<?php echo htmlspecialchars($view_rb_aos_delay, ENT_QUOTES, 'UTF-8'); ?>"); // 초기값 설정
+                                    </script>
+                                    <div class="cb"></div>
+                                </ul>
+
+                                <ul class="rows_inp_lr mt-10">
+                                    <li class="rows_inp_l rows_inp_l_span">
+                                        <span class="font-B">모션속도</span><br>
+                                        data-aos-duration
+                                    </li>
+                                    <li class="rows_inp_r mt-15">
+                                        <div id="rb_aos_duration_range" class="rb_range_item"></div>
+                                        <input type="hidden" id="rb_aos_duration" class="co_range_send" name="rb_aos_duration" value="<?php echo htmlspecialchars($view_rb_aos_duration, ENT_QUOTES, 'UTF-8'); ?>">
+                                    </li>
+
+                                    <script type="text/javascript">
+                                        $("#rb_aos_duration_range").slider({
+                                            range: "min",
+                                            min: 0,
+                                            max: 1000,
+                                            value: <?php echo htmlspecialchars($view_rb_aos_duration, ENT_QUOTES, 'UTF-8'); ?>,
+                                            step: 50,
+                                            slide: function(e, ui) {
+                                                $("#rb_aos_duration_range .ui-slider-handle").html(ui.value);
+                                                $("#rb_aos_duration").val(ui.value); // hidden input에 값 업데이트
+                                            }
+                                        });
+
+                                        $("#rb_aos_duration_range .ui-slider-handle").html("<?php echo htmlspecialchars($view_rb_aos_duration, ENT_QUOTES, 'UTF-8'); ?>");
+                                        $("#rb_aos_duration").val("<?php echo htmlspecialchars($view_rb_aos_duration, ENT_QUOTES, 'UTF-8'); ?>"); // 초기값 설정
+                                    </script>
+                                    <div class="cb"></div>
+                                </ul>
+
+
+
+                                <ul class="rows_inp_lr mt-5">
+                                    <li class="rows_inp_l rows_inp_l_span">
+                                        <span class="font-B">옵션</span><br>
+                                        data-aos-once
+                                    </li>
+                                    <li class="rows_inp_r mt-5">
+                                        <input type="checkbox" name="rb_aos_once" id="rb_aos_once" class="magic-checkbox" value="1" <?php echo ($view_rb_aos_once === 1 ? 'checked' : ''); ?>>
+                                        <label for="rb_aos_once">스크롤시 최초 1회만 적용</label>
+                                    </li>
+
+                                    <div class="cb"></div>
+                                </ul>
+
+
+                            </div>
+
+                        </div>
+
+                    </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
                     <?php if (!defined("_INDEX_")) { ?>
                     <ul class="rb_config_sec" <?php if(defined('_SHOP_')) { // 영카트?>style="display:block !important;" <?php } else { ?>style="display:none !important;" <?php } ?>>
 
@@ -3477,7 +3831,6 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         var co_main_width = $('select[name="co_main_width"]').val();
         var co_tb_width = $('select[name="co_tb_width"]').val();
 
-
         var co_padding_top = $('input[name="co_padding_top"]').val();
         var co_padding_top_sub = $('input[name="co_padding_top_sub"]').val();
         var co_padding_top_shop = $('input[name="co_padding_top_shop"]').val();
@@ -3487,6 +3840,28 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         var co_padding_btm_sub = $('input[name="co_padding_btm_sub"]').val();
         var co_padding_btm_shop = $('input[name="co_padding_btm_shop"]').val();
         var co_padding_btm_sub_shop = $('input[name="co_padding_btm_sub_shop"]').val();
+
+        // AOS(일반)
+        var rb_aos_use = $('input[name="rb_aos_use"]:checked').val();
+        var rb_aos_motion = $('select[name="rb_aos_motion"]').val();
+        var rb_aos_offset = $('input[name="rb_aos_offset"]').val();
+        var rb_aos_delay = $('input[name="rb_aos_delay"]').val();
+        var rb_aos_duration = $('input[name="rb_aos_duration"]').val();
+        var rb_aos_easing = $('input[name="rb_aos_easing"]').val();
+        var rb_aos_mirror = $('input[name="rb_aos_mirror"]').is(':checked') ? '1' : '0';
+        var rb_aos_once = $('input[name="rb_aos_once"]').is(':checked') ? '1' : '0';
+        var rb_aos_anchor_placement = $('input[name="rb_aos_anchor_placement"]').val();
+
+        // AOS(마켓)
+        var rb_aos_use_shop = $('input[name="rb_aos_use_shop"]:checked').val();
+        var rb_aos_motion_shop = $('select[name="rb_aos_motion_shop"]').val();
+        var rb_aos_offset_shop = $('input[name="rb_aos_offset_shop"]').val();
+        var rb_aos_delay_shop = $('input[name="rb_aos_delay_shop"]').val();
+        var rb_aos_duration_shop = $('input[name="rb_aos_duration_shop"]').val();
+        var rb_aos_easing_shop = $('input[name="rb_aos_easing_shop"]').val();
+        var rb_aos_mirror_shop = $('input[name="rb_aos_mirror_shop"]').is(':checked') ? '1' : '0';
+        var rb_aos_once_shop = $('input[name="rb_aos_once_shop"]').is(':checked') ? '1' : '0';
+        var rb_aos_anchor_placement_shop = $('input[name="rb_aos_anchor_placement_shop"]').val();
 
         <?php if(defined('_SHOP_')) { // 영카트?>
         var co_menu_shop = $('input[name="co_menu_shop"]:checked').val();
@@ -3624,6 +3999,28 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                 "co_sidemenu_padding_shop": co_sidemenu_padding_shop,
                 "co_sidemenu_hide": co_sidemenu_hide,
                 "co_sidemenu_hide_shop": co_sidemenu_hide_shop,
+
+                // AOS (일반)
+                "rb_aos_use": rb_aos_use,
+                "rb_aos_motion": rb_aos_motion,
+                "rb_aos_offset": rb_aos_offset,
+                "rb_aos_delay": rb_aos_delay,
+                "rb_aos_duration": rb_aos_duration,
+                "rb_aos_easing": rb_aos_easing,
+                "rb_aos_mirror": rb_aos_mirror,
+                "rb_aos_once": rb_aos_once,
+                "rb_aos_anchor_placement": rb_aos_anchor_placement,
+
+                // AOS (마켓)
+                "rb_aos_use_shop": rb_aos_use_shop,
+                "rb_aos_motion_shop": rb_aos_motion_shop,
+                "rb_aos_offset_shop": rb_aos_offset_shop,
+                "rb_aos_delay_shop": rb_aos_delay_shop,
+                "rb_aos_duration_shop": rb_aos_duration_shop,
+                "rb_aos_easing_shop": rb_aos_easing_shop,
+                "rb_aos_mirror_shop": rb_aos_mirror_shop,
+                "rb_aos_once_shop": rb_aos_once_shop,
+                "rb_aos_anchor_placement_shop": rb_aos_anchor_placement_shop,
 
                 "mod_type": mod_type,
             },

@@ -24,7 +24,16 @@ if(defined('_INDEX_')) { // index에서만 실행
 }
 
 include_once(G5_PATH.'/rb/rb.mod/alarm/alarm.php'); // 실시간 알림
+
+if(defined('_INDEX_') || $co_id || $fr_id) {
+    if ($rb_aos_exists) {
+        echo '<script src="'.G5_URL.'/rb/rb.mod/aos/aos.set.php"></script>'."\n";
+        echo '<link rel="stylesheet" href="'.G5_URL.'/rb/rb.mod/aos/aos.css">'."\n";
+        echo '<script src="'.G5_URL.'/rb/rb.mod/aos/aos.js"></script>'."\n";
+    }
+}
 ?>
+
 
 
     <?php

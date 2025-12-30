@@ -383,10 +383,13 @@ if(G5_DEVICE_BUTTON_DISPLAY && !G5_IS_MOBILE) { ?>
 if ($config['cf_analytics']) {
     echo $config['cf_analytics'];
 }
+
+if ($rb_aos_exists) {
+    echo '<script>AOS.init();</script>';
+}
 ?>
 
 <!-- } 하단 끝 -->
-
 
 <script>
     $(function() {

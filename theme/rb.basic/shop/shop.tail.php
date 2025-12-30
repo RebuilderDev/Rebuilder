@@ -380,6 +380,10 @@ $file = $_SERVER['SCRIPT_NAME'];
 if ($config['cf_analytics']) {
     echo $config['cf_analytics'];
 }
+
+if ($rb_aos_exists) {
+    echo '<script>AOS.init();</script>';
+}
 ?>
 
 <script src="<?php echo G5_JS_URL; ?>/sns.js"></script>
