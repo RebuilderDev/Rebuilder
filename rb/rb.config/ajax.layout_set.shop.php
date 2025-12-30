@@ -1,5 +1,6 @@
 <?php
 include_once('../../common.php');
+
 include_once(G5_LIB_PATH.'/latest.lib.php');
 include_once(G5_LIB_PATH.'/poll.lib.php');
 
@@ -24,22 +25,56 @@ if (isset($rb_core['theme'])) {
 
 $result_data = array();
 
+
+// 렌더링 속도 최적화
+$modules_by_layout = array();
+$sections_by_layout = array();
+
+if (!empty($layouts)) {
+    $layout_ids = array_map(function($id) {
+        return "'" . sql_real_escape_string($id) . "'";
+    }, $layouts);
+    $layout_ids_str = implode(',', $layout_ids);
+
+    $all_modules_sql = "SELECT * FROM rb_module_shop
+        WHERE md_layout IN ({$layout_ids_str})
+        AND md_theme = '{$theme_name}'
+        AND md_layout_name = '{$layout_name}'
+        ORDER BY md_layout, md_order_id, md_id ASC";
+
+    $modules_result = sql_query($all_modules_sql);
+    while ($row = sql_fetch_array($modules_result)) {
+        $modules_by_layout[$row['md_layout']][] = $row;
+    }
+
+    $all_sections_sql = "SELECT * FROM rb_section_shop
+        WHERE sec_layout IN ({$layout_ids_str})
+        AND sec_theme = '{$theme_name}'
+        AND sec_layout_name = '{$layout_name}'
+        ORDER BY sec_layout, sec_order_id, sec_id ASC";
+
+    $sections_result = sql_query($all_sections_sql);
+    while ($row = sql_fetch_array($sections_result)) {
+        $sections_by_layout[$row['sec_layout']][] = $row;
+    }
+}
+
+
+
 foreach ($layouts as $layout_no) {
     $cache_file = G5_DATA_PATH . "/cache/rb_layout_shop_" . $layout_no . ".php";
     $hash_file = G5_DATA_PATH . "/cache/rb_layout_shop_" . $layout_no . ".hash";
 
     // checksum using modules + sections
-    $layout_sql_mod = "SELECT * FROM rb_module_shop WHERE md_layout = '{$layout_no}' AND md_theme = '{$theme_name}' AND md_layout_name = '{$layout_name}' ORDER BY md_order_id, md_id ASC";
-    $layout_sql_sec = "SELECT * FROM rb_section_shop WHERE sec_layout = '{$layout_no}' AND sec_theme = '{$theme_name}' AND sec_layout_name = '{$layout_name}' ORDER BY sec_order_id, sec_id ASC";
+    $layout_rows_mod = isset($modules_by_layout[$layout_no]) ? $modules_by_layout[$layout_no] : array();
+    $layout_rows_sec = isset($sections_by_layout[$layout_no]) ? $sections_by_layout[$layout_no] : array();
 
-    $layout_rows_mod = sql_query($layout_sql_mod);
-    $layout_rows_sec = sql_query($layout_sql_sec);
 
     $layout_structure = '';
-    while ($row = sql_fetch_array($layout_rows_mod)) {
+    foreach ($layout_rows_mod as $row) {
         $layout_structure .= 'M:' . implode('|', $row) . ';';
     }
-    while ($row = sql_fetch_array($layout_rows_sec)) {
+    foreach ($layout_rows_sec as $row) {
         $layout_structure .= 'S:' . implode('|', $row) . ';';
     }
 

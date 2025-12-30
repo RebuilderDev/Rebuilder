@@ -229,7 +229,7 @@ body.sLightBox{overflow:hidden !important;}
 }
 
 .swiper-slide img {
-    width:100%;
+    max-width:100%;
 }
 
 .swiper-pagination-bullet-active {
