@@ -16,7 +16,7 @@ if(G5_COMMUNITY_USE === false) {
     <div class="rb_bo_btm flex_box rb_sub_module" data-layout="rb_bo_btm_<?php echo $bo_table ?>"></div>
     <?php } ?>
     <?php if(isset($co_id) && $co_id) { ?>
-    <div class="rb_co_btm flex_box rb_sub_module" data-layout="rb_co_btm_<?php echo $co_id ?>"></div>
+    <div class="rb_co flex_box" data-layout="rb_co_btm_<?php echo $co_id ?>"></div>
     <?php } ?>
     <?php if(isset($fr_id) && $fr_id) { ?>
     <div class="rb_fr_btm flex_box rb_sub_module" data-layout="rb_fr_btm_<?php echo $fr_id ?>"></div>

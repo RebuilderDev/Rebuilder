@@ -15,7 +15,7 @@ $admin = get_admin("super");
                 <div class="rb_bo_btm flex_box rb_sub_module" data-layout="rb_bo_btm_shop_<?php echo $bo_table ?>"></div>
             <?php } ?>
             <?php if(isset($co_id) && $co_id) { ?>
-                <div class="rb_co_btm flex_box rb_sub_module" data-layout="rb_co_btm_shop_<?php echo $co_id ?>"></div>
+                <div class="rb_co flex_box" data-layout="rb_co_btm_shop_<?php echo $co_id ?>"></div>
             <?php } ?>
             <?php if(isset($_GET['ca_id']) && $_GET['ca_id']) { ?>
                 <div class="rb_ca_btm flex_box rb_sub_module" data-layout="rb_ca_btm_shop_<?php echo $_GET['ca_id'] ?>"></div>

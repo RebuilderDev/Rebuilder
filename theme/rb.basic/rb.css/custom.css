@@ -850,7 +850,7 @@ select#ct_send_cost {width: 150px;}
 
 #cbp-hrmenu-btm .rb-3d-open > .rb-btm-3d-toggle{background-image: url('../rb.img/icon/arr_up.svg');}
 #cbp-hrmenu-btm .cbp-hrsub-inner > div > ul > li.rb-btm-2d{position: relative;padding-right: 0px;}
-
+.rb_module_wide {padding-left: 0px !important; padding-right: 0px !important;}
 /* } */
 
 @media all and (max-width:1024px){
@@ -1126,9 +1126,9 @@ select#ct_send_cost {width: 150px;}
     /* } */
 
     /* 2.2.5 { */
-    #sit_buy .sit_buy_inner {
-        padding-bottom: 0px;
-    }
+    #sit_buy .sit_buy_inner {padding-bottom: 0px;}
+    .rb_co .content_box {padding-left: 0px !important; padding-right: 0px !important;}
+    .rb_co .rb_section_box {width: 100vw !important; transform: translateX(-50%); left: 50%;}
     /* } */
 
 }

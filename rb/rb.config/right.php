@@ -449,7 +449,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                         <h6 class="font-B">
                         <?php if (defined('_SHOP_')) { // 영카트?>마켓 <?php } ?>AOS 설정
                                 <div class="rb-help" data-open="false">
-                                    <button type="button" class="rb-help-btn" data-img="<?php echo G5_URL ?>/rb/rb.config/image/guide/help-img-aos.gif" data-txt="페이지를 스크롤할 때, 각 모듈을 부드럽게 나타나게 하거나(fade), 위로 올라오거나(slide), 확대(zoom), 뒤집힘(flip) 등의 효과를 줄 수 있어요." data-title="AOS 설정 이란?" data-alt="미리보기" aria-expanded="false">
+                                    <button type="button" class="rb-help-btn" data-img="<?php echo G5_URL ?>/rb/rb.config/image/guide/help-img-aos.gif" data-txt="페이지를 스크롤할 때, 각 모듈에 부드러운 애니메이션을 추가할 수 있어요." data-title="AOS 설정 이란?" data-alt="미리보기" aria-expanded="false">
                                         <svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>
                                             <g fill='none'>
                                                 <path d='M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z' />
@@ -462,8 +462,8 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                         </h6>
                         <h6 class="font-R rb_config_sub_txt">
                             모듈에 AOS를 일괄 적용 합니다.<br>
-                            AOS는 메인, 그룹, 일반(co_id) 페이지에 적용 되며,<br>
-                            일반/마켓 별도 설정이 가능합니다.
+                            AOS는 메인, 그룹, 일반 페이지에 적용 되며,<br>
+                            마켓 별도 설정이 가능합니다.
                         </h6>
 
                         <div <?php if(defined('_SHOP_')) { // 영카트?>style="display:block !important;" <?php } else { ?>style="display:none !important;" <?php } ?>>
