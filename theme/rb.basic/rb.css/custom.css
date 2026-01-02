@@ -851,6 +851,14 @@ select#ct_send_cost {width: 150px;}
 #cbp-hrmenu-btm .rb-3d-open > .rb-btm-3d-toggle{background-image: url('../rb.img/icon/arr_up.svg');}
 #cbp-hrmenu-btm .cbp-hrsub-inner > div > ul > li.rb-btm-2d{position: relative;padding-right: 0px;}
 .rb_module_wide {padding-left: 0px !important; padding-right: 0px !important;}
+.module_display_wrap .swiper-container-horizontal>.swiper-pagination-bullets, .swiper-pagination-custom, .swiper-pagination-fraction {
+    bottom: 20px !important;
+}
+.module_display_wrap .swiper-pagination-bullet {background-color: #fff !important; border:1px solid rgba(0,0,0,0.1) !important; opacity: 0.4}
+.module_display_wrap .swiper-pagination-bullet-active {opacity: 1;}
+#sit_pvi .swiper-button-prev, #sit_pvi .swiper-button-next {color:#000; border-radius: 6px;}
+#sit_pvi .swiper-button-prev {left: 0px !important; border-top-left-radius: 0px; border-bottom-left-radius: 0px;}
+#sit_pvi .swiper-button-next {right: 0px !important; border-top-right-radius: 0px; border-bottom-right-radius: 0px;}
 /* } */
 
 @media all and (max-width:1024px){
