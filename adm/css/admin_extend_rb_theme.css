@@ -460,6 +460,8 @@ select.required{background:url('') top 3px right 3px no-repeat #fff !important}
     .sidx_cs #anc_sidx_ps .btn_list03 {margin: 0 0px 0 0;}
     .new_win .tbl_frm01.tbl_wrap {overflow: inherit;}
     .new_win .tbl_frm01 table {min-width: 100%;}
+    .new_win .tbl_head01.tbl_wrap {overflow-x:inherit;}
+    .new_win .tbl_head01 table {min-width: 100%;}
 }
 
 /* } */
