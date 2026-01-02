@@ -1136,10 +1136,12 @@ if (isset($app['ap_title'], $app['ap_key'], $app['ap_pid']) && $app['ap_title'] 
         $me_id = $me ? $me['new_me_id'] + 1 : 1;
 
         $memo_cont = $title . "\n" . $link_url;
+        $memo_cont_push = $title;
 
         $recv = $recv_id; // 수신 아이디
         $send = $send_id; // 발신 아이디
         $memo = $memo_cont;
+        $memo_push = $memo_cont_push;
 
         // 수신아이디가 관리자이고, 시스템 메세지 일때 수신여부를 체크함 (작업중)
         if($recv == $config['cf_admin'] && $send == "system-msg") {
