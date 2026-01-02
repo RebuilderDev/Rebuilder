@@ -1129,6 +1129,8 @@ select#ct_send_cost {width: 150px;}
     #sit_buy .sit_buy_inner {padding-bottom: 0px;}
     .rb_co .content_box {padding-left: 0px !important; padding-right: 0px !important;}
     .rb_co .rb_section_box {width: 100vw !important; transform: translateX(-50%); left: 50%;}
+    .chat_btn_pos_left {bottom:90px !important;}
+    .chat_btn_pos_right {bottom:90px !important;}
     /* } */
 
 }
