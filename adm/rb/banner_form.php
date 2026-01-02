@@ -49,16 +49,32 @@ include_once(G5_ADMIN_PATH . '/admin.head.php');
         <td>
             <input type="file" name="bn_bimg">
             <?php
-            $bimg_str = "";
-            $bimg = G5_DATA_PATH . "/banners/" . $bn['bn_id'];
-            if (isset($bn['bn_id']) && file_exists($bimg)) {
+            $bimg_str = '';
+
+            $cur_id = isset($bn['bn_id']) ? (int)$bn['bn_id'] : 0;
+
+            // // rb_display 우선, 없으면 banners fallback
+            $bimg = '';
+            if ($cur_id > 0) {
+                $p1 = G5_DATA_PATH . "/rb_display/" . $cur_id;
+                $p2 = G5_DATA_PATH . "/banners/" . $cur_id;
+
+                if (is_file($p1)) $bimg = $p1;
+                else if (is_file($p2)) $bimg = $p2;
+            }
+
+            if ($cur_id > 0 && $bimg && is_file($bimg)) {
                 $size = @getimagesize($bimg);
-                $width = (isset($size[0]) && $size[0] > 750) ? 750 : (isset($size[0]) ? $size[0] : 0);
+                $w0 = (is_array($size) && isset($size[0])) ? (int)$size[0] : 0;
+                $width = ($w0 > 750) ? 750 : $w0;
 
                 echo '<input type="checkbox" name="bn_bimg_del" value="1" id="bn_bimg_del"> <label for="bn_bimg_del">삭제</label>';
-                $bimg_str = '<img src="' . G5_DATA_URL . '/banners/' . $bn['bn_id'] . '?ver=' . G5_SERVER_TIME . '" width="' . $width . '">';
+
+                // // 미리보기는 서빙 엔드포인트로 통일(폴더 변경/차단 대응)
+                $bimg_str = '<img src="' . G5_URL . '/rb/rb.mod/display/displayimg.php?did=' . $cur_id . '&v=' . G5_SERVER_TIME . '" width="' . $width . '">';
             }
-            if (isset($bn['bn_id']) && $bn['bn_id']) {
+
+            if ($cur_id > 0) {
                 echo '<div class="banner_or_img">';
                 echo $bimg_str;
                 echo '</div>';
@@ -134,9 +150,9 @@ include_once(G5_ADMIN_PATH . '/admin.head.php');
         </td>
     </tr>
     <tr>
-        <th scope="row"><label for="bn_ad_ico">AD아이콘</label></th>
+        <th scope="row"><label for="bn_ad_ico">PR아이콘</label></th>
         <td>
-             <?php echo help("배너이미지에 AD 아이콘을 보여줄지 설정 합니다.", 50); ?>
+             <?php echo help("배너이미지에 PR 아이콘을 보여줄지 설정 합니다.", 50); ?>
             <select name="bn_ad_ico" id="bn_ad_ico">
                 <option value="0" <?php echo get_selected(isset($bn['bn_ad_ico']) ? $bn['bn_ad_ico'] : 0, 0); ?>>사용안함</option>
                 <option value="1" <?php echo get_selected(isset($bn['bn_ad_ico']) ? $bn['bn_ad_ico'] : 1, 1); ?>>사용</option>

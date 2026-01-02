@@ -272,7 +272,7 @@ foreach ($layouts as $layout_no) {
                             <ul class="bbs_main_wrap_tit_r"></ul>
                             <div class="cb"></div>
                         </div>
-                        <div class="rb-module-wrap module_banner_wrap md_arrow_<?php echo isset($row_mod['md_arrow_type']) ? $row_mod['md_arrow_type'] : ''; ?>"
+                        <div class="rb-module-wrap module_display_wrap md_arrow_<?php echo isset($row_mod['md_arrow_type']) ? $row_mod['md_arrow_type'] : ''; ?>"
                            style="
                            <?php if(empty($row_mod['md_height']) || isset($row_mod['md_height']) && $row_mod['md_height'] == "auto") { ?>height:auto;<?php } else { ?>height:<?php echo $row_mod['md_height'] ?>px;<?php } ?>
                            <?php if(!empty($row_mod['md_border_color'])) { ?>border-color:<?php echo $row_mod['md_border_color'] ?>; <?php } ?>
