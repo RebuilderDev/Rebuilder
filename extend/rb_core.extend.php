@@ -1866,4 +1866,53 @@ if ($rb_aos_exists) {
     if (isset($rb_aos_shop['once']) && (string)$rb_aos_shop['once'] !== '') $rb_aos_once_shop = (string)$rb_aos_shop['once'];
     if (isset($rb_aos_shop['anchor_placement']) && trim((string)$rb_aos_shop['anchor_placement']) !== '') $rb_aos_anchor_shop = trim((string)$rb_aos_shop['anchor_placement']);
 }
+
+// // rb_display 우선, 없으면 기존 banners 폴더 fallback (기존 유지)
+if (!function_exists('rb_display_file_path')) {
+    function rb_display_file_path($id) {
+        $id = preg_replace('/[^0-9]/', '', (string)$id);
+        if ($id === '') return '';
+        $cands = array(
+            G5_DATA_PATH . '/rb_display/' . $id,
+            G5_DATA_PATH . '/banners/' . $id
+        );
+        for ($i = 0; $i < count($cands); $i++) {
+            if (is_file($cands[$i])) return $cands[$i];
+        }
+        return '';
+    }
+}
+if (!function_exists('rb_design_bg_exists')) {
+    function rb_design_bg_exists($id) {
+        $id = preg_replace('/[^0-9]/', '', (string)$id);
+        if ($id === '') return false;
+        return is_file(G5_DATA_PATH . '/rb_display_design/' . $id);
+    }
+}
+if (!function_exists('rb_int_range')) {
+    function rb_int_range($v, $min, $max, $def) {
+        $n = (int)$v;
+        if ($n < $min || $n > $max) return (int)$def;
+        return $n;
+    }
+}
+if (!function_exists('rb_ratio_sanitize')) {
+    function rb_ratio_sanitize($r) {
+        $r = trim((string)$r);
+        if ($r === '') return '16 / 9';
+        $r = preg_replace('/[^0-9\.\/\s]/', '', $r);
+        $r = trim(preg_replace('/\s+/', ' ', $r));
+        if ($r === '') return '16 / 9';
+        return $r;
+    }
+}
+if (!function_exists('rb_safe_admin_html')) {
+    function rb_safe_admin_html($html) {
+        $html = (string)$html;
+        $html = preg_replace('#<\s*script[^>]*>.*?<\s*/\s*script>#is', '', $html);
+        $html = preg_replace('/on[a-z]+\s*=\s*([\'"]).*?\1/i', '', $html);
+        $html = preg_replace('/javascript\s*:/i', '', $html);
+        return $html;
+    }
+}
 ?>

@@ -72,7 +72,7 @@ $from_record = ($page - 1) * $rows; // 시작 열을 구함
     <tbody>
     <?php
     $sql = " select * from rb_banner
-          order by bn_position, bn_id desc
+          order by bn_id desc
           limit $from_record, $rows  ";
     $result = sql_query($sql);
     for ($i=0; $row=sql_fetch_array($result); $i++) {
