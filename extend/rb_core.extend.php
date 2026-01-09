@@ -542,6 +542,29 @@ function wr_cnt($mb_id, $type){
     return $wr_sum;
 }
 
+//스크랩 갯수
+function rb_get_scrap_count($mb_id)
+{
+    global $g5;
+
+    $mb_id = trim((string)$mb_id);
+    if ($mb_id === '') return 0;
+
+    // // SQL 인젝션 방지
+    if (function_exists('sql_escape_string')) {
+        $mb_id_esc = sql_escape_string($mb_id);
+    } else {
+        // // 혹시 모를 환경 대비(그누보드엔 보통 sql_escape_string 존재)
+        $mb_id_esc = addslashes($mb_id);
+    }
+
+    $sql = " select count(*) as cnt
+             from {$g5['scrap_table']}
+             where mb_id = '{$mb_id_esc}' ";
+
+    $row = sql_fetch($sql);
+    return isset($row['cnt']) ? (int)$row['cnt'] : 0;
+}
 
 // 생성된 게시판 목록조회
 function rb_board_list($bo_tables) {

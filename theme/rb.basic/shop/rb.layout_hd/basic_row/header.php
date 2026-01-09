@@ -138,7 +138,9 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_SHOP_URL.'/rb.layout_hd/
 
                     <li class="member_info_wrap">
                         <?php if($is_member) { ?>
+                        <?php if(isset($config['cf_use_point']) && $config['cf_use_point'] == 1) { ?>
                         <a href="<?php echo G5_BBS_URL ?>/member_confirm.php?url=<?php echo G5_BBS_URL ?>/register_form.php" class="font-B notranslate"><?php echo $member['mb_nick'] ?></a>　<a href="<?php echo G5_BBS_URL; ?>/point.php" target="_blank" class="win_point"><span class="font-H"><?php echo number_format($member['mb_point']); ?> P</span></a>
+                        <?php } ?>
                         <?php } ?>
                     </li>
                     <li class="my_btn_wrap">

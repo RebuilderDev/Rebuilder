@@ -176,80 +176,6 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout_hd/'.$rb
                     </ul>
                 </nav>
 
-                <script>
-                (function () {
-                    var lastRect = null;
-                    var lastOpenEl = null;
-
-                    function getRect(el) {
-                        if (!el) return null;
-                        return el.getBoundingClientRect();
-                    }
-
-                    // // hover 들어갈 때: "이전 위치"에서 출발시켜서 현재 위치로 이동
-                    $(document).on('mouseenter', '#cbp-hrmenu .cbp-hrsub-inner > div > ul > li', function () {
-                        var $li = $(this);
-                        var $panel = $li.children('.cbp-hrsub-3');
-
-                        if (!$panel.length) return;
-
-                        // // 현재 타겟 위치(열렸을 때 최종 위치의 rect)
-                        // // 패널이 absolute라서, 일단 보이게 만든 뒤 rect를 잡는 게 안전
-                        $panel.addClass('rb-anim-prep');
-
-                        // // 강제 reflow
-                        $panel[0].offsetWidth;
-
-                        var curRect = getRect($panel[0]);
-
-                        // // 이전 패널 좌표가 있으면: 그 지점에서 시작하도록 translate를 걸어줌
-                        if (lastRect && curRect) {
-                            var dx = lastRect.left - curRect.left;
-                            var dy = lastRect.top - curRect.top;
-
-                            // // 시작점 세팅(이전 위치에서 출발)
-                            $panel.css({
-                                transition: 'none',
-                                transform: 'translate3d(' + dx + 'px,' + dy + 'px,0)',
-                                opacity: 0
-                            });
-
-                            // // reflow 후 트랜지션 복원 + 최종 위치로
-                            $panel[0].offsetWidth;
-
-                            $panel.css({
-                                transition: '',
-                                transform: '',
-                                opacity: ''
-                            });
-                        }
-
-                        // // 현재 열린 패널 기록
-                        lastOpenEl = $panel[0];
-                    });
-
-                    // // hover 나갈 때: 마지막 열린 패널 위치를 저장
-                    $(document).on('mouseleave', '#cbp-hrmenu .cbp-hrsub-inner > div > ul > li', function () {
-                        var $panel = $(this).children('.cbp-hrsub-3');
-                        if (!$panel.length) return;
-
-                        // // 닫히기 직전 rect 저장
-                        var r = getRect($panel[0]);
-                        if (r) lastRect = r;
-                    });
-
-                    // // 1차 메뉴가 닫힐 때도 마지막 위치 저장(안전)
-                    $(document).on('mouseleave', '#cbp-hrmenu > ul > li', function () {
-                        if (lastOpenEl) {
-                            var r = getRect(lastOpenEl);
-                            if (r) lastRect = r;
-                        }
-                    });
-                })();
-                </script>
-
-
-
 
                 <!-- 퀵메뉴 { -->
                 <ul class="snb_wrap">
@@ -391,7 +317,9 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout_hd/'.$rb
                     </li>
                     <li class="member_info_wrap">
                         <?php if($is_member) { ?>
+                        <?php if(isset($config['cf_use_point']) && $config['cf_use_point'] == 1) { ?>
                         <a href="<?php echo G5_BBS_URL ?>/member_confirm.php?url=<?php echo G5_BBS_URL ?>/register_form.php" class="font-B notranslate"><?php echo $member['mb_nick'] ?></a>　<a href="<?php echo G5_BBS_URL; ?>/point.php" target="_blank" class="win_point"><span class="font-H"><?php echo number_format($member['mb_point']); ?> P</span></a>
+                        <?php } ?>
                         <?php } ?>
                     </li>
                     <li class="my_btn_wrap">

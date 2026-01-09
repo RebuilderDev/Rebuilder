@@ -47,6 +47,7 @@ if($rb_header_code == "#ffffff" || $rb_header_code == "#FFFFFF" || $rb_header_co
 .<?php echo $rb_header_set ?> #header .gnb_wrap .snb_wrap .qm_wrap a svg path {fill:<?php echo $rb_header_a ?>}
 .<?php echo $rb_header_set ?> #header .gnb_wrap .snb_wrap .qm_wrap button svg path {fill:<?php echo $rb_header_a ?>}
 .<?php echo $rb_header_set ?> #header .gnb_all_menu {<?php echo $arr_w ?>}
+.<?php echo $rb_header_set ?> #header .gnb_wrap .snb_q_wrap a {color:<?php echo $rb_header_a ?>}
 
 .<?php echo $rb_header_set ?> .co_header_ex_dd {background-color:<?php echo $rb_header_code ?>; color:<?php echo $rb_header_txt ?>; border:1px solid rgba(0,0,0,0.1);}
 .<?php echo $rb_header_set ?> .co_header_ex_dd svg path {fill:<?php echo $rb_header_a ?>;}

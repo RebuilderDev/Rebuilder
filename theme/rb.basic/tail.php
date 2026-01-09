@@ -384,8 +384,10 @@ if ($config['cf_analytics']) {
     echo $config['cf_analytics'];
 }
 
-if ($rb_aos_exists) {
-    echo '<script>AOS.init();</script>';
+if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id) && $co_id) {
+    if ($rb_aos_exists) {
+        echo '<script>AOS.init();</script>';
+    }
 }
 ?>
 
