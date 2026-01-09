@@ -31,7 +31,7 @@ if(defined('_INDEX_')) { // index에서만 실행
 
 include_once(G5_PATH.'/rb/rb.mod/alarm/alarm.php'); // 실시간 알림
 
-if(defined('_INDEX_') || isset($gr_id) && $gr_id || isset($co_id) && $co_id) {
+if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id) && $co_id) {
     if ($rb_aos_exists) {
         echo '<script src="'.G5_URL.'/rb/rb.mod/aos/aos.set.php"></script>'."\n";
         echo '<link rel="stylesheet" href="'.G5_URL.'/rb/rb.mod/aos/aos.css">'."\n";
@@ -135,4 +135,6 @@ if(defined('_INDEX_') || isset($gr_id) && $gr_id || isset($co_id) && $co_id) {
         <?php if (defined("_INDEX_")) { ?><span style="margin-top:-70px;" class="pc"></span><?php } ?>
         <?php } ?>
 
-        <?php if (!defined("_INDEX_")) { ?><h2 id="container_title"><?php echo get_head_title($g5['title']); ?></h2><?php } ?>
+        <?php if (!defined("_INDEX_")) { ?>
+        <h2 id="container_title"><?php echo get_head_title($g5['title']); ?></h2>
+        <?php } ?>
