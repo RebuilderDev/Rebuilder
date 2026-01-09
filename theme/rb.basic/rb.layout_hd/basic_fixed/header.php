@@ -263,7 +263,10 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout_hd/'.$rb
                                     </ul>
                                     <ul class="rb_my_p_ul2 flex_r">
                                         <a href="<?php echo G5_URL ?>/rb/home.php?mb_id=<?php echo $member['mb_id'] ?>&ca=fw" alt="구독자" class="font-B font-12">
-                                        <?php echo trim(str_replace('구독', '', sb_cnt($member['mb_id']))); ?>
+                                        <?php
+                                        $cnt = trim(str_replace('구독', '', (string)sb_cnt($member['mb_id'])));
+                                        echo ($cnt === '' ? '0명' : $cnt);
+                                        ?>
                                         </a>
                                     </ul>
                                 </div>

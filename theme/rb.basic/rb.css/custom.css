@@ -861,7 +861,7 @@ select#ct_send_cost {width: 150px;}
 #sit_pvi .swiper-button-next {right: 0px !important; border-top-right-radius: 0px; border-bottom-right-radius: 0px;}
 .sb_fw_wrap ul img {width: 100%;}
 .rb_search_wraps_inner button {top:14px; right:20px;}
-.rb_shop_list {padding: 0px !important;}
+.rb_shop_list {padding-left: 0px; padding-right: 0px}
 #sps_sch {display: none;}
 .sps_img .prd_detail {display: none;}
 #sps > ol{display: grid;gap: 30px;}
@@ -888,6 +888,7 @@ select#ct_send_cost {width: 150px;}
 .review_detail_in {width: 600px !important; margin-left: 0px !important; transform: translateX(-50%);}
 .rd_cls {top:3px !important; padding: 15px 25px !important;}
 .review_detail_in h3 {padding:15px 25px !important;}
+#ssch_q:focus {border:0px !important;}
 /* } */
 
 @media all and (max-width:1024px){
