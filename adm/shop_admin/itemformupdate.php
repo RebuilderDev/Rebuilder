@@ -539,16 +539,18 @@ if ($w == "" || $w == "u")
 
 // 선택옵션등록
 if($option_count) {
-    $comma = '';
-    $sql = " INSERT INTO {$g5['g5_shop_item_option_table']}
-                    ( `io_id`, `io_type`, `it_id`, `io_price`, `io_stock_qty`, `io_noti_qty`, `io_use` )
-                VALUES ";
-    for($i=0; $i<$option_count; $i++) {
-        $sql .= $comma . " ( '".sql_real_escape_string($_POST['opt_id'][$i])."', '0', '$it_id', '".sql_real_escape_string($_POST['opt_price'][$i])."', '".sql_real_escape_string($_POST['opt_stock_qty'][$i])."', '".sql_real_escape_string($_POST['opt_noti_qty'][$i])."', '".sql_real_escape_string($_POST['opt_use'][$i])."' )";
-        $comma = ' , ';
-    }
+    if(!(isset($_POST['it_types']) && $_POST['it_types'] == '1')) {
+        $comma = '';
+        $sql = " INSERT INTO {$g5['g5_shop_item_option_table']}
+                        ( `io_id`, `io_type`, `it_id`, `io_price`, `io_stock_qty`, `io_noti_qty`, `io_use` )
+                    VALUES ";
+        for($i=0; $i<$option_count; $i++) {
+            $sql .= $comma . " ( '".sql_real_escape_string($_POST['opt_id'][$i])."', '0', '$it_id', '".sql_real_escape_string($_POST['opt_price'][$i])."', '".sql_real_escape_string($_POST['opt_stock_qty'][$i])."', '".sql_real_escape_string($_POST['opt_noti_qty'][$i])."', '".sql_real_escape_string($_POST['opt_use'][$i])."' )";
+            $comma = ' , ';
+        }
 
-    sql_query($sql);
+        sql_query($sql);
+    }
 }
 
 // 추가옵션등록

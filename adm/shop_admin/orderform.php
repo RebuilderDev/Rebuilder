@@ -343,8 +343,9 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             </tr>
                             <tr>
                                 <th scope="col">항목</th>
-                                <th scope="col">일수</th>
+
                                 <th scope="col">금액</th>
+                                <th scope="col">일수</th>
                                 <th scope="col">수량</th>
 
                                 <th scope="col">합계</th>
@@ -355,7 +356,13 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             <tbody>
 
 
-
+                            <tr>
+                                <td nowrap>기본</td>
+                                <td nowrap><?php echo number_format($opt_price); ?></td>
+                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
+                                <td nowrap>-</td>
+                                <td nowrap><?php echo number_format($opt_price * $opt['ct_qty']); ?></td>
+                            </tr>
 
                             <?php if(isset($opt['ct_user_txt1']) && $opt['ct_user_txt1']) { ?>
                             <?php
@@ -368,8 +375,8 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             ?>
                             <tr <?php if(isset($opt['ct_user_qty1']) && $opt['ct_user_qty1'] < 1) { ?>style="opacity:0.3"<?php } ?>>
                                 <td nowrap><?php echo $opt['ct_user_txt1'] ?></td>
-                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
                                 <td nowrap><?php echo number_format($opt['ct_user_pri1']); ?></td>
+                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
                                 <td nowrap><?php echo $opt['ct_user_qty1'] ?></td>
                                 <td nowrap><?php echo number_format($tot1); ?></td>
 
@@ -386,10 +393,9 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             ?>
                             <tr <?php if(isset($opt['ct_user_qty2']) && $opt['ct_user_qty2'] < 1) { ?>style="opacity:0.3"<?php } ?>>
                                 <td nowrap><?php echo $opt['ct_user_txt2'] ?></td>
-                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
                                 <td nowrap><?php echo number_format($opt['ct_user_pri2']); ?></td>
+                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
                                 <td nowrap><?php echo $opt['ct_user_qty2'] ?></td>
-
                                 <td nowrap><?php echo number_format($tot2); ?></td>
                             </tr>
                             <?php } ?>
@@ -404,10 +410,9 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             ?>
                             <tr <?php if(isset($opt['ct_user_qty3']) && $opt['ct_user_qty3'] < 1) { ?>style="opacity:0.3"<?php } ?>>
                                 <td nowrap><?php echo $opt['ct_user_txt3'] ?></td>
-                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
                                 <td nowrap><?php echo number_format($opt['ct_user_pri3']); ?></td>
+                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
                                 <td nowrap><?php echo $opt['ct_user_qty3'] ?></td>
-
                                 <td nowrap><?php echo number_format($tot3); ?></td>
                             </tr>
                             <?php } ?>
@@ -415,20 +420,27 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             <?php if(isset($opt['ct_date_extra_price']) && $opt['ct_date_extra_price']) { ?>
                             <tr>
                                 <td nowrap>특수일</td>
-                                <td nowrap colspan="4"><?php echo number_format($opt['ct_date_extra_price']); ?></td>
+                                <td nowrap><?php echo number_format($opt['ct_date_extra_price'] / $opt['ct_date_d']); ?></td>
+                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
+                                <td nowrap>-</td>
+                                <td nowrap><?php echo number_format($opt['ct_date_extra_price']); ?></td>
                             </tr>
                             <?php } ?>
 
                             <?php if(isset($opt['ct_date_extra_price2']) && $opt['ct_date_extra_price2']) { ?>
                             <tr>
                                 <td nowrap>시즌</td>
-                                <td nowrap colspan="4"><?php echo number_format($opt['ct_date_extra_price2']); ?></td>
+                                <td nowrap><?php echo number_format($opt['ct_date_extra_price2'] / $opt['ct_date_d']); ?></td>
+                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
+                                <td nowrap>-</td>
+                                <td nowrap><?php echo number_format($opt['ct_date_extra_price2']); ?></td>
                             </tr>
                             <?php } ?>
 
                             <?php if(isset($opt['ct_date_t']) && $opt['ct_date_t']) { ?>
                             <tr>
-                                <td nowrap colspan="5"><?php echo $opt['ct_date_t'] ?></td>
+                                <td nowrap>선택항목</td>
+                                <td nowrap colspan="4"><?php echo $opt['ct_date_t'] ?></td>
                             </tr>
                             <?php } ?>
 

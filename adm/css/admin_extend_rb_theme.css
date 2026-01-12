@@ -1,3 +1,56 @@
+:root {
+    --rb-adm-bg: #f2f4f6;
+    --rb-adm-bg-w: #ffffff;
+    --rb-adm-font: 'font-R', sans-serif;
+    --rb-adm-th-color: #4e5968;
+    --rb-adm-th-bg: #f0f5f9;
+    --rb-adm-th-font: 'font-B', sans-serif;
+    --rb-adm-th-font-size: 14px;
+    --rb-adm-th-border-color: #d1d6db;
+    --rb-adm-td-color: #6b7684 --rb-adm-td-bg:#ffffff;
+    --rb-adm-td-font: 'font-R', sans-serif;
+    --rb-adm-td-font-size: 12px;
+    --rb-adm-td-border-color: #d1d6db;
+    --rb-adm-menu-bg: #191d20;
+
+    --rb-adm-hd-bg: #ffffff;
+    --rb-adm-body-bg: #ffffff;
+
+    --rb-card-bg: #fff;
+    --rb-card-bd: #e9edf2;
+    --rb-text: #101113;
+    --rb-info-text: #7b8794;
+    --rb-dim: #7b8794;
+    --rb-strong: #202d33;
+    --rb-shadow: 0;
+    --rb-radius: 10px;
+
+    --rb-adm-input-bg: transparent;
+    --rb-adm-input-color: #000;
+    --rb-adm-input-border-color: #ddd;
+
+    --rb-adm-text-rev: #7b8794;
+
+    --rb-sb-thumb: rgba(255, 255, 255, 0.2);
+    --rb-sb-thumb-hover: rgba(255, 255, 255, 0.4);
+    --rb-sb-track: transparent;
+
+    --rb-sb2-thumb: rgba(0, 0, 0, 0.1);
+    --rb-sb2-thumb-hover: rgba(0, 0, 0, 0.2);
+    --rb-sb2-track: transparent;
+
+    --rb-adm-main-btn-bg: #191d20;
+    --rb-adm-main-btn-color: #ffffff;
+
+    --rb-adm-snb-bg: #f0f5f9;
+    --rb-adm-snb-border: 1px solid rgba(0, 0, 0, 0.1);
+    --rb-adm-snb-color: #000;
+
+    --rb-adm-sc1: rgba(0, 0, 0, 0.15);
+    --rb-adm-sc2: rgba(0, 0, 0, 0.06);
+}
+
+
 body {font-family:'font-R', sans-serif;}
 h1, h2, h3, h4, h5, h6 {font-family:'font-R', sans-serif;}
 input, button {font-family:'font-R', sans-serif;}

@@ -814,7 +814,7 @@ $(function(){
         <?php
         $opt_subject = explode(',', $it['it_option_subject']);
         ?>
-        <tr>
+        <tr id="item_option_row">
             <th scope="row">상품선택옵션</th>
             <td colspan="2">
                 <div class="sit_option tbl_frm01">
@@ -2047,6 +2047,96 @@ window.addEventListener('DOMContentLoaded', function() {
     var sel3 = document.getElementById('ca_id3');
     if(sel2) updateCategoryInfoSub(sel2);
     if(sel3) updateCategoryInfoSub(sel3);
+});
+
+// 예약 타입 선택 시 상품선택옵션 처리
+$('input[name="it_types"]').on('change', function() {
+    if ($(this).val() == '1' && $(this).is(':checked')) {
+        // 예약 선택 시
+        $('#item_option_row').hide();
+
+        // 기존 옵션 데이터 백업
+        if (!$('#itemoptionlist').data('backup')) {
+            $('#itemoptionlist').data('backup', $('#itemoptionlist').html());
+        }
+
+        // 옵션 목록 비우기
+        $('#itemoptionlist').empty();
+
+    } else {
+        // 일반상품 선택 시
+        $('#item_option_row').show();
+
+        // 백업된 옵션 복구
+        var backup = $('#itemoptionlist').data('backup');
+        if (backup) {
+            $('#itemoptionlist').html(backup);
+        }
+    }
+});
+
+// 페이지 로드 시 초기 상태 확인
+$(document).ready(function() {
+    if ($('input[name="it_types"]:checked').val() == '1') {
+        $('#item_option_row').hide();
+        $('#itemoptionlist').empty();
+    }
+});
+
+// 예약 타입 선택 시 상품선택옵션 처리
+$('input[name="it_types"]').on('change', function() {
+    if ($(this).val() == '1' && $(this).is(':checked')) {
+        // 예약 선택 시
+        $('#item_option_row').hide();
+
+        // 기존 옵션 데이터 백업
+        if (!$('#itemoptionlist').data('backup')) {
+            $('#itemoptionlist').data('backup', $('#itemoptionlist').html());
+        }
+
+        // 옵션 목록 비우기
+        $('#itemoptionlist').empty();
+
+    } else {
+        // 일반상품 선택 시
+        $('#item_option_row').show();
+
+        // 백업된 옵션 복구
+        var backup = $('#itemoptionlist').data('backup');
+        if (backup) {
+            $('#itemoptionlist').html(backup);
+        }
+    }
+});
+
+// 페이지 로드 시 초기 상태 확인
+$(document).ready(function() {
+    if ($('input[name="it_types"]:checked').val() == '1') {
+        $('#item_option_row').hide();
+        $('#itemoptionlist').empty();
+    }
+});
+
+// form submit 시 예약 타입이면 일반옵션 관련 input 값을 비움
+$('#fitemform').on('submit', function(e) {
+    if ($('input[name="it_types"]:checked').val() == '1') {
+
+        // 일반옵션(상품선택옵션) 관련 input 값을 모두 빈값으로
+        // 옵션 제목
+        $('#opt1_subject').val('');
+        $('#opt2_subject').val('');
+        $('#opt3_subject').val('');
+
+        $('#opt1').val('');
+        $('#opt2').val('');
+        $('#opt3').val('');
+
+        $('input[name="opt_id[]"]').val('');
+        $('input[name="opt_price[]"]').val('');
+        $('input[name="opt_stock_qty[]"]').val('');
+        $('input[name="opt_noti_qty[]"]').val('');
+        $('input[name="opt_use[]"]').prop('checked', false);
+    }
 });
 </script>
 
