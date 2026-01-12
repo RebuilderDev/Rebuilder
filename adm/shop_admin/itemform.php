@@ -393,7 +393,10 @@ if(!sql_query(" select it_skin from {$g5['g5_shop_item_table']} limit 1", false)
                 <input type="radio" name="it_types" value="1" id="it_types1" <?php echo ($it['it_types'] == 1) ? "checked" : ""; ?>> <label for="it_types1">예약</label>
                 <?php } ?>
                 <?php if(isset($rb_item_con['con_is']) && $rb_item_con['con_is'] == 1) { ?>
-                <input type="radio" name="it_types" value="2" id="it_types2" <?php echo ($it['it_types'] == 2) ? "checked" : ""; ?>> <label for="it_types3">파일</label>
+                <input type="radio" name="it_types" value="2" id="it_types2" <?php echo ($it['it_types'] == 2) ? "checked" : ""; ?>> <label for="it_types2">파일</label>
+                <?php } ?>
+                <?php if(isset($rb_item_con['mov_is']) && $rb_item_con['mov_is'] == 1) { ?>
+                <input type="radio" name="it_types" value="3" id="it_types3" <?php echo ($it['it_types'] == 3) ? "checked" : ""; ?>> <label for="it_types3">동영상</label>
                 <?php } ?>
 
             </td>

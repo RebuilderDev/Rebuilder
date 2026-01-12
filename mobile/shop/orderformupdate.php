@@ -120,13 +120,13 @@ $i_send_coupon  = isset($_POST['od_send_coupon']) ? abs((int) $_POST['od_send_co
 $i_temp_point = isset($_POST['od_temp_point']) ? (int) $_POST['od_temp_point'] : 0;
 
 // 주문금액이 상이함
-
 if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) { //예약상품일 경우 합계방식을 변경함
     $sql = " SELECT
             SUM(
                 IF(io_type = 1,
                     (COALESCE(io_price, 0) * COALESCE(ct_qty, 1)),
                     ((COALESCE(ct_price, 0) + COALESCE(io_price, 0)) * COALESCE(ct_qty, 1))
+                    + COALESCE(ct_date_extra_price, 0) + COALESCE(ct_date_extra_price2, 0)
                     + (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0) * IF(COALESCE(ct_opt_opt,0) = 1, COALESCE(ct_qty,1), 1))
                     + (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0) * IF(COALESCE(ct_opt_opt,0) = 1, COALESCE(ct_qty,1), 1))
                     + (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0) * IF(COALESCE(ct_opt_opt,0) = 1, COALESCE(ct_qty,1), 1))
@@ -141,7 +141,6 @@ if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) { //예약상�
         COUNT(distinct it_id) as cart_count
             from {$g5['g5_shop_cart_table']} where od_id = '$tmp_cart_id' and ct_select = '1' ";
 }
-
 
 $row = sql_fetch($sql);
 

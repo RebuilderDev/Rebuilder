@@ -81,13 +81,15 @@ include_once('./_head.php');
                 $is_opt_opt = (isset($row['it_opt_opt']) && (int)$row['it_opt_opt'] === 1) ? 1 : 0;
                 $mul_qty = $is_opt_opt ? " * ct_qty" : "";
 
-                $price_calc = "((ct_price + io_price) * ct_qty +
-                               (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0){$mul_qty}) +
-                               (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0){$mul_qty}) +
-                               (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0){$mul_qty}))";
+                $price_calc = "(((ct_price + io_price) * ct_qty) + COALESCE(ct_date_extra_price, 0) + COALESCE(ct_date_extra_price2, 0) +
+               (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0){$mul_qty}) +
+               (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0){$mul_qty}) +
+               (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0){$mul_qty}))";
+
             }
 
             $sql = "SELECT SUM(IF(io_type = 1, (io_price * ct_qty), $price_calc)) AS price,
+                           SUM(IF(io_type = 1, io_price, 0)) AS iop,
                            SUM(ct_point * ct_qty) AS point,
                            SUM(ct_qty) AS qty
                     FROM {$g5['g5_shop_cart_table']}
@@ -151,6 +153,7 @@ include_once('./_head.php');
 
             $point      = $sum['point'];
             $sell_price = $sum['price'];
+            $sell_iop = $sum['iop'];
         ?>
 
         <tr>
@@ -176,7 +179,7 @@ include_once('./_head.php');
                 </div>
             </td>
             <td class="td_num"><?php echo number_format($sum['qty']); ?></td>
-            <td class="td_numbig text_right">
+            <td class="text_right" nowrap>
             <?php
                 //예약정보 로드
                 if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {

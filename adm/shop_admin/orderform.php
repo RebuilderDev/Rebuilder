@@ -199,14 +199,27 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
             $rowspan = sql_num_rows($res);;
 
 
+            // 합계금액 계산 (예약상품일 경우 합계방식 변경)
+            $price_calc = "((ct_price + io_price) * ct_qty)";
+            if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($row['ct_types']) && $row['ct_types'] == 1) {
 
-            // 합계금액 계산
-            $sql = " select SUM(IF(io_type = 1, (io_price * ct_qty), ((ct_price + io_price) * ct_qty))) as price,
-                            SUM(ct_qty) as qty
-                        from {$g5['g5_shop_cart_table']}
-                        where it_id = '{$row['it_id']}'
-                          and od_id = '{$od['od_id']}' ";
-            $sum = sql_fetch($sql);
+                        // it_opt_opt==1 일때만 인원추가금에 ct_qty(일수) 곱
+                        $is_opt_opt = (isset($row['ct_opt_opt']) && (int)$row['ct_opt_opt'] === 1) ? 1 : 0;
+                        $mul_qty = $is_opt_opt ? " * ct_qty" : "";
+
+                        $price_calc = "(((ct_price + io_price) * ct_qty) + COALESCE(ct_date_extra_price, 0) + COALESCE(ct_date_extra_price2, 0) +
+                               (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0){$mul_qty}) +
+                               (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0){$mul_qty}) +
+                               (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0){$mul_qty}))";
+            }
+
+            $sql = "SELECT SUM(IF(io_type = 1, (io_price * ct_qty), $price_calc)) AS price,
+                                   SUM(ct_qty) AS qty
+                            FROM {$g5['g5_shop_cart_table']}
+                            WHERE it_id = '{$row['it_id']}'
+                              AND od_id = '$od_id'";
+
+	       $sum = sql_fetch($sql);
 
             // 배송비
             switch($row['ct_send_cost'])
@@ -238,40 +251,39 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                     $opt_price = $opt['ct_price'] + $opt['io_price'];
 
                 // 소계
-
                 if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($opt['ct_types']) && $opt['ct_types'] == 1) {
 
+                    // 기본 가격 계산
+                    $ct_price_base = $opt_price * $opt['ct_qty'];
 
-                            // // 옵션 합계 계산
-                            $opt_opt   = (isset($opt['ct_opt_opt']) && (int)$opt['ct_opt_opt'] === 1) ? 1 : 0;
-                            $date_d    = (isset($opt['ct_date_d']) && (int)$opt['ct_date_d'] > 0) ? (int)$opt['ct_date_d'] : 0;
+                    // 옵션 합계 계산
+                    $opt_opt   = (isset($opt['ct_opt_opt']) && (int)$opt['ct_opt_opt'] === 1) ? 1 : 0;
+                    $mul_days = $opt_opt ? $opt['ct_qty'] : 1;
 
-                            $u_pri1 = isset($opt['ct_user_pri1']) ? (int)$opt['ct_user_pri1'] : 0;
-                            $u_qty1 = isset($opt['ct_user_qty1']) ? (int)$opt['ct_user_qty1'] : 0;
+                    $u_pri1 = isset($opt['ct_user_pri1']) ? (int)$opt['ct_user_pri1'] : 0;
+                    $u_qty1 = isset($opt['ct_user_qty1']) ? (int)$opt['ct_user_qty1'] : 0;
+                    $u_pri2 = isset($opt['ct_user_pri2']) ? (int)$opt['ct_user_pri2'] : 0;
+                    $u_qty2 = isset($opt['ct_user_qty2']) ? (int)$opt['ct_user_qty2'] : 0;
+                    $u_pri3 = isset($opt['ct_user_pri3']) ? (int)$opt['ct_user_pri3'] : 0;
+                    $u_qty3 = isset($opt['ct_user_qty3']) ? (int)$opt['ct_user_qty3'] : 0;
 
-                            $u_pri2 = isset($opt['ct_user_pri2']) ? (int)$opt['ct_user_pri2'] : 0;
-                            $u_qty2 = isset($opt['ct_user_qty2']) ? (int)$opt['ct_user_qty2'] : 0;
+                    $ct_user_pri1_p = $u_pri1 * $u_qty1 * $mul_days;
+                    $ct_user_pri2_p = $u_pri2 * $u_qty2 * $mul_days;
+                    $ct_user_pri3_p = $u_pri3 * $u_qty3 * $mul_days;
+                    $ct_user_pri_p = $ct_user_pri1_p + $ct_user_pri2_p + $ct_user_pri3_p;
 
-                            $u_pri3 = isset($opt['ct_user_pri3']) ? (int)$opt['ct_user_pri3'] : 0;
-                            $u_qty3 = isset($opt['ct_user_qty3']) ? (int)$opt['ct_user_qty3'] : 0;
+                    // 날짜별 추가요금
+                    $ct_date_extra_price = isset($opt['ct_date_extra_price']) ? (int)$opt['ct_date_extra_price'] : 0;
+                    $ct_date_extra_price2 = isset($opt['ct_date_extra_price2']) ? (int)$opt['ct_date_extra_price2'] : 0;
 
-                            $mul_days = ($opt_opt === 1 && $date_d > 0) ? $date_d : 1;
-
-                            $opt_sum = 0;
-                            $opt_sum += ($u_pri1 * $u_qty1) * $mul_days;
-                            $opt_sum += ($u_pri2 * $u_qty2) * $mul_days;
-                            $opt_sum += ($u_pri3 * $u_qty3) * $mul_days;
-
-
-                            if ($opt_sum > 0) {
-                                $ct_price_opt = $opt_price * $opt['ct_qty'];
-                                $ct_price['stotal'] = $ct_price_opt + $opt_sum;
-                            } else {
-                                $ct_price['stotal'] = $opt_price * $opt['ct_qty'];
-                            }
-
-
-
+                    // io_type에 따른 분기
+                    if($opt['io_type']) {
+                        // 추가옵션: 단순 계산
+                        $ct_price['stotal'] = $opt_price * $opt['ct_qty'];
+                    } else {
+                        // 선택옵션: 복잡한 계산
+                        $ct_price['stotal'] = $ct_price_base + $ct_date_extra_price + $ct_date_extra_price2 + $ct_user_pri_p;
+                    }
 
                 } else {
                     $ct_price['stotal'] = $opt_price * $opt['ct_qty'];
@@ -297,23 +309,29 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                 <?php } ?>
                 <td class="td_left">
 
+                    <label for="ct_chk_<?php echo $chk_cnt; ?>" class="sound_only"><?php echo get_text($opt['ct_option']); ?></label>
+                    <input type="checkbox" name="ct_chk[<?php echo $chk_cnt; ?>]" id="ct_chk_<?php echo $chk_cnt; ?>" value="<?php echo $chk_cnt; ?>" class="sct_sel_<?php echo $i; ?>">
+                    <input type="hidden" name="ct_id[<?php echo $chk_cnt; ?>]" value="<?php echo $opt['ct_id']; ?>">
+                    <?php echo get_text($opt['ct_option']); ?>
+
                     <?php if(isset($opt['ct_types']) && $opt['ct_types'] == 1) { ?>
 
                     <?php if($k == 0) { ?>
 
-                        <div class="tbl_head01 tbl_wrap" style="width:300px">
+                        <div class="tbl_head01 tbl_wrap" style="min-width:350px; width:100%; margin-top:10px;">
 
 
                             <table>
                             <colgroup>
-                                <col style="width:40%;">
+                                <col style="width:20%;">
+                                <col style="width:20%;">
                                 <col style="width:20%;">
                                 <col style="width:20%;">
                                 <col style="width:20%;">
                             </colgroup>
                             <thead>
                             <tr>
-                                <th colspan="4">
+                                <th colspan="5">
                                     <strong class="" style="display:block; text-align:center; color:#ff0000;">
                                     <?php if(isset($opt['ct_date_e']) && $opt['ct_date_e'] == '0000-00-00') { ?>
                                         <?php echo $opt['ct_date_s'] ?> (<?php echo $opt['ct_date_d'] ?>일)
@@ -325,8 +343,10 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             </tr>
                             <tr>
                                 <th scope="col">항목</th>
+                                <th scope="col">일수</th>
                                 <th scope="col">금액</th>
                                 <th scope="col">수량</th>
+
                                 <th scope="col">합계</th>
                             </tr>
 
@@ -348,10 +368,11 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             ?>
                             <tr <?php if(isset($opt['ct_user_qty1']) && $opt['ct_user_qty1'] < 1) { ?>style="opacity:0.3"<?php } ?>>
                                 <td nowrap><?php echo $opt['ct_user_txt1'] ?></td>
+                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
                                 <td nowrap><?php echo number_format($opt['ct_user_pri1']); ?></td>
                                 <td nowrap><?php echo $opt['ct_user_qty1'] ?></td>
-
                                 <td nowrap><?php echo number_format($tot1); ?></td>
+
                             </tr>
                             <?php } ?>
 
@@ -365,6 +386,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             ?>
                             <tr <?php if(isset($opt['ct_user_qty2']) && $opt['ct_user_qty2'] < 1) { ?>style="opacity:0.3"<?php } ?>>
                                 <td nowrap><?php echo $opt['ct_user_txt2'] ?></td>
+                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
                                 <td nowrap><?php echo number_format($opt['ct_user_pri2']); ?></td>
                                 <td nowrap><?php echo $opt['ct_user_qty2'] ?></td>
 
@@ -382,6 +404,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             ?>
                             <tr <?php if(isset($opt['ct_user_qty3']) && $opt['ct_user_qty3'] < 1) { ?>style="opacity:0.3"<?php } ?>>
                                 <td nowrap><?php echo $opt['ct_user_txt3'] ?></td>
+                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
                                 <td nowrap><?php echo number_format($opt['ct_user_pri3']); ?></td>
                                 <td nowrap><?php echo $opt['ct_user_qty3'] ?></td>
 
@@ -389,11 +412,27 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             </tr>
                             <?php } ?>
 
-                            <?php if(isset($opt['ct_date_t']) && $opt['ct_date_t']) { ?>
+                            <?php if(isset($opt['ct_date_extra_price']) && $opt['ct_date_extra_price']) { ?>
                             <tr>
-                                <td nowrap colspan="4"><?php echo $opt['ct_date_t'] ?></td>
+                                <td nowrap>특수일</td>
+                                <td nowrap colspan="4"><?php echo number_format($opt['ct_date_extra_price']); ?></td>
                             </tr>
                             <?php } ?>
+
+                            <?php if(isset($opt['ct_date_extra_price2']) && $opt['ct_date_extra_price2']) { ?>
+                            <tr>
+                                <td nowrap>시즌</td>
+                                <td nowrap colspan="4"><?php echo number_format($opt['ct_date_extra_price2']); ?></td>
+                            </tr>
+                            <?php } ?>
+
+                            <?php if(isset($opt['ct_date_t']) && $opt['ct_date_t']) { ?>
+                            <tr>
+                                <td nowrap colspan="5"><?php echo $opt['ct_date_t'] ?></td>
+                            </tr>
+                            <?php } ?>
+
+
 
                             </tbody>
                             </table>
@@ -403,10 +442,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
 
                 <?php } ?>
 
-                    <label for="ct_chk_<?php echo $chk_cnt; ?>" class="sound_only"><?php echo get_text($opt['ct_option']); ?></label>
-                    <input type="checkbox" name="ct_chk[<?php echo $chk_cnt; ?>]" id="ct_chk_<?php echo $chk_cnt; ?>" value="<?php echo $chk_cnt; ?>" class="sct_sel_<?php echo $i; ?>">
-                    <input type="hidden" name="ct_id[<?php echo $chk_cnt; ?>]" value="<?php echo $opt['ct_id']; ?>">
-                    <?php echo get_text($opt['ct_option']); ?>
+
                 </td>
                 <td class="td_mngsmall"><?php echo $opt['ct_status']; ?></td>
                 <td class="td_num">

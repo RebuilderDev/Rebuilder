@@ -102,6 +102,7 @@ if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) { //예약상�
                 IF(io_type = 1,
                     (COALESCE(io_price, 0) * COALESCE(ct_qty, 1)),
                     ((COALESCE(ct_price, 0) + COALESCE(io_price, 0)) * COALESCE(ct_qty, 1))
+                    + COALESCE(ct_date_extra_price, 0) + COALESCE(ct_date_extra_price2, 0)
                     + (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0) * IF(COALESCE(ct_opt_opt,0) = 1, COALESCE(ct_qty,1), 1))
                     + (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0) * IF(COALESCE(ct_opt_opt,0) = 1, COALESCE(ct_qty,1), 1))
                     + (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0) * IF(COALESCE(ct_opt_opt,0) = 1, COALESCE(ct_qty,1), 1))

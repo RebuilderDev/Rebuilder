@@ -283,6 +283,95 @@ else // 장바구니에 담기
             $ct_select_time = '0000-00-00 00:00:00';
         }
 
+        // ========================================
+        // 날짜별 추가요금 + 시즌별 추가요금 계산
+        // ========================================
+        $date_extra_price = 0;
+        $season_extra_price = 0;
+
+        if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+            if (isset($it['it_types']) && $it['it_types'] == 1) {
+                $ct_date_s = isset($_POST['ct_date_s']) ? trim(strip_tags($_POST['ct_date_s'])) : '';
+                $ct_date_e = isset($_POST['ct_date_e']) ? trim(strip_tags($_POST['ct_date_e'])) : '';
+
+                if($ct_date_s) {
+                    // 날짜별 추가요금
+                    $table_name = 'rb_reservation_date_price';
+
+                    $sql_price = " SELECT * FROM `$table_name`
+                                   WHERE it_id = '$it_id'
+                                   AND dp_use = 1
+                                   ORDER BY dp_date_from ";
+                    $result_price = sql_query($sql_price, false);
+
+                    $date_prices = array();
+                    if($result_price) {
+                        while($row_price = sql_fetch_array($result_price)) {
+                            $date_from = $row_price['dp_date_from'];
+                            $date_to = $row_price['dp_date_to'];
+                            $extra_price = (int)$row_price['dp_price'];
+
+                            $start_ts = strtotime($date_from);
+                            $end_ts = strtotime($date_to);
+
+                            if($start_ts && $end_ts) {
+                                for($ts = $start_ts; $ts <= $end_ts; $ts += 86400) {
+                                    $date_key = date('Y-m-d', $ts);
+                                    $date_prices[$date_key] = $extra_price;
+                                }
+                            }
+                        }
+                    }
+
+                    // 시즌별 추가요금
+                    $sql_season = " SELECT sd.*, ss.ss_price
+                                   FROM `rb_reservation_season_date` sd
+                                   INNER JOIN `rb_reservation_season` ss ON sd.ss_id = ss.ss_id
+                                   WHERE sd.sd_use = 1 AND ss.ss_use = 1
+                                   ORDER BY sd.sd_date_from ";
+                    $result_season = sql_query($sql_season, false);
+
+                    $season_prices = array();
+                    if($result_season) {
+                        while($row_season = sql_fetch_array($result_season)) {
+                            $date_from = $row_season['sd_date_from'];
+                            $date_to = $row_season['sd_date_to'];
+                            $season_price = (int)$row_season['ss_price'];
+
+                            $start_ts = strtotime($date_from);
+                            $end_ts = strtotime($date_to);
+
+                            if($start_ts && $end_ts) {
+                                for($ts = $start_ts; $ts <= $end_ts; $ts += 86400) {
+                                    $date_key = date('Y-m-d', $ts);
+                                    $season_prices[$date_key] = $season_price;
+                                }
+                            }
+                        }
+                    }
+
+                    // 선택된 날짜 범위의 추가요금 계산
+                    $start_date = strtotime($ct_date_s);
+                    $end_date = $ct_date_e ? strtotime($ct_date_e) : $start_date;
+
+                    for($ts = $start_date; $ts <= $end_date; $ts += 86400) {
+                        $check_date = date('Y-m-d', $ts);
+
+                        // 날짜별 추가요금
+                        if(isset($date_prices[$check_date])) {
+                            $date_extra_price += $date_prices[$check_date];
+                        }
+
+                        // 시즌별 추가요금
+                        if(isset($season_prices[$check_date])) {
+                            $season_extra_price += $season_prices[$check_date];
+                        }
+                    }
+                }
+            }
+        }
+        // ========================================
+
         // 장바구니에 Insert
         $comma = '';
 
@@ -312,6 +401,8 @@ else // 장바구니에 담기
                 $columns[] = "ct_user_pri1";
                 $columns[] = "ct_user_pri2";
                 $columns[] = "ct_user_pri3";
+                $columns[] = "ct_date_extra_price"; // 추가
+                $columns[] = "ct_date_extra_price2"; // 추가
             }
         }
 
@@ -444,6 +535,8 @@ else // 장바구니에 담기
                     $values[] = "'$ct_user_pri1'";
                     $values[] = "'$ct_user_pri2'";
                     $values[] = "'$ct_user_pri3'";
+                    $values[] = "'$date_extra_price'"; // 추가
+                    $values[] = "'$season_extra_price'"; // 추가
                 }
             }
 

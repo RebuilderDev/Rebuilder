@@ -72,10 +72,10 @@ if($od['od_pg'] == 'lg') {
                         $is_opt_opt = (isset($row['ct_opt_opt']) && (int)$row['ct_opt_opt'] === 1) ? 1 : 0;
                         $mul_qty = $is_opt_opt ? " * ct_qty" : "";
 
-                        $price_calc = "((ct_price + io_price) * ct_qty +
-                                       (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0){$mul_qty}) +
-                                       (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0){$mul_qty}) +
-                                       (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0){$mul_qty}))";
+                        $price_calc = "(((ct_price + io_price) * ct_qty) + COALESCE(ct_date_extra_price, 0) + COALESCE(ct_date_extra_price2, 0) +
+                               (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0){$mul_qty}) +
+                               (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0){$mul_qty}) +
+                               (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0){$mul_qty}))";
                     }
 
                     $sql = "SELECT SUM(IF(io_type = 1, (io_price * ct_qty), $price_calc)) AS price,
@@ -85,6 +85,7 @@ if($od['od_pg'] == 'lg') {
                               AND od_id = '$od_id'";
 
 	                $sum = sql_fetch($sql);
+
 
 	                // 배송비
 	                switch($row['ct_send_cost'])
@@ -124,10 +125,10 @@ if($od['od_pg'] == 'lg') {
                     }
 
 	                for($k=0; $opt=sql_fetch_array($res); $k++) {
-	                    if($opt['io_type'])
-	                        $opt_price = $opt['io_price'];
-	                    else
-	                        $opt_price = $opt['ct_price'] + $opt['io_price'];
+                        if($opt['io_type'])
+                            $opt_price = $opt['io_price'];
+                        else
+                            $opt_price = $opt['ct_price'] + $opt['io_price'];
 
                         if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
                             if(isset($opt['ct_types']) && $opt['ct_types'] == 1) {
@@ -144,10 +145,14 @@ if($od['od_pg'] == 'lg') {
 
                                 $ct_user_pri_p = $ct_user_pri1_p + $ct_user_pri2_p + $ct_user_pri3_p;
 
+                                // 날짜별 추가요금
+                                $ct_date_extra_price = isset($opt['ct_date_extra_price']) ? (int)$opt['ct_date_extra_price'] : 0;
+                                $ct_date_extra_price2 = isset($opt['ct_date_extra_price2']) ? (int)$opt['ct_date_extra_price2'] : 0;
+
                                 if($opt['io_type']) {
                                     $sell_price = $opt_price * $opt['ct_qty'];
                                 } else {
-                                    $sell_price = $sell_price_re2 + $ct_user_pri_p;
+                                    $sell_price = $sell_price_re2 + $ct_date_extra_price + $ct_date_extra_price2 + $ct_user_pri_p;
                                 }
 
                             } else {
@@ -157,9 +162,8 @@ if($od['od_pg'] == 'lg') {
                             $sell_price = $opt_price * $opt['ct_qty'];
                         }
 
-	                    $point = $opt['ct_point'] * $opt['ct_qty'];
-
-	                    if($k == 0) {
+                        $point = $opt['ct_point'] * $opt['ct_qty'];
+                        if($k == 0) {
 	            ?>
 	            <?php } ?>
 	            <tr>
@@ -183,7 +187,7 @@ if($od['od_pg'] == 'lg') {
 	                <td headers="th_itprice" class="td_numbig text_right"><?php echo number_format($opt_price); ?></td>
 	                <td headers="th_itpt" class="td_numbig text_right"><?php echo number_format($point); ?></td>
 	                <td headers="th_itsd" class="td_dvr"><?php echo $ct_send_cost; ?></td>
-	                <td headers="th_itsum" class="td_numbig text_right">
+	                <td headers="th_itsum" class="text_right" nowrap>
 	                   <?php
                             //예약정보 로드
                             if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
