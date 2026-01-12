@@ -5,7 +5,6 @@ include_once('./_common.php');
 auth_check_menu($auth, $sub_menu, "w");
 add_stylesheet('<link rel="stylesheet" href="./css/style.css">', 0);
 
-
 $g5['title'] = '빌더설정';
 include_once (G5_ADMIN_PATH.'/admin.head.php');
 
@@ -62,8 +61,10 @@ $pg_anchor = '<ul class="anchor">
                             ?>
                             <?php echo !empty($key_info['key_no']) ? $key_info['key_no'] : '라이선스키가 없습니다. DB업데이트를 진행해주세요.'; ?>
                             <?php if(!empty($key_info['key_no'])) { ?>
-                            　<a href="javascript:void(0);" class="btn_frmline" style="height:25px; line-height:25px;" id="data-copy">복사하기</a>
+                             <br><a href="javascript:void(0);" class="btn_frmline" style="height:25px; line-height:25px;" id="data-copy">복사하기</a>
                              <a href="https://rebuilder.co.kr" target="_blank" class="btn_frmline" style="height:25px; line-height:25px;">라이선스키 등록</a>
+                             <a href="javascript:void(0);" class="btn_frmline" style="height:25px; line-height:25px;" id="data-new">재발급</a>
+
 
                             <input type="hidden" id="data-area" class="data-area" value="<?php echo !empty($key_info['key_no']) ? $key_info['key_no'] : ''; ?>">
                             <script>
@@ -79,6 +80,23 @@ $pg_anchor = '<ul class="anchor">
                                         }
                                     });
 
+                                });
+
+                                // 재발급 기능
+                                $('#data-new').click(function() {
+                                    if (typeof rb_confirm === 'function') {
+                                        // rb_confirm 함수가 있으면 사용
+                                        rb_confirm('라이선스키를 재발급 하시겠습니까?\n기존 키는 사용할 수 없으며, 라이선스 서버에 자동 등록 됩니다.').then(function(ok) {
+                                            if (ok) {
+                                                location.href = './rb_key_regenerate.php';
+                                            }
+                                        });
+                                    } else {
+                                        // rb_confirm 함수가 없으면 기본 confirm 사용
+                                        if (confirm('라이선스키를 재발급 하시겠습니까?\n기존 키는 사용할 수 없으며, 라이선스 서버에 자동 등록 됩니다.')) {
+                                            location.href = './rb_key_regenerate.php';
+                                        }
+                                    }
                                 });
                             </script>
                             <?php } ?>
