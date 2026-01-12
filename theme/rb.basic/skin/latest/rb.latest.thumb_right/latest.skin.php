@@ -95,6 +95,8 @@ $rb_skin['md_auto_is'] 자동롤링 여부(1,0)
                        data-autoplay-time="<?php echo $rb_skin['md_auto_time'] ?>"
                        data-pc-swap="<?php echo $rb_skin['md_swiper_is'] ?>"
                        data-mo-swap="<?php echo $rb_skin['md_swiper_is'] ?>"
+                       data-pc-speed="<?php echo $rb_skin['md_speed'] ?>"
+                       data-mo-speed="<?php echo $rb_skin['md_speed'] ?>"
                     >
                         <div class="rb_swiper_inner">
                             <div class="rb-swiper-wrapper swiper-wrapper">

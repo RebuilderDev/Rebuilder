@@ -183,6 +183,9 @@ while ($row = sql_fetch_array($result)) {
             $fw = isset($btn['fontw']) ? (string)$btn['fontw'] : 'font-R';
             if (!in_array($fw, array('font-R','font-B','font-H'), true)) $fw = 'font-R';
 
+            // 버튼 링크의 새창 설정 (btn['new_win'] 사용)
+            $btn_new_win = isset($btn['new_win']) && $btn['new_win'] ? ' target="_blank" rel="noopener"' : '';
+
             $pad_btn = ($scale_use === 1)
                 ? 'calc('.$py.'px * var(--rb-scale,1)) calc('.$px.'px * var(--rb-scale,1))'
                 : ($py.'px '.$px.'px');
@@ -213,7 +216,7 @@ while ($row = sql_fetch_array($result)) {
             echo '            <div class="rb_bd_out_btn_wrap" style="text-align:'.$btn_align.';">' . PHP_EOL;
 
             if ($btn_link !== '') {
-                echo '              <a class="rb_bd_out_btn '.$fw.'" href="'.$btn_link.'"'.$display_new_win.' style="'.$btn_style.'">'.get_text($btn_text).'</a>' . PHP_EOL;
+                echo '              <a class="rb_bd_out_btn '.$fw.'" href="'.$btn_link.'"'.$btn_new_win.' style="'.$btn_style.'">'.get_text($btn_text).'</a>' . PHP_EOL;
             } else {
                 echo '              <span class="rb_bd_out_btn '.$fw.'" style="'.$btn_style.'">'.get_text($btn_text).'</span>' . PHP_EOL;
             }
@@ -264,7 +267,7 @@ if ($i == 0 && $is_admin) {
 ?>
 <div class="mod_display_wrap">
     <div style="padding:20px; background-color:#f9f9f9; text-align:center; color:#999;">
-        출력할 항목이 없습니다. 관리를 확인해주세요
+        출력할 배너가 없습니다.
     </div>
 </div>
 <?php } ?>
@@ -282,21 +285,51 @@ if ($i == 0 && $is_admin) {
 
 <script>
 (function(){
-    document.addEventListener('click', function(ev){
-        // // a(버튼 링크 등)를 직접 클릭한 경우는 전체링크 동작하지 않게
-        if (ev.target && ev.target.closest && ev.target.closest('a')) return;
+    function initClickHandlers() {
+        // 버튼 링크들의 이벤트 전파 차단
+        var btns = document.querySelectorAll('.rb_bd_out a:not([data-click-bound]), .rb_bd_out_btn:not([data-click-bound])');
+        for (var j = 0; j < btns.length; j++) {
+            btns[j].setAttribute('data-click-bound', 'true');
+            btns[j].addEventListener('click', function(ev) {
+                ev.stopPropagation();
+            }, false);
+        }
 
-        var wrap = ev.target && ev.target.closest ? ev.target.closest('.rb_bd_out[data-href]') : null;
-        if (!wrap) return;
+        // 전체 영역 클릭 처리
+        var wraps = document.querySelectorAll('.rb_bd_out[data-href]:not([data-click-bound])');
 
-        var href = wrap.getAttribute('data-href');
-        if (!href) return;
+        for (var i = 0; i < wraps.length; i++) {
+            wraps[i].setAttribute('data-click-bound', 'true');
 
-        var nw = wrap.getAttribute('data-newwin') === '1';
+            (function(wrap) {
+                wrap.addEventListener('click', function(ev) {
+                    // a 태그나 버튼을 클릭한 경우 전체링크 동작 안함
+                    var target = ev.target;
+                    if (target.tagName === 'A' || target.closest('a') || target.classList.contains('rb_bd_out_btn')) {
+                        return;
+                    }
 
-        if (nw) window.open(href, '_blank', 'noopener');
-        else window.location.href = href;
-    }, false);
+                    var href = wrap.getAttribute('data-href');
+                    if (!href) return;
+
+                    // 이벤트 전파 중지
+                    ev.stopPropagation();
+
+                    var nw = wrap.getAttribute('data-newwin') === '1';
+
+                    if (nw) window.open(href, '_blank', 'noopener');
+                    else window.location.href = href;
+                }, false);
+            })(wraps[i]);
+        }
+    }
+
+    // 초기 실행
+    initClickHandlers();
+
+    // Swiper 초기화 후 재실행
+    setTimeout(initClickHandlers, 100);
+    setTimeout(initClickHandlers, 500);
 })();
 </script>
 
@@ -311,6 +344,7 @@ else {
         slidesPerColumnFill: 'row',
         slidesPerColumn: <?php echo (!empty($rb_skin['md_row'])) ? (int)$rb_skin['md_row'] : 1; ?>,
         touchRatio: <?php echo (!empty($rb_skin['md_swiper_is'])) ? (int)$rb_skin['md_swiper_is'] : 0; ?>,
+        speed: <?php echo (isset($rb_skin['md_speed'])) ? (int)$rb_skin['md_speed'] : 400; ?>,
         observer: true,
         observeParents: true,
         navigation: {
@@ -353,7 +387,19 @@ else {
     }
 
     function updateDesignScale(){
-        var outs = _wrap.querySelectorAll('.rb_bd_out[data-scale="1"]');
+        // // 호출 타이밍에 _wrap이 null일 수 있어서 매번 보정
+        var wrap = _wrap;
+
+        // // _wrap이 없으면 현재 md_id 셀렉터로 다시 찾기(안 찾히면 그냥 종료)
+        if (!wrap) {
+            wrap = document.querySelector('.swiper-container-slide_display_<?php echo $row_mod['md_id'] ?>');
+            if (!wrap) return;
+            _wrap = wrap; // // 다음 호출을 위해 갱신
+        }
+
+        var outs = wrap.querySelectorAll('.rb_bd_out[data-scale="1"]');
+        if (!outs || outs.length === 0) return;
+
         for (var i=0;i<outs.length;i++){
             var el = outs[i];
             var basew = parseFloat(el.getAttribute('data-basew')) || 750;
@@ -383,4 +429,3 @@ else {
     setTimeout(updateDesignScale, 60);
 })();
 </script>
-

@@ -823,6 +823,14 @@ function rb_json_attr($s){
                         </div>
 
                         <div class="rb_bd_row">
+                            <span class="rb_bd_lbl" style="width:80px;">새창여부</span>
+                            <label>
+                                <input type="checkbox" id="rb_btn_new_win" value="1">
+                                새창
+                            </label>
+                        </div>
+
+                        <div class="rb_bd_row">
                             <span class="rb_bd_lbl" style="width:80px;">여백</span>
                             <input type="number" id="rb_btn_px" class="inp_bf" min="0" max="60" value="10" style="width:60px;">
                             <input type="number" id="rb_btn_py" class="inp_bf" min="0" max="60" value="16" style="width:60px;">
@@ -1243,6 +1251,7 @@ function rb_json_attr($s){
     var btnAlign = document.getElementById('rb_btn_align');
     var btnText = document.getElementById('rb_btn_text');
     var btnLink = document.getElementById('rb_btn_link');
+    var btnNewWin = document.getElementById('rb_btn_new_win');
     var btnPX = document.getElementById('rb_btn_px');
     var btnPY = document.getElementById('rb_btn_py');
     var btnRadius = document.getElementById('rb_btn_radius');
@@ -1284,6 +1293,7 @@ var selDesignLoad = document.getElementById('rb_design_load');
             align: 'left',
             text: '자세히 보기',
             link: '',
+            new_win: 0,
             px: 25,
             py: 15,
             radius: 10,
@@ -1310,10 +1320,11 @@ var selDesignLoad = document.getElementById('rb_design_load');
     if (!state.bg) state.bg = { mode:'solid', solid:'#ffffff', g1:'#92c9f7', g2:'#cc9afe', angle:45, brightness:100, hasImage:0 };
     if (!state.texts) state.texts = [];
     if (!state.btn) {
-        state.btn = { use:0, align:'center', text:'자세히 보기', link:'', px:10, py:16, radius:12, bg:'#ffffff', color:'#000000', border:0, border_style:'solid', border_w:1, border_color:'#cccccc' };
+        state.btn = { use:0, align:'center', text:'자세히 보기', link:'', new_win:0, px:10, py:16, radius:12, bg:'#ffffff', color:'#000000', border:0, border_style:'solid', border_w:1, border_color:'#cccccc' };
     }
 
     if (typeof state.btn.mt === 'undefined') state.btn.mt = 0;
+    if (typeof state.btn.new_win === 'undefined') state.btn.new_win = 0;
     if (!state.btn.fontw) state.btn.fontw = 'font-R';
 
     if (!state.order || !Array.isArray(state.order)) state.order = [];
@@ -2481,6 +2492,7 @@ function rbEsc(s){
         if (btnAlign) btnAlign.value = state.btn.align || 'center';
         if (btnText) btnText.value = state.btn.text || '자세히 보기';
         if (btnLink) btnLink.value = state.btn.link || '';
+        if (btnNewWin) btnNewWin.checked = state.btn.new_win ? true : false;
 
         if (btnPX) btnPX.value = String(clamp(state.btn.px, 0, 60));
         if (btnPY) btnPY.value = String(clamp(state.btn.py, 0, 60));
@@ -2506,6 +2518,7 @@ function rbEsc(s){
         state.btn.align = btnAlign ? btnAlign.value : 'center';
         state.btn.text = btnText ? (btnText.value || '자세히 보기') : '자세히 보기';
         state.btn.link = btnLink ? (btnLink.value || '') : '';
+        state.btn.new_win = (btnNewWin && btnNewWin.checked) ? 1 : 0;
 
         state.btn.px = clamp(btnPX ? btnPX.value : 10, 0, 60);
         state.btn.py = clamp(btnPY ? btnPY.value : 16, 0, 60);
@@ -2531,6 +2544,7 @@ function rbEsc(s){
     if (btnAlign) btnAlign.addEventListener('change', applyBtnFromUI);
     if (btnText) btnText.addEventListener('input', applyBtnFromUI);
     if (btnLink) btnLink.addEventListener('input', applyBtnFromUI);
+    if (btnNewWin) btnNewWin.addEventListener('change', applyBtnFromUI);
     if (btnPX) btnPX.addEventListener('input', applyBtnFromUI);
     if (btnPY) btnPY.addEventListener('input', applyBtnFromUI);
     if (btnRadius) btnRadius.addEventListener('input', applyBtnFromUI);

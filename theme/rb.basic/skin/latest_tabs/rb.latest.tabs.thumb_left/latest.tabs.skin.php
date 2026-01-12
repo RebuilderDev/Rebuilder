@@ -115,7 +115,7 @@ $rb_skin['md_tab_list'] 탭 설정
                 ?>
                 <button type="button" class="more_btn" onclick="location.href='<?php echo $links_url ?>';" style="display:<?php echo (isset($rb_skin['md_title_hide']) && $rb_skin['md_title_hide'] == '1') ? 'none' : 'block'; ?>">더보기</button>
 
-                <div class="rb_swiper" id="rb_swiper_<?php echo $rb_skin['md_id'].'_'.$i ?>" data-pc-w="<?php echo $rb_skin['md_col'] ?>" data-pc-h="<?php echo $rb_skin['md_row'] ?>" data-mo-w="<?php echo $rb_skin['md_col_mo'] ?>" data-mo-h="<?php echo $rb_skin['md_row_mo'] ?>" data-pc-gap="<?php echo $rb_skin['md_gap'] ?>" data-mo-gap="<?php echo $rb_skin['md_gap_mo'] ?>" data-autoplay="<?php echo $rb_skin['md_auto_is'] ?>" data-autoplay-time="<?php echo $rb_skin['md_auto_time'] ?>" data-pc-swap="<?php echo $rb_skin['md_swiper_is'] ?>" data-mo-swap="<?php echo $rb_skin['md_swiper_is'] ?>">
+                <div class="rb_swiper" id="rb_swiper_<?php echo $rb_skin['md_id'].'_'.$i ?>" data-pc-w="<?php echo $rb_skin['md_col'] ?>" data-pc-h="<?php echo $rb_skin['md_row'] ?>" data-mo-w="<?php echo $rb_skin['md_col_mo'] ?>" data-mo-h="<?php echo $rb_skin['md_row_mo'] ?>" data-pc-gap="<?php echo $rb_skin['md_gap'] ?>" data-mo-gap="<?php echo $rb_skin['md_gap_mo'] ?>" data-autoplay="<?php echo $rb_skin['md_auto_is'] ?>" data-autoplay-time="<?php echo $rb_skin['md_auto_time'] ?>" data-pc-swap="<?php echo $rb_skin['md_swiper_is'] ?>" data-mo-swap="<?php echo $rb_skin['md_swiper_is'] ?>" data-pc-speed="<?php echo $rb_skin['md_speed'] ?>" data-mo-speed="<?php echo $rb_skin['md_speed'] ?>">
 
                     <div class="rb_swiper_inner">
                         <div class="rb-swiper-wrapper swiper-wrapper">

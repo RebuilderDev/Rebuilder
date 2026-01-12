@@ -77,6 +77,8 @@ $rb_skin['md_gap_mo']; // 모바일 여백
         data-autoplay-time="<?php echo $rb_skin['md_auto_time'] ?>"
         data-pc-swap="<?php echo $rb_skin['md_swiper_is'] ?>"
         data-mo-swap="<?php echo $rb_skin['md_swiper_is'] ?>"
+        data-pc-speed="<?php echo $rb_skin['md_speed'] ?>"
+        data-mo-speed="<?php echo $rb_skin['md_speed'] ?>"
     >
 
     <div class="rb_swiper_inner">

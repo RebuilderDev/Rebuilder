@@ -49,6 +49,7 @@ $rb_skin['md_icon_is'] 아이콘 출력여부(1,0)
 $rb_skin['md_comment_is'] 댓글수 출력여부(1,0)
 $rb_skin['md_swiper_is'] 스와이프 여부(1,0)
 $rb_skin['md_auto_is'] 자동롤링 여부(1,0)
+$rb_skin['md_speed'] 스와이프 스피드(0~1000)
 */
 
 ?>
@@ -91,6 +92,8 @@ $rb_skin['md_auto_is'] 자동롤링 여부(1,0)
                        data-autoplay-time="<?php echo $rb_skin['md_auto_time'] ?>"
                        data-pc-swap="<?php echo $rb_skin['md_swiper_is'] ?>"
                        data-mo-swap="<?php echo $rb_skin['md_swiper_is'] ?>"
+                       data-pc-speed="<?php echo $rb_skin['md_speed'] ?>"
+                       data-mo-speed="<?php echo $rb_skin['md_speed'] ?>"
                     >
             <div class="rb_swiper_inner">
                 <div class="rb-swiper-wrapper swiper-wrapper">

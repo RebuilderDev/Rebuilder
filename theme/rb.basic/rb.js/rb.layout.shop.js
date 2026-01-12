@@ -318,11 +318,11 @@ function setupResponsiveSlider($rb_slider) {
         const slidesPerView = rows * cols;
 
         // // 슬라이드 전환 속도(ms)
-        // // 우선순위: data-mo-speed / data-pc-speed > data-speed > 기본값 400
-        const speed =
-            parseInt($rb_slider.data(isMobile ? 'mo-speed' : 'pc-speed'), 10) ||
-            parseInt($rb_slider.data('speed'), 10) ||
-            400;
+        const speedData = $rb_slider.data(isMobile ? 'mo-speed' : 'pc-speed');
+        const speed = speedData !== undefined && speedData !== null && speedData !== ''
+            ? parseInt(speedData, 10)
+            : (parseInt($rb_slider.data('speed'), 10) || 400);
+
 
         // 슬라이드 재구성 및 간격 설정
         configureSlides($rb_slider, slidesPerView, cols, gap);
