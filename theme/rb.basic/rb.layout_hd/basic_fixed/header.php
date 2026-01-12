@@ -485,7 +485,7 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout_hd/'.$rb
                                 observer: true,
                                 observeParents: true,
                                 touchRatio: 0,
-                                spaceBetween: 45,
+                                spaceBetween: 30,
 
                                 breakpoints: {
                                     10: {
@@ -493,11 +493,11 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout_hd/'.$rb
                                       touchRatio: 1,
                                     },
                                     768: {
-                                      spaceBetween: 30,
+                                      spaceBetween: 25,
                                       touchRatio: 1,
                                     },
                                     1024: {
-                                      spaceBetween: 45,
+                                      spaceBetween: 30,
                                       touchRatio: 0,
                                     },
                                 }

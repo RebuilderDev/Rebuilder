@@ -83,7 +83,7 @@
 .gnb_wrap .rows_gnb_wrap {display: flex; align-items: center; margin: 0 auto;}
 .gnb_wrap .rows_gnb_wrap .row_gnbs {width: 100%; margin:inherit; display: block; align-items: center; gap: 0px;}
 .gnb_wrap nav {background-color: transparent;}
-.gnb_wrap .snb_wrap .member_info_wrap a font {opacity: 0.6;}
+.gnb_wrap .snb_wrap .member_info_wrap a .notranslate font {opacity: 0.6;}
 .gnb_wrap .snb_wrap .my_btn_wrap .btn_round.arr_bg {background-image: url(../../rb.img/icon/arr_down.svg);}
 .gnb_wrap .snb_wrap .qm_wrap a svg {opacity: .3; margin-top: 3px;}
 .gnb_wrap .snb_wrap .qm_wrap a:hover svg {opacity: 1;}
@@ -116,6 +116,25 @@
 .rb_my_p_ul2.flex_r {margin-left: auto;}
 .rb_my_panel_line {border-top:1px solid #eee; margin-top: 10px;}
 
+#google_notranslate_top {margin-left: 0px !important; position: relative;}
+.translation-links {top:25px !important; right:-17px !important; box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.05) !important;}
+.translation-links a {margin-top: 2px; margin-bottom: 2px; display: block}
+
+.translation-links::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid #fff;
+
+}
+
+
 @media all and (max-width:1024px) {
 
     .search_top_wrap {display: none !important;}
@@ -130,14 +149,16 @@
     /* } */
 
     /* 1.1.1 { */
-    .gnb_wrap .inner {gap:20px;}
+    .gnb_wrap .inner {gap:10px;}
     /* } */
 
     .gnb_wrap .tog_wrap {margin-right: 0px;}
-    .gnb_wrap .snb_wrap {gap:20px;}
+    .gnb_wrap .snb_wrap {gap:10px;}
     .rows_gnb_wrap .cbp-hrmenu {position:relative; width: 100%; height: auto;}
     .gnb_wrap .rows_gnb_wrap {width: 100% !important;}
     .rows_gnb_wrap .cbp-hrmenu .cbp-hrsub {display: none !important;}
     .gnb_wrap .snb_q_wrap {display: none;}
     .gnb_wrap .snb_wrap .my_btn_wrap .btn_round.arr_bg {background-position: center right 15px;}
+
+    .gnb_wrap .snb_wrap .my_btn_wrap {display: block !important;}
 }

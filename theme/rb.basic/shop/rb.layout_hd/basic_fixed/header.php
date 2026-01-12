@@ -627,11 +627,11 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_SHOP_URL.'/rb.layout_hd/
                                       touchRatio: 1,
                                     },
                                     768: {
-                                      spaceBetween: 30,
+                                      spaceBetween: 25,
                                       touchRatio: 1,
                                     },
                                     1024: {
-                                      spaceBetween: 45,
+                                      spaceBetween: 30,
                                       touchRatio: 0,
                                     },
                                 }
