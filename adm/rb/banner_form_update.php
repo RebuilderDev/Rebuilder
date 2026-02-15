@@ -120,8 +120,8 @@ if ($w == "") {
                     bn_hit        = '0',
                     bn_order      = '" . rb_sql_escape($bn_order) . "',
                     bn_type       = '" . rb_sql_escape($bn_type) . "',
-                    bn_design_json= '" . rb_sql_escape($bn_design_json) . "',
-                    bn_stage_json = '" . rb_sql_escape($bn_stage_json) . "'";
+                    bn_design_json= '" . addslashes($bn_design_json) . "',
+                    bn_stage_json = '" . addslashes($bn_stage_json) . "'";
     sql_query($sql);
 
     $bn_id = sql_insert_id();
@@ -141,8 +141,8 @@ if ($w == "") {
                     bn_end_time   = '" . rb_sql_escape($bn_end_time) . "',
                     bn_order      = '" . rb_sql_escape($bn_order) . "',
                     bn_type       = '" . rb_sql_escape($bn_type) . "',
-                    bn_design_json= '" . rb_sql_escape($bn_design_json) . "',
-                    bn_stage_json = '" . rb_sql_escape($bn_stage_json) . "'
+                    bn_design_json= '" . addslashes($bn_design_json) . "',
+                    bn_stage_json = '" . addslashes($bn_stage_json) . "'
               WHERE bn_id = '" . (int)$bn_id . "'";
     sql_query($sql);
 

@@ -497,9 +497,8 @@ function rb_json_attr($s){
 ?>
 
 <input type="hidden" name="bn_type" id="bn_type" value="<?php echo (isset($bn['bn_type']) && $bn['bn_type'] === 'design') ? 'design' : 'image'; ?>">
-<input type="hidden" name="bn_design_json" id="bn_design_json" value="<?php echo isset($bn['bn_design_json']) ? rb_json_attr($bn['bn_design_json']) : ''; ?>">
-<input type="hidden" name="bn_stage_json" id="bn_stage_json" value="<?php echo isset($bn['bn_stage_json']) ? rb_json_attr($bn['bn_stage_json']) : ''; ?>">
-
+<textarea name="bn_design_json" id="bn_design_json" style="display:none;"><?php echo isset($bn['bn_design_json']) ? $bn['bn_design_json'] : ''; ?></textarea>
+<textarea name="bn_stage_json" id="bn_stage_json" style="display:none;"><?php echo isset($bn['bn_stage_json']) ? $bn['bn_stage_json'] : ''; ?></textarea>
 
 <input type="hidden" name="rb_bg_copy_kind" id="rb_bg_copy_kind" value="">
 <input type="hidden" name="rb_bg_copy_id" id="rb_bg_copy_id" value="">

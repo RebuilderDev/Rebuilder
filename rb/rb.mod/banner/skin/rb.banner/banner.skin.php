@@ -65,9 +65,6 @@ while ($row = sql_fetch_array($result)) {
         $design_json = isset($row['bn_design_json']) ? (string)$row['bn_design_json'] : '';
         $stage_json  = isset($row['bn_stage_json']) ? (string)$row['bn_stage_json'] : '';
 
-        $design_json = stripslashes($design_json);
-        $stage_json  = stripslashes($stage_json);
-
         $st = json_decode($design_json, true);
         if (!is_array($st)) $st = array();
 
