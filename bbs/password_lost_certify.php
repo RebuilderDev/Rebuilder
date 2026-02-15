@@ -42,10 +42,10 @@ if ($mb_nonce !== $stored_nonce) {
 if ($mb['mb_password'] === $new_password_hash) {
     sql_query(" update {$g5['member_table']} set mb_lost_certify = '' where mb_no = '$mb_no' ");
     setcookie('pwd_reset_real_user', '', time() - 3600, '/');
-    alert('비밀번호가 변경 되었습니다.\\n변경된 비밀번호로 로그인 하시기 바랍니다.', G5_BBS_URL.'/login.php');
+    alert('비밀번호가 변경 되었습니다.\\n변경된 비밀번호로 로그인 하시기 바랍니다.', G5_BBS_URL.'/login.php', false);
 }
 
 sql_query(" update {$g5['member_table']} set mb_lost_certify = '', mb_password = '$new_password_hash' where mb_no = '$mb_no' ");
 run_event('password_lost_certify_after', $mb, $mb_nonce);
 setcookie('pwd_reset_real_user', '', time() - 3600, '/');
-alert('비밀번호가 변경 되었습니다.\\n변경된 비밀번호로 로그인 하시기 바랍니다.', G5_BBS_URL.'/login.php');
+alert('비밀번호가 변경 되었습니다.\\n변경된 비밀번호로 로그인 하시기 바랍니다.', G5_BBS_URL.'/login.php', false);
