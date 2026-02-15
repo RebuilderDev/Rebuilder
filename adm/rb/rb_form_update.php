@@ -401,7 +401,7 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
     $chk4_is = $chk4['cnt'];
 
     if($chk0_is > 0 && $chk1_is > 0 && $chk2_is > 0 && $chk3_is > 0 && $chk4_is > 0) {
-        alert('DB 테이블 설치가 완료 되었습니다.\n[DB 업데이트] 를 반드시 실행해주세요.\n테이블 설치 후 환경설정 > 테마설정 메뉴에서\nRebuilder Basic 테마를 적용해주세요.');
+        alert('DB 테이블 설치가 완료 되었습니다.\n[DB 업데이트] 를 반드시 실행해주세요.\n테이블 설치 후 환경설정 > 테마설정 메뉴에서 테마를 적용해주세요.');
     } else {
         alert('설치가 누락된 테이블이 있습니다.\nDB 테이블을 확인해주세요.');
     }
