@@ -331,7 +331,7 @@ if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipi
                         </dd>
                         <dd class="mem_imgs_dd2">
                             <input type="file" name="mb_icon" id="reg_mb_icon" class="input_tiny files_inp">
-                            <span class="help_text">GIF, JPG, PNG 파일 (<?php echo $config['cf_member_icon_width'] ?>X<?php echo $config['cf_member_icon_height'] ?> / <?php echo byteFormat($config['cf_member_icon_size'], "MB"); ?> 이하)</span>
+                            <span class="help_text">GIF, JPG, PNG 파일 (<?php echo $config['cf_member_icon_width'] ?>X<?php echo $config['cf_member_icon_height'] ?> / <?php echo byteFormat($config['cf_member_icon_size']); ?> 이하)</span>
                             <?php if ($w == 'u' && file_exists($mb_icon_path)) {  ?>
                             <input type="checkbox" name="del_mb_icon" value="1" id="del_mb_icon"><label for="del_mb_icon" class="inline">삭제</label>
                             <?php } ?>
@@ -386,7 +386,7 @@ if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipi
                         </dd>
                         <dd class="mem_imgs_dd2">
                             <input type="file" name="mb_img" id="reg_mb_img" class="input_tiny files_inp">
-                            <span class="help_text">GIF, JPG, PNG 파일 (<?php echo $config['cf_member_img_width'] ?>X<?php echo $config['cf_member_img_height'] ?> / <?php echo byteFormat($config['cf_member_img_size'], "MB"); ?> 이하)</span>
+                            <span class="help_text">GIF, JPG, PNG 파일 (<?php echo $config['cf_member_img_width'] ?>X<?php echo $config['cf_member_img_height'] ?> / <?php echo byteFormat($config['cf_member_img_size']); ?> 이하)</span>
                             <?php if ($w == 'u' && file_exists($mb_img_path)) {  ?>
                             <input type="checkbox" name="del_mb_img" value="1" id="del_mb_img"><label for="del_mb_img" class="inline">삭제</label>
                             <?php } ?>
