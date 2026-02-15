@@ -1,8 +1,8 @@
-Theme Name: GNUBOARD Rebuilder Basic
-Theme URI: https://rebuild.iwinv.net
-Maker: GNUBOARD Rebuilder / SIR
+Theme Name: rb.Basic
+Theme URI: https://rebuilder.co.kr
+Maker: Rebuilder
 Maker URI: https://rebuilder.co.kr
 Version: 1.0.0
-Detail: GNUBOARD Rebuilder Basic Theme
-License: GNU LESSER GENERAL PUBLIC LICENSE Version 2.1
-License URI: http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+Detail: Rebuilder Basic Theme
+License: Proprietary Freeware License with Commercial Add-ons
+License URI: https://rebuilder.co.kr/content/policy
