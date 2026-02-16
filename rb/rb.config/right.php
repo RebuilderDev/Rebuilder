@@ -2076,8 +2076,11 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         //클래스로 확인한다.
         if (rbIsMod()) {
             toggleSideOptions_close_mod();
+            $('body').removeClass('aos-disabled');
+            if(typeof AOS !== 'undefined') AOS.refresh();
         } else {
             toggleSideOptions_open_mod();
+            $('body').addClass('aos-disabled');
         }
     }
 
@@ -2086,8 +2089,11 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
         if (rbIsSec()) {
             toggleSideOptions_close_sec();
+            $('body').removeClass('aos-disabled');
+            if(typeof AOS !== 'undefined') AOS.refresh();
         } else {
             toggleSideOptions_open_sec();
+            $('body').addClass('aos-disabled');
         }
 
     }
