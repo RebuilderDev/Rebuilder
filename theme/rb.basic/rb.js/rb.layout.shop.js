@@ -43,6 +43,11 @@ $(document).ready(function () {
         var cfg = rbPickMarketConfig();
         if (!cfg) return;
 
+        // 최초 로드시 뷰포트 내에 있으면 AOS 적용 안함
+        var rect = el.getBoundingClientRect();
+        var inViewport = rect.top < window.innerHeight && rect.bottom > 0;
+        if (inViewport && !el.hasAttribute('data-aos')) return;
+
         rbSetAttrIfMissing(el, 'data-aos', cfg.aos);
         rbSetAttrIfMissing(el, 'data-aos-offset', cfg.offset);
         rbSetAttrIfMissing(el, 'data-aos-delay', cfg.delay);
