@@ -2,7 +2,7 @@
 if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 include_once(G5_LIB_PATH.'/thumbnail.lib.php');
 
-$rb_skin = sql_fetch (" select * from rb_module where md_id = '{$options}' "); //최신글 환경설정 테이블 조회 (삭제금지)
+$rb_skin = sql_fetch (" select * from {$rb_module_table} where md_id = '{$options}' ");
 
 $thumb_width = 180;
 $thumb_height = 180;
