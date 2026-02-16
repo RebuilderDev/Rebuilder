@@ -18,8 +18,8 @@ if (!$key) {
 }
 
 // 워딩 입력값 정리
-$main = isset($_POST['main']) ? trim($_POST['main']) : '';
-$sub  = isset($_POST['sub'])  ? trim($_POST['sub'])  : '';
+$main = isset($_POST['main']) ? stripslashes(trim($_POST['main'])) : '';
+$sub  = isset($_POST['sub'])  ? stripslashes(trim($_POST['sub']))  : '';
 
 $main_lines = preg_split('/\r\n|\r|\n/', $main);
 $sub_lines  = preg_split('/\r\n|\r|\n/', $sub);
