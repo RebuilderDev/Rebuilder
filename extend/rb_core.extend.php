@@ -1478,7 +1478,7 @@ function rb_banners($position, $bnid='', $skin='', $order='')
     global $g5, $rb_core;
 
     if($skin == "") {
-        $skin_path = G5_PATH.'/rb/rb.mod/banner/skin/rb.basic/banner.skin.php';
+        $skin_path = G5_PATH.'/rb/rb.mod/banner/skin/rb.banner/banner.skin.php';
     } else {
         $skin_path = G5_PATH.'/rb/'.$skin.'/banner.skin.php';
     }
