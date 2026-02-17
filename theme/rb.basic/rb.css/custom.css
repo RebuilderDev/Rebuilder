@@ -896,6 +896,8 @@ body.aos-disabled [data-aos] {
     opacity: 1 !important;
     transform: none !important;
 }
+footer .footer_gnb {background-color: #fff;}
+.bbs_main .no_data {margin-top: 0px; padding-top:0px !important; padding-bottom: 0px !important; border-bottom: 0px !important;}
 /* } */
 
 @media all and (max-width:1024px){
@@ -1217,6 +1219,9 @@ body.aos-disabled [data-aos] {
     .rb_btm_sbbs .rb_swiper_hub_top_skin {position: relative; min-height: 80px;}
     /* } */
 
+    /* 2.2.6 { */
+    footer .footer_gnb_ul2 {background-color: #fff; border-top:1px solid #ddd;}
+    /* } */
 }
 
 @media all and (max-width:512px){
