@@ -110,7 +110,6 @@ $rb_gap_minus2 = $rb_gap_minus / 2;
    #rb_sidemenu {margin-top:var(--rb-gap);}
    #rb_sidemenu_shop {margin-top:var(--rb-gap);}
    <?php if($rb_gap_mo == 1) { ?>
-    .flex_box {gap:var(--rb-gap) 0px;}
-    .content_box {padding-top:0px !important; padding-bottom: 0px !important}
+
     <?php } ?>
 }

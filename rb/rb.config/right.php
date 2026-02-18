@@ -189,7 +189,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                             모듈간격 설정 (공용)
 
                             <div class="rb-help" data-open="false">
-                                <button type="button" class="rb-help-btn" data-img="<?php echo G5_URL ?>/rb/rb.config/image/guide/help-img-2.png" data-txt="삽입된 모듈간의 간격을 일괄 조정할 수 있어요. 설정된 간격은 모바일에서도 동일하게 적용 되요." data-title="모듈 간격설정 이란?" data-alt="미리보기" aria-expanded="false">
+                                <button type="button" class="rb-help-btn" data-img="<?php echo G5_URL ?>/rb/rb.config/image/guide/help-img-2.png" data-txt="삽입된 모듈간의 간격을 일괄 조정할 수 있어요. 설정된 간격은 모바일 및 모바일 헤더 영역에 동일하게 적용 되요." data-title="모듈 간격설정 이란?" data-alt="미리보기" aria-expanded="false">
                                     <svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>
                                         <g fill='none'>
                                             <path d='M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z' />
@@ -201,7 +201,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                             </div>
 
                         </h6>
-                        <h6 class="font-R rb_config_sub_txt">모듈간 간격을 일괄 설정할 수 있습니다.<br>설정된 간격은 모바일에서 동일하게 적용 됩니다.</h6>
+                        <h6 class="font-R rb_config_sub_txt">각 모듈들의 간격을 일괄 설정할 수 있습니다.<br>설정된 간격은 모바일 및 모바일 헤더 영역에 동일하게 적용 됩니다.</h6>
                         <div class="config_wrap">
 
                             <ul class="rows_inp_lr mt-10">
@@ -252,7 +252,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                             </ul>
 
                             <input type="hidden" id="co_inner_padding_pc" class="" name="co_inner_padding_pc" value="">
-
+                            <!--
                             <ul class="rows_inp_lr mt-10">
                                 <li class="rows_inp_l rows_inp_l_span">
                                     <span class="font-B">모바일 간격</span><br>
@@ -275,6 +275,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                                     <aside role="tooltip" class="rb-help-pop" aria-hidden="true"></aside>
                                 </div>
                             </ul>
+                            -->
 
 
                         </div>
