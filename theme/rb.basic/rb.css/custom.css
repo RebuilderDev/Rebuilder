@@ -897,7 +897,7 @@ body.aos-disabled [data-aos] {
     transform: none !important;
 }
 footer .footer_gnb {background-color: #fff;}
-.bbs_main .no_data {margin-top: 0px; padding-top:0px !important; padding-bottom: 0px !important; border-bottom: 0px !important;}
+.bbs_main .no_data {margin-top: 0px; padding-top:20px !important; padding-bottom: 20px !important;}
 
 .rb_faq #faq_wrap li h3 > a {padding-right: 40px; display: block; word-break: keep-all; margin-top: 4px;}
 .rb_faq #faq_wrap li h3 > a > div {width: 100%;}
