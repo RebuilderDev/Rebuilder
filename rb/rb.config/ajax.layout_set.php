@@ -177,6 +177,16 @@ foreach ($layouts as $layout_no) {
               data-sec-uid="<?php echo isset($row_mod['md_sec_uid']) ? $row_mod['md_sec_uid'] : ''; ?>"
               data-title="<?php echo $row_mod['md_title']; ?>"
               data-shop="0"
+              <?php if(isset($row_mod['md_aos_use']) && $row_mod['md_aos_use'] == 1) { ?>
+              data-aos="<?php echo isset($row_mod['md_aos_motion']) ? $row_mod['md_aos_motion'] : ''; ?>"
+              data-aos-offset="<?php echo isset($row_mod['md_aos_offset']) ? $row_mod['md_aos_offset'] : ''; ?>"
+              data-aos-delay="<?php echo isset($row_mod['md_aos_delay']) ? $row_mod['md_aos_delay'] : ''; ?>"
+              data-aos-duration="<?php echo isset($row_mod['md_aos_duration']) ? $row_mod['md_aos_duration'] : ''; ?>"
+              data-aos-easing="<?php echo isset($row_mod['md_aos_easing']) ? $row_mod['md_aos_easing'] : ''; ?>"
+              data-aos-mirror="<?php echo (isset($row_mod['md_aos_mirror']) && $row_mod['md_aos_mirror'] == 0) ? 'false' : 'true'; ?>"
+              data-aos-once="<?php echo (isset($row_mod['md_aos_once']) && $row_mod['md_aos_once'] == 0) ? 'false' : 'true'; ?>"
+              data-aos-anchor-placement="top-center"
+              <?php } ?>
             >
 
                 <ul class="content_box rb_module_<?php echo $row_mod['md_id']; ?> <?php if(!empty($row_mod['md_border'])) { ?>rb_module_border_<?php echo $row_mod['md_border']; ?> rb_module_border_width_<?php echo $row_mod['md_border_width']; ?> <?php } ?><?php if (isset($row_mod['md_padding']) && $row_mod['md_padding'] > 0) { ?> rb_module_padding_<?php echo $row_mod['md_padding']; ?><?php } ?> <?php echo isset($row_mod['md_show']) ? $row_mod['md_show'] : ''; ?> <?php if (isset($row_mod['md_wide_is']) && $row_mod['md_wide_is'] == 1) { ?>rb_module_wide<?php } ?> <?php if (isset($row_mod['md_wide_is']) && $row_mod['md_wide_is'] == 2) { ?>rb_module_mid<?php } ?>"

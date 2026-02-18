@@ -9,6 +9,18 @@ $md_title_color = isset($_POST['md_title_color']) ? $_POST['md_title_color'] : '
 $md_title_size = isset($_POST['md_title_size']) ? $_POST['md_title_size'] : '20';
 $md_title_font = isset($_POST['md_title_font']) ? $_POST['md_title_font'] : 'font-B';
 $md_title_hide = isset($_POST['md_title_hide']) ? $_POST['md_title_hide'] : '0';
+
+$md_aos_use = ($_POST['md_aos_use'] === '' ? 0 : (int)$_POST['md_aos_use']);
+$md_aos_motion = ($_POST['md_aos_motion'] !== '' ? $_POST['md_aos_motion'] : 'fade-up');
+$md_aos_offset = ($_POST['md_aos_offset'] !== '' ? $_POST['md_aos_offset'] : '-200');
+$md_aos_delay = ($_POST['md_aos_delay'] !== '' ? $_POST['md_aos_delay'] : '50');
+$md_aos_duration = ($_POST['md_aos_duration'] !== '' ? $_POST['md_aos_duration'] : '500');
+$md_aos_easing = ($_POST['md_aos_easing'] !== '' ? $_POST['md_aos_easing'] : 'ease-in-out-cubic');
+$md_aos_anchor_placement = ($_POST['md_aos_anchor_placement'] !== '' ? $_POST['md_aos_anchor_placement'] : 'top-center');
+$md_aos_mirror = ($_POST['md_aos_mirror'] === '' ? 1 : (int)$_POST['md_aos_mirror']);
+$md_aos_once = ($_POST['md_aos_once'] === '' ? 0 : (int)$_POST['md_aos_once']);
+
+
 $md_layout = isset($_POST['md_layout']) ? $_POST['md_layout'] : '';
 $md_skin = isset($_POST['md_skin']) ? $_POST['md_skin'] : '';
 $md_tab_list = isset($_POST['md_tab_list']) ? $_POST['md_tab_list'] : '';
@@ -272,6 +284,15 @@ if (isset($is_height) && $is_height == "1") {
                 md_title_size = '{$md_title_size}',
                 md_title_font = '{$md_title_font}',
                 md_title_hide = '{$md_title_hide}',
+                md_aos_use = '{$md_aos_use}',
+                md_aos_motion = '{$md_aos_motion}',
+                md_aos_offset = '{$md_aos_offset}',
+                md_aos_delay = '{$md_aos_delay}',
+                md_aos_duration = '{$md_aos_duration}',
+                md_aos_easing = '{$md_aos_easing}',
+                md_aos_mirror = '{$md_aos_mirror}',
+                md_aos_once = '{$md_aos_once}',
+                md_aos_anchor_placement = '{$md_aos_anchor_placement}',
                 md_layout = '{$md_layout}',
                 md_skin = '{$md_skin}',
                 md_tab_skin = '{$md_tab_skin}',
@@ -377,6 +398,15 @@ if (isset($is_height) && $is_height == "1") {
                 md_title_size = '{$md_title_size}',
                 md_title_font = '{$md_title_font}',
                 md_title_hide = '{$md_title_hide}',
+                md_aos_use = '{$md_aos_use}',
+                md_aos_motion = '{$md_aos_motion}',
+                md_aos_offset = '{$md_aos_offset}',
+                md_aos_delay = '{$md_aos_delay}',
+                md_aos_duration = '{$md_aos_duration}',
+                md_aos_easing = '{$md_aos_easing}',
+                md_aos_mirror = '{$md_aos_mirror}',
+                md_aos_once = '{$md_aos_once}',
+                md_aos_anchor_placement = '{$md_aos_anchor_placement}',
                 md_layout = '{$md_layout}',
                 md_skin = '{$md_skin}',
                 md_tab_skin = '{$md_tab_skin}',

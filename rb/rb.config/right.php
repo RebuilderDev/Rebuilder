@@ -448,7 +448,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
                     <ul class="rb_config_sec">
                         <h6 class="font-B">
-                        <?php if (defined('_SHOP_')) { // 영카트?>마켓 <?php } ?>AOS 설정
+                        <?php if (defined('_SHOP_')) { // 영카트?>마켓 <?php } ?>AOS 설정 (공용)
                                 <div class="rb-help" data-open="false">
                                     <button type="button" class="rb-help-btn" data-img="<?php echo G5_URL ?>/rb/rb.config/image/guide/help-img-aos.gif" data-txt="페이지를 스크롤할 때, 각 모듈에 부드러운 애니메이션을 추가할 수 있어요." data-title="AOS 설정 이란?" data-alt="미리보기" aria-expanded="false">
                                         <svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>
@@ -463,8 +463,8 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                         </h6>
                         <h6 class="font-R rb_config_sub_txt">
                             모듈에 AOS를 일괄 적용 합니다.<br>
-                            AOS는 메인, 그룹, 일반 페이지에 적용 되며,<br>
-                            마켓 별도 설정이 가능합니다.
+                            AOS는 메인, 그룹, 일반 페이지에 적용 됩니다.<br>
+                            개별 모듈에 적용된 AOS가 우선 적용됩니다.
                         </h6>
 
                         <div <?php if(defined('_SHOP_')) { // 영카트?>style="display:block !important;" <?php } else { ?>style="display:none !important;" <?php } ?>>
@@ -510,7 +510,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                                     <li class="rows_inp_r mt-5">
                                         <select id="rb_aos_motion_shop" name="rb_aos_motion_shop" class="select select_tiny w50">
                                             <option value="" <?php echo ($view_rb_aos_motion_shop === '' ? 'selected' : ''); ?>>모션선택</option>
-                                            <option value="" disabled>──── Fade ────</option>
+                                            <option value="" disabled>───Fade</option>
                                             <option value="fade" <?php echo ($view_rb_aos_motion_shop === 'fade' ? 'selected' : ''); ?>>fade</option>
                                             <option value="fade-up" <?php echo ($view_rb_aos_motion_shop === 'fade-up' ? 'selected' : ''); ?>>fade-up</option>
                                             <option value="fade-down" <?php echo ($view_rb_aos_motion_shop === 'fade-down' ? 'selected' : ''); ?>>fade-down</option>
@@ -520,18 +520,18 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                                             <option value="fade-up-left" <?php echo ($view_rb_aos_motion_shop === 'fade-up-left' ? 'selected' : ''); ?>>fade-up-left</option>
                                             <option value="fade-down-right" <?php echo ($view_rb_aos_motion_shop === 'fade-down-right' ? 'selected' : ''); ?>>fade-down-right</option>
                                             <option value="fade-down-left" <?php echo ($view_rb_aos_motion_shop === 'fade-down-left' ? 'selected' : ''); ?>>fade-down-left</option>
-                                            <option value="" disabled>──── Flip ────</option>
+                                            <option value="" disabled>───Flip</option>
                                             <option value="flip-up" <?php echo ($view_rb_aos_motion_shop === 'flip-up' ? 'selected' : ''); ?>>flip-up</option>
                                             <option value="flip-down" <?php echo ($view_rb_aos_motion_shop === 'flip-down' ? 'selected' : ''); ?>>flip-down</option>
                                             <option value="flip-left" <?php echo ($view_rb_aos_motion_shop === 'flip-left' ? 'selected' : ''); ?>>flip-left</option>
                                             <option value="flip-right" <?php echo ($view_rb_aos_motion_shop === 'flip-right' ? 'selected' : ''); ?>>flip-right</option>
-                                            <option value="" disabled>──── Zoom In ────</option>
+                                            <option value="" disabled>───Zoom In</option>
                                             <option value="zoom-in" <?php echo ($view_rb_aos_motion_shop === 'zoom-in' ? 'selected' : ''); ?>>zoom-in</option>
                                             <option value="zoom-in-up" <?php echo ($view_rb_aos_motion_shop === 'zoom-in-up' ? 'selected' : ''); ?>>zoom-in-up</option>
                                             <option value="zoom-in-down" <?php echo ($view_rb_aos_motion_shop === 'zoom-in-down' ? 'selected' : ''); ?>>zoom-in-down</option>
                                             <option value="zoom-in-left" <?php echo ($view_rb_aos_motion_shop === 'zoom-in-left' ? 'selected' : ''); ?>>zoom-in-left</option>
                                             <option value="zoom-in-right" <?php echo ($view_rb_aos_motion_shop === 'zoom-in-right' ? 'selected' : ''); ?>>zoom-in-right</option>
-                                            <option value="" disabled>──── Zoom Out ────</option>
+                                            <option value="" disabled>───Zoom Out</option>
                                             <option value="zoom-out" <?php echo ($view_rb_aos_motion_shop === 'zoom-out' ? 'selected' : ''); ?>>zoom-out</option>
                                             <option value="zoom-out-up" <?php echo ($view_rb_aos_motion_shop === 'zoom-out-up' ? 'selected' : ''); ?>>zoom-out-up</option>
                                             <option value="zoom-out-down" <?php echo ($view_rb_aos_motion_shop === 'zoom-out-down' ? 'selected' : ''); ?>>zoom-out-down</option>
@@ -4505,6 +4505,17 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         var md_title_size = $('input[name="md_title_size"]').val();
         var md_title_font = $('select[name="md_title_font"]').val();
         var md_title_hide = $('input[name="md_title_hide"]:checked').val();
+
+        var md_aos_use = $('input[name="md_aos_use"]:checked').val();
+        var md_aos_motion = $('select[name="md_aos_motion"]').val();
+        var md_aos_offset = $('input[name="md_aos_offset"]').val();
+        var md_aos_delay = $('input[name="md_aos_delay"]').val();
+        var md_aos_duration = $('input[name="md_aos_duration"]').val();
+        var md_aos_easing = $('input[name="md_aos_easing"]').val();
+        var md_aos_mirror = $('input[name="md_aos_mirror"]').val();
+        var md_aos_once = $('input[name="md_aos_once"]:checked').val();
+        var md_aos_anchor_placement = $('input[name="md_aos_anchor_placement"]').val();
+
         var md_layout = $('input[name="md_layout"]').val();
         var md_theme = $('input[name="md_theme"]').val();
 
@@ -4761,6 +4772,15 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                     "md_title_size": md_title_size,
                     "md_title_font": md_title_font,
                     "md_title_hide": md_title_hide,
+                    "md_aos_use": md_aos_use,
+                    "md_aos_motion": md_aos_motion,
+                    "md_aos_offset": md_aos_offset,
+                    "md_aos_delay": md_aos_delay,
+                    "md_aos_duration": md_aos_duration,
+                    "md_aos_easing": md_aos_easing,
+                    "md_aos_mirror": md_aos_mirror,
+                    "md_aos_once": md_aos_once,
+                    "md_aos_anchor_placement": md_aos_anchor_placement,
                     "md_layout": md_layout,
                     "md_skin": md_skin,
                     "md_tab_list": md_tab_list,
