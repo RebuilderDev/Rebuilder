@@ -24,6 +24,10 @@ $rb_padding_btm_shop = isset($rb_core['padding_btm_shop']) && $rb_core['padding_
 
 $is_index = isset($_GET['rb_is_index']) ? $_GET['rb_is_index'] : 0;
 $is_shop = isset($_GET['rb_is_shop']) ? $_GET['rb_is_shop'] : 0;
+
+$rb_gap_num   = (int)str_replace('px', '', $rb_gap);
+$rb_gap_minus = $rb_gap_num / 2;
+$rb_gap_minus2 = $rb_gap_minus / 2;
 ?>
 
 :root {
@@ -37,6 +41,8 @@ $is_shop = isset($_GET['rb_is_shop']) ? $_GET['rb_is_shop'] : 0;
   --rb-header-width: <?php echo $rb_tb_width; ?>;
   --rb-footer-width: <?php echo $rb_tb_width; ?>;
   --rb-gap: <?php echo $rb_gap; ?>;
+  --rb-gap-minus: <?php echo $rb_gap_minus; ?>px;
+  --rb-gap-minus2: <?php echo $rb_gap_minus2; ?>px;
   --rb-padding-top: <?php echo $rb_padding_top; ?>;
   --rb-padding-btm: <?php echo $rb_padding_btm; ?>;
   --rb-padding-top-sub: <?php echo $rb_padding_top_sub; ?>;
@@ -71,7 +77,36 @@ $is_shop = isset($_GET['rb_is_shop']) ? $_GET['rb_is_shop'] : 0;
 
 <?php } ?>
 
+.rb_module_wide{width: 100vw;margin-left: calc(50% - 50vw);margin-right: calc(50% - 50vw);left: auto; right: auto; transform: none; padding-left:var(--rb-gap-minus2) !important; padding-right:var(--rb-gap-minus2) !important}
+
+@media all and (max-width:1430px){
+    .gnb_wrap .inner {max-width: 1280px !important;}
+    .gnb_wrap .rows_gnb_wrap {max-width: 1280px !important;}
+    .index {max-width: 1280px !important;}
+    .sub {max-width: 1280px !important;}
+    .rb_section_box {min-width: 1280px !important;}
+    .rb_module_wide  {min-width: 1280px !important;}
+    .rb_section_box .flex_box {max-width: calc(1280px + var(--rb-gap))}
+    .footer_gnb .inner {max-width: 1280px !important;}
+    .footer_copy .inner {max-width: 1280px !important;}
+}
+
+@media all and (max-width:1310px){
+    .gnb_wrap .inner {max-width: 1024px !important;}
+    .gnb_wrap .rows_gnb_wrap {max-width: 1024px !important;}
+    .index {max-width: 1024px !important;}
+    .sub {max-width: 1024px !important;}
+    .rb_section_box {min-width: 1024px !important;}
+    .rb_module_wide  {min-width: 1024px !important;}
+    .rb_section_box .flex_box {max-width: calc(1024px + var(--rb-gap))}
+    .footer_gnb .inner {max-width: 1024px !important;}
+    .footer_copy .inner {max-width: 1024px !important;}
+}
+
 @media all and (max-width:1024px) {
+   .rb_section_box {min-width: 100% !important;}
+   .content_box {min-width: 100% !important;}
+
    #rb_sidemenu {margin-top:var(--rb-gap);}
    #rb_sidemenu_shop {margin-top:var(--rb-gap);}
    <?php if($rb_gap_mo == 1) { ?>

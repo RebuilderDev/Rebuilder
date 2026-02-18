@@ -901,6 +901,7 @@ footer .footer_gnb {background-color: #fff;}
 
 .rb_faq #faq_wrap li h3 > a {padding-right: 40px; display: block; word-break: keep-all; margin-top: 4px;}
 .rb_faq #faq_wrap li h3 > a > div {width: 100%;}
+.rb_bbs_wrap .btns_gr_wrap .btns_gr {margin-right: -80px !important;}
 /* } */
 
 @media all and (max-width:1024px){

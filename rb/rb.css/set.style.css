@@ -44,60 +44,59 @@
 .co_gap_pc_0 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-0px);}
 .co_gap_pc_0.rb-layout-row {width: calc(100% + 0px); transform: translateX(-0px);}
 
-.co_gap_pc_5 .content_box {padding: 5px;}
-.co_gap_pc_5 .flex_box {width: calc(100% + 10px);}
-.co_gap_pc_5 > .flex_box {transform: translateX(-5px);}
-.co_gap_pc_5 > #rb_sidemenu .flex_box {transform: translateX(-5px);}
-.co_gap_pc_5 > #rb_sidemenu_float .flex_box {transform: translateX(-5px);}
-.co_gap_pc_5 > #rb_sidemenu_shop .flex_box {transform: translateX(-5px);}
-.co_gap_pc_5 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-5px);}
-.co_gap_pc_5.rb-layout-row {width: calc(100% + 10px); transform: translateX(-5px);}
+.co_gap_pc_5 .content_box {padding: 2.5px;}
+.co_gap_pc_5 .flex_box {width: calc(100% + 5px);}
+.co_gap_pc_5 > .flex_box {transform: translateX(-2.5px);}
+.co_gap_pc_5 > #rb_sidemenu .flex_box {transform: translateX(-2.5px);}
+.co_gap_pc_5 > #rb_sidemenu_float .flex_box {transform: translateX(-2.5px);}
+.co_gap_pc_5 > #rb_sidemenu_shop .flex_box {transform: translateX(-2.5px);}
+.co_gap_pc_5 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-2.5px);}
+.co_gap_pc_5.rb-layout-row {width: calc(100% + 5px); transform: translateX(-2.5px);}
 
-.co_gap_pc_10 .content_box {padding: 10px;}
-.co_gap_pc_10 .flex_box {width: calc(100% + 20px);}
-.co_gap_pc_10 > .flex_box {transform: translateX(-10px);}
-.co_gap_pc_10 > #rb_sidemenu .flex_box {transform: translateX(-10px);}
-.co_gap_pc_10 > #rb_sidemenu_float .flex_box {transform: translateX(-10px);}
-.co_gap_pc_10 > #rb_sidemenu_shop .flex_box {transform: translateX(-10px);}
-.co_gap_pc_10 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-10px);}
-.co_gap_pc_10.rb-layout-row {width: calc(100% + 20px); transform: translateX(-10px);}
+.co_gap_pc_10 .content_box {padding: 5px;}
+.co_gap_pc_10 .flex_box {width: calc(100% + 10px);}
+.co_gap_pc_10 > .flex_box {transform: translateX(-5px);}
+.co_gap_pc_10 > #rb_sidemenu .flex_box {transform: translateX(-5px);}
+.co_gap_pc_10 > #rb_sidemenu_float .flex_box {transform: translateX(-5px);}
+.co_gap_pc_10 > #rb_sidemenu_shop .flex_box {transform: translateX(-5px);}
+.co_gap_pc_10 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-5px);}
+.co_gap_pc_10.rb-layout-row {width: calc(100% + 10px); transform: translateX(-5px);}
 
-.co_gap_pc_15 .content_box {padding: 15px;}
-.co_gap_pc_15 .flex_box {width: calc(100% + 30px);}
-.co_gap_pc_15 > .flex_box {transform: translateX(-15px);}
-.co_gap_pc_15 > #rb_sidemenu .flex_box {transform: translateX(-15px);}
-.co_gap_pc_15 > #rb_sidemenu_float .flex_box {transform: translateX(-15px);}
-.co_gap_pc_15 > #rb_sidemenu_shop .flex_box {transform: translateX(-15px);}
-.co_gap_pc_15 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-15px);}
-.co_gap_pc_15.rb-layout-row {width: calc(100% + 30px); transform: translateX(-15px);}
+.co_gap_pc_15 .content_box {padding: 7.5px;}
+.co_gap_pc_15 .flex_box {width: calc(100% + 15px);}
+.co_gap_pc_15 > .flex_box {transform: translateX(-7.5px);}
+.co_gap_pc_15 > #rb_sidemenu .flex_box {transform: translateX(-7.5px);}
+.co_gap_pc_15 > #rb_sidemenu_float .flex_box {transform: translateX(-7.5px);}
+.co_gap_pc_15 > #rb_sidemenu_shop .flex_box {transform: translateX(-7.5px);}
+.co_gap_pc_15 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-7.5px);}
+.co_gap_pc_15.rb-layout-row {width: calc(100% + 15px); transform: translateX(-7.5px);}
 
-.co_gap_pc_20 .content_box {padding: 20px;}
-.co_gap_pc_20 .flex_box {width: calc(100% + 40px);}
-.co_gap_pc_20 > .flex_box {transform: translateX(-20px);}
-.co_gap_pc_20 > #rb_sidemenu .flex_box {transform: translateX(-20px);}
-.co_gap_pc_20 > #rb_sidemenu_float .flex_box {transform: translateX(-20px);}
-.co_gap_pc_20 > #rb_sidemenu_shop .flex_box {transform: translateX(-20px);}
-.co_gap_pc_20 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-20px);}
-.co_gap_pc_20.rb-layout-row {width: calc(100% + 40px); transform: translateX(-20px);}
+.co_gap_pc_20 .content_box {padding: 10px;}
+.co_gap_pc_20 .flex_box {width: calc(100% + 20px);}
+.co_gap_pc_20 > .flex_box {transform: translateX(-10px);}
+.co_gap_pc_20 > #rb_sidemenu .flex_box {transform: translateX(-10px);}
+.co_gap_pc_20 > #rb_sidemenu_float .flex_box {transform: translateX(-10px);}
+.co_gap_pc_20 > #rb_sidemenu_shop .flex_box {transform: translateX(-10px);}
+.co_gap_pc_20 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-10px);}
+.co_gap_pc_20.rb-layout-row {width: calc(100% + 20px); transform: translateX(-10px);}
 
-.co_gap_pc_25 .content_box {padding: 25px;}
-.co_gap_pc_25 .flex_box {width: calc(100% + 50px);}
-.co_gap_pc_25 > .flex_box {transform: translateX(-25px);}
-.co_gap_pc_25 > #rb_sidemenu .flex_box {transform: translateX(-25px);}
-.co_gap_pc_25 > #rb_sidemenu_float .flex_box {transform: translateX(-25px);}
-.co_gap_pc_25 > #rb_sidemenu_shop .flex_box {transform: translateX(-25px);}
-.co_gap_pc_25 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-25px);}
-.co_gap_pc_25.rb-layout-row {width: calc(100% + 50px); transform: translateX(-25px);}
+.co_gap_pc_25 .content_box {padding: 12.5px;}
+.co_gap_pc_25 .flex_box {width: calc(100% + 25px);}
+.co_gap_pc_25 > .flex_box {transform: translateX(-12.5px);}
+.co_gap_pc_25 > #rb_sidemenu .flex_box {transform: translateX(-12.5px);}
+.co_gap_pc_25 > #rb_sidemenu_float .flex_box {transform: translateX(-12.5px);}
+.co_gap_pc_25 > #rb_sidemenu_shop .flex_box {transform: translateX(-12.5px);}
+.co_gap_pc_25 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-12.5px);}
+.co_gap_pc_25.rb-layout-row {width: calc(100% + 25px); transform: translateX(-12.5px);}
 
-.co_gap_pc_30 .content_box {padding: 30px;}
-.co_gap_pc_30 .flex_box {width: calc(100% + 60px);}
-.co_gap_pc_30 > .flex_box {transform: translateX(-30px);}
-.co_gap_pc_30 > #rb_sidemenu .flex_box {transform: translateX(-30px);}
-.co_gap_pc_30 > #rb_sidemenu_float .flex_box {transform: translateX(-30px);}
-.co_gap_pc_30 > #rb_sidemenu_shop .flex_box {transform: translateX(-30px);}
-.co_gap_pc_30 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-30px);}
-.co_gap_pc_30.rb-layout-row {width: calc(100% + 60px); transform: translateX(-30px);}
-
+.co_gap_pc_30 .content_box {padding: 15px;}
+.co_gap_pc_30 .flex_box {width: calc(100% + 30px);}
+.co_gap_pc_30 > .flex_box {transform: translateX(-15px);}
+.co_gap_pc_30 > #rb_sidemenu .flex_box {transform: translateX(-15px);}
+.co_gap_pc_30 > #rb_sidemenu_float .flex_box {transform: translateX(-15px);}
+.co_gap_pc_30 > #rb_sidemenu_shop .flex_box {transform: translateX(-15px);}
+.co_gap_pc_30 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-15px);}
+.co_gap_pc_30.rb-layout-row {width: calc(100% + 30px); transform: translateX(-15px);}
 
 .adm_co_gap_pc_ {padding: 0px;}
 .adm_co_gap_pc_0 {padding: 0px;}
@@ -124,7 +123,7 @@ section.co_gap_pc_30 {margin-top: -10px;}
 
 @media all and (max-width:1024px) {
 
-    .flex_box {margin-left: 0px !important; margin-right: 0px !important; margin-bottom: 20px; transform: translateX(0px) !important;}
+    .flex_box {margin-left: 0px !important; margin-right: 0px !important; transform: translateX(0px) !important;}
     .rb_sub_module.flex_box {margin-bottom: 0px;}
     .rb-layout-row {width: 100% !important; transform: translateX(0px) !important;}
 
@@ -156,6 +155,79 @@ section.co_gap_pc_30 {margin-top: -10px;}
     .sub.co_gap_pc_20 {padding-left: 20px; padding-right: 20px;}
     .sub.co_gap_pc_25 {padding-left: 25px; padding-right: 25px;}
     .sub.co_gap_pc_30 {padding-left: 30px; padding-right: 30px;}
+
+    .co_gap_pc_ .content_box {padding: 0px;}
+    .co_gap_pc_ .flex_box {width: calc(100% + 0px);}
+    .co_gap_pc_ > .flex_box {transform: translateX(-0px);}
+    .co_gap_pc_ > #rb_sidemenu .flex_box {transform: translateX(-0px);}
+    .co_gap_pc_ > #rb_sidemenu_float .flex_box {transform: translateX(-0px);}
+    .co_gap_pc_ > #rb_sidemenu_shop .flex_box {transform: translateX(-0px);}
+    .co_gap_pc_ > #rb_sidemenu_float_shop .flex_box {transform: translateX(-0px);}
+    .co_gap_pc_.rb-layout-row {width: calc(100% + 0px); transform: translateX(-0px);}
+
+    .co_gap_pc_0 .content_box {padding: 0px;}
+    .co_gap_pc_0 .flex_box {width: calc(100% + 0px);}
+    .co_gap_pc_0 > .flex_box {transform: translateX(-0px);}
+    .co_gap_pc_0 > #rb_sidemenu .flex_box {transform: translateX(-0px);}
+    .co_gap_pc_0 > #rb_sidemenu_float .flex_box {transform: translateX(-0px);}
+    .co_gap_pc_0 > #rb_sidemenu_shop .flex_box {transform: translateX(-0px);}
+    .co_gap_pc_0 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-0px);}
+    .co_gap_pc_0.rb-layout-row {width: calc(100% + 0px); transform: translateX(-0px);}
+
+    .co_gap_pc_5 .content_box {padding: 5px;}
+    .co_gap_pc_5 .flex_box {width: calc(100% + 10px);}
+    .co_gap_pc_5 > .flex_box {transform: translateX(-5px);}
+    .co_gap_pc_5 > #rb_sidemenu .flex_box {transform: translateX(-5px);}
+    .co_gap_pc_5 > #rb_sidemenu_float .flex_box {transform: translateX(-5px);}
+    .co_gap_pc_5 > #rb_sidemenu_shop .flex_box {transform: translateX(-5px);}
+    .co_gap_pc_5 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-5px);}
+    .co_gap_pc_5.rb-layout-row {width: calc(100% + 10px); transform: translateX(-5px);}
+
+    .co_gap_pc_10 .content_box {padding: 10px;}
+    .co_gap_pc_10 .flex_box {width: calc(100% + 20px);}
+    .co_gap_pc_10 > .flex_box {transform: translateX(-10px);}
+    .co_gap_pc_10 > #rb_sidemenu .flex_box {transform: translateX(-10px);}
+    .co_gap_pc_10 > #rb_sidemenu_float .flex_box {transform: translateX(-10px);}
+    .co_gap_pc_10 > #rb_sidemenu_shop .flex_box {transform: translateX(-10px);}
+    .co_gap_pc_10 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-10px);}
+    .co_gap_pc_10.rb-layout-row {width: calc(100% + 20px); transform: translateX(-10px);}
+
+    .co_gap_pc_15 .content_box {padding: 15px;}
+    .co_gap_pc_15 .flex_box {width: calc(100% + 30px);}
+    .co_gap_pc_15 > .flex_box {transform: translateX(-15px);}
+    .co_gap_pc_15 > #rb_sidemenu .flex_box {transform: translateX(-15px);}
+    .co_gap_pc_15 > #rb_sidemenu_float .flex_box {transform: translateX(-15px);}
+    .co_gap_pc_15 > #rb_sidemenu_shop .flex_box {transform: translateX(-15px);}
+    .co_gap_pc_15 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-15px);}
+    .co_gap_pc_15.rb-layout-row {width: calc(100% + 30px); transform: translateX(-15px);}
+
+    .co_gap_pc_20 .content_box {padding: 20px;}
+    .co_gap_pc_20 .flex_box {width: calc(100% + 40px);}
+    .co_gap_pc_20 > .flex_box {transform: translateX(-20px);}
+    .co_gap_pc_20 > #rb_sidemenu .flex_box {transform: translateX(-20px);}
+    .co_gap_pc_20 > #rb_sidemenu_float .flex_box {transform: translateX(-20px);}
+    .co_gap_pc_20 > #rb_sidemenu_shop .flex_box {transform: translateX(-20px);}
+    .co_gap_pc_20 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-20px);}
+    .co_gap_pc_20.rb-layout-row {width: calc(100% + 40px); transform: translateX(-20px);}
+
+    .co_gap_pc_25 .content_box {padding: 25px;}
+    .co_gap_pc_25 .flex_box {width: calc(100% + 50px);}
+    .co_gap_pc_25 > .flex_box {transform: translateX(-25px);}
+    .co_gap_pc_25 > #rb_sidemenu .flex_box {transform: translateX(-25px);}
+    .co_gap_pc_25 > #rb_sidemenu_float .flex_box {transform: translateX(-25px);}
+    .co_gap_pc_25 > #rb_sidemenu_shop .flex_box {transform: translateX(-25px);}
+    .co_gap_pc_25 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-25px);}
+    .co_gap_pc_25.rb-layout-row {width: calc(100% + 50px); transform: translateX(-25px);}
+
+    .co_gap_pc_30 .content_box {padding: 30px;}
+    .co_gap_pc_30 .flex_box {width: calc(100% + 60px);}
+    .co_gap_pc_30 > .flex_box {transform: translateX(-30px);}
+    .co_gap_pc_30 > #rb_sidemenu .flex_box {transform: translateX(-30px);}
+    .co_gap_pc_30 > #rb_sidemenu_float .flex_box {transform: translateX(-30px);}
+    .co_gap_pc_30 > #rb_sidemenu_shop .flex_box {transform: translateX(-30px);}
+    .co_gap_pc_30 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-30px);}
+    .co_gap_pc_30.rb-layout-row {width: calc(100% + 60px); transform: translateX(-30px);}
+
 
 }
 
@@ -213,3 +285,5 @@ section.co_gap_pc_30 {margin-top: -10px;}
 .flex_box_inner .no_data_section {display: none !important;}
 .flex_box_inner {margin-left: 0px !important; margin-right: 0px !important;}
 .flex_box_inner .rb_layout_box .add_module_wrap {display: none !important;}
+
+.ui-sortable-handle {margin-left: -1px; margin-right: -1px;}
