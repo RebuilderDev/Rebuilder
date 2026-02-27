@@ -10,15 +10,15 @@ $md_title_size = isset($_POST['md_title_size']) ? $_POST['md_title_size'] : '20'
 $md_title_font = isset($_POST['md_title_font']) ? $_POST['md_title_font'] : 'font-B';
 $md_title_hide = isset($_POST['md_title_hide']) ? $_POST['md_title_hide'] : '0';
 
-$md_aos_use = ($_POST['md_aos_use'] === '' ? 0 : (int)$_POST['md_aos_use']);
-$md_aos_motion = ($_POST['md_aos_motion'] !== '' ? $_POST['md_aos_motion'] : 'fade-up');
-$md_aos_offset = ($_POST['md_aos_offset'] !== '' ? $_POST['md_aos_offset'] : '-200');
-$md_aos_delay = ($_POST['md_aos_delay'] !== '' ? $_POST['md_aos_delay'] : '50');
-$md_aos_duration = ($_POST['md_aos_duration'] !== '' ? $_POST['md_aos_duration'] : '500');
-$md_aos_easing = ($_POST['md_aos_easing'] !== '' ? $_POST['md_aos_easing'] : 'ease-in-out-cubic');
-$md_aos_anchor_placement = ($_POST['md_aos_anchor_placement'] !== '' ? $_POST['md_aos_anchor_placement'] : 'top-center');
-$md_aos_mirror = ($_POST['md_aos_mirror'] === '' ? 1 : (int)$_POST['md_aos_mirror']);
-$md_aos_once = ($_POST['md_aos_once'] === '' ? 0 : (int)$_POST['md_aos_once']);
+$md_aos_use = isset($_POST['md_aos_use']) ? (int)$_POST['md_aos_use'] : 0;
+$md_aos_motion = isset($_POST['md_aos_motion']) && $_POST['md_aos_motion'] !== '' ? $_POST['md_aos_motion'] : 'fade-up';
+$md_aos_offset = isset($_POST['md_aos_offset']) && $_POST['md_aos_offset'] !== '' ? $_POST['md_aos_offset'] : '-200';
+$md_aos_delay = isset($_POST['md_aos_delay']) && $_POST['md_aos_delay'] !== '' ? $_POST['md_aos_delay'] : '50';
+$md_aos_duration = isset($_POST['md_aos_duration']) && $_POST['md_aos_duration'] !== '' ? $_POST['md_aos_duration'] : '500';
+$md_aos_easing = isset($_POST['md_aos_easing']) && $_POST['md_aos_easing'] !== '' ? $_POST['md_aos_easing'] : 'ease-in-out-cubic';
+$md_aos_anchor_placement = isset($_POST['md_aos_anchor_placement']) && $_POST['md_aos_anchor_placement'] !== '' ? $_POST['md_aos_anchor_placement'] : 'top-center';
+$md_aos_mirror = isset($_POST['md_aos_mirror']) ? (int)$_POST['md_aos_mirror'] : 1;
+$md_aos_once = isset($_POST['md_aos_once']) ? (int)$_POST['md_aos_once'] : 0;
 
 
 $md_layout = isset($_POST['md_layout']) ? $_POST['md_layout'] : '';
@@ -507,4 +507,3 @@ if (isset($is_height) && $is_height == "1") {
             }
         }
     ?>
-

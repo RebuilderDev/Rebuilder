@@ -361,7 +361,15 @@ if($mod_type == "del_sec") { //섹션삭제
                 $md_9 = !empty($rb_module['md_9']) ? $rb_module['md_9'] : '';
                 $md_10 = !empty($rb_module['md_10']) ? $rb_module['md_10'] : '';
 
-
+                $md_aos_use           = (int)(!empty($rb_module['md_aos_use'])        ? $rb_module['md_aos_use']              : 0);
+                $view_md_aos_motion   = !empty($rb_module['md_aos_motion'])           ? $rb_module['md_aos_motion']           : 'fade-up';
+                $view_md_aos_offset   = !empty($rb_module['md_aos_offset'])           ? $rb_module['md_aos_offset']           : '-200';
+                $view_md_aos_delay    = !empty($rb_module['md_aos_delay'])            ? $rb_module['md_aos_delay']            : '50';
+                $view_md_aos_duration = !empty($rb_module['md_aos_duration'])         ? $rb_module['md_aos_duration']         : '500';
+                $view_md_aos_easing   = !empty($rb_module['md_aos_easing'])           ? $rb_module['md_aos_easing']           : 'ease-in-out-cubic';
+                $view_md_aos_anchor   = !empty($rb_module['md_aos_anchor_placement']) ? $rb_module['md_aos_anchor_placement'] : 'top-center';
+                $view_md_aos_mirror   = !empty($rb_module['md_aos_mirror'])           ? (int)$rb_module['md_aos_mirror']      : 1;
+                $view_md_aos_once     = !empty($rb_module['md_aos_once'])             ? (int)$rb_module['md_aos_once']        : 0;
 
                 ?>
 
@@ -2480,20 +2488,6 @@ if($mod_type == "del_sec") { //섹션삭제
 
     <div>
 
-                            <?php
-                            // 표시용 기본값(화면에만 채움)
-                            $view_md_aos_motion = ($rb_module['md_aos_motion'] !== '' ? $rb_module['md_aos_motion'] : 'fade-up');
-                            $view_md_aos_offset = ($rb_module['md_aos_offset'] !== '' ? $rb_module['md_aos_offset'] : '-200');
-                            $view_md_aos_delay = ($rb_module['md_aos_delay'] !== '' ? $rb_module['md_aos_delay'] : '50');
-                            $view_md_aos_duration = ($rb_module['md_aos_duration'] !== '' ? $rb_module['md_aos_duration'] : '500');
-                            $view_md_aos_easing = ($rb_module['md_aos_easing'] !== '' ? $rb_module['md_aos_easing'] : 'ease-in-out-cubic');
-                            $view_md_aos_anchor = ($rb_module['md_aos_anchor_placement'] !== '' ? $rb_module['md_aos_anchor_placement'] : 'top-center');
-
-                            // // 체크박스 표시용 기본값(화면에만)
-                            // // DB 값이 ''(미저장) 이면: mirror=true(체크), once=false(미체크)
-                            $view_md_aos_mirror = ($rb_module['md_aos_mirror'] === '' ? 1 : (int)$rb_module['md_aos_mirror']);
-                            $view_md_aos_once = ($rb_module['md_aos_once'] === '' ? 0 : (int)$rb_module['md_aos_once']);
-                            ?>
 
         <div class="config_wrap">
 
@@ -2503,12 +2497,11 @@ if($mod_type == "del_sec") { //섹션삭제
                     AOS
                 </li>
                 <li class="rows_inp_r mt-5">
-                    <input type="radio" name="md_aos_use" id="md_aos_use_0" class="magic-radio" value="0" <?php echo ((int)$rb_module['md_aos_use'] === 0 ? 'checked' : ''); ?>>
+                    <input type="radio" name="md_aos_use" id="md_aos_use_0" class="magic-radio" value="0" <?php echo (!empty($md_aos_use) ? $md_aos_use : 0) === 0 ? 'checked' : ''; ?>>
                     <label for="md_aos_use_0">사용안함</label>
-                    <input type="radio" name="md_aos_use" id="md_aos_use_1" class="magic-radio" value="1" <?php echo ((int)$rb_module['md_aos_use'] === 1 ? 'checked' : ''); ?>>
+                    <input type="radio" name="md_aos_use" id="md_aos_use_1" class="magic-radio" value="1" <?php echo (!empty($md_aos_use) ? $md_aos_use : 0) === 1 ? 'checked' : ''; ?>>
                     <label for="md_aos_use_1">사용함</label>
                 </li>
-
                 <div class="cb"></div>
             </ul>
 
@@ -2519,37 +2512,36 @@ if($mod_type == "del_sec") { //섹션삭제
                 </li>
                 <li class="rows_inp_r mt-5">
                     <select id="md_aos_motion" name="md_aos_motion" class="select select_tiny w50">
-                        <option value="" <?php echo ($view_md_aos_motion === '' ? 'selected' : ''); ?>>모션선택</option>
+                        <option value="" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === '' ? 'selected' : ''; ?>>모션선택</option>
                         <option value="" disabled>──── Fade ────</option>
-                        <option value="fade" <?php echo ($view_md_aos_motion === 'fade' ? 'selected' : ''); ?>>fade</option>
-                        <option value="fade-up" <?php echo ($view_md_aos_motion === 'fade-up' ? 'selected' : ''); ?>>fade-up</option>
-                        <option value="fade-down" <?php echo ($view_md_aos_motion === 'fade-down' ? 'selected' : ''); ?>>fade-down</option>
-                        <option value="fade-left" <?php echo ($view_md_aos_motion === 'fade-left' ? 'selected' : ''); ?>>fade-left</option>
-                        <option value="fade-right" <?php echo ($view_md_aos_motion === 'fade-right' ? 'selected' : ''); ?>>fade-right</option>
-                        <option value="fade-up-right" <?php echo ($view_md_aos_motion === 'fade-up-right' ? 'selected' : ''); ?>>fade-up-right</option>
-                        <option value="fade-up-left" <?php echo ($view_md_aos_motion === 'fade-up-left' ? 'selected' : ''); ?>>fade-up-left</option>
-                        <option value="fade-down-right" <?php echo ($view_md_aos_motion === 'fade-down-right' ? 'selected' : ''); ?>>fade-down-right</option>
-                        <option value="fade-down-left" <?php echo ($view_md_aos_motion === 'fade-down-left' ? 'selected' : ''); ?>>fade-down-left</option>
+                        <option value="fade" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'fade' ? 'selected' : ''; ?>>fade</option>
+                        <option value="fade-up" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'fade-up' ? 'selected' : ''; ?>>fade-up</option>
+                        <option value="fade-down" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'fade-down' ? 'selected' : ''; ?>>fade-down</option>
+                        <option value="fade-left" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'fade-left' ? 'selected' : ''; ?>>fade-left</option>
+                        <option value="fade-right" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'fade-right' ? 'selected' : ''; ?>>fade-right</option>
+                        <option value="fade-up-right" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'fade-up-right' ? 'selected' : ''; ?>>fade-up-right</option>
+                        <option value="fade-up-left" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'fade-up-left' ? 'selected' : ''; ?>>fade-up-left</option>
+                        <option value="fade-down-right" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'fade-down-right' ? 'selected' : ''; ?>>fade-down-right</option>
+                        <option value="fade-down-left" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'fade-down-left' ? 'selected' : ''; ?>>fade-down-left</option>
                         <option value="" disabled>──── Flip ────</option>
-                        <option value="flip-up" <?php echo ($view_md_aos_motion === 'flip-up' ? 'selected' : ''); ?>>flip-up</option>
-                        <option value="flip-down" <?php echo ($view_md_aos_motion === 'flip-down' ? 'selected' : ''); ?>>flip-down</option>
-                        <option value="flip-left" <?php echo ($view_md_aos_motion === 'flip-left' ? 'selected' : ''); ?>>flip-left</option>
-                        <option value="flip-right" <?php echo ($view_md_aos_motion === 'flip-right' ? 'selected' : ''); ?>>flip-right</option>
+                        <option value="flip-up" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'flip-up' ? 'selected' : ''; ?>>flip-up</option>
+                        <option value="flip-down" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'flip-down' ? 'selected' : ''; ?>>flip-down</option>
+                        <option value="flip-left" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'flip-left' ? 'selected' : ''; ?>>flip-left</option>
+                        <option value="flip-right" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'flip-right' ? 'selected' : ''; ?>>flip-right</option>
                         <option value="" disabled>──── Zoom In ────</option>
-                        <option value="zoom-in" <?php echo ($view_md_aos_motion === 'zoom-in' ? 'selected' : ''); ?>>zoom-in</option>
-                        <option value="zoom-in-up" <?php echo ($view_md_aos_motion === 'zoom-in-up' ? 'selected' : ''); ?>>zoom-in-up</option>
-                        <option value="zoom-in-down" <?php echo ($view_md_aos_motion === 'zoom-in-down' ? 'selected' : ''); ?>>zoom-in-down</option>
-                        <option value="zoom-in-left" <?php echo ($view_md_aos_motion === 'zoom-in-left' ? 'selected' : ''); ?>>zoom-in-left</option>
-                        <option value="zoom-in-right" <?php echo ($view_md_aos_motion === 'zoom-in-right' ? 'selected' : ''); ?>>zoom-in-right</option>
+                        <option value="zoom-in" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'zoom-in' ? 'selected' : ''; ?>>zoom-in</option>
+                        <option value="zoom-in-up" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'zoom-in-up' ? 'selected' : ''; ?>>zoom-in-up</option>
+                        <option value="zoom-in-down" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'zoom-in-down' ? 'selected' : ''; ?>>zoom-in-down</option>
+                        <option value="zoom-in-left" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'zoom-in-left' ? 'selected' : ''; ?>>zoom-in-left</option>
+                        <option value="zoom-in-right" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'zoom-in-right' ? 'selected' : ''; ?>>zoom-in-right</option>
                         <option value="" disabled>──── Zoom Out ────</option>
-                        <option value="zoom-out" <?php echo ($view_md_aos_motion === 'zoom-out' ? 'selected' : ''); ?>>zoom-out</option>
-                        <option value="zoom-out-up" <?php echo ($view_md_aos_motion === 'zoom-out-up' ? 'selected' : ''); ?>>zoom-out-up</option>
-                        <option value="zoom-out-down" <?php echo ($view_md_aos_motion === 'zoom-out-down' ? 'selected' : ''); ?>>zoom-out-down</option>
-                        <option value="zoom-out-left" <?php echo ($view_md_aos_motion === 'zoom-out-left' ? 'selected' : ''); ?>>zoom-out-left</option>
-                        <option value="zoom-out-right" <?php echo ($view_md_aos_motion === 'zoom-out-right' ? 'selected' : ''); ?>>zoom-out-right</option>
+                        <option value="zoom-out" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'zoom-out' ? 'selected' : ''; ?>>zoom-out</option>
+                        <option value="zoom-out-up" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'zoom-out-up' ? 'selected' : ''; ?>>zoom-out-up</option>
+                        <option value="zoom-out-down" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'zoom-out-down' ? 'selected' : ''; ?>>zoom-out-down</option>
+                        <option value="zoom-out-left" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'zoom-out-left' ? 'selected' : ''; ?>>zoom-out-left</option>
+                        <option value="zoom-out-right" <?php echo (!empty($view_md_aos_motion) ? $view_md_aos_motion : 'fade-up') === 'zoom-out-right' ? 'selected' : ''; ?>>zoom-out-right</option>
                     </select>
                 </li>
-
                 <div class="cb"></div>
             </ul>
 
@@ -2565,24 +2557,22 @@ if($mod_type == "del_sec") { //섹션삭제
                 </li>
                 <li class="rows_inp_r mt-15">
                     <div id="md_aos_delay_range" class="rb_range_item"></div>
-                    <input type="hidden" id="md_aos_delay" class="md_range_send" name="md_aos_delay" value="<?php echo htmlspecialchars($view_md_aos_delay, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" id="md_aos_delay" class="md_range_send" name="md_aos_delay" value="<?php echo !empty($view_md_aos_delay) ? $view_md_aos_delay : '50'; ?>">
                 </li>
-
                 <script type="text/javascript">
                     $("#md_aos_delay_range").slider({
                         range: "min",
                         min: 0,
                         max: 1000,
-                        value: <?php echo htmlspecialchars($view_md_aos_delay, ENT_QUOTES, 'UTF-8'); ?>,
+                        value: <?php echo !empty($view_md_aos_delay) ? $view_md_aos_delay : '50'; ?>,
                         step: 50,
                         slide: function(e, ui) {
                             $("#md_aos_delay_range .ui-slider-handle").html(ui.value);
-                            $("#md_aos_delay").val(ui.value); // hidden input에 값 업데이트
+                            $("#md_aos_delay").val(ui.value);
                         }
                     });
-
-                    $("#md_aos_delay_range .ui-slider-handle").html("<?php echo htmlspecialchars($view_md_aos_delay, ENT_QUOTES, 'UTF-8'); ?>");
-                    $("#md_aos_delay").val("<?php echo htmlspecialchars($view_md_aos_delay, ENT_QUOTES, 'UTF-8'); ?>"); // 초기값 설정
+                    $("#md_aos_delay_range .ui-slider-handle").html("<?php echo !empty($view_md_aos_delay) ? $view_md_aos_delay : '50'; ?>");
+                    $("#md_aos_delay").val("<?php echo !empty($view_md_aos_delay) ? $view_md_aos_delay : '50'; ?>");
                 </script>
                 <div class="cb"></div>
             </ul>
@@ -2594,29 +2584,25 @@ if($mod_type == "del_sec") { //섹션삭제
                 </li>
                 <li class="rows_inp_r mt-15">
                     <div id="md_aos_duration_range" class="rb_range_item"></div>
-                    <input type="hidden" id="md_aos_duration" class="md_range_send" name="md_aos_duration" value="<?php echo htmlspecialchars($view_md_aos_duration, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" id="md_aos_duration" class="md_range_send" name="md_aos_duration" value="<?php echo !empty($view_md_aos_duration) ? $view_md_aos_duration : '500'; ?>">
                 </li>
-
                 <script type="text/javascript">
                     $("#md_aos_duration_range").slider({
                         range: "min",
                         min: 0,
                         max: 1000,
-                        value: <?php echo htmlspecialchars($view_md_aos_duration, ENT_QUOTES, 'UTF-8'); ?>,
+                        value: <?php echo !empty($view_md_aos_duration) ? $view_md_aos_duration : '500'; ?>,
                         step: 50,
                         slide: function(e, ui) {
                             $("#md_aos_duration_range .ui-slider-handle").html(ui.value);
-                            $("#md_aos_duration").val(ui.value); // hidden input에 값 업데이트
+                            $("#md_aos_duration").val(ui.value);
                         }
                     });
-
-                    $("#md_aos_duration_range .ui-slider-handle").html("<?php echo htmlspecialchars($view_md_aos_duration, ENT_QUOTES, 'UTF-8'); ?>");
-                    $("#md_aos_duration").val("<?php echo htmlspecialchars($view_md_aos_duration, ENT_QUOTES, 'UTF-8'); ?>"); // 초기값 설정
+                    $("#md_aos_duration_range .ui-slider-handle").html("<?php echo !empty($view_md_aos_duration) ? $view_md_aos_duration : '500'; ?>");
+                    $("#md_aos_duration").val("<?php echo !empty($view_md_aos_duration) ? $view_md_aos_duration : '500'; ?>");
                 </script>
                 <div class="cb"></div>
             </ul>
-
-
 
             <ul class="rows_inp_lr mt-5">
                 <li class="rows_inp_l rows_inp_l_span">
@@ -2624,13 +2610,11 @@ if($mod_type == "del_sec") { //섹션삭제
                     data-aos-once
                 </li>
                 <li class="rows_inp_r mt-5">
-                    <input type="checkbox" name="md_aos_once" id="md_aos_once" class="magic-checkbox" value="1" <?php echo ($view_md_aos_once === 1 ? 'checked' : ''); ?>>
+                    <input type="checkbox" name="md_aos_once" id="md_aos_once" class="magic-checkbox" value="1" <?php echo (!empty($view_md_aos_once) ? $view_md_aos_once : 0) === 1 ? 'checked' : ''; ?>>
                     <label for="md_aos_once">스크롤시 최초 1회만 적용</label>
                 </li>
-
                 <div class="cb"></div>
             </ul>
-
 
         </div>
 
