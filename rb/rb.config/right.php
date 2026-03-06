@@ -3815,6 +3815,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
     // Ajax 실행 함수 정의
     async function executeAjax() {
 
+        var co_theme = '<?php echo $rb_core['theme']; ?>';
         var co_color = $('input[name="co_color"]').val();
         var co_header = $('input[name="co_header"]').val();
 
@@ -3963,6 +3964,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
             method: 'POST', // 또는 'GET' 등의 HTTP 메서드
             dataType: 'json',
             data: {
+                "co_theme": co_theme,
                 "co_color": co_color,
                 "co_header": co_header,
                 "co_main_bg": co_main_bg,

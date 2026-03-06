@@ -8,12 +8,22 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 //ini_set('display_startup_errors', 1);
 //error_reporting(E_ALL);
 
-define('RB_VER',  '2.2.5'); // 버전
+define('RB_VER',  '2.2.5.1'); // 버전
 define('RB_TABLE_PREFIX', 'rb_'); // 리빌더 접두사
 
 /*********************************************/
 
-$rb_config = sql_fetch (" select * from rb_config "); // 환경설정 테이블 조회
+$rb_config_col = sql_fetch (" select * from rb_config  "); // 환경설정 테이블 1차조회
+
+if (!isset($rb_config_col['co_theme'])) { // 컬럼이 없으면 추가
+    sql_query("alter table rb_config add column co_theme varchar(100) default ''");
+}
+if (empty($rb_config_col['co_theme'])) { // 환경설정 테이블에 테마명이 비어있는 경우 주입
+    sql_query("update rb_config set co_theme = '" . addslashes($config['cf_theme']) . "'");
+    $rb_config['co_theme'] = $config['cf_theme'];
+}
+
+$rb_config = sql_fetch (" select * from rb_config where co_theme = '{$config['cf_theme']}' "); // 환경설정 테이블 조회
 $rb_builder = sql_fetch (" select * from rb_builder "); // 빌더설정 테이블 조회
 
 $rb_core['theme'] = !empty($config['cf_theme']) ? $config['cf_theme'] : ''; // 테마
