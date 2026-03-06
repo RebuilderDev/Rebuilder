@@ -265,6 +265,7 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
             `co_header` varchar(20) NOT NULL DEFAULT '#ffffff' COMMENT '헤더',
             `co_footer` varchar(20) NOT NULL COMMENT '풋터',
             `co_font` varchar(20) NOT NULL DEFAULT '' COMMENT '폰트',
+            `co_theme` varchar(100) NOT NULL DEFAULT '' COMMENT '테마명',
             `co_datetime` datetime NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT '등록일시(변경일시)',
             `co_ip` varchar(100) NOT NULL DEFAULT '' COMMENT '등록자IP',
             PRIMARY KEY (`co_id`)
@@ -283,6 +284,7 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
                     co_header = '#ffffff',
                     co_footer = '0',
                     co_font = 'Pretendard',
+                    co_theme = 'rb.basic',
                     co_datetime = '".G5_TIME_YMDHIS."',
                     co_ip = '' ";
     sql_query($sql);
