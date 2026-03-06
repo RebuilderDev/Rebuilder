@@ -227,7 +227,7 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_SHOP_URL.'/rb.layout_hd/
                                         게시물
                                     </ul>
                                     <ul class="rb_my_p_ul2 flex_r">
-                                        <a href="<?php echo G5_URL ?>/rb/home.php?mb_id=<?php echo $member['mb_id'] ?>&ca=bbs" alt="게시물" class="font-B font-12">
+                                        <a href="<?php echo G5_URL ?>/rb/new.php?mb_id=<?php echo $member['mb_id'] ?>&view=w" alt="게시물" class="font-B font-12">
                                         <?php echo wr_cnt($member['mb_id'], 'w') ?>건
                                         </a>
                                     </ul>
@@ -237,7 +237,7 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_SHOP_URL.'/rb.layout_hd/
                                         댓글
                                     </ul>
                                     <ul class="rb_my_p_ul2 flex_r">
-                                        <a href="<?php echo G5_URL ?>/rb/home.php?mb_id=<?php echo $member['mb_id'] ?>&ca=co" alt="댓글" class="font-B font-12">
+                                        <a href="<?php echo G5_URL ?>/rb/new.php?mb_id=<?php echo $member['mb_id'] ?>&view=c" alt="댓글" class="font-B font-12">
                                         <?php echo wr_cnt($member['mb_id'], 'c') ?>건
                                         </a>
                                     </ul>
