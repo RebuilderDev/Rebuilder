@@ -219,7 +219,7 @@ section.co_gap_pc_30 {margin-top: -10px;}
     .co_gap_pc_25 > #rb_sidemenu_float_shop .flex_box {transform: translateX(-12.5px);}
     .co_gap_pc_25.rb-layout-row {width: calc(100% + 25px); transform: translateX(-12.5px);}
 
-    .co_gap_pc_30 .content_box {padding: 15px;}
+    .co_gap_pc_30 .content_box {padding: 15px; padding-left: 30px; padding-right: 30px;}
     .co_gap_pc_30 .flex_box {width: calc(100% + 30px);}
     .co_gap_pc_30 > .flex_box {transform: translateX(-15px);}
     .co_gap_pc_30 > #rb_sidemenu .flex_box {transform: translateX(-15px);}
