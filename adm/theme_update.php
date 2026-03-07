@@ -14,8 +14,16 @@ $post_set_default_skin = isset($_POST['set_default_skin']) ? clean_xss_tags($_PO
 $theme_dir = get_theme_dir();
 
 if($post_type == 'reset') {
+    $reset_theme = sql_real_escape_string(trim($config['cf_theme']));
+
     $sql = " update {$g5['config_table']} set cf_theme = '' ";
     sql_query($sql);
+
+    if($reset_theme !== '') {
+        sql_query("UPDATE rb_config SET co_theme = '' WHERE co_theme = '{$reset_theme}'");
+        sql_query("DELETE FROM rb_import_log WHERE theme_key = '{$reset_theme}'");
+    }
+
     die('');
 }
 
