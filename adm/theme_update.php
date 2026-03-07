@@ -20,8 +20,8 @@ if($post_type == 'reset') {
     sql_query($sql);
 
     if($reset_theme !== '') {
-        sql_query("UPDATE rb_config SET co_theme = '' WHERE co_theme = '{$reset_theme}'");
-        sql_query("DELETE FROM rb_import_log WHERE theme_key = '{$reset_theme}'");
+        //sql_query("UPDATE rb_config SET co_theme = '' WHERE co_theme = '{$reset_theme}'");
+        //sql_query("DELETE FROM rb_import_log");
     }
 
     die('');
@@ -162,7 +162,7 @@ if (!empty($rb_json_files)) {
 
                         $co_theme_val = isset($row['co_theme']) ? sql_real_escape_string((string)$row['co_theme']) : '';
                         $exists = sql_fetch("SELECT co_id FROM rb_config WHERE co_theme = '{$co_theme_val}' LIMIT 1");
-                        if ($exists) continue;
+                        if (!empty($exists)) continue;
 
                         $cols = array();
                         $vals = array();
