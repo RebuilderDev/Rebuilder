@@ -618,7 +618,7 @@ foreach ($layouts as $layout_no) {
             $row_sec = $it['row'];
             ob_start();
             ?>
-            <div class="rb_section_box rb_section_<?php echo $row_sec['sec_id']; ?> <?php if (isset($row_sec['sec_width']) && $row_sec['sec_width'] == 1) { ?>rb_sec_wide<?php } ?>"
+            <div class="rb_section_box rb_section_<?php echo $row_sec['sec_id']; ?> <?php if (isset($row_sec['sec_width']) && $row_sec['sec_width'] == 1) { ?>rb_sec_wide<?php } ?> <?php if (isset($row_sec['sec_con_width']) && $row_sec['sec_con_width'] == 1) { ?>sec_wide_set<?php } ?>"
                  style="
 
                     <?php if (isset($row_sec['sec_width']) && $row_sec['sec_width'] == 1) { ?>
@@ -664,7 +664,7 @@ foreach ($layouts as $layout_no) {
 
 
                 <div class="flex_box" style="
-                   <?php if (isset($row_sec['sec_con_width']) && $row_sec['sec_con_width'] == 1) { ?><?php } else { ?>width: calc(<?php if($is_index) { ?><?php echo $rb_core['main_width'] ?>px<?php } else { ?><?php echo $rb_core['sub_width'] ?>px<?php } ?> + <?php echo $rb_core['gap_pc'] ?>px); transform: translateX(0px);<?php } ?>"
+                   <?php if (isset($row_sec['sec_con_width']) && $row_sec['sec_con_width'] == 1) { ?>max-width: calc(100% + <?php echo $rb_core['gap_pc'] ?>px);<?php } else { ?>width: calc(<?php if($is_index) { ?><?php echo $rb_core['main_width'] ?>px<?php } else { ?><?php echo $rb_core['sub_width'] ?>px<?php } ?> + <?php echo $rb_core['gap_pc'] ?>px); transform: translateX(0px);<?php } ?>"
                     data-layout="<?php echo $row_sec['sec_layout']; ?>"
                     data-order-id="<?php echo (int)$row_sec['sec_order_id']; ?>"
                     data-sec-key="<?php echo $row_sec['sec_key']; ?>"

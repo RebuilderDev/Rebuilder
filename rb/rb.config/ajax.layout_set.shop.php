@@ -639,7 +639,7 @@ foreach ($layouts as $layout_no) {
             ob_start();
         ?>
 
-           <div class="rb_section_box rb_section_<?php echo $row_sec['sec_id']; ?> <?php if (isset($row_sec['sec_width']) && $row_sec['sec_width'] == 1) { ?>rb_sec_wide<?php } ?>"
+           <div class="rb_section_box rb_section_<?php echo $row_sec['sec_id']; ?> <?php if (isset($row_sec['sec_width']) && $row_sec['sec_width'] == 1) { ?>rb_sec_wide<?php } ?> <?php if (isset($row_sec['sec_con_width']) && $row_sec['sec_con_width'] == 1) { ?>sec_wide_set<?php } ?>"
                  style="
                     <?php if (isset($row_sec['sec_width']) && $row_sec['sec_width'] == 1) { ?>
                     min-width:<?php if($is_index) { ?><?php echo $rb_core['main_width'] ?>px<?php } else { ?><?php echo $rb_core['sub_width'] ?>px<?php } ?>;

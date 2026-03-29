@@ -77,18 +77,18 @@ $rb_gap_minus2 = $rb_gap_minus / 2;
 
 <?php } ?>
 
-.rb_module_wide{width: 100vw;margin-left: calc(50% - 50vw);margin-right: calc(50% - 50vw);left: auto; right: auto; transform: none; padding-left:var(--rb-gap-minus2) !important; padding-right:var(--rb-gap-minus2) !important}
+.sec_wide_set .content_box {padding-left:0px !important; padding-right:0px !important;}
 
 @media all and (max-width:1430px){
     .gnb_wrap .inner {max-width: 1280px !important;}
     .gnb_wrap .rows_gnb_wrap {max-width: 1280px !important;}
     .index {max-width: 1280px !important;}
     .sub {max-width: 1280px !important;}
-    .rb_section_box {min-width: 1280px !important;}
     .rb_module_wide  {min-width: 1280px !important;}
-    .rb_section_box .flex_box {max-width: calc(1280px + var(--rb-gap))}
     .footer_gnb .inner {max-width: 1280px !important;}
     .footer_copy .inner {max-width: 1280px !important;}
+    .rb_section_title {max-width: 1280px !important; margin:0 auto; padding-left:0px !important; padding-right:0px !important;}
+    .rb_section_box .flex_box {max-width: calc(1280px + var(--rb-gap))}
 }
 
 @media all and (max-width:1310px){
@@ -96,11 +96,11 @@ $rb_gap_minus2 = $rb_gap_minus / 2;
     .gnb_wrap .rows_gnb_wrap {max-width: 1024px !important;}
     .index {max-width: 1024px !important;}
     .sub {max-width: 1024px !important;}
-    .rb_section_box {min-width: 1024px !important;}
     .rb_module_wide  {min-width: 1024px !important;}
-    .rb_section_box .flex_box {max-width: calc(1024px + var(--rb-gap))}
     .footer_gnb .inner {max-width: 1024px !important;}
     .footer_copy .inner {max-width: 1024px !important;}
+    .rb_section_title {max-width: 1024px !important; margin:0 auto; padding-left:0px !important; padding-right:0px !important;}
+    .rb_section_box .flex_box {max-width: calc(1024px + var(--rb-gap))}
 }
 
 @media all and (max-width:1024px) {
@@ -109,6 +109,7 @@ $rb_gap_minus2 = $rb_gap_minus / 2;
 
    #rb_sidemenu {margin-top:var(--rb-gap);}
    #rb_sidemenu_shop {margin-top:var(--rb-gap);}
+   .rb_section_title {max-width: 100% !important; padding-left:var(--rb-gap) !important; padding-right:var(--rb-gap) !important;}
    <?php if($rb_gap_mo == 1) { ?>
 
     <?php } ?>

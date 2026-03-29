@@ -807,8 +807,7 @@ input#md_title_hide + label:after {
 }
 
 .rb_section_box_set.ui-sortable-handle{border: 1px dashed #ff64b5 !important;}
-.rb-mode-sec .ui-sortable-handle .content_box {border:0px !important;}
-.rb-mode-sec .rb_section_box_set.ui-sortable-handle .content_box {border: 1px dashed #ff64b5 !important;border-radius: 0px !important;}
+.rb-mode-sec .ui-sortable-handle .content_box {border: 1px dashed #00d6ee !important;border-radius: 0px !important;}
 
 .rb_section_box .add_section_wrap .add_section_btns {
     border: 0px;
