@@ -151,6 +151,25 @@ section.co_gap_pc_30 {margin-top: -10px;}
 #rb_sidemenu_float .content_box {padding-top: 1px !important;}
 #rb_sidemenu_float_shop .content_box {padding-top: 1px !important;}
 
+.rb_module_wide {
+    width: var(--vw);
+    margin-left: calc(50% - var(--vw) / 2);
+    margin-right: calc(50% - var(--vw) / 2);
+    left: auto;
+    right: auto;
+    transform: none;
+}
+
+.rb_sec_wide {
+    width: var(--vw);
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    padding-left: 10px;
+    padding-right: 10px;
+    flex: 0 0 var(--vw);
+}
+
 @media all and (max-width:1024px) {
 
     .flex_box {margin-left: 0px !important; margin-right: 0px !important; transform: translateX(0px) !important;}

@@ -481,6 +481,18 @@ if(!defined('G5_IS_ADMIN'))
     echo $config['cf_add_script'];
 ?>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        function setViewport() {
+            var w = document.documentElement.clientWidth;
+            document.documentElement.style.setProperty('--vw', w + 'px');
+            document.documentElement.style.setProperty('--scrollbar-width', (window.innerWidth - w) + 'px');
+        }
+        setViewport();
+        window.addEventListener('resize', setViewport);
+    });
+</script>
+
 </head>
 <body<?php echo isset($g5['body_script']) ? $g5['body_script'] : ''; ?>>
 <?php

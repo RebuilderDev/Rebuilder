@@ -87,7 +87,6 @@ $rb_gap_minus2 = $rb_gap_minus / 2;
     .rb_module_wide  {min-width: 1280px !important;}
     .footer_gnb .inner {max-width: 1280px !important;}
     .footer_copy .inner {max-width: 1280px !important;}
-    .rb_section_title {max-width: 1280px !important; margin:0 auto; padding-left:0px !important; padding-right:0px !important;}
     .rb_section_box .flex_box {max-width: calc(1280px + var(--rb-gap))}
 }
 
@@ -99,7 +98,6 @@ $rb_gap_minus2 = $rb_gap_minus / 2;
     .rb_module_wide  {min-width: 1024px !important;}
     .footer_gnb .inner {max-width: 1024px !important;}
     .footer_copy .inner {max-width: 1024px !important;}
-    .rb_section_title {max-width: 1024px !important; margin:0 auto; padding-left:0px !important; padding-right:0px !important;}
     .rb_section_box .flex_box {max-width: calc(1024px + var(--rb-gap))}
 }
 
@@ -109,7 +107,6 @@ $rb_gap_minus2 = $rb_gap_minus / 2;
 
    #rb_sidemenu {margin-top:var(--rb-gap);}
    #rb_sidemenu_shop {margin-top:var(--rb-gap);}
-   .rb_section_title {max-width: 100% !important; padding-left:var(--rb-gap) !important; padding-right:var(--rb-gap) !important;}
    <?php if($rb_gap_mo == 1) { ?>
 
     <?php } ?>
