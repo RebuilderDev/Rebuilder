@@ -29,6 +29,15 @@
   /* Fix of Webkit flickering */
   z-index: 1;
 }
+.rb_swiper.rb-swiper-pending .rb_swiper_inner {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.rb_swiper.rb-swiper-ready .rb_swiper_inner {
+  visibility: visible;
+  opacity: 1;
+}
 .swiper-container-vertical > .swiper-wrapper {
   flex-direction: column;
 }

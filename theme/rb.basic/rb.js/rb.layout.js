@@ -1,4 +1,4 @@
-$(document).ready(function () {
+﻿$(document).ready(function () {
 
     function rbGetAosConfigsSafe() {
         var cfgs = window.RB_AOS_CONFIGS || {};
@@ -9,13 +9,11 @@ $(document).ready(function () {
 
     function rbHasAnyAosValue(cfg) {
         if (!cfg) return false;
-        // // 마켓과 동일: aos가 있어야만 적용
         if (cfg.aos === null || cfg.aos === undefined) return false;
         if (String(cfg.aos).trim() === '') return false;
         return true;
     }
 
-    // // 일반 JS는 무조건 general만 사용
     function rbPickGeneralConfig() {
         var cfg = rbGetAosConfigsSafe().general;
         if (!cfg || cfg.use !== 1) return null;
@@ -36,7 +34,6 @@ $(document).ready(function () {
         var cfg = rbPickGeneralConfig();
         if (!cfg) return;
 
-        // 최초 로드시 뷰포트 내에 있으면 AOS 적용 안함
         var rect = el.getBoundingClientRect();
         var inViewport = rect.top < window.innerHeight && rect.bottom > 0;
         if (inViewport && !el.hasAttribute('data-aos')) return;
@@ -62,7 +59,6 @@ $(document).ready(function () {
     }
 
     function rbAosRefresh() {
-        // // use=0이면 refresh도 안 함 (마켓과 동일)
         if (!rbPickGeneralConfig()) return;
 
         if (window.AOS && typeof AOS.refreshHard === 'function') AOS.refreshHard();
@@ -70,7 +66,28 @@ $(document).ready(function () {
     }
 
     rbApplyAosToTargets(document);
-    rbAosRefresh();
+
+    function finalizeLayoutReady() {
+        if (typeof initializeAllSliders === "function") initializeAllSliders($(document));
+        document.documentElement.classList.remove('rb-swiper-boot');
+        requestAnimationFrame(function () {
+            if (typeof refreshStandaloneSwipers === "function") refreshStandaloneSwipers($(document));
+            if (typeof initializeCalendar === "function") initializeCalendar();
+            rbAosRefresh();
+            var root = document.querySelector('.flex_box');
+            if (root) root.classList.add('is_ready');
+        });
+    }
+
+    var layoutRoot = document.querySelector('.flex_box');
+    var hasServerRenderedModules = layoutRoot && layoutRoot.querySelector(':scope > .rb_layout_box, :scope > .rb_section_box');
+    if (hasServerRenderedModules) {
+        packModulesIntoSectionsOnce();
+        processFlexBoxesOnce($(layoutRoot), function () {
+            finalizeLayoutReady();
+        });
+        return;
+    }
 
     function getBasePathFromG5() {
         try {
@@ -172,15 +189,13 @@ $(document).ready(function () {
     window._GET = getGETFromRewrite();
 
     function processFlexBoxesOnce($scope, callback) {
-        // 1) 로드 대상 수집: 섹션 내부는 제외
         var flexBoxes = $scope.find('.flex_box').addBack('.flex_box').filter(function () {
             var $box = $(this);
             if ($box.data('layout-loaded')) return false;
-            if ($box.closest('.rb_section_box').length) return false; // 섹션 내부 제외
+            if ($box.closest('.rb_section_box').length) return false;
             return true;
         });
 
-        // 2) 레이아웃 목록 만들기 (없으면 자동 부여)
         var layoutNumbers = [];
         var seq = 0;
         flexBoxes.each(function () {
@@ -188,14 +203,12 @@ $(document).ready(function () {
             var lay = String($box.attr('data-layout') || '').trim();
 
             if (!lay) {
-                // 최상위 컨테이너에만 임시 번호 부여 (1,2,3…)
                 seq += 1;
                 lay = String(seq);
                 $box.attr('data-layout', lay);
             }
 
             if (layoutNumbers.indexOf(lay) === -1) layoutNumbers.push(lay);
-            // 여기서는 아직 layout-loaded 찍지 않음 (성공 후에 찍음)
         });
 
         if (!layoutNumbers.length) {
@@ -205,7 +218,6 @@ $(document).ready(function () {
 
         var qs = toQueryString(getGETFromRewrite());
 
-        // 3) AJAX 로드
         $.ajax({
             url: g5_url + '/rb/rb.config/ajax.layout_set.php' + qs,
             method: 'POST',
@@ -223,16 +235,14 @@ $(document).ready(function () {
                         $box.html(res[lay]);
 
                         rbApplyAosToTargets($box[0]);
-                        rbAosRefresh();
 
-                        $box.data('layout-loaded', true); // 성공 후에 표시
+                        $box.data('layout-loaded', true);
 
-                        // // HTML 들어오자마자 해당 영역 슬라이더 즉시 초기화
                         if (typeof initializeAllSliders === "function") initializeAllSliders($box);
+                        if (typeof refreshStandaloneSwipers === "function") refreshStandaloneSwipers($box);
                     }
                 });
 
-                // 로드 후: 키(sec_uid) 일치 모듈만 섹션으로 이동
                 packModulesIntoSectionsOnce();
 
                 rbApplyAosToTargets(document);
@@ -241,13 +251,12 @@ $(document).ready(function () {
                 if (callback) callback();
             },
             error: function () {
-                console.error('레이아웃 로드 실패');
+                console.error('Layout load failed');
                 if (callback) callback();
             }
         });
     }
 
-    // 섹션으로 모듈을 '키 일치'할 때만 이동
     function packModulesIntoSectionsOnce() {
         $('.rb_section_box').each(function () {
             var $sec = $(this);
@@ -255,8 +264,9 @@ $(document).ready(function () {
             if (!secUid) return;
 
             var $inner = $sec.children('.flex_box').first();
+            if (!$inner.length) return;
+            var layout = String($sec.attr('data-layout') || '').trim();
 
-            // 현재 섹션 바깥에 있는 모듈 중 sec_uid가 같은 것만 흡수
             var $cand = $('.rb_layout_box').filter(function () {
                 var $m = $(this);
                 var mUid = String($m.attr('data-sec-uid') || '').trim();
@@ -266,16 +276,25 @@ $(document).ready(function () {
 
             if ($cand.length) {
                 $inner.append($cand);
-                // 보너스: 표시용 layout도 섹션 layout로 맞춤
-                var layout = String($sec.attr('data-layout') || '').trim();
-                $cand.attr('data-layout', layout);
             }
+
+            var modules = $inner.children('.rb_layout_box').get();
+            modules.sort(function (a, b) {
+                var aOrder = parseInt(a.getAttribute('data-order-id') || '0', 10);
+                var bOrder = parseInt(b.getAttribute('data-order-id') || '0', 10);
+                return aOrder - bOrder;
+            });
+
+            $(modules).each(function () {
+                if (layout) {
+                    $(this).attr('data-layout', layout);
+                }
+                $inner.append(this);
+            });
         });
     }
 
-    // 2회 로드 패턴 유지
     processFlexBoxesOnce($('body'), function () {
-        // // 아직 로딩 안된 flex_box가 남아있을 때만 2회차
         if ($('.flex_box').filter(function(){ return !$(this).data('layout-loaded'); }).length) {
             processFlexBoxesOnce($('body'), done);
         } else {
@@ -283,31 +302,91 @@ $(document).ready(function () {
         }
 
         function done() {
-            requestAnimationFrame(function () {
-                requestAnimationFrame(function () {
-                    if (typeof initializeAllSliders === "function") initializeAllSliders($(document));
-                    if (typeof initializeCalendar === "function") initializeCalendar();
-                    var root = document.getElementById('rb_layout_root');
-                    if (root) root.classList.add('is_ready');
-                });
-            });
+            finalizeLayoutReady();
         }
     });
 });
 
 
-function initializeAllSliders() {
-    $('.rb_swiper').each(function () {
+function initializeAllSliders($scope) {
+    const $root = $scope && $scope.length ? $scope : $(document);
+    const immediate = [];
+    const deferred = [];
+
+    $root.find('.rb_swiper').addBack('.rb_swiper').each(function () {
         const $slider = $(this);
-        setupResponsiveSlider($slider);
+        if ($slider.data('rb-swiper-queued')) return;
+        $slider.data('rb-swiper-queued', true);
+
+        if (rbIsNearViewport(this, 0)) immediate.push(this);
+        else deferred.push(this);
+    });
+
+    immediate.forEach(function (el) {
+        setupResponsiveSlider($(el));
+    });
+
+    queueDeferredSliders(deferred);
+}
+
+function rbIsNearViewport(el, threshold) {
+    if (!el || typeof el.getBoundingClientRect !== 'function') return true;
+    const rect = el.getBoundingClientRect();
+    const extra = typeof threshold === 'number' ? threshold : 0;
+    const viewH = window.innerHeight || document.documentElement.clientHeight || 0;
+    return rect.bottom >= -extra && rect.top <= viewH + extra;
+}
+
+function queueDeferredSliders(sliders) {
+    if (!sliders || !sliders.length) return;
+
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+                observer.unobserve(entry.target);
+                window.requestAnimationFrame(function () {
+                    setupResponsiveSlider($(entry.target));
+                });
+            });
+        }, {
+            rootMargin: '100px 0px 100px 0px'
+        });
+
+        sliders.forEach(function (el) {
+            observer.observe(el);
+        });
+        return;
+    }
+
+    sliders.forEach(function (el, index) {
+        window.setTimeout(function () {
+            setupResponsiveSlider($(el));
+        }, 60 * (index + 1));
+    });
+}
+
+function refreshStandaloneSwipers($scope) {
+    const $root = $scope && $scope.length ? $scope : $(document);
+    $root.find('[class*="swiper-container-slide_display"]').addBack('[class*="swiper-container-slide_display"]').each(function () {
+        if (!this.swiper) return;
+        if (this.swiper.navigation && typeof this.swiper.navigation.update === 'function') {
+            this.swiper.navigation.update();
+        }
+        if (typeof this.swiper.update === 'function') {
+            this.swiper.update();
+        }
     });
 }
 
 function setupResponsiveSlider($rb_slider) {
-    let swiperInstance = null; // Swiper 인스턴스 저장
-    let currentMode = ''; // 현재 모드 ('pc' 또는 'mo')
+    let swiperInstance = $rb_slider.data('rb-swiper-instance') || null;
+    let currentMode = $rb_slider.data('rb-swiper-mode') || '';
+    const sliderEl = $rb_slider[0];
+    const innerEl = sliderEl ? sliderEl.querySelector('.rb_swiper_inner') : null;
+    const nextEl = sliderEl ? sliderEl.querySelector('.rb-swiper-next') : null;
+    const prevEl = sliderEl ? sliderEl.querySelector('.rb-swiper-prev') : null;
 
-    // 초기 설정
     function initSlider(mode) {
         const isMobile = mode === 'mo';
         const rows = parseInt($rb_slider.data(isMobile ? 'mo-h' : 'pc-h'), 10) || 1;
@@ -316,90 +395,97 @@ function setupResponsiveSlider($rb_slider) {
         const swap = $rb_slider.data(isMobile ? 'mo-swap' : 'pc-swap') == 1;
         const slidesPerView = rows * cols;
 
-        // // 슬라이드 전환 속도(ms)
         const speedData = $rb_slider.data(isMobile ? 'mo-speed' : 'pc-speed');
         const speed = speedData !== undefined && speedData !== null && speedData !== ''
             ? parseInt(speedData, 10)
             : (parseInt($rb_slider.data('speed'), 10) || 400);
 
-        // 슬라이드 재구성 및 간격 설정
+        $rb_slider.removeClass('rb-swiper-ready').addClass('rb-swiper-pending');
         configureSlides($rb_slider, slidesPerView, cols, gap);
 
-        // Swiper 초기화
         if (swiperInstance) {
-            swiperInstance.destroy(true, true); // 기존 Swiper 삭제
+            swiperInstance.destroy(true, true);
         }
 
-        swiperInstance = new Swiper($rb_slider.find('.rb_swiper_inner')[0], {
+        swiperInstance = new Swiper(innerEl, {
             slidesPerView: 1,
             initialSlide: 0,
             spaceBetween: gap,
             resistanceRatio: 0,
             touchRatio: swap ? 1 : 0,
-
-            // // 전환 속도
             speed: speed,
-
             autoplay: $rb_slider.data('autoplay') == 1 ? {
                 delay: parseInt($rb_slider.data('autoplay-time'), 10) || 3000,
                 disableOnInteraction: false,
             } : false,
             navigation: {
-                nextEl: $rb_slider.find('.rb-swiper-next')[0],
-                prevEl: $rb_slider.find('.rb-swiper-prev')[0],
+                nextEl: nextEl,
+                prevEl: prevEl,
             },
         });
+
+        swiperInstance.update();
+        $rb_slider.removeClass('rb-swiper-pending').addClass('rb-swiper-ready');
+
+        $rb_slider.data('rb-swiper-instance', swiperInstance);
+        $rb_slider.data('rb-swiper-mode', mode);
     }
 
-    // 슬라이드 구성 및 재구성
     function configureSlides($rb_slider, view, cols, gap) {
+        const wrapperEl = sliderEl ? sliderEl.querySelector('.rb-swiper-wrapper') : null;
+        if (!wrapperEl) return;
+
+        wrapperEl.querySelectorAll('.swiper-slide-duplicate').forEach(function (el) {
+            el.remove();
+        });
+
+        Array.from(wrapperEl.children).forEach(function (child) {
+            if (!child.classList || !child.classList.contains('rb-swiper-slide')) return;
+            while (child.firstChild) {
+                wrapperEl.insertBefore(child.firstChild, child);
+            }
+            child.remove();
+        });
+
         const widthPercentage = `calc(${100 / cols}% - ${(gap * (cols - 1)) / cols}px)`;
+        const lists = Array.from(wrapperEl.querySelectorAll('.rb_swiper_list'));
+        if (!lists.length) return;
 
-        $rb_slider.find('.rb_swiper_list').css('width', widthPercentage);
+        lists.forEach(function (listEl, index) {
+            listEl.style.width = widthPercentage;
+            listEl.style.marginRight = ((index + 1) % cols === 0) ? '0' : '';
+        });
 
-        // 기존 슬라이드 그룹화 제거
-        if ($rb_slider.find('.rb_swiper_list').parent().hasClass('rb-swiper-slide')) {
-            $rb_slider.find('.swiper-slide-duplicate').remove();
-            $rb_slider.find('.rb_swiper_list').unwrap('.rb-swiper-slide');
+        for (let start = 0; start < lists.length; start += view) {
+            const slideEl = document.createElement('div');
+            slideEl.className = 'rb-swiper-slide swiper-slide';
+            slideEl.style.gap = `${gap}px`;
+            wrapperEl.insertBefore(slideEl, lists[start]);
+
+            for (let idx = start; idx < Math.min(start + view, lists.length); idx++) {
+                slideEl.appendChild(lists[idx]);
+            }
         }
-
-        // 슬라이드 그룹화
-        let groupIndex = 0;
-        $rb_slider.find('.rb_swiper_list').each(function (index) {
-            $(this).addClass('rb_swiper_group' + Math.floor(index / view));
-            groupIndex = Math.floor(index / view);
-        }).promise().done(function () {
-            for (let i = 0; i <= groupIndex; i++) {
-                $rb_slider.find('.rb_swiper_group' + i).wrapAll('<div class="rb-swiper-slide swiper-slide"></div>');
-                $rb_slider.find('.rb_swiper_group' + i).removeClass('rb_swiper_group' + i);
-            }
-        });
-
-        // 간격 설정
-        $rb_slider.find('.rb-swiper-slide').css({
-            'gap': `${gap}px`,
-        });
-
-        // 마지막 요소 오른쪽 간격 제거
-        $rb_slider.find('.rb_swiper_list').each(function (index) {
-            if ((index + 1) % cols === 0) {
-                $(this).css('margin-right', '0');
-            }
-        });
     }
 
-    // 반응형 설정
     function checkModeAndInit() {
         const winWidth = window.innerWidth;
         const mode = winWidth <= 1024 ? 'mo' : 'pc';
 
         if (currentMode !== mode) {
             currentMode = mode;
-            initSlider(mode); // 모드 변경 시 재초기화
+            initSlider(mode);
         }
     }
 
-    // 초기 실행 및 이벤트 등록
-    $(window).on('load resize', checkModeAndInit);
-    checkModeAndInit(); // 첫 실행
+    if (!$rb_slider.data('rb-swiper-bound')) {
+        window.__rbSwiperUid = (window.__rbSwiperUid || 0) + 1;
+        const resizeNamespace = '.rbSwiper' + window.__rbSwiperUid;
+        $(window).on('resize' + resizeNamespace + ' orientationchange' + resizeNamespace, checkModeAndInit);
+        $rb_slider.data('rb-swiper-bound', true);
+        $rb_slider.data('rb-swiper-resize-ns', resizeNamespace);
+    }
+
+    checkModeAndInit();
 }
+

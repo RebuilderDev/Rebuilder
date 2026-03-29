@@ -36,6 +36,47 @@ header("Pragma: no-cache"); // HTTP/1.0
 <head>
 
 <meta charset="utf-8">
+<script>
+document.documentElement.className += (document.documentElement.className ? ' ' : '') + 'rb-swiper-boot';
+window.setTimeout(function () {
+    document.documentElement.classList.remove('rb-swiper-boot');
+}, 3000);
+</script>
+<style>
+html.rb-swiper-boot .rb_swiper {
+    position: relative;
+    min-height: 70px;
+}
+html.rb-swiper-boot .rb_swiper .rb_swiper_inner {
+    opacity: 0;
+}
+<?php if (!empty($rb_builder['bu_module_spinner_use'])) { ?>
+html .rb_swiper .rb_swiper_inner {
+    transition: opacity 0.13s ease-out;
+}
+html.rb-swiper-boot .rb_swiper::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 22px;
+    height: 22px;
+    margin-top: -11px;
+    margin-left: -11px;
+    border: 2px solid rgba(160, 160, 160, 0.22);
+    border-top-color: rgba(160, 160, 160, 0.72);
+    border-radius: 50%;
+    animation: rbSwiperSpin 0.35s ease-in-out infinite;
+    pointer-events: none;
+    display: block;
+    z-index: 20;
+}
+@keyframes rbSwiperSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+<?php } ?>
+</style>
 
 <!-- viewport { -->
 <?php if(isset($rb_builder['bu_viewport']) && $rb_builder['bu_viewport']) { ?>
@@ -385,11 +426,11 @@ add_javascript('<script src="'.G5_JS_URL.'/jquery-migrate-1.4.1.min.js"></script
 
 if(defined('_SHOP_')) {
     if (isset($rb_core['layout_shop'])) {
-        add_javascript('<script src="' . G5_THEME_URL . '/rb.js/rb.layout.shop.js?ver=2.2.5"></script>', 0);
+        add_javascript('<script src="' . G5_THEME_URL . '/rb.js/rb.layout.shop.js?ver=2.2.6"></script>', 0);
     }
 } else {
     if (isset($rb_core['layout'])) {
-        add_javascript('<script src="' . G5_THEME_URL . '/rb.js/rb.layout.js?ver=2.2.5"></script>', 0);
+        add_javascript('<script src="' . G5_THEME_URL . '/rb.js/rb.layout.js?ver=2.2.6"></script>', 0);
     }
 }
 

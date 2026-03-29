@@ -60,8 +60,14 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
     //컬럼이 있는지 검사한다.
     $cnt = sql_fetch (" select COUNT(*) as cnt from rb_builder ");
 
+    $spinner_col = sql_fetch(" SHOW COLUMNS FROM rb_builder LIKE 'bu_module_spinner_use' ");
+    if (empty($spinner_col['Field'])) {
+        sql_query(" ALTER TABLE rb_builder ADD `bu_module_spinner_use` int(4) NOT NULL DEFAULT 0 AFTER `bu_load` ", false);
+    }
+
     //@닥본사 님 코드적용 (PHP8.4.4 관련 오류)
     $bu_load = isset($_POST['bu_load']) && is_numeric($_POST['bu_load']) ? (int)$_POST['bu_load'] : 0;
+    $bu_module_spinner_use = !empty($_POST['bu_module_spinner_use']) ? 1 : 0;
     $bu_systemmsg_use = isset($_POST['bu_systemmsg_use']) && is_numeric($_POST['bu_systemmsg_use']) ? (int)$_POST['bu_systemmsg_use'] : 0;
 
     $bu_mini_use1 = isset($_POST['bu_mini_use1']) && is_numeric($_POST['bu_mini_use1']) ? (int)$_POST['bu_mini_use1'] : 0;
@@ -73,6 +79,7 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
     if($cnt['cnt'] > 0) {
             $sql = " update rb_builder
                 set bu_load = '{$bu_load}',
+                    bu_module_spinner_use = '{$bu_module_spinner_use}',
                     bu_1 = '{$_POST['bu_1']}',
                     bu_2 = '{$_POST['bu_2']}',
                     bu_3 = '{$_POST['bu_3']}',
@@ -116,6 +123,7 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
 
             $sql = " insert rb_builder
                 set bu_load = '{$bu_load}',
+                    bu_module_spinner_use = '{$bu_module_spinner_use}',
                     bu_1 = '{$_POST['bu_1']}',
                     bu_2 = '{$_POST['bu_2']}',
                     bu_3 = '{$_POST['bu_3']}',
@@ -209,6 +217,7 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
             `bu_logo_mo` varchar(255) NOT NULL DEFAULT '' COMMENT '로고 MO',
             `bu_logo_mo_w` varchar(255) NOT NULL DEFAULT '' COMMENT '로고 MO W',
             `bu_load` int(4) NOT NULL DEFAULT 1 COMMENT '로딩인디케이터',
+            `bu_module_spinner_use` int(4) NOT NULL DEFAULT 0 COMMENT '모듈 로딩 스피너 사용',
             `bu_systemmsg_use` int(4) NOT NULL DEFAULT 1 COMMENT '시스템메세지 관리자수신여부',
             `bu_1` varchar(255) NOT NULL DEFAULT '' COMMENT '회사명',
             `bu_2` varchar(255) NOT NULL DEFAULT '' COMMENT '대표자명',

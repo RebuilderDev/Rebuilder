@@ -3,6 +3,7 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 
 // 레이아웃 폴더내 style.css 파일
 add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout/'.$rb_core['layout'].'/style.css">', 0);
+include_once(G5_PATH.'/rb/rb.config/layout.render.php');
 ?>
 
 <!--
@@ -20,4 +21,10 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout/'.$rb_co
 - class="flex_box" 를 사용하지 않고 직접 메인페이지를 구성할 수 있습니다.
 -->
 
-<div class="flex_box"></div>
+<?php
+if (function_exists('rb_render_server_layout_box')) {
+    echo rb_render_server_layout_box();
+} else {
+    echo '<div class="flex_box"></div>';
+}
+?>

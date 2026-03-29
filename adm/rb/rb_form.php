@@ -360,6 +360,10 @@ $pg_anchor = '<ul class="anchor">
                         <input type="radio" name="bu_load" value="" id="bu_load0" <?php echo empty($bu['bu_load']) || $bu['bu_load'] == '' ? 'checked' : ''; ?>> <label for="bu_load0">사용안함</label>
                         <input type="radio" name="bu_load" value="1" id="bu_load1" <?php echo isset($bu['bu_load']) && $bu['bu_load'] == 1 ? 'checked' : ''; ?>> <label for="bu_load1">전체 사용</label>
                         <input type="radio" name="bu_load" value="2" id="bu_load2" <?php echo isset($bu['bu_load']) && $bu['bu_load'] == 2 ? 'checked' : ''; ?>> <label for="bu_load2">메인만 사용</label>
+                        <div style="margin-top:10px;">
+                            <input type="checkbox" name="bu_module_spinner_use" value="1" id="bu_module_spinner_use" <?php echo !empty($bu['bu_module_spinner_use']) ? 'checked' : ''; ?>>
+                            <label for="bu_module_spinner_use">모듈 로딩스피너 사용</label>
+                        </div>
                         </td>
                     </tr>
 

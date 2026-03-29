@@ -8,6 +8,22 @@ $is_shop  = (isset($_POST['is_shop']) && $_POST['is_shop'] == '1') ? 1 : 0;
 function run_q($sql){ return sql_query($sql); }
 function esc($s){ return sql_escape_string($s); } // 그누보드 기본 이스케이프
 function to_int($v){ return (int)$v; }
+function rb_ensure_module_section_columns($table){
+    $res_key = sql_query("SHOW COLUMNS FROM {$table} LIKE 'md_sec_key'", false);
+    if (!$res_key || sql_num_rows($res_key) == 0) {
+        sql_query("ALTER TABLE {$table} ADD `md_sec_key` VARCHAR(255) NOT NULL DEFAULT '' AFTER `md_theme`", false);
+    }
+
+    $res_uid = sql_query("SHOW COLUMNS FROM {$table} LIKE 'md_sec_uid'", false);
+    if (!$res_uid || sql_num_rows($res_uid) == 0) {
+        sql_query("ALTER TABLE {$table} ADD `md_sec_uid` VARCHAR(255) NOT NULL DEFAULT '' AFTER `md_sec_key`", false);
+    }
+}
+function rb_json_exit($data){
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data);
+    exit;
+}
 
 /* ===== ca_name ===== */
 if ($mod_type === "ca_name") {
@@ -70,6 +86,62 @@ if ($mod_type === "mod_order") {
         echo "success"; exit;
     }
     echo "Invalid order data"; exit;
+}
+
+/* ===== mod_sync_state: update module order/layout/section in one pass ===== */
+if ($mod_type === "mod_sync_state") {
+    $mods_json = isset($_POST['mods']) ? $_POST['mods'] : '';
+    if (is_string($mods_json)) {
+        $mods_json = stripslashes($mods_json);
+    }
+    $mods = $mods_json ? json_decode($mods_json, true) : array();
+
+    if (!is_array($mods) || !count($mods)) {
+        rb_json_exit(array('status' => 'error', 'message' => 'Invalid mods', 'mods_json' => $mods_json));
+    }
+
+    $table = $is_shop ? 'rb_module_shop' : 'rb_module';
+    rb_ensure_module_section_columns($table);
+
+    $updated = array();
+
+    foreach ($mods as $mod) {
+        $md_id = isset($mod['id']) ? to_int($mod['id']) : 0;
+        if ($md_id <= 0) continue;
+
+        $order_id = isset($mod['order_id']) ? to_int($mod['order_id']) : 0;
+        $layout   = isset($mod['layout']) ? esc($mod['layout']) : '';
+        $sec_key  = isset($mod['sec_key']) ? esc($mod['sec_key']) : '';
+        $sec_uid  = isset($mod['sec_uid']) ? esc($mod['sec_uid']) : '';
+
+        $sql = "UPDATE {$table}
+                SET md_order_id = {$order_id},
+                    md_layout = '{$layout}',
+                    md_sec_key = '{$sec_key}',
+                    md_sec_uid = '{$sec_uid}'
+                WHERE md_id = {$md_id}";
+        $res = sql_query($sql, false);
+        if (!$res) {
+            $db_error = isset($GLOBALS['g5']['connect_db']) ? mysqli_error($GLOBALS['g5']['connect_db']) : 'sql_query failed';
+            rb_json_exit(array(
+                'status' => 'error',
+                'message' => 'mod_sync_state update failed',
+                'sql' => $sql,
+                'db_error' => $db_error,
+                'mod' => $mod
+            ));
+        }
+
+        $updated[] = array(
+            'id' => $md_id,
+            'order_id' => $order_id,
+            'layout' => $layout,
+            'sec_key' => $sec_key,
+            'sec_uid' => $sec_uid
+        );
+    }
+
+    rb_json_exit(array('status' => 'success', 'updated' => $updated));
 }
 
 /* ===== sec_order: update section order + sec_uid 갱신 ===== */
@@ -140,6 +212,7 @@ if ($mod_type === "mod_update_sec") {
     if (!is_array($maps) || !count($maps)) { echo "Invalid maps"; exit; }
 
     $table = $is_shop ? 'rb_module_shop' : 'rb_module';
+    rb_ensure_module_section_columns($table);
 
     foreach ($maps as $m) {
         $ids = isset($m['mod_ids']) && is_array($m['mod_ids']) ? $m['mod_ids'] : array();
@@ -152,7 +225,7 @@ if ($mod_type === "mod_update_sec") {
         // 키/UID가 모두 null 이면 NULL 세팅
         if (array_key_exists('md_sec_key', $m) && array_key_exists('md_sec_uid', $m)
             && (is_null($m['md_sec_key']) && is_null($m['md_sec_uid']))) {
-            run_q("UPDATE {$table} SET md_sec_key = NULL, md_sec_uid = NULL WHERE md_id IN ({$in})");
+            run_q("UPDATE {$table} SET md_sec_key = '', md_sec_uid = '' WHERE md_id IN ({$in})");
         } else {
             $key = isset($m['md_sec_key']) ? esc($m['md_sec_key']) : '';
             $uid = isset($m['md_sec_uid']) ? esc($m['md_sec_uid']) : '';

@@ -2170,6 +2170,32 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
             });
         }
 
+        function normalizeModuleAttrs($mod) {
+            if (!$mod || !$mod.length) return;
+
+            var $parentFlex = $mod.parent('.flex_box');
+            var layout = String($parentFlex.attr('data-layout') || $mod.attr('data-layout') || '').trim();
+            var $sec = $mod.closest('.rb_section_box');
+
+            if ($sec.length) {
+                var secKey = String($sec.attr('data-sec-key') || '').trim();
+                var orderId = String($sec.attr('data-order-id') || '').trim();
+                var secUid = recomputeSecUid(secKey, orderId);
+
+                $mod.attr({
+                    'data-layout': layout,
+                    'data-sec-key': secKey,
+                    'data-sec-uid': secUid
+                });
+            } else {
+                $mod.attr('data-layout', layout);
+                $mod.removeAttr('data-sec-key');
+                $mod.removeAttr('data-sec-uid');
+                $mod.removeData('sec-key');
+                $mod.removeData('sec-uid');
+            }
+        }
+
         function getVisualRows($flex) {
             var rowsMap = new Map(),
                 order = [],
@@ -2317,6 +2343,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
         function queueRowHandleRefresh($flex) {
             if (!$flex || !$flex.length) return;
+            if ($flex.hasClass('rb-mod-sorting')) return;
 
             var raf1 = $flex.data('rbRaf1'),
                 raf2 = $flex.data('rbRaf2');
@@ -2673,6 +2700,30 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                 $flex.find('> .flex_box_inner').length === 0;
         }
 
+        function moveModuleIntoInnerByPoint(clientX, clientY, $item) {
+            if (clientX == null || clientY == null || !$item || !$item.length) return null;
+
+            var hoveredEl = document.elementFromPoint(clientX, clientY);
+            if (!hoveredEl) return null;
+
+            var $adminOv = $(hoveredEl).closest('.admin_ov');
+            if (!$adminOv.length) return null;
+
+            var $targetBox = $adminOv.closest('.rb_layout_box');
+            if (!$targetBox.length || $targetBox[0] === $item[0]) return null;
+
+            var $targetInner = $targetBox.children('.flex_box_inner').first();
+            if (!$targetInner.length) return null;
+
+            $targetInner.append($item);
+
+            $targetInner.children('.rb_layout_box').each(function(index) {
+                $(this).attr('data-order-id', index + 1);
+            });
+
+            normalizeModuleAttrs($item);
+            return $targetInner;
+        }
         // 모듈이동
         $(function() {
             $(".flex_box").each(function() {
@@ -2738,18 +2789,28 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                 $flexBox.sortable({
                     items: "> .rb_layout_box",
                     placeholder: "placeholders_box",
-                    tolerance: "pointer",
+                    tolerance: "intersect",
+                    distance: 8,
+                    delay: 60,
                     helper: "clone",
                     appendTo: "body",
                     forceHelperSize: true,
                     forcePlaceholderSize: true,
                     scroll: true,
+                    dropOnEmpty: true,
+                    refreshPositions: true,
                     containment: "document",
-                    connectWith: false,
+                    connectWith: ".flex_box",
                     cancel: '.rb-resize-s, .rb-resize-s-reset, .admin_set_btn',
 
                     start: function(event, ui) {
+                        var $originFlex = $(event.target).closest('.flex_box');
+                        if ($originFlex.length && $originFlex[0] !== $flexBox[0]) {
+                            $flexBox.sortable('cancel');
+                            return;
+                        }
 
+                        $flexBox.addClass('rb-mod-sorting');
                         ui.helper.addClass("dragging");
                         $('.mobule_set_btn').css('display', 'none');
 
@@ -2779,26 +2840,11 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                     receive: function(event, ui) {
 
 
-                        var layout = String($flexBox.attr('data-layout') || '').trim();
-                        ui.item.attr('data-layout', layout).data('layout', layout);
-
-                        var $sec = $flexBox.closest('.rb_section_box');
-                        if ($sec.length) {
-                            var secKey = String($sec.attr('data-sec-key') || '').trim();
-                            var orderId = String($sec.attr('data-order-id') || '').trim();
-                            var secUid = recomputeSecUid(secKey, orderId);
-                            ui.item.attr({
-                                'data-sec-key': secKey,
-                                'data-sec-uid': secUid,
-                                'data-order-id': orderId
-                            }).data('sec-key', secKey).data('sec-uid', secUid).data('order-id', orderId);
-                        } else {
-                            ui.item.removeAttr('data-sec-key data-sec-uid');
-                            ui.item.removeData('sec-key').removeData('sec-uid');
-                        }
+                        normalizeModuleAttrs(ui.item);
 
                         // 위치 보정
                         enforceToolbarRule($flexBox, ui.item);
+                        normalizeModuleAttrs(ui.item);
                         queueRowHandleRefresh($flexBox); // 타겟 컨테이너
                         if (ui.sender) queueRowHandleRefresh($(ui.sender)); // 출발지 컨테이너도 갱신
                     },
@@ -2824,10 +2870,29 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                         queueRowHandleRefresh($flexBox)
                     },
                     stop: function(event, ui) {
+                        $flexBox.removeClass('rb-mod-sorting');
                         ui.item.removeClass("dragging");
+
+                        var clientX = event.clientX || ui.item.data('_rbLastClientX') || 0;
+                        var clientY = event.clientY || ui.item.data('_rbLastClientY') || 0;
+                        var $innerTarget = moveModuleIntoInnerByPoint(clientX, clientY, ui.item);
+                        if ($innerTarget && $innerTarget.length) {
+                            $innerTarget.children('.rb_layout_box').each(function(index) {
+                                $(this).attr('data-order-id', index + 1);
+                            });
+                            queueRowHandleRefresh($innerTarget);
+                            var $fromFlex = ui.item.data('_fromFlex');
+                            if ($fromFlex && $fromFlex.length && $fromFlex[0] !== $innerTarget[0]) {
+                                $fromFlex.children('.rb_layout_box').each(function(index) {
+                                    $(this).attr('data-order-id', index + 1);
+                                });
+                                queueRowHandleRefresh($fromFlex);
+                            }
+                        }
 
                         var $sec = ui.item.closest('.rb_section_box');
                         if ($sec.length) propagateSectionAttrs($sec);
+                        normalizeModuleAttrs(ui.item);
 
                         $("#saveOrderButton").show();
                         enforceToolbarRule($flexBox, ui.item);
@@ -2865,38 +2930,55 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                 return false;
                 <?php } ?>
 
-                var modOrder = [];
-                var secOrder = [];
+                var modStates = [];
                 var idx = 1;
 
                 $(".flex_box").each(function() {
-                    $(this).children(".rb_layout_box, .rb_section_box").each(function() {
-                        var $it = $(this);
-                        var id = $it.data('id');
-                        if (!id) return;
-                        if ($it.hasClass("rb_layout_box")) {
-                            modOrder.push({
-                                id: id,
-                                order_id: idx
-                            });
-                        } else if ($it.hasClass("rb_section_box")) {
-                            secOrder.push({
-                                id: id,
-                                order_id: idx
-                            });
+                    $(this).children(".rb_layout_box").each(function() {
+                        var $mod = $(this);
+                        var modId = parseInt($mod.data('id'), 10);
+                        if (!modId) return;
+
+                        var $sec = $mod.closest('.rb_section_box');
+                        var secKey = '';
+                        var secUid = '';
+                        if ($sec.length) {
+                            secKey = String($sec.attr('data-sec-key') || '').trim();
+                            secUid = String($sec.attr('data-sec-uid') || '').trim();
+                            if (!secUid && secKey) {
+                                secUid = recomputeSecUid(secKey, String($sec.attr('data-order-id') || '').trim());
+                            }
                         }
+
+                        var layout = '';
+                        var $parentFlex = $mod.parent('.flex_box');
+                        if ($parentFlex.length) {
+                            layout = String($parentFlex.attr('data-layout') || '').trim();
+                        }
+                        if (!layout) {
+                            layout = String($mod.attr('data-layout') || '').trim();
+                        }
+
+                        modStates.push({
+                            id: modId,
+                            order_id: idx,
+                            layout: layout,
+                            sec_key: secKey,
+                            sec_uid: secUid
+                        });
                         idx++;
                     });
                 });
 
                 var saveModules = function() {
-                    if (!modOrder.length) return $.Deferred().resolve().promise();
+                    if (!modStates.length) return $.Deferred().resolve().promise();
                     return $.ajax({
                         url: '<?php echo G5_URL ?>/rb/rb.lib/ajax.res.php',
                         method: 'POST',
+                        dataType: 'json',
                         data: {
-                            order: modOrder,
-                            mod_type: "mod_order",
+                            mods: JSON.stringify(modStates),
+                            mod_type: "mod_sync_state",
                             <?php if (defined('_SHOP_')) { ?>
                             is_shop: "1"
                             <?php } else { ?>
@@ -2906,28 +2988,23 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                     });
                 };
 
-                var saveSections = function() {
-                    if (!secOrder.length) return $.Deferred().resolve().promise();
-                    return $.ajax({
-                        url: '<?php echo G5_URL ?>/rb/rb.lib/ajax.res.php',
-                        method: 'POST',
-                        data: {
-                            order: secOrder,
-                            mod_type: "sec_order",
-                            <?php if (defined('_SHOP_')) { ?>is_shop: "1"
-                            <?php } else { ?>is_shop: "0"
-                            <?php } ?>
-                        }
-                    });
-                };
-
-                $.when(saveModules()).then(saveSections)
+                $.when(saveModules())
                     .done(function(resp) {
+                        if (!resp || resp.status !== 'success') {
+                            console.error('mod_sync_state unexpected response:', resp);
+                            alert('모듈 저장 응답이 올바르지 않습니다. Console을 확인해주세요.');
+                            return;
+                        }
                         $("#saveOrderButton").hide();
                         location.reload();
                     })
                     .fail(function(xhr, status, err) {
-                        console.error('Error saving order:', err);
+                        console.error('Error saving order:', {
+                            status: status,
+                            error: err,
+                            httpStatus: xhr && xhr.status,
+                            responseText: xhr && xhr.responseText
+                        });
                         alert('모듈 순서 저장 중 오류가 발생했습니다.');
                     });
             });
@@ -3031,7 +3108,9 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
                     items: "> .rb_layout_box, > .rb_section_box",
                     cancel: ".rb_layout_box, a, button, input, textarea, select, .no-drag",
                     placeholder: "placeholders_section",
-                    tolerance: "pointer",
+                    tolerance: "intersect",
+                    distance: 8,
+                    delay: 60,
                     appendTo: "body",
                     //connectWith: ".flex_box", // 서로 다른 컨테이너 간 이동 허용
                     connectWith: ".flex_box:not(.flex_box_inner)",

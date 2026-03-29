@@ -1,9 +1,11 @@
 <?php
-include_once('../../common.php');
+include_once(__DIR__ . '/../../common.php');
 include_once(G5_LIB_PATH.'/latest.lib.php');
 include_once(G5_LIB_PATH.'/poll.lib.php');
 
 if (!defined('_GNUBOARD_')) exit;
+
+$is_admin = isset($GLOBALS['is_admin']) ? $GLOBALS['is_admin'] : (isset($is_admin) ? $is_admin : '');
 
 $is_index = isset($_POST['is_index']) && $_POST['is_index'] === 'true';
 
@@ -161,7 +163,7 @@ foreach ($layouts as $layout_no) {
         if ($it['type'] === 'mod') {
             $row_mod = $it['row'];
             ob_start();
-            echo "<?php\n\$row_mod = " . var_export($row_mod, true) . ";\n?>\n";
+            echo "<?php\n\$row_mod = " . var_export($row_mod, true) . ";\n\$GLOBALS['row_mod'] = \$row_mod;\n?>\n";
             // 레벨처리 추가 {
             echo "<?php \$__rb_mb_level = isset(\$GLOBALS['member']['mb_level']) ? (int)\$GLOBALS['member']['mb_level'] : 1;
             if (!\$is_admin && !rb__level_visible(\$__rb_mb_level, " . (int)($row_mod['md_level_is'] ?? 0) . ", " . (int)($row_mod['md_level'] ?? 0) . ")) { } else { ?>\n";
@@ -595,7 +597,13 @@ foreach ($layouts as $layout_no) {
                 </ul>
 
 
-                <div class="flex_box_inner flex_box" data-layout="<?php echo $row_mod['md_layout']; ?>-<?php echo $row_mod['md_id']; ?>"></div>
+                <div class="flex_box_inner flex_box" data-layout="<?php echo $row_mod['md_layout']; ?>-<?php echo $row_mod['md_id']; ?>">
+                    <?php if($is_admin) { ?>
+                    <div class="add_module_wrap">
+                        <button type="button" class="add_module_btns font-B" onclick="set_module_send(this);" data-tooltip="모듈을 추가할 수 있어요." data-tooltip-pos="top"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none"><path d="M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z"></path><path fill="#FFFFFFFF" d="M11 20a1 1 0 1 0 2 0v-7h7a1 1 0 1 0 0-2h-7V4a1 1 0 1 0-2 0v7H4a1 1 0 1 0 0 2h7z"></path></g></svg></button>
+                    </div>
+                    <?php } ?>
+                </div>
             </div>
 
 
@@ -655,13 +663,6 @@ foreach ($layouts as $layout_no) {
                 <?php } ?>
 
 
-                <div class="rb_section_title">
-                    <h2 class="<?php echo !empty($row_sec['sec_title_font']) ? $row_sec['sec_title_font'] : 'font-B'; ?>" style="color:<?php echo !empty($row_sec['sec_title_color']) ? $row_sec['sec_title_color'] : '#25282b'; ?>; font-size:<?php echo !empty($row_sec['sec_title_size']) ? $row_sec['sec_title_size'] : '26'; ?>px; text-align:<?php echo !empty($row_sec['sec_title_align']) ? $row_sec['sec_title_align'] : 'center'; ?>; display:<?php echo (isset($row_sec['sec_title_hide']) && $row_sec['sec_title_hide'] == '1') ? 'none' : 'block'; ?>;"><?php echo $row_sec['sec_title'] ?></h2>
-                    <h6 class="<?php echo !empty($row_sec['sec_sub_title_font']) ? $row_sec['sec_sub_title_font'] : 'font-R'; ?>" style="color:<?php echo !empty($row_sec['sec_sub_title_color']) ? $row_sec['sec_sub_title_color'] : '#25282b'; ?>; font-size:<?php echo !empty($row_sec['sec_sub_title_size']) ? $row_sec['sec_sub_title_size'] : '26'; ?>px;  text-align:<?php echo !empty($row_sec['sec_sub_title_align']) ? $row_sec['sec_sub_title_align'] : 'center'; ?>; display:<?php echo (isset($row_sec['sec_sub_title_hide']) && $row_sec['sec_sub_title_hide'] == '1') ? 'none' : 'block'; ?>;"><?php echo nl2br($row_sec['sec_sub_title']); ?></h6>
-                </div>
-
-
-
                 <div class="flex_box" style="
                    <?php if (isset($row_sec['sec_con_width']) && $row_sec['sec_con_width'] == 1) { ?><?php } else { ?>width: calc(<?php if($is_index) { ?><?php echo $rb_core['main_width'] ?>px<?php } else { ?><?php echo $rb_core['sub_width'] ?>px<?php } ?> + <?php echo $rb_core['gap_pc'] ?>px); transform: translateX(0px);<?php } ?>"
                     data-layout="<?php echo $row_sec['sec_layout']; ?>"
@@ -670,6 +671,11 @@ foreach ($layouts as $layout_no) {
                     data-sec-uid="<?php echo $row_sec['sec_uid']; ?>"
                     data-shop="0"
                     >
+
+                    <div class="rb_section_title">
+                        <h2 class="<?php echo !empty($row_sec['sec_title_font']) ? $row_sec['sec_title_font'] : 'font-B'; ?>" style="color:<?php echo !empty($row_sec['sec_title_color']) ? $row_sec['sec_title_color'] : '#25282b'; ?>; font-size:<?php echo !empty($row_sec['sec_title_size']) ? $row_sec['sec_title_size'] : '26'; ?>px; text-align:<?php echo !empty($row_sec['sec_title_align']) ? $row_sec['sec_title_align'] : 'center'; ?>; display:<?php echo (isset($row_sec['sec_title_hide']) && $row_sec['sec_title_hide'] == '1') ? 'none' : 'block'; ?>;"><?php echo $row_sec['sec_title'] ?></h2>
+                        <h6 class="<?php echo !empty($row_sec['sec_sub_title_font']) ? $row_sec['sec_sub_title_font'] : 'font-R'; ?>" style="color:<?php echo !empty($row_sec['sec_sub_title_color']) ? $row_sec['sec_sub_title_color'] : '#25282b'; ?>; font-size:<?php echo !empty($row_sec['sec_sub_title_size']) ? $row_sec['sec_sub_title_size'] : '26'; ?>px;  text-align:<?php echo !empty($row_sec['sec_sub_title_align']) ? $row_sec['sec_sub_title_align'] : 'center'; ?>; display:<?php echo (isset($row_sec['sec_sub_title_hide']) && $row_sec['sec_sub_title_hide'] == '1') ? 'none' : 'block'; ?>;"><?php echo nl2br($row_sec['sec_sub_title']); ?></h6>
+                    </div>
 
 
                     <?php if ($is_admin) { ?>
@@ -726,6 +732,10 @@ foreach ($layouts as $layout_no) {
 
     // evaluate and store result
     $result_data[$layout_no] = eval('?>' . $output);
+}
+
+if (!empty($GLOBALS['rb_layout_capture_only'])) {
+    return $result_data;
 }
 
 header('Content-Type: application/json; charset=utf-8');
