@@ -77,7 +77,7 @@ $rb_gap_minus2 = $rb_gap_minus / 2;
 
 <?php } ?>
 
-.sec_wide_set .content_box {padding-left:0px !important; padding-right:0px !important;}
+.sec_wide_set .content_box {padding-left:0px !important; padding-right:0px !important; padding-top:0px !important; padding-bottom:0px !important;}
 
 @media all and (max-width:1430px){
     .gnb_wrap .inner {max-width: 1280px !important;}
