@@ -700,6 +700,8 @@ input#md_title_hide + label:after {
     min-height: 75px;
 }
 
+.rb-mode-mod .rb_section_box {border:2px dashed #ff64b5 !important;}
+
 .rb-row-handle {
   pointer-events: auto;
 }
