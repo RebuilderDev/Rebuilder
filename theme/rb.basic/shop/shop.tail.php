@@ -653,5 +653,21 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
     }
 </style>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.rb-mod-label[data-mod-id]').forEach(function(label) {
+        var modId = label.getAttribute('data-mod-id');
+        var contentBox = document.querySelector('.rb_module_shop_' + modId);
+        if (!contentBox) return;
+        var style = window.getComputedStyle(contentBox);
+        var paddingTop = parseFloat(style.paddingTop) || 0;
+        var paddingBottom = parseFloat(style.paddingBottom) || 0;
+        var innerH = Math.round(contentBox.clientHeight - paddingTop - paddingBottom);
+        var hSpan = label.querySelector('.rb-mod-label-h');
+        if (hSpan) hSpan.textContent = innerH + 'px';
+    });
+});
+</script>
+
 <?php
 include_once(G5_THEME_PATH.'/tail.sub.php');

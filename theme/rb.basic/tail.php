@@ -685,6 +685,22 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
 <!-- } 하단 끝 -->
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.rb-mod-label[data-mod-id]').forEach(function(label) {
+        var modId = label.getAttribute('data-mod-id');
+        var contentBox = document.querySelector('.rb_module_' + modId);
+        if (!contentBox) return;
+        var style = window.getComputedStyle(contentBox);
+        var paddingTop = parseFloat(style.paddingTop) || 0;
+        var paddingBottom = parseFloat(style.paddingBottom) || 0;
+        var innerH = Math.round(contentBox.clientHeight - paddingTop - paddingBottom);
+        var hSpan = label.querySelector('.rb-mod-label-h');
+        if (hSpan) hSpan.textContent = innerH + 'px';
+    });
+});
+</script>
+
+<script>
     $(function() {
         // 폰트 리사이즈 쿠키있으면 실행
         font_resize("container", get_cookie("ck_font_resize_rmv_class"), get_cookie("ck_font_resize_add_class"));

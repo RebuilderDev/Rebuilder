@@ -585,7 +585,8 @@ foreach ($layouts as $layout_no) {
                         <span class="admin_ov">
 
                             <?php if ($is_admin) { ?>
-                                <span class="rb-mod-label">모듈 <?php echo $row_mod['md_id']; ?> / <?php echo cut_str($row_mod['md_title'], 15); ?> (<?php echo $row_mod['md_width']; ?><?php echo !empty($row_mod['md_size']) ? $row_mod['md_size'] : '%'; ?>)</span>
+                                <span class="rb-mod-label" data-mod-id="<?php echo $row_mod['md_id']; ?>">모듈 <?php echo $row_mod['md_id']; ?> / <?php echo cut_str($row_mod['md_title'], 15); ?> (<?php echo $row_mod['md_width']; ?><?php echo !empty($row_mod['md_size']) ? $row_mod['md_size'] : '%'; ?> / <span class="rb-mod-label-h">-</span>)</span>
+
                             <?php } ?>
 
                             <div class="mod_edit">
@@ -639,7 +640,7 @@ foreach ($layouts as $layout_no) {
             ob_start();
         ?>
 
-           <div class="rb_section_box rb_section_<?php echo $row_sec['sec_id']; ?> <?php if (isset($row_sec['sec_width']) && $row_sec['sec_width'] == 1) { ?>rb_sec_wide<?php } ?> <?php if (isset($row_sec['sec_con_width']) && $row_sec['sec_con_width'] == 1) { ?>sec_wide_set<?php } ?>"
+           <div class="rb_section_box rb_section_<?php echo $row_sec['sec_id']; ?> <?php if (isset($row_sec['sec_width']) && $row_sec['sec_width'] == 1) { ?>rb_sec_wide<?php } ?>"
                  style="
                     <?php if (isset($row_sec['sec_width']) && $row_sec['sec_width'] == 1) { ?>
                     min-width:<?php if($is_index) { ?><?php echo $rb_core['main_width'] ?>px<?php } else { ?><?php echo $rb_core['sub_width'] ?>px<?php } ?>;

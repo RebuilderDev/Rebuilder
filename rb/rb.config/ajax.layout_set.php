@@ -566,7 +566,7 @@ foreach ($layouts as $layout_no) {
                     <?php if ($is_admin) { ?>
                         <span class="admin_ov">
                             <?php if ($is_admin) { ?>
-                                <span class="rb-mod-label">모듈 <?php echo $row_mod['md_id']; ?> / <?php echo cut_str($row_mod['md_title'], 15); ?> (<?php echo $row_mod['md_width']; ?><?php echo !empty($row_mod['md_size']) ? $row_mod['md_size'] : '%'; ?>)</span>
+                                <span class="rb-mod-label" data-mod-id="<?php echo $row_mod['md_id']; ?>">모듈 <?php echo $row_mod['md_id']; ?> / <?php echo cut_str($row_mod['md_title'], 15); ?> (<?php echo $row_mod['md_width']; ?><?php echo !empty($row_mod['md_size']) ? $row_mod['md_size'] : '%'; ?> / <span class="rb-mod-label-h">-</span>)</span>
                             <?php } ?>
                             <div class="mod_edit">
                                 <ul class="middle_y text-center">
