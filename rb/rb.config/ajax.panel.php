@@ -7,6 +7,15 @@ include_once(G5_PATH . '/rb/rb.lib/lib.panel.php');
 
 $panel_id = isset($_REQUEST['panel_id']) ? trim((string)$_REQUEST['panel_id']) : '';
 
+if (empty($is_admin)) {
+    http_response_code(403);
+    echo json_encode(array(
+        'status' => 'error',
+        'message' => 'admin only',
+    ));
+    exit;
+}
+
 if ($panel_id === '') {
     http_response_code(400);
     echo json_encode(array(

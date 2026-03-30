@@ -111,6 +111,10 @@ if (!function_exists('rb_config_load_dynamic_panels')) {
         $panels = array();
         $panel_dir = !empty($context['panel_dir']) ? $context['panel_dir'] : dirname(__DIR__) . '/rb.config/panel';
 
+        if (empty($context['is_admin'])) {
+            return $panels;
+        }
+
         if (!is_dir($panel_dir)) {
             return $panels;
         }
