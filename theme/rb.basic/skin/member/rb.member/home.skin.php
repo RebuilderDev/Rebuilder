@@ -344,6 +344,12 @@ $ca = isset($_GET['ca']) ? $_GET['ca'] : '';
                         height: 260,
                         toolbar: {
                             show: false
+                        },
+                        zoom: {
+                            enabled: false
+                        },
+                        selection: {
+                            enabled: false
                         }
                     },
                     series: [{
@@ -529,6 +535,12 @@ $ca = isset($_GET['ca']) ? $_GET['ca'] : '';
                         height: 260,
                         toolbar: {
                             show: false
+                        },
+                        zoom: {
+                            enabled: false
+                        },
+                        selection: {
+                            enabled: false
                         }
                     },
                     series: [{
