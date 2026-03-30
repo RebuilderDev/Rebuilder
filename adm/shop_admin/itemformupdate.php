@@ -281,6 +281,12 @@ if($option_count) {
     }
 }
 
+// 예약 타입이면 선택옵션 subject 강제 초기화
+if(isset($_POST['it_types']) && $_POST['it_types'] == '1') {
+    $it_option_subject = '';
+}
+
+
 // 추가옵션
 sql_query(" delete from {$g5['g5_shop_item_option_table']} where io_type = '1' and it_id = '$it_id' "); // 기존추가옵션삭제
 
