@@ -10,10 +10,30 @@ add_javascript('<script src="'.G5_URL.'/rb/rb.config/coloris/coloris.js"></scrip
 if (!isset($_SESSION['rb_widget_csrf'])) {
   $_SESSION['rb_widget_csrf'] = bin2hex(function_exists('random_bytes') ? random_bytes(32) : openssl_random_pseudo_bytes(32));
 }
+
+include_once(G5_PATH . '/rb/rb.lib/lib.panel.php');
+
+$rb_panel_context = rb_config_panel_context(array(
+    'is_admin' => isset($is_admin) ? $is_admin : false,
+    'rb_core' => isset($rb_core) ? $rb_core : array(),
+    'rb_config' => isset($rb_config) ? $rb_config : array(),
+));
+$rb_side_panels = rb_config_get_all_panels($rb_panel_context);
+$rb_side_panels_js = array();
+
+foreach ($rb_side_panels as $rb_side_panel) {
+    $rb_side_panels_js[] = array(
+        'id' => isset($rb_side_panel['id']) ? $rb_side_panel['id'] : '',
+        'panel_kind' => isset($rb_side_panel['panel_kind']) ? $rb_side_panel['panel_kind'] : 'dynamic',
+        'builtin_target' => isset($rb_side_panel['builtin_target']) ? $rb_side_panel['builtin_target'] : '',
+    );
+}
 ?>
 
 <script>
     window.RB_WIDGET_CSRF = "<?php echo $_SESSION['rb_widget_csrf'] ?>";
+    window.RB_SIDE_PANELS = <?php echo json_encode($rb_side_panels_js); ?>;
+    window.RB_PANEL_HIDE_TIMER = null;
 
     (function fixShopRadioCheckboxNamesOnce() {
         if (window.RB_IS_SHOP != 1) return;
@@ -53,10 +73,21 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         <div class="sh-side-options-item-container"><img src="<?php echo G5_URL ?>/rb/rb.config/image/icon_setting.svg"></div>
     </a>
 
-
-    <a class="sh-side-options-item sh-accent-color mobule_set_btn" onclick="toggleSideOptions();" data-tooltip="모듈설정" data-tooltip-pos="top">
-        <div class="sh-side-options-item-container"><img src="<?php echo G5_URL ?>/rb/rb.config/image/icon_mod.svg"></div>
+    <?php foreach ($rb_side_panels as $rb_side_panel) { ?>
+    <a
+        href="javascript:void(0);"
+        class="sh-side-options-item sh-accent-color <?php echo !empty($rb_side_panel['button_class']) ? $rb_side_panel['button_class'] : ''; ?>"
+        onclick="rbToggleRegisteredPanel('<?php echo $rb_side_panel['id']; ?>');"
+        data-tooltip="<?php echo $rb_side_panel['tooltip']; ?>"
+        data-tooltip-pos="top"
+        data-panel-id="<?php echo $rb_side_panel['id']; ?>"
+        data-panel-kind="<?php echo $rb_side_panel['panel_kind']; ?>"
+    >
+        <div class="sh-side-options-item-container">
+            <img src="<?php echo $rb_side_panel['icon']; ?>" alt="<?php echo $rb_side_panel['title']; ?>">
+        </div>
     </a>
+    <?php } ?>
 
     <a href="javascript:void(0);" class="sh-side-options-item sh-accent-color" id="saveOrderButton" data-tooltip="현재순서 저장" data-tooltip-pos="top">
         <div class="sh-side-options-item-container" style="height:38px;">
@@ -69,15 +100,6 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         </div>
     </a>
 
-    <?php if (defined("_INDEX_") || !empty($_GET['gr_id']) || !empty($_GET['co_id'])) { ?>
-    <a class="sh-side-options-item sh-accent-color section_set_btn" onclick="toggleSideSection();" data-tooltip="섹션설정" data-tooltip-pos="top">
-        <div class="sh-side-options-item-container"><img src="<?php echo G5_URL ?>/rb/rb.config/image/icon_sec.svg"></div>
-    </a>
-    <?php } ?>
-
-    <a class="sh-side-options-item sh-accent-color setting_set_btn" onclick="toggleSideOptions_open_set();" data-tooltip="환경설정" data-tooltip-pos="top">
-        <div class="sh-side-options-item-container"><img src="<?php echo G5_URL ?>/rb/rb.config/image/icon_set.svg"></div>
-    </a>
 </div>
 
 <div class="sh-side-options sh-side-options-pages">
@@ -1875,6 +1897,8 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
                 </div>
 
+                <?php rb_config_render_dynamic_panels($rb_side_panels, $rb_panel_context); ?>
+
 
             </div>
         </div>
@@ -2015,8 +2039,105 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         $('.rb_config_mod1').hide();
         $('.rb_config_mod2').hide();
         $('.rb_config_mod3').hide();
+        $('.rb_config_panel_ext').hide();
         $("#saveOrderButton").hide();
     });
+
+    function rbCancelDeferredPanelHide() {
+        if (window.RB_PANEL_HIDE_TIMER) {
+            clearTimeout(window.RB_PANEL_HIDE_TIMER);
+            window.RB_PANEL_HIDE_TIMER = null;
+        }
+    }
+
+    function rbHideExtendedPanelsDeferred() {
+        rbCancelDeferredPanelHide();
+        window.RB_PANEL_HIDE_TIMER = setTimeout(function() {
+            $('.rb_config_panel_ext').hide();
+            window.RB_PANEL_HIDE_TIMER = null;
+        }, 620);
+    }
+
+    function rbFindPanelMeta(panelId) {
+        var panels = window.RB_SIDE_PANELS || [];
+        for (var i = 0; i < panels.length; i++) {
+            if (panels[i] && panels[i].id === panelId) {
+                return panels[i];
+            }
+        }
+        return null;
+    }
+
+    function rbResetPanelUiState() {
+        rbCancelDeferredPanelHide();
+        $('.rb_config_mod1').hide();
+        $('.rb_config_mod2').hide();
+        $('.rb_config_mod3').hide();
+        $('.rb_config_panel_ext').hide();
+
+        $('.sh-side-options-item[data-panel-id]').removeClass('open');
+        $('.content_box').removeClass('content_box_set handles');
+        $('.rb_layout_box').removeClass('bg_fff ui-sortable-handle');
+        $('.rb_section_box').removeClass('bg_fff handles rb_section_box_set ui-sortable-handle');
+        $('.add_module_wrap').hide();
+        $('.add_section_wrap').hide();
+        $('.rb-row-handle').hide();
+        $('.rb-mod-label').hide();
+        $('.rb-sec-label').hide();
+        $('.flex_box').removeClass('ui-sortable');
+    }
+
+    function rbOpenDynamicPanel(panelId) {
+        var $panel = $('.rb_config_panel_ext[data-panel-id="' + panelId + '"]');
+        if (!$panel.length) return;
+
+        cleanupSecArtifacts();
+        cleanupModArtifacts();
+        rbResetPanelUiState();
+
+        $panel.show();
+        toggleSideOptions_open();
+        $('.sh-side-options-item[data-panel-id="' + panelId + '"]').addClass('open');
+
+        rbSetMode(null);
+
+        if (window.Coloris) {
+            Coloris({
+                el: '.coloris'
+            });
+            Coloris.setInstance('.coloris', {
+                parent: '.sh-side-demos-container'
+            });
+        }
+    }
+
+    function rbToggleRegisteredPanel(panelId) {
+        var meta = rbFindPanelMeta(panelId);
+        if (!meta) return;
+
+        if (meta.panel_kind === 'builtin') {
+            if (meta.builtin_target === 'module') {
+                toggleSideOptions();
+                return;
+            }
+            if (meta.builtin_target === 'section') {
+                toggleSideSection();
+                return;
+            }
+            if (meta.builtin_target === 'setting') {
+                toggleSideOptions_open_set();
+                return;
+            }
+        }
+
+        var $btn = $('.sh-side-options-item[data-panel-id="' + panelId + '"]');
+        if ($btn.hasClass('open') && $('.sh-side-options').hasClass('open')) {
+            toggleSideOptions_close();
+            return;
+        }
+
+        rbOpenDynamicPanel(panelId);
+    }
 
 
     //모듈설정 토글
@@ -2121,6 +2242,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
         // 섹션 모드 잔여물 정리
         cleanupSecArtifacts();
+        $('.rb_config_panel_ext').hide();
 
         $('.rb_config_mod1').hide();
         $('.rb_config_mod2').show();
@@ -2132,6 +2254,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         $('.mobule_set_btn').addClass('open');
         $('.setting_set_btn').removeClass('open');
         $('.section_set_btn').removeClass('open');
+        $('.rb-dynamic-panel-btn').removeClass('open');
         $('.add_module_wrap').show();
         $('.add_section_wrap').hide();
         $('.rb-mod-label').show();
@@ -3030,6 +3153,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
         // 모듈 모드 잔여물 정리
         cleanupModArtifacts();
+        $('.rb_config_panel_ext').hide();
 
         $('.rb_config_mod1').hide();
         $('.rb_config_mod2').hide();
@@ -3042,6 +3166,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         $('.mobule_set_btn').removeClass('open');
         $('.setting_set_btn').removeClass('open');
         $('.section_set_btn').addClass('open');
+        $('.rb-dynamic-panel-btn').removeClass('open');
         $('.add_module_wrap').hide();
         $('.rb-row-handle').hide();
         $('.add_section_wrap').show();
@@ -3494,6 +3619,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         $('.mobule_set_btn').removeClass('open');
         $('.setting_set_btn').removeClass('open');
         $('.section_set_btn').removeClass('open');
+        $('.rb-dynamic-panel-btn').removeClass('open');
         $('.add_module_wrap').hide();
         $('.add_section_wrap').hide();
         $('.rb-row-handle').hide();
@@ -3527,6 +3653,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         $('.mobule_set_btn').removeClass('open');
         $('.setting_set_btn').removeClass('open');
         $('.section_set_btn').removeClass('open');
+        $('.rb-dynamic-panel-btn').removeClass('open');
         $('.add_module_wrap').hide();
         $('.add_section_wrap').hide();
         $('.rb-row-handle').hide();
@@ -3542,6 +3669,8 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
     function toggleSideOptions_open_set() {
         toggleSideOptions_open();
         cleanupModArtifacts();
+        cleanupSecArtifacts();
+        $('.rb_config_panel_ext').hide();
 
         $('.rb_config_mod1').show();
         $('.rb_config_mod2').hide();
@@ -3551,6 +3680,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         $('.setting_set_btn').addClass('open');
         $('.mobule_set_btn').removeClass('open');
         $('.section_set_btn').removeClass('open');
+        $('.rb-dynamic-panel-btn').removeClass('open');
         $('.content_box').removeClass('content_box_set');
         $('.rb_layout_box').removeClass('bg_fff');
         $('.add_module_wrap').hide();
@@ -3565,6 +3695,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
     //환경설정 열기
     function toggleSideOptions_open() {
+        rbCancelDeferredPanelHide();
         $('.sh-side-options').css('transition', 'all 600ms cubic-bezier(0.86, 0, 0.07, 1)');
         $('.sh-side-options').addClass('open');
         rbSetMode(null);
@@ -3578,6 +3709,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
         $('.setting_set_btn').removeClass('open');
         $('.mobule_set_btn').removeClass('open');
         $('.section_set_btn').removeClass('open');
+        $('.rb-dynamic-panel-btn').removeClass('open');
         $('.content_box').removeClass('content_box_set');
         $('.rb_layout_box').removeClass('bg_fff');
         $('.rb_section_box').removeClass('bg_fff');
@@ -3593,6 +3725,7 @@ if (!isset($_SESSION['rb_widget_csrf'])) {
 
         edit_css_close();
         lib_close();
+        rbHideExtendedPanelsDeferred();
 
     }
 

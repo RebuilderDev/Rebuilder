@@ -51,6 +51,7 @@
 
 .sh-side-options-item:hover .sh-side-options-item-container,
 .sh-side-options-item:focus .sh-side-options-item-container,
+.sh-side-options-item.open .sh-side-options-item-container,
 .setting_set_btn.open .sh-side-options-item-container {
     background-color: #f3f5fd;
 }
