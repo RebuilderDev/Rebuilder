@@ -1,5 +1,44 @@
 <?php
 include_once('./_common.php');
+
+if (!function_exists('rb_shop_has_column')) {
+    function rb_shop_has_column($table, $column)
+    {
+        static $cache = array();
+        $key = $table . ':' . $column;
+        if (isset($cache[$key])) {
+            return $cache[$key];
+        }
+
+        $row = sql_fetch("SHOW COLUMNS FROM `{$table}` LIKE '" . sql_real_escape_string($column) . "'", false);
+        $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
+        return $cache[$key];
+    }
+}
+if (!function_exists('rb_shop_order_has_shipping_items')) {
+    function rb_shop_order_has_shipping_items($order_id, $selected_only = false)
+    {
+        global $g5;
+
+        $order_id = preg_replace('/[^A-Za-z0-9_\-]/', '', (string)$order_id);
+        if ($order_id === '') {
+            return false;
+        }
+
+        $selected_sql = $selected_only ? " AND a.ct_select = '1' " : '';
+        $row = sql_fetch("
+            SELECT COUNT(*) AS shipping_cnt
+            FROM {$g5['g5_shop_cart_table']} a
+            LEFT JOIN {$g5['g5_shop_item_table']} b ON a.it_id = b.it_id
+            WHERE a.od_id = '{$order_id}'
+              {$selected_sql}
+              AND a.io_type = '0'
+              AND COALESCE(NULLIF(b.it_types, ''), '0') = '0'
+        ", false);
+
+        return !empty($row['shipping_cnt']);
+    }
+}
 include_once(G5_LIB_PATH.'/mailer.lib.php');
 
 $post_p_hash = isset($_POST['P_HASH']) ? $_POST['P_HASH'] : '';
@@ -118,6 +157,13 @@ $i_send_cost  = isset($_POST['od_send_cost']) ? (int) $_POST['od_send_cost'] : 0
 $i_send_cost2  = isset($_POST['od_send_cost2']) ? (int) $_POST['od_send_cost2'] : 0;
 $i_send_coupon  = isset($_POST['od_send_coupon']) ? abs((int) $_POST['od_send_coupon']) : 0;
 $i_temp_point = isset($_POST['od_temp_point']) ? (int) $_POST['od_temp_point'] : 0;
+$rb_file_order_only = function_exists('rb_file_is_cart_file_only') ? rb_file_is_cart_file_only($tmp_cart_id, true) : false;
+$rb_media_order_only = function_exists('rb_media_is_cart_media_only') ? rb_media_is_cart_media_only($tmp_cart_id, true) : false;
+$rb_has_shipping_items = rb_shop_order_has_shipping_items($tmp_cart_id, true);
+$rb_deliveryless_order_only = !$rb_has_shipping_items;
+$rb_file_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
+$rb_media_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
+$rb_order_post_it_ids = isset($_POST['rb_order_it_id']) && is_array($_POST['rb_order_it_id']) ? $_POST['rb_order_it_id'] : (isset($_POST['it_id']) && is_array($_POST['it_id']) ? $_POST['it_id'] : array());
 
 // 주문금액이 상이함
 if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) { //예약상품일 경우 합계방식을 변경함
@@ -137,7 +183,11 @@ if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) { //예약상�
         WHERE od_id = '$tmp_cart_id'
         AND ct_select = '1' ";
 } else {
-    $sql = " select SUM(IF(io_type = 1, (io_price * ct_qty), ((ct_price + io_price) * ct_qty))) as od_price,
+$rb_file_price_expr = $rb_file_columns_ready ? "(ct_price + io_price + COALESCE(ct_file_price, 0))" : "(ct_price + io_price)";
+if ($rb_media_columns_ready) {
+    $rb_file_price_expr = preg_replace('/\)$/', " + COALESCE(ct_media_price, 0))", $rb_file_price_expr, 1);
+}
+$sql = " select SUM(IF(io_type = 1, (io_price * ct_qty), ((" . $rb_file_price_expr . ") * ct_qty))) as od_price,
         COUNT(distinct it_id) as cart_count
             from {$g5['g5_shop_cart_table']} where od_id = '$tmp_cart_id' and ct_select = '1' ";
 }
@@ -156,7 +206,7 @@ if($is_member) {
     $arr_it_cp_prc = array();
     for($i=0; $i<$it_cp_cnt; $i++) {
         $cid = isset($_POST['cp_id'][$i]) ? $_POST['cp_id'][$i] : '';
-        $it_id = isset($_POST['it_id'][$i]) ? safe_replace_regex($_POST['it_id'][$i], 'it_id') : '';
+        $it_id = isset($rb_order_post_it_ids[$i]) ? safe_replace_regex($rb_order_post_it_ids[$i], 'it_id') : '';
         $sql = " select cp_id, cp_method, cp_target, cp_type, cp_price, cp_trunc, cp_minimum, cp_maximum
                     from {$g5['g5_shop_coupon_table']}
                     where cp_id = '$cid'
@@ -190,7 +240,7 @@ if($is_member) {
         }
 
         // 상품금액
-        $sql = " select SUM( IF(io_type = '1', io_price * ct_qty, (ct_price + io_price) * ct_qty)) as sum_price
+$sql = " select SUM( IF(io_type = '1', io_price * ct_qty, (" . $rb_file_price_expr . ") * ct_qty)) as sum_price
                     from {$g5['g5_shop_cart_table']}
                     where od_id = '$tmp_cart_id'
                       and it_id = '$it_id'
@@ -268,7 +318,7 @@ if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) { //예약이�
 
 
 // 배송비가 상이함
-$send_cost = get_sendcost($tmp_cart_id);
+$send_cost = $rb_deliveryless_order_only ? 0 : get_sendcost($tmp_cart_id);
 
 $tot_sc_cp_price = 0;
 if($is_member && $send_cost > 0) {
@@ -311,18 +361,33 @@ if ((int)($send_cost - $tot_sc_cp_price) !== (int)($i_send_cost - $i_send_coupon
 }
 
 // 추가배송비가 상이함
-$od_b_zip   = preg_replace('/[^0-9]/', '', $od_b_zip);
-$od_b_zip1  = substr($od_b_zip, 0, 3);
-$od_b_zip2  = substr($od_b_zip, 3);
-$zipcode = $od_b_zip1 . $od_b_zip2;
-$sql = " select sc_id, sc_price from {$g5['g5_shop_sendcost_table']} where sc_zip1 <= '$zipcode' and sc_zip2 >= '$zipcode' ";
-$tmp = sql_fetch($sql);
-if(! (isset($tmp['sc_id']) && $tmp['sc_id']))
+if ($rb_deliveryless_order_only) {
+    $od_b_name = $od_name;
+    $od_b_tel = $od_tel;
+    $od_b_hp = $od_hp;
+    $od_b_zip = $od_zip;
+    $od_b_addr1 = $od_addr1;
+    $od_b_addr2 = $od_addr2;
+    $od_b_addr3 = $od_addr3;
+    $od_b_addr_jibeon = $od_addr_jibeon;
+    $i_send_cost = 0;
+    $i_send_cost2 = 0;
+    $i_send_coupon = 0;
     $send_cost2 = 0;
-else
-    $send_cost2 = (int)$tmp['sc_price'];
+} else {
+    $od_b_zip   = preg_replace('/[^0-9]/', '', $od_b_zip);
+    $od_b_zip1  = substr($od_b_zip, 0, 3);
+    $od_b_zip2  = substr($od_b_zip, 3);
+    $zipcode = $od_b_zip1 . $od_b_zip2;
+    $sql = " select sc_id, sc_price from {$g5['g5_shop_sendcost_table']} where sc_zip1 <= '$zipcode' and sc_zip2 >= '$zipcode' ";
+    $tmp = sql_fetch($sql);
+    if(! (isset($tmp['sc_id']) && $tmp['sc_id']))
+        $send_cost2 = 0;
+    else
+        $send_cost2 = (int)$tmp['sc_price'];
+}
 
-if($send_cost2 !== $i_send_cost2) {
+if(!$rb_deliveryless_order_only && $send_cost2 !== $i_send_cost2) {
     if(function_exists('add_order_post_log')) add_order_post_log('추가배송비 최종 계산 Error...');
     die("Error...");
 }
@@ -333,16 +398,22 @@ $temp_point = 0;
 if ($is_member && $config['cf_use_point'])
 {
     if($member['mb_point'] >= $default['de_settle_min_point']) {
-        $temp_point = (int)$default['de_settle_max_point'];
+        $temp_point_base = max(0, (int)$i_price);
+        if($temp_point_base <= 0) {
+            $temp_point_base = max(0, (int)$tot_od_price);
+        }
 
-        if($temp_point > (int)$tot_od_price)
-            $temp_point = (int)$tot_od_price;
+        $temp_point = $temp_point_base;
+        $point_max_limit = (int)$default['de_settle_max_point'];
+        if($point_max_limit > 0 && $temp_point > $point_max_limit)
+            $temp_point = $point_max_limit;
 
         if($temp_point > (int)$member['mb_point'])
             $temp_point = (int)$member['mb_point'];
 
         $point_unit = (int)$default['de_settle_point_unit'];
-        $temp_point = (int)((int)($temp_point / $point_unit) * $point_unit);
+        if($point_unit > 0)
+            $temp_point = (int)((int)($temp_point / $point_unit) * $point_unit);
     }
 }
 
@@ -904,7 +975,7 @@ if($is_member) {
     $it_cp_cnt = (isset($_POST['cp_id']) && is_array($_POST['cp_id'])) ? count($_POST['cp_id']) : 0;
     for($i=0; $i<$it_cp_cnt; $i++) {
         $cid = isset($_POST['cp_id'][$i]) ? clean_xss_tags($_POST['cp_id'][$i], 1, 1) : '';
-        $cp_it_id = isset($_POST['it_id'][$i]) ? safe_replace_regex($_POST['it_id'][$i], 'it_id') : '';
+        $cp_it_id = isset($rb_order_post_it_ids[$i]) ? safe_replace_regex($rb_order_post_it_ids[$i], 'it_id') : '';
         $cp_prc = isset($arr_it_cp_prc[$cp_it_id]) ? (int) $arr_it_cp_prc[$cp_it_id] : 0;
 
         if(trim($cid)) {
@@ -1072,8 +1143,15 @@ set_session('ss_order_id', '');
 if (get_session('ss_direct'))
     set_session('ss_cart_direct', '');
 
+if(function_exists('rb_file_issue_order_downloads')) {
+    rb_file_issue_order_downloads($od_id);
+}
+if(function_exists('rb_media_issue_order_rights')) {
+    rb_media_issue_order_rights($od_id);
+}
+
 // 배송지처리
-if($is_member) {
+if($is_member && !$rb_file_order_only) {
     $sql = " select * from {$g5['g5_shop_order_address_table']}
                 where mb_id = '{$member['mb_id']}'
                   and ad_name = '$od_b_name'

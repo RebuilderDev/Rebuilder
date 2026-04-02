@@ -3,6 +3,20 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 
 // add_stylesheet('css 구문', 출력순서); 숫자가 작을 수록 먼저 출력됨
 add_stylesheet('<link rel="stylesheet" href="'.G5_SHOP_CSS_URL.'/style.css">', 0);
+$rb_is_file_item = function_exists('rb_file_is_item') && rb_file_is_item($it);
+$rb_is_media_item = function_exists('rb_media_is_item') && rb_media_is_item($it);
+$rb_is_reservation_item = isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($it['it_types']) && (string)$it['it_types'] === '1';
+$rb_preview_media_rows = array();
+if ($rb_is_media_item && function_exists('rb_media_get_items')) {
+    $rb_preview_media_items = rb_media_get_items($it['it_id']);
+    if (is_array($rb_preview_media_items)) {
+        foreach ($rb_preview_media_items as $rb_preview_media_candidate) {
+            if (!empty($rb_preview_media_candidate['mi_preview'])) {
+                $rb_preview_media_rows[] = $rb_preview_media_candidate;
+            }
+        }
+    }
+}
 ?>
 
 <script src="//developers.kakao.com/sdk/js/kakao.min.js" charset="utf-8"></script>
@@ -14,6 +28,12 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_SHOP_CSS_URL.'/style.css">', 0
 	<input type="hidden" name="sw_direct">
 	<input type="hidden" name="url">
 	<input type="hidden" name="it_partner" value="<?php echo isset($it['it_partner']) ? $it['it_partner'] : ''; ?>">
+    <?php if ($rb_is_file_item) { ?>
+    <div id="rb_file_pick_hidden_box" style="display:none;"></div>
+    <?php } ?>
+    <?php if ($rb_is_media_item) { ?>
+    <div id="rb_media_pick_hidden_box" style="display:none;"></div>
+    <?php } ?>
 
 	<div id="sit_ov_wrap">
 
@@ -310,11 +330,16 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_SHOP_CSS_URL.'/style.css">', 0
 	                        <span class="sit_opt_subj"><?php echo $it['it_name']; ?></span>
 	                    </div>
 	                    <div class="opt_count">
+	                        <?php if ($rb_is_reservation_item) { ?>
+                            <input type="hidden" name="ct_qty[<?php echo $it_id; ?>][]" value="<?php echo $it['it_buy_min_qty']; ?>" id="ct_qty_<?php echo $i; ?>">
+                            <span class="sit_opt_prc">+0원</span>
+	                        <?php } else { ?>
 	                        <label for="ct_qty_<?php echo $i; ?>" class="sound_only">수량</label>
 							<button type="button" class="sit_qty_minus"><i class="fa fa-minus" aria-hidden="true"></i><span class="sound_only">감소</span></button>
 	                        <input type="text" name="ct_qty[<?php echo $it_id; ?>][]" value="<?php echo $it['it_buy_min_qty']; ?>" id="ct_qty_<?php echo $i; ?>" class="num_input" size="5">
 	                        <button type="button" class="sit_qty_plus"><i class="fa fa-plus" aria-hidden="true"></i><span class="sound_only">증가</span></button>
 	                        <span class="sit_opt_prc">+0원</span>
+	                        <?php } ?>
 	                    </div>
 	                </li>
 	            </ul>
@@ -364,8 +389,11 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_SHOP_CSS_URL.'/style.css">', 0
 	        {
 	            if (!g5_is_member)
 	            {
-	                if (confirm("회원만 추천하실 수 있습니다."))
-	                    document.location.href = "<?php echo G5_BBS_URL; ?>/login.php?url=<?php echo urlencode(shop_item_url($it_id)); ?>";
+	                rbConfirmCompat("회원만 추천하실 수 있습니다.").then(function(ok) {
+	                    if (ok) {
+	                        document.location.href = "<?php echo G5_BBS_URL; ?>/login.php?url=<?php echo urlencode(shop_item_url($it_id)); ?>";
+	                    }
+	                });
 	            }
 	            else
 	            {
@@ -396,6 +424,20 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_SHOP_CSS_URL.'/style.css">', 0
                     $big_img_count = 0;
                     $thumbnails = array();
                     $count_img = 1;
+
+                    if (!empty($rb_preview_media_rows)) {
+                        foreach ($rb_preview_media_rows as $rb_preview_media_row) {
+                            if (empty($rb_preview_media_row['mi_id'])) {
+                                continue;
+                            }
+                            $rb_preview_play_url = G5_URL . '/rb/rb.mod/media/play.php?mi_id=' . (int)$rb_preview_media_row['mi_id'];
+                            $rb_preview_title = get_text($rb_preview_media_row['mi_title']);
+                            $rb_preview_thumb = '<div class="rb_sit_media_thumb" title="' . $rb_preview_title . '"><span class="rb_sit_media_thumb_icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="8 5 19 12 8 19 8 5"></polygon></svg></span></div>';
+                            $thumbnails[] = $rb_preview_thumb;
+                            $big_img_count++;
+                            echo '<div class="swiper-slide rb_sit_media_slide"><iframe src="' . $rb_preview_play_url . '" allow="autoplay; fullscreen" allowfullscreen title="' . $rb_preview_title . '"></iframe></div>';
+                        }
+                    }
 
                     for($i=$count_img; $i<=10; $i++) {
                         if(!$it['it_img'.$i])
@@ -490,11 +532,45 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_SHOP_CSS_URL.'/style.css">', 0
                         swiper: galleryThumbs
                     }
                 });
+                function rbRefreshGalleryTopHeight() {
+                    if (typeof galleryTop === 'undefined' || !galleryTop) {
+                        return;
+                    }
+                    setTimeout(function() {
+                        galleryTop.update();
+                        galleryTop.updateAutoHeight(0);
+                    }, 80);
+                }
+                function rbPauseMediaSlideVideos() {
+                    $('.gallery-top .swiper-slide iframe').each(function(index) {
+                        if (index === galleryTop.activeIndex) {
+                            return;
+                        }
+                        try {
+                            if (this.contentWindow && typeof this.contentWindow.postMessage === 'function') {
+                                this.contentWindow.postMessage({ type: 'rbMediaPause' }, '*');
+                            }
+                        } catch (e) {}
+                    });
+                }
+                $(window).on('load', rbRefreshGalleryTopHeight);
+                $(window).on('resize', rbRefreshGalleryTopHeight);
+                $('.gallery-top iframe').on('load', rbRefreshGalleryTopHeight);
+                $('.gallery-top img').on('load', rbRefreshGalleryTopHeight);
+                galleryTop.on('slideChangeTransitionStart', rbPauseMediaSlideVideos);
+                galleryTop.on('slideChangeTransitionEnd', function() {
+                    rbPauseMediaSlideVideos();
+                    rbRefreshGalleryTopHeight();
+                });
             </script>
             <style>
                 .gallery-thumbs .swiper-slide-thumb-active img {
                     border-color:#454545;
                 }
+                .rb_sit_media_slide{background:#000}
+                .rb_sit_media_slide iframe{display:block;width:100%;aspect-ratio:<?php echo (int)$default['de_mimg_width']; ?> / <?php echo max(1, (int)$default['de_mimg_height']); ?>;border:0;background:#000}
+                .rb_sit_media_thumb{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:1 / 1;padding:10px;border:1px solid #111827;border-radius:12px;background:#000;text-align:center}
+                .rb_sit_media_thumb_icon{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:999px;background:rgba(255,255,255,.08);color:#fff}
             </style>
 
 
@@ -786,6 +862,13 @@ function fsubmit_check(f)
 // 바로구매, 장바구니 폼 전송
 function fitem_submit(f)
 {
+    if (typeof rb_file_sync_hidden_inputs === "function") {
+        rb_file_sync_hidden_inputs();
+    }
+    if (typeof rb_media_sync_hidden_inputs === "function") {
+        rb_media_sync_hidden_inputs();
+    }
+
     f.action = "<?php echo $action_url; ?>";
     f.target = "";
 
@@ -852,8 +935,293 @@ function fitem_submit(f)
         return false;
     }
 
+    <?php if (function_exists('rb_file_is_item') && rb_file_is_item($it)) { ?>
+    if ($(".rb_file_pick_chk").length > 0 && $(".rb_file_pick_chk:checked").length < 1) {
+        alert("구매할 파일을 하나 이상 선택해 주십시오.");
+        return false;
+    }
+    <?php } ?>
+
+    <?php if (function_exists('rb_media_is_item') && rb_media_is_item($it)) { ?>
+    if ($(".rb_media_pick_chk").length > 0 && $(".rb_media_pick_chk:checked").length < 1) {
+        alert("구매할 미디어를 하나 이상 선택해 주십시오.");
+        return false;
+    }
+    <?php } ?>
+
     return true;
 }
+
+function rbConfirmCompat(message)
+{
+    if (typeof rb_confirm === "function") {
+        return rb_confirm(message);
+    }
+
+    return Promise.resolve(confirm(message));
+}
+
+<?php if (function_exists('rb_file_is_item') && rb_file_is_item($it)) { ?>
+var rb_file_price_calculate_original = null;
+var rb_file_price_hook_bound = false;
+
+function rb_file_sync_hidden_inputs()
+{
+    var $box = $("#rb_file_pick_hidden_box");
+    if ($box.length < 1) {
+        return;
+    }
+
+    $box.empty();
+    $(".rb_file_pick_chk:checked").each(function() {
+        var name = $(this).attr("name");
+        var value = $(this).val();
+        $("<input>", {
+            type: "hidden",
+            name: name,
+            value: value
+        }).appendTo($box);
+    });
+}
+
+function rb_file_get_extra_price()
+{
+    var extraPrice = 0;
+
+    $(".rb_file_pick_chk:checked").each(function() {
+        var txt = $(this).closest("li").find(".rb_file_pick_price").first().text();
+        var num = parseInt(txt.replace(/[^0-9\-]/g, ""), 10);
+        if (!isNaN(num) && num > 0) {
+            extraPrice += num;
+        }
+    });
+
+    return extraPrice;
+}
+
+function rb_file_apply_total_price()
+{
+    var basePrice = parseInt($("#it_price").val(), 10) || 0;
+    var checkedCount = $(".rb_file_pick_chk:checked").length;
+    var extraPrice = rb_file_get_extra_price();
+    var currentTotal = 0;
+    var currentText = $("#sit_tot_price strong").first().text();
+    if (currentText) {
+        currentTotal = parseInt(String(currentText).replace(/[^0-9\-]/g, ""), 10);
+    }
+    if (isNaN(currentTotal) || currentTotal < 0) {
+        currentTotal = basePrice;
+    }
+
+    var totalPrice = currentTotal + extraPrice;
+    $("#sit_tot_price").html("<span>총 금액</span><strong>" + number_format(String(totalPrice)) + "</strong> 원");
+    $(".sum_section .sit_tot_price").html("<span>총 금액 </span><strong>" + number_format(String(totalPrice)) + "</strong> 원");
+    $("#od_tot_price .total_price, #mod_option_frm #sit_tot_price strong, .sit_tot_price strong").text(number_format(String(totalPrice)));
+    $("#ct_res_pri strong").text(number_format(String(totalPrice)));
+    if (checkedCount > 0) {
+        $("#ct_res_pri").show();
+    } else {
+        $("#ct_res_pri").hide();
+    }
+
+    rb_file_sync_hidden_inputs();
+}
+
+function rb_file_sync_price()
+{
+    if (typeof rb_file_price_calculate_original === "function") {
+        rb_file_price_calculate_original();
+    } else if (typeof price_calculate === "function") {
+        price_calculate();
+        return;
+    }
+
+    rb_file_apply_total_price();
+}
+
+function rb_file_bind_price_hook()
+{
+    if (typeof price_calculate === "function") {
+        if (!price_calculate.__rb_file_wrapped) {
+            rb_file_price_calculate_original = price_calculate;
+            var rb_wrapped_price_calculate = function() {
+                var result = rb_file_price_calculate_original.apply(this, arguments);
+                rb_file_apply_total_price();
+                return result;
+            };
+            rb_wrapped_price_calculate.__rb_file_wrapped = true;
+            price_calculate = rb_wrapped_price_calculate;
+        } else if (typeof price_calculate.__rb_file_original === "function") {
+            rb_file_price_calculate_original = price_calculate.__rb_file_original;
+        }
+    }
+
+    if (!rb_file_price_hook_bound) {
+        $(document).on("change.rbFilePrice input.rbFilePrice", "select[name^=io_id], select[name^=it_option], select[name^=io_option], input[name^=ct_qty]", function() {
+            setTimeout(rb_file_apply_total_price, 0);
+        });
+        rb_file_price_hook_bound = true;
+    }
+
+    $(".rb_file_pick_chk").off("change.rbFilePrice").on("change.rbFilePrice", rb_file_sync_price);
+    rb_file_apply_total_price();
+}
+
+$(function() {
+    rb_file_bind_price_hook();
+});
+<?php } ?>
+
+<?php if (function_exists('rb_media_is_item') && rb_media_is_item($it)) { ?>
+var rb_media_price_calculate_original = null;
+var rb_media_price_hook_bound = false;
+
+function rb_media_sync_hidden_inputs()
+{
+    var $box = $("#rb_media_pick_hidden_box");
+    if ($box.length < 1) {
+        return;
+    }
+
+    $box.empty();
+    $(".rb_media_pick_chk:checked").each(function() {
+        $("<input>", {
+            type: "hidden",
+            name: $(this).attr("name"),
+            value: $(this).val()
+        }).appendTo($box);
+    });
+}
+
+function rb_media_get_extra_price()
+{
+    var extraPrice = 0;
+
+    $(".rb_media_pick_chk:checked").each(function() {
+        var txt = $(this).closest("li").find(".rb_media_pick_price").first().text();
+        var num = parseInt(String(txt).replace(/[^0-9\\-]/g, ""), 10);
+        if (!isNaN(num) && num > 0) {
+            extraPrice += num;
+        }
+    });
+
+    return extraPrice;
+}
+
+function rb_media_apply_total_price()
+{
+    var basePrice = parseInt($("#it_price").val(), 10) || 0;
+    var currentTotal = 0;
+    var currentText = $("#sit_tot_price strong").first().text();
+    if (currentText) {
+        currentTotal = parseInt(String(currentText).replace(/[^0-9\\-]/g, ""), 10);
+    }
+    if (isNaN(currentTotal) || currentTotal < 0) {
+        currentTotal = basePrice;
+    }
+
+    var extraPrice = rb_media_get_extra_price();
+    var totalPrice = currentTotal + extraPrice;
+    $("#sit_tot_price").html("<span>총 금액</span><strong>" + number_format(String(totalPrice)) + "</strong> 원");
+    $(".sum_section .sit_tot_price").html("<span>총 금액 </span><strong>" + number_format(String(totalPrice)) + "</strong> 원");
+    $("#od_tot_price .total_price, #mod_option_frm #sit_tot_price strong, .sit_tot_price strong").text(number_format(String(totalPrice)));
+    $("#ct_res_pri strong").text(number_format(String(totalPrice)));
+    if ($(".rb_media_pick_chk:checked").length > 0) {
+        $("#ct_res_pri").show();
+    } else {
+        $("#ct_res_pri").hide();
+    }
+    rb_media_sync_hidden_inputs();
+}
+
+function rb_media_sync_price()
+{
+    if (typeof rb_media_price_calculate_original === "function") {
+        rb_media_price_calculate_original();
+    } else if (typeof price_calculate === "function") {
+        price_calculate();
+        return;
+    }
+
+    rb_media_apply_total_price();
+}
+
+function rb_media_bind_price_hook()
+{
+    if (typeof price_calculate === "function") {
+        if (!price_calculate.__rb_media_wrapped) {
+            rb_media_price_calculate_original = price_calculate;
+            var rb_wrapped_media_price_calculate = function() {
+                var result = rb_media_price_calculate_original.apply(this, arguments);
+                rb_media_apply_total_price();
+                return result;
+            };
+            rb_wrapped_media_price_calculate.__rb_media_wrapped = true;
+            price_calculate = rb_wrapped_media_price_calculate;
+        } else if (typeof price_calculate.__rb_media_original === "function") {
+            rb_media_price_calculate_original = price_calculate.__rb_media_original;
+        }
+    }
+
+    if (!rb_media_price_hook_bound) {
+        $(document).on("change.rbMediaPrice input.rbMediaPrice", "select[name^=io_id], select[name^=it_option], select[name^=io_option], input[name^=ct_qty]", function() {
+            setTimeout(rb_media_apply_total_price, 0);
+        });
+        rb_media_price_hook_bound = true;
+    }
+
+    $(".rb_media_pick_chk").off("change.rbMediaPrice").on("change.rbMediaPrice", rb_media_sync_price);
+    rb_media_apply_total_price();
+}
+
+$(function() {
+    rb_media_bind_price_hook();
+});
+<?php } ?>
 </script>
 <?php /* 2017 리뉴얼한 테마 적용 스크립트입니다. 기존 스크립트를 오버라이드 합니다. */ ?>
 <script src="<?php echo G5_JS_URL; ?>/shop.override.js"></script>
+<?php if (function_exists('rb_file_is_item') && rb_file_is_item($it)) { ?>
+<script>
+$(window).on("load", function() {
+    setTimeout(function() {
+        if (typeof rb_file_bind_price_hook === "function") {
+            if (typeof price_calculate === "function" && !price_calculate.__rb_file_wrapped) {
+                rb_file_price_calculate_original = price_calculate;
+                var rb_wrapped_price_calculate = function() {
+                    var result = rb_file_price_calculate_original.apply(this, arguments);
+                    rb_file_apply_total_price();
+                    return result;
+                };
+                rb_wrapped_price_calculate.__rb_file_wrapped = true;
+                rb_wrapped_price_calculate.__rb_file_original = rb_file_price_calculate_original;
+                price_calculate = rb_wrapped_price_calculate;
+            }
+            rb_file_bind_price_hook();
+        }
+    }, 0);
+});
+<?php } ?>
+</script>
+<?php if (function_exists('rb_media_is_item') && rb_media_is_item($it)) { ?>
+<script>
+$(window).on("load", function() {
+    setTimeout(function() {
+        if (typeof rb_media_bind_price_hook === "function") {
+            if (typeof price_calculate === "function" && !price_calculate.__rb_media_wrapped) {
+                rb_media_price_calculate_original = price_calculate;
+                var rb_wrapped_media_price_calculate = function() {
+                    var result = rb_media_price_calculate_original.apply(this, arguments);
+                    rb_media_apply_total_price();
+                    return result;
+                };
+                rb_wrapped_media_price_calculate.__rb_media_wrapped = true;
+                rb_wrapped_media_price_calculate.__rb_media_original = rb_media_price_calculate_original;
+                price_calculate = rb_wrapped_media_price_calculate;
+            }
+            rb_media_bind_price_hook();
+        }
+    }, 0);
+});
+</script>
+<?php } ?>

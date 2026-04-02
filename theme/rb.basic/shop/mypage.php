@@ -17,7 +17,164 @@ for($k=0; $cp=sql_fetch_array($res); $k++) {
     if(!is_used_coupon($member['mb_id'], $cp['cp_id']))
         $cp_count++;
 }
+
+$rb_file_inquiry_ready = is_file(G5_SHOP_PATH . '/fileinquiry.php') && function_exists('rb_file_order_has_files');
+$rb_media_inquiry_ready = is_file(G5_SHOP_PATH . '/mediainquiry.php') && function_exists('rb_media_order_has_media');
+
+$rb_file_order_count = 0;
+if ($rb_file_inquiry_ready) {
+    $rb_file_result = sql_query("
+        SELECT DISTINCT o.od_id, i.it_id
+        FROM {$g5['g5_shop_order_table']} o
+        INNER JOIN {$g5['g5_shop_cart_table']} c ON o.od_id = c.od_id
+        INNER JOIN {$g5['g5_shop_item_table']} i ON c.it_id = i.it_id
+        WHERE o.mb_id = '" . sql_real_escape_string($member['mb_id']) . "'
+          AND i.it_types = '2'
+    ", false);
+    $rb_file_order_ids = array();
+    if ($rb_file_result) {
+        while ($rb_file_nav = sql_fetch_array($rb_file_result)) {
+            $available_count = function_exists('rb_file_count_order_item_available_files')
+                ? rb_file_count_order_item_available_files($rb_file_nav['od_id'], $rb_file_nav['it_id'], $member, false)
+                : 0;
+            if ($available_count > 0) {
+                $rb_file_order_ids[$rb_file_nav['od_id']] = 1;
+            }
+        }
+    }
+    $rb_file_order_count = count($rb_file_order_ids);
+}
+
+$rb_media_order_count = 0;
+if ($rb_media_inquiry_ready) {
+    $rb_media_result = sql_query("
+        SELECT DISTINCT o.od_id, i.it_id
+        FROM {$g5['g5_shop_order_table']} o
+        INNER JOIN {$g5['g5_shop_cart_table']} c ON o.od_id = c.od_id
+        INNER JOIN {$g5['g5_shop_item_table']} i ON c.it_id = i.it_id
+        WHERE o.mb_id = '" . sql_real_escape_string($member['mb_id']) . "'
+          AND i.it_types = '3'
+    ", false);
+    $rb_media_order_ids = array();
+    if ($rb_media_result) {
+        while ($rb_media_nav = sql_fetch_array($rb_media_result)) {
+            $available_count = function_exists('rb_media_count_order_item_available_media')
+                ? rb_media_count_order_item_available_media($rb_media_nav['od_id'], $rb_media_nav['it_id'], $member, false)
+                : 0;
+            if ($available_count > 0) {
+                $rb_media_order_ids[$rb_media_nav['od_id']] = 1;
+            }
+        }
+    }
+    $rb_media_order_count = count($rb_media_order_ids);
+}
+
+if (!function_exists('rb_mypage_get_type_order_row')) {
+    function rb_mypage_get_type_order_row($it_type)
+    {
+        global $g5, $member;
+
+        $row = sql_fetch("
+            SELECT DISTINCT o.od_id, o.od_time, i.it_id
+            FROM {$g5['g5_shop_order_table']} o
+            INNER JOIN {$g5['g5_shop_cart_table']} c ON o.od_id = c.od_id
+            INNER JOIN {$g5['g5_shop_item_table']} i ON c.it_id = i.it_id
+            WHERE o.mb_id = '" . sql_real_escape_string($member['mb_id']) . "'
+              AND i.it_types = '" . sql_real_escape_string($it_type) . "'
+            ORDER BY o.od_time DESC, o.od_id DESC, c.ct_id ASC
+            LIMIT 1
+        ", false);
+
+        if (!is_array($row) || empty($row['od_id']) || empty($row['it_id'])) {
+            return array();
+        }
+
+        if ((string)$it_type === '2' && function_exists('rb_file_count_order_item_available_files')) {
+            if (rb_file_count_order_item_available_files($row['od_id'], $row['it_id'], $member, false) < 1) {
+                $fallback_result = sql_query("
+                    SELECT DISTINCT o.od_id, o.od_time, i.it_id
+                    FROM {$g5['g5_shop_order_table']} o
+                    INNER JOIN {$g5['g5_shop_cart_table']} c ON o.od_id = c.od_id
+                    INNER JOIN {$g5['g5_shop_item_table']} i ON c.it_id = i.it_id
+                    WHERE o.mb_id = '" . sql_real_escape_string($member['mb_id']) . "'
+                      AND i.it_types = '" . sql_real_escape_string($it_type) . "'
+                    ORDER BY o.od_time DESC, o.od_id DESC, c.ct_id ASC
+                ", false);
+                if ($fallback_result) {
+                    while ($fallback_row = sql_fetch_array($fallback_result)) {
+                        if (rb_file_count_order_item_available_files($fallback_row['od_id'], $fallback_row['it_id'], $member, false) > 0) {
+                            return $fallback_row;
+                        }
+                    }
+                }
+                return array();
+            }
+        }
+
+        if ((string)$it_type === '3' && function_exists('rb_media_count_order_item_available_media')) {
+            if (rb_media_count_order_item_available_media($row['od_id'], $row['it_id'], $member, false) < 1) {
+                $fallback_result = sql_query("
+                    SELECT DISTINCT o.od_id, o.od_time, i.it_id
+                    FROM {$g5['g5_shop_order_table']} o
+                    INNER JOIN {$g5['g5_shop_cart_table']} c ON o.od_id = c.od_id
+                    INNER JOIN {$g5['g5_shop_item_table']} i ON c.it_id = i.it_id
+                    WHERE o.mb_id = '" . sql_real_escape_string($member['mb_id']) . "'
+                      AND i.it_types = '" . sql_real_escape_string($it_type) . "'
+                    ORDER BY o.od_time DESC, o.od_id DESC, c.ct_id ASC
+                ", false);
+                if ($fallback_result) {
+                    while ($fallback_row = sql_fetch_array($fallback_result)) {
+                        if (rb_media_count_order_item_available_media($fallback_row['od_id'], $fallback_row['it_id'], $member, false) > 0) {
+                            return $fallback_row;
+                        }
+                    }
+                }
+                return array();
+            }
+        }
+
+        return $row;
+    }
+}
+
+if (!function_exists('rb_mypage_get_type_order_title')) {
+    function rb_mypage_get_type_order_title($od_id, $it_type)
+    {
+        global $g5;
+
+        $result = sql_query("
+            SELECT DISTINCT i.it_name
+            FROM {$g5['g5_shop_cart_table']} c
+            INNER JOIN {$g5['g5_shop_item_table']} i ON c.it_id = i.it_id
+            WHERE c.od_id = '" . sql_real_escape_string($od_id) . "'
+              AND i.it_types = '" . sql_real_escape_string($it_type) . "'
+            ORDER BY c.ct_id ASC
+        ", false);
+
+        $names = array();
+        if ($result) {
+            while ($row = sql_fetch_array($result)) {
+                $name = trim((string)$row['it_name']);
+                if ($name !== '') {
+                    $names[] = $name;
+                }
+            }
+        }
+
+        if (!$names) {
+            return $it_type === '2' ? '파일 다운로드' : '미디어 재생 및 다운로드';
+        }
+
+        $first = $names[0];
+        $more = count($names) - 1;
+        return $more > 0 ? $first . ' 외 ' . $more . '건' : $first;
+    }
+}
 ?>
+<style>
+#smb_my_file .rb_file_order_downloads,
+#smb_my_media .rb_file_order_downloads{margin-bottom:50px}
+</style>
 
 <!-- 마이페이지 시작 { -->
 <div id="smb_my">
@@ -169,6 +326,78 @@ for($k=0; $cp=sql_fetch_array($res); $k++) {
 
 	    </section>
 	    <!-- } 최근 주문내역 끝 -->
+
+        <?php if ($rb_file_inquiry_ready && $rb_file_order_count > 0) { ?>
+        <section id="smb_my_file">
+            <ul class="bbs_main_wrap_tit mb-10">
+                <li class="bbs_main_wrap_tit_l">
+                    <h2 class="font-B font-18">파일 다운로드</h2>
+                </li>
+                <li class="bbs_main_wrap_tit_r">
+                    <button type="button" class="more_btn" onclick="location.href='./fileinquiry.php';">더보기</button>
+                </li>
+                <div class="cb"></div>
+            </ul>
+            <?php $rb_file_latest_order = rb_mypage_get_type_order_row('2'); ?>
+            <?php if (!empty($rb_file_latest_order['od_id'])) { ?>
+                <?php
+                $od_id = $rb_file_latest_order['od_id'];
+                $rb_file_box_title = rb_mypage_get_type_order_title($od_id, '2');
+                $rb_file_order_downloads_file = G5_PATH . '/rb/rb.mod/file/order_downloads.inc.php';
+                if (is_file($rb_file_order_downloads_file)) {
+                    include($rb_file_order_downloads_file);
+                }
+                unset($rb_file_box_title);
+                ?>
+            <?php } else { ?>
+            <div class="tbl_head03 tbl_wrap">
+                <table>
+                <tbody>
+                <tr>
+                    <td class="empty_table">구매한 파일 상품이 없습니다.</td>
+                </tr>
+                </tbody>
+                </table>
+            </div>
+            <?php } ?>
+        </section>
+        <?php } ?>
+
+        <?php if ($rb_media_inquiry_ready && $rb_media_order_count > 0) { ?>
+        <section id="smb_my_media">
+            <ul class="bbs_main_wrap_tit mb-10">
+                <li class="bbs_main_wrap_tit_l">
+                    <h2 class="font-B font-18">미디어 재생 및 다운로드</h2>
+                </li>
+                <li class="bbs_main_wrap_tit_r">
+                    <button type="button" class="more_btn" onclick="location.href='./mediainquiry.php';">더보기</button>
+                </li>
+                <div class="cb"></div>
+            </ul>
+            <?php $rb_media_latest_order = rb_mypage_get_type_order_row('3'); ?>
+            <?php if (!empty($rb_media_latest_order['od_id'])) { ?>
+                <?php
+                $od_id = $rb_media_latest_order['od_id'];
+                $rb_media_box_title = rb_mypage_get_type_order_title($od_id, '3');
+                $rb_media_order_downloads_file = G5_PATH . '/rb/rb.mod/media/order_media.inc.php';
+                if (is_file($rb_media_order_downloads_file)) {
+                    include($rb_media_order_downloads_file);
+                }
+                unset($rb_media_box_title);
+                ?>
+            <?php } else { ?>
+            <div class="tbl_head03 tbl_wrap">
+                <table>
+                <tbody>
+                <tr>
+                    <td class="empty_table">구매한 미디어 상품이 없습니다.</td>
+                </tr>
+                </tbody>
+                </table>
+            </div>
+            <?php } ?>
+        </section>
+        <?php } ?>
 
 	    <!-- 최근 위시리스트 시작 { -->
 	        <!-- { -->
@@ -333,7 +562,22 @@ for($k=0; $cp=sql_fetch_array($res); $k++) {
 <script>
 function member_leave()
 {
-    return confirm('정말 회원에서 탈퇴 하시겠습니까?')
+    rbConfirmCompat('정말 회원에서 탈퇴 하시겠습니까?').then(function(ok) {
+        if (ok) {
+            location.href = "<?php echo G5_BBS_URL; ?>/member_confirm.php?url=member_leave.php";
+        }
+    });
+
+    return false;
+}
+
+function rbConfirmCompat(message)
+{
+    if (typeof rb_confirm === "function") {
+        return rb_confirm(message);
+    }
+
+    return Promise.resolve(confirm(message));
 }
 
 function out_cd_check(fld, out_cd)
@@ -379,6 +623,7 @@ function fwishlist_check(f, act)
 
     return true;
 }
+
 </script>
 <!-- } 마이페이지 끝 -->
 

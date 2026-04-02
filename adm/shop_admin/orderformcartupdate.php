@@ -425,6 +425,13 @@ if($cancel_change) {
 $sql .= " where od_id = '$od_id' ";
 sql_query($sql);
 
+if (function_exists('rb_file_issue_order_downloads')) {
+    rb_file_issue_order_downloads($od_id);
+}
+if (function_exists('rb_media_issue_order_rights')) {
+    rb_media_issue_order_rights($od_id);
+}
+
 
 if ($_POST['ct_status'] == '배송') {
     // 주문자에게 쪽지

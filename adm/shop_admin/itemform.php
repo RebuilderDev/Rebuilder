@@ -394,11 +394,11 @@ if(!sql_query(" select it_skin from {$g5['g5_shop_item_table']} limit 1", false)
                 <?php if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) { ?>
                 <input type="radio" name="it_types" value="1" id="it_types1" <?php echo ($it['it_types'] == 1) ? "checked" : ""; ?>> <label for="it_types1">예약</label>
                 <?php } ?>
-                <?php if(isset($rb_item_con['con_is']) && $rb_item_con['con_is'] == 1) { ?>
-                <input type="radio" name="it_types" value="2" id="it_types2" <?php echo ($it['it_types'] == 2) ? "checked" : ""; ?>> <label for="it_types2">파일</label>
+                <?php if (function_exists('rb_file_is_enabled') && rb_file_is_enabled()) { ?>
+                <input type="radio" name="it_types" value="2" id="it_types2" <?php echo ($it['it_types'] == 2) ? "checked" : ""; ?>> <label for="it_types2">콘텐츠</label>
                 <?php } ?>
-                <?php if(isset($rb_item_con['mov_is']) && $rb_item_con['mov_is'] == 1) { ?>
-                <input type="radio" name="it_types" value="3" id="it_types3" <?php echo ($it['it_types'] == 3) ? "checked" : ""; ?>> <label for="it_types3">동영상</label>
+                <?php if (function_exists('rb_media_is_enabled') && rb_media_is_enabled()) { ?>
+                <input type="radio" name="it_types" value="3" id="it_types3" <?php echo ($it['it_types'] == 3) ? "checked" : ""; ?>> <label for="it_types3">미디어</label>
                 <?php } ?>
 
             </td>
@@ -1218,7 +1218,6 @@ $(function(){
     </div>
 </section>
 
-
 <section id="anc_sitfrm_sendcost">
     <h2 class="h2_frm">배송비</h2>
     <?php echo $pg_anchor; ?>
@@ -1881,6 +1880,10 @@ function fitemformcheck(f)
         }
     }
 
+    if(parseInt(f.it_types.value, 10) === 2) {
+        return true;
+    }
+
     if(parseInt(f.it_sc_type.value) > 1) {
         if(!f.it_sc_price.value || f.it_sc_price.value == "0") {
             alert("기본배송비를 입력해 주십시오.");
@@ -2053,25 +2056,24 @@ window.addEventListener('DOMContentLoaded', function() {
     if(sel3) updateCategoryInfoSub(sel3);
 });
 
-// 예약 타입 선택 시 상품선택옵션 처리
+function rbToggleItemTypeSections() {
+    var itemType = $('input[name="it_types"]:checked').val();
+    var isReservation = itemType === '1';
+    $('#item_option_row').toggle(!isReservation);
+}
+
 $('input[name="it_types"]').on('change', function() {
-    if ($(this).val() == '1' && $(this).is(':checked')) {
-        $('#item_option_row').hide();
-    } else {
-        $('#item_option_row').show();
-    }
+    rbToggleItemTypeSections();
 });
 
-// 페이지 로드 시 초기 상태 확인
 $(document).ready(function() {
-    if ($('input[name="it_types"]:checked').val() == '1') {
-        $('#item_option_row').hide();
-    }
+    rbToggleItemTypeSections();
 });
 
 // form submit 시 예약 타입이면 선택옵션 서버전송값 초기화
 $('form[name="fitemform"]').on('submit', function() {
-    if ($('input[name="it_types"]:checked').val() == '1') {
+    var itemType = $('input[name="it_types"]:checked').val();
+    if (itemType == '1') {
         $('#opt1_subject').val('');
         $('#opt2_subject').val('');
         $('#opt3_subject').val('');

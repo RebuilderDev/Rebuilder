@@ -1,6 +1,46 @@
 <?php
 if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 
+if (!function_exists('rb_shop_has_column')) {
+    function rb_shop_has_column($table, $column)
+    {
+        static $cache = array();
+        $key = $table . ':' . $column;
+        if (isset($cache[$key])) {
+            return $cache[$key];
+        }
+
+        $row = sql_fetch("SHOW COLUMNS FROM `{$table}` LIKE '" . sql_real_escape_string($column) . "'", false);
+        $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
+        return $cache[$key];
+    }
+}
+
+if (!function_exists('rb_shop_order_has_shipping_items')) {
+    function rb_shop_order_has_shipping_items($order_id, $selected_only = false)
+    {
+        global $g5;
+
+        $order_id = preg_replace('/[^A-Za-z0-9_\-]/', '', (string)$order_id);
+        if ($order_id === '') {
+            return false;
+        }
+
+        $selected_sql = $selected_only ? " AND a.ct_select = '1' " : '';
+        $row = sql_fetch("
+            SELECT COUNT(*) AS shipping_cnt
+            FROM {$g5['g5_shop_cart_table']} a
+            LEFT JOIN {$g5['g5_shop_item_table']} b ON a.it_id = b.it_id
+            WHERE a.od_id = '{$order_id}'
+              {$selected_sql}
+              AND a.io_type = '0'
+              AND COALESCE(NULLIF(b.it_types, ''), '0') = '0'
+        ", false);
+
+        return !empty($row['shipping_cnt']);
+    }
+}
+
 require_once(G5_SHOP_PATH.'/settle_'.$default['de_pg_service'].'.inc.php');
 require_once(G5_SHOP_PATH.'/settle_kakaopay.inc.php');
 
@@ -26,8 +66,48 @@ if(function_exists('is_use_easypay') && is_use_easypay('global_nhnkcp')){  // �
 if($is_kakaopay_use) {
     require_once(G5_SHOP_PATH.'/kakaopay/orderform.1.php');
 }
-?>
 
+$rb_file_feature_ready = function_exists('rb_file_is_cart_file_only');
+$rb_file_order_only = $rb_file_feature_ready ? rb_file_is_cart_file_only($s_cart_id, true) : false;
+$rb_media_feature_ready = function_exists('rb_media_is_cart_media_only');
+$rb_media_order_only = $rb_media_feature_ready ? rb_media_is_cart_media_only($s_cart_id, true) : false;
+$rb_file_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
+$rb_media_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
+$rb_reservation_order_only = false;
+ $rb_has_shipping_items = true;
+if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+    $rb_reservation_type = sql_fetch("
+        SELECT
+            SUM(IF(ct_types = '1', 1, 0)) AS reservation_cnt,
+            SUM(IF(ct_types <> '1' OR ct_types IS NULL, 1, 0)) AS normal_cnt
+        FROM {$g5['g5_shop_cart_table']}
+        WHERE od_id = '$s_cart_id'
+          AND io_type = '0'
+          AND ct_select = '1'
+    ", false);
+    $rb_reservation_order_only = !empty($rb_reservation_type['reservation_cnt']) && empty($rb_reservation_type['normal_cnt']);
+}
+$rb_has_shipping_items = rb_shop_order_has_shipping_items($s_cart_id, true);
+$rb_special_order_only = ($rb_file_order_only || $rb_media_order_only || $rb_reservation_order_only);
+$rb_deliveryless_order_only = !$rb_has_shipping_items;
+?>
+<style>
+    .rb-file-order-tag {
+        font-size: 12px !important;
+        padding: 3px 7px 3px 7px !important;
+        display: inline-block;
+        margin: 1px 2px 2px 0;
+        padding: 3px;
+        border-radius: 3px;
+        background: #e2eaf6;
+        line-height: 1em;
+        color: #3a8afd;
+    }
+</style>
 <form name="forderform" id="forderform" method="post" action="<?php echo $order_action_url; ?>" autocomplete="off">
 <div id="sod_frm" class="sod_frm_pc">
     <!-- 주문상품 확인 시작 { -->
@@ -64,6 +144,8 @@ if($is_kakaopay_use) {
         $sql = " select a.ct_id,
                         a.it_id,
                         a.it_name,
+                        " . ($rb_file_columns_ready ? "MAX(a.ct_file_ids) AS ct_file_ids, MAX(a.ct_file_subjects) AS ct_file_subjects," : "'' AS ct_file_ids, '' AS ct_file_subjects,") . "
+                        " . ($rb_media_columns_ready ? "MAX(a.ct_media_ids) AS ct_media_ids, MAX(a.ct_media_subjects) AS ct_media_subjects," : "'' AS ct_media_ids, '' AS ct_media_subjects,") . "
                         a.ct_price,
                         a.ct_point,
                         a.ct_qty,
@@ -103,12 +185,16 @@ if($is_kakaopay_use) {
             }
 
             // 합계금액 계산 (예약상품일 경우 합계방식 변경)
-            $price_calc = "((ct_price + io_price) * ct_qty)";
+            $price_base = $rb_file_columns_ready ? "(ct_price + io_price + COALESCE(ct_file_price, 0))" : "(ct_price + io_price)";
+            if ($rb_media_columns_ready) {
+                $price_base = preg_replace('/\)$/', " + COALESCE(ct_media_price, 0))", $price_base, 1);
+            }
+            $price_calc = "({$price_base} * ct_qty)";
             if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($resv['ct_types']) && $resv['ct_types'] == 1) {
                 // it_opt_opt==1 일때만 인원추가금에 ct_qty(일수) 곱
                 $is_opt_opt = (isset($row['it_opt_opt']) && (int)$row['it_opt_opt'] === 1) ? 1 : 0;
                 $mul_qty = $is_opt_opt ? " * ct_qty" : "";
-                $price_calc = "(((ct_price + io_price) * ct_qty) + COALESCE(ct_date_extra_price, 0) + COALESCE(ct_date_extra_price2, 0) +
+$price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0) + COALESCE(ct_date_extra_price2, 0) +
                (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0){$mul_qty}) +
                (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0){$mul_qty}) +
                (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0){$mul_qty}))";
@@ -148,6 +234,11 @@ if($is_kakaopay_use) {
 
             $it_name = '<b>' . stripslashes($row['it_name']) . '</b>';
             $it_options = print_item_options($row['it_id'], $s_cart_id);
+            if(function_exists('rb_file_is_item') && rb_file_is_item($row['it_id']) && function_exists('rb_file_format_option_html')) {
+                $it_options = rb_file_format_option_html($it_options, isset($row['ct_file_subjects']) ? $row['ct_file_subjects'] : '', $row['it_id'], isset($row['ct_file_ids']) ? $row['ct_file_ids'] : '', isset($sum['qty']) ? $sum['qty'] : $row['ct_qty']);
+            } else if(function_exists('rb_media_is_item') && rb_media_is_item($row['it_id']) && function_exists('rb_media_format_option_html')) {
+                $it_options = rb_media_format_option_html($it_options, isset($row['ct_media_subjects']) ? $row['ct_media_subjects'] : '', $row['it_id'], isset($row['ct_media_ids']) ? $row['ct_media_ids'] : '', isset($sum['qty']) ? $sum['qty'] : $row['ct_qty']);
+            }
             if($it_options) {
                 $it_name .= '<div class="sod_opt">'.$it_options.'</div>';
             }
@@ -229,8 +320,14 @@ if($is_kakaopay_use) {
 
             if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
                 if(isset($resv['ct_types']) && $resv['ct_types'] == 1) {
-                    $ct_send_cost = '-';
+                    $ct_send_cost = '예약';
                 }
+            }
+
+            if(function_exists('rb_file_is_item') && rb_file_is_item($row['it_id'])) {
+                $ct_send_cost = '콘텐츠';
+            } else if(function_exists('rb_media_is_item') && rb_media_is_item($row['it_id'])) {
+                $ct_send_cost = '미디어';
             }
         ?>
 
@@ -239,7 +336,7 @@ if($is_kakaopay_use) {
             <td class="td_prd">
                 <div class="sod_img"><?php echo $image; ?></div>
                 <div class="sod_name">
-                    <input type="hidden" name="it_id[<?php echo $i; ?>]"    value="<?php echo $row['it_id']; ?>">
+                    <input type="hidden" name="rb_order_it_id[<?php echo $i; ?>]"    value="<?php echo $row['it_id']; ?>">
                     <input type="hidden" name="it_name[<?php echo $i; ?>]"  value="<?php echo get_text($row['it_name']); ?>">
                     <input type="hidden" name="it_price[<?php echo $i; ?>]" value="<?php echo $sell_price; ?>">
                     <input type="hidden" name="cp_id[<?php echo $i; ?>]" value="">
@@ -294,7 +391,7 @@ if($is_kakaopay_use) {
             alert('장바구니가 비어 있습니다.', G5_SHOP_URL.'/cart.php');
         } else {
             // 배송비 계산
-            $send_cost = get_sendcost($s_cart_id);
+            $send_cost = $rb_deliveryless_order_only ? 0 : get_sendcost($s_cart_id);
         }
 
         // 복합과세처리
@@ -404,6 +501,7 @@ if($is_kakaopay_use) {
         <!-- } 주문하시는 분 입력 끝 -->
 
         <!-- 받으시는 분 입력 시작 { -->
+        <?php if (!$rb_deliveryless_order_only) { ?>
         <section id="sod_frm_taker">
             <br><br>
             <h2>받으시는 분</h2>
@@ -511,6 +609,7 @@ if($is_kakaopay_use) {
                 </table>
             </div>
         </section>
+        <?php } ?>
         <!-- } 받으시는 분 입력 끝 -->
     </div>
 
@@ -777,16 +876,17 @@ if($is_kakaopay_use) {
                     // 포인트 결제 사용 포인트보다 회원의 포인트가 크다면
                     if ($member['mb_point'] >= $default['de_settle_min_point'])
                     {
-                        $temp_point = (int)$default['de_settle_max_point'];
-
-                        if($temp_point > (int)$tot_sell_price)
-                            $temp_point = (int)$tot_sell_price;
+                        $temp_point = (int)$tot_sell_price;
+                        $point_max_limit = (int)$default['de_settle_max_point'];
+                        if($point_max_limit > 0 && $temp_point > $point_max_limit)
+                            $temp_point = $point_max_limit;
 
                         if($temp_point > (int)$member['mb_point'])
                             $temp_point = (int)$member['mb_point'];
 
                         $point_unit = (int)$default['de_settle_point_unit'];
-                        $temp_point = (int)((int)($temp_point / $point_unit) * $point_unit);
+                        if($point_unit > 0)
+                            $temp_point = (int)((int)($temp_point / $point_unit) * $point_unit);
                 ?>
 				</div>
                 <div class="sod_frm_point">
@@ -1143,15 +1243,15 @@ $(function() {
             }
 
             var f = document.forderform;
-            f.od_b_name.value        = addr[0];
-            f.od_b_tel.value         = addr[1];
-            f.od_b_hp.value          = addr[2];
-            f.od_b_zip.value         = addr[3] + addr[4];
-            f.od_b_addr1.value       = addr[5];
-            f.od_b_addr2.value       = addr[6];
-            f.od_b_addr3.value       = addr[7];
-            f.od_b_addr_jibeon.value = addr[8];
-            f.ad_subject.value       = addr[9];
+            if (f.od_b_name)        f.od_b_name.value = addr[0];
+            if (f.od_b_tel)         f.od_b_tel.value = addr[1];
+            if (f.od_b_hp)          f.od_b_hp.value = addr[2];
+            if (f.od_b_zip)         f.od_b_zip.value = addr[3] + addr[4];
+            if (f.od_b_addr1)       f.od_b_addr1.value = addr[5];
+            if (f.od_b_addr2)       f.od_b_addr2.value = addr[6];
+            if (f.od_b_addr3)       f.od_b_addr3.value = addr[7];
+            if (f.od_b_addr_jibeon) f.od_b_addr_jibeon.value = addr[8];
+            if (f.ad_subject)       f.ad_subject.value = addr[9];
 
             var zip1 = addr[3].replace(/[^0-9]/g, "");
             var zip2 = addr[4].replace(/[^0-9]/g, "");
@@ -1234,10 +1334,10 @@ function calculate_total_price()
 
 function calculate_order_price()
 {
-    var sell_price = parseInt($("input[name=od_price]").val());
-    var send_cost = parseInt($("input[name=od_send_cost]").val());
-    var send_cost2 = parseInt($("input[name=od_send_cost2]").val());
-    var send_coupon = parseInt($("input[name=od_send_coupon]").val());
+    var sell_price = parseInt($("input[name=od_price]").val()) || 0;
+    var send_cost = parseInt($("input[name=od_send_cost]").val()) || 0;
+    var send_cost2 = parseInt($("input[name=od_send_cost2]").val()) || 0;
+    var send_coupon = parseInt($("input[name=od_send_coupon]").val()) || 0;
     var tot_price = sell_price + send_cost + send_cost2 - send_coupon;
 
     $("input[name=good_mny]").val(tot_price);
@@ -1253,15 +1353,16 @@ function calculate_temp_point()
     var mb_point = parseInt(<?php echo $member['mb_point']; ?>);
     var max_point = parseInt(<?php echo $default['de_settle_max_point']; ?>);
     var point_unit = parseInt(<?php echo $default['de_settle_point_unit']; ?>);
-    var temp_point = max_point;
+    var temp_point = sell_price;
 
-    if(temp_point > sell_price)
-        temp_point = sell_price;
+    if(max_point > 0 && temp_point > max_point)
+        temp_point = max_point;
 
     if(temp_point > mb_point)
         temp_point = mb_point;
 
-    temp_point = parseInt(temp_point / point_unit) * point_unit;
+    if(point_unit > 0)
+        temp_point = parseInt(temp_point / point_unit) * point_unit;
 
     $("#use_max_point").text(number_format(String(temp_point))+"점");
     $("input[name=max_temp_point]").val(temp_point);
@@ -1357,15 +1458,19 @@ function forderform_check(f)
     if (typeof(f.od_hope_date) != "undefined")
     {
         clear_field(f.od_hope_date);
-        if (!f.od_hope_date.value)
+        if (!rb_deliveryless_order_only && !f.od_hope_date.value)
             error_field(f.od_hope_date, "희망배송일을 선택하여 주십시오.");
     }
 
-    check_field(f.od_b_name, "받으시는 분 이름을 입력하십시오.");
-    check_field(f.od_b_hp, "받으시는 분 휴대전화 번호를 입력하십시오.");
-    check_field(f.od_b_addr1, "주소검색을 이용하여 받으시는 분 주소를 입력하십시오.");
-    //check_field(f.od_b_addr2, "받으시는 분의 상세주소를 입력하십시오.");
-    check_field(f.od_b_zip, "");
+    if (rb_deliveryless_order_only) {
+        gumae2baesong();
+    } else {
+        check_field(f.od_b_name, "받으시는 분 이름을 입력하십시오.");
+        check_field(f.od_b_hp, "받으시는 분 휴대전화 번호를 입력하십시오.");
+        check_field(f.od_b_addr1, "주소검색을 이용하여 받으시는 분 주소를 입력하십시오.");
+        //check_field(f.od_b_addr2, "받으시는 분의 상세주소를 입력하십시오.");
+        check_field(f.od_b_zip, "");
+    }
 
     var od_settle_bank = document.getElementById("od_settle_bank");
     if (od_settle_bank) {
@@ -1376,7 +1481,9 @@ function forderform_check(f)
     }
 
     // 배송비를 받지 않거나 더 받는 경우 아래식에 + 또는 - 로 대입
-    f.od_send_cost.value = parseInt(f.od_send_cost.value);
+    if (f.od_send_cost) {
+        f.od_send_cost.value = parseInt(f.od_send_cost.value) || 0;
+    }
 
     if (errmsg)
     {
@@ -1404,10 +1511,10 @@ function forderform_check(f)
         return false;
     }
 
-    var od_price = parseInt(f.od_price.value);
-    var send_cost = parseInt(f.od_send_cost.value);
-    var send_cost2 = parseInt(f.od_send_cost2.value);
-    var send_coupon = parseInt(f.od_send_coupon.value);
+    var od_price = f.od_price ? (parseInt(f.od_price.value) || 0) : 0;
+    var send_cost = f.od_send_cost ? (parseInt(f.od_send_cost.value) || 0) : 0;
+    var send_cost2 = f.od_send_cost2 ? (parseInt(f.od_send_cost2.value) || 0) : 0;
+    var send_coupon = f.od_send_coupon ? (parseInt(f.od_send_coupon.value) || 0) : 0;
 
     var max_point = 0;
     if (typeof(f.max_temp_point) != "undefined")
@@ -1447,7 +1554,9 @@ function forderform_check(f)
 
         // pg 결제 금액에서 포인트 금액 차감
         if(settle_method != "무통장") {
-            f.good_mny.value = od_price + send_cost + send_cost2 - send_coupon - temp_point;
+            if (f.good_mny) {
+                f.good_mny.value = od_price + send_cost + send_cost2 - send_coupon - temp_point;
+            }
         }
     }
 
@@ -1708,18 +1817,24 @@ function forderform_check(f)
         }
         <?php } ?>
         // 결제정보설정
-        <?php if($default['de_pg_service'] == 'kcp') { ?>
+    <?php if($default['de_pg_service'] == 'kcp') { ?>
+        var rb_receiver_name = f.od_b_name ? f.od_b_name.value : (f.od_name ? f.od_name.value : "");
+        var rb_receiver_tel = f.od_b_tel ? f.od_b_tel.value : (f.od_tel ? f.od_tel.value : "");
+        var rb_receiver_hp = f.od_b_hp ? f.od_b_hp.value : (f.od_hp ? f.od_hp.value : "");
+        var rb_receiver_zip = f.od_b_zip ? f.od_b_zip.value : (f.od_zip ? f.od_zip.value : "");
+        var rb_receiver_addr1 = f.od_b_addr1 ? f.od_b_addr1.value : (f.od_addr1 ? f.od_addr1.value : "");
+        var rb_receiver_addr2 = f.od_b_addr2 ? f.od_b_addr2.value : (f.od_addr2 ? f.od_addr2.value : "");
         f.buyr_name.value = f.od_name.value;
         f.buyr_mail.value = f.od_email.value;
         f.buyr_tel1.value = f.od_tel.value;
         f.buyr_tel2.value = f.od_hp.value;
-        f.rcvr_name.value = f.od_b_name.value;
-        f.rcvr_tel1.value = f.od_b_tel.value;
-        f.rcvr_tel2.value = f.od_b_hp.value;
+        f.rcvr_name.value = rb_receiver_name;
+        f.rcvr_tel1.value = rb_receiver_tel;
+        f.rcvr_tel2.value = rb_receiver_hp;
         f.rcvr_mail.value = f.od_email.value;
-        f.rcvr_zipx.value = f.od_b_zip.value;
-        f.rcvr_add1.value = f.od_b_addr1.value;
-        f.rcvr_add2.value = f.od_b_addr2.value;
+        f.rcvr_zipx.value = rb_receiver_zip;
+        f.rcvr_add1.value = rb_receiver_addr1;
+        f.rcvr_add2.value = rb_receiver_addr2;
 
         if(f.pay_method.value != "무통장") {
             jsf__pay( f );
@@ -1732,12 +1847,12 @@ function forderform_check(f)
         f.LGD_BUYEREMAIL.value = f.od_email.value;
         f.LGD_BUYERPHONE.value = f.od_hp.value;
         f.LGD_AMOUNT.value = f.good_mny.value;
-        f.LGD_RECEIVER.value = f.od_b_name.value;
-        f.LGD_RECEIVERPHONE.value = f.od_b_hp.value;
+        f.LGD_RECEIVER.value = f.od_b_name ? f.od_b_name.value : (f.od_name ? f.od_name.value : "");
+        f.LGD_RECEIVERPHONE.value = f.od_b_hp ? f.od_b_hp.value : (f.od_hp ? f.od_hp.value : "");
         <?php if($default['de_escrow_use']) { ?>
-        f.LGD_ESCROW_ZIPCODE.value = f.od_b_zip.value;
-        f.LGD_ESCROW_ADDRESS1.value = f.od_b_addr1.value;
-        f.LGD_ESCROW_ADDRESS2.value = f.od_b_addr2.value;
+        f.LGD_ESCROW_ZIPCODE.value = f.od_b_zip ? f.od_b_zip.value : (f.od_zip ? f.od_zip.value : "");
+        f.LGD_ESCROW_ADDRESS1.value = f.od_b_addr1 ? f.od_b_addr1.value : (f.od_addr1 ? f.od_addr1.value : "");
+        f.LGD_ESCROW_ADDRESS2.value = f.od_b_addr2 ? f.od_b_addr2.value : (f.od_addr2 ? f.od_addr2.value : "");
         f.LGD_ESCROW_BUYERPHONE.value = f.od_hp.value;
         <?php } ?>
         <?php if($default['de_tax_flag_use']) { ?>
@@ -1815,10 +1930,10 @@ function forderform_check(f)
         f.buyername.value   = f.od_name.value;
         f.buyeremail.value  = f.od_email.value;
         f.buyertel.value    = f.od_hp.value ? f.od_hp.value : f.od_tel.value;
-        f.recvname.value    = f.od_b_name.value;
-        f.recvtel.value     = f.od_b_hp.value ? f.od_b_hp.value : f.od_b_tel.value;
-        f.recvpostnum.value = f.od_b_zip.value;
-        f.recvaddr.value    = f.od_b_addr1.value + " " +f.od_b_addr2.value;
+        f.recvname.value    = f.od_b_name ? f.od_b_name.value : (f.od_name ? f.od_name.value : "");
+        f.recvtel.value     = f.od_b_hp ? (f.od_b_hp.value ? f.od_b_hp.value : (f.od_b_tel ? f.od_b_tel.value : "")) : (f.od_hp.value ? f.od_hp.value : f.od_tel.value);
+        f.recvpostnum.value = f.od_b_zip ? f.od_b_zip.value : (f.od_zip ? f.od_zip.value : "");
+        f.recvaddr.value    = (f.od_b_addr1 ? f.od_b_addr1.value : (f.od_addr1 ? f.od_addr1.value : "")) + " " + (f.od_b_addr2 ? f.od_b_addr2.value : (f.od_addr2 ? f.od_addr2.value : ""));
 
         if(f.gopaymethod.value != "무통장") {
             // 주문정보 임시저장
@@ -1896,17 +2011,33 @@ function forderform_check(f)
 function gumae2baesong() {
     var f = document.forderform;
 
-    f.od_b_name.value = f.od_name.value;
-    f.od_b_tel.value  = f.od_tel.value;
-    f.od_b_hp.value   = f.od_hp.value;
-    f.od_b_zip.value  = f.od_zip.value;
-    f.od_b_addr1.value = f.od_addr1.value;
-    f.od_b_addr2.value = f.od_addr2.value;
-    f.od_b_addr3.value = f.od_addr3.value;
-    f.od_b_addr_jibeon.value = f.od_addr_jibeon.value;
+    if (f.od_b_name)        f.od_b_name.value = f.od_name.value;
+    if (f.od_b_tel)         f.od_b_tel.value = f.od_tel.value;
+    if (f.od_b_hp)          f.od_b_hp.value = f.od_hp.value;
+    if (f.od_b_zip)         f.od_b_zip.value = f.od_zip.value;
+    if (f.od_b_addr1)       f.od_b_addr1.value = f.od_addr1.value;
+    if (f.od_b_addr2)       f.od_b_addr2.value = f.od_addr2.value;
+    if (f.od_b_addr3)       f.od_b_addr3.value = f.od_addr3.value;
+    if (f.od_b_addr_jibeon) f.od_b_addr_jibeon.value = f.od_addr_jibeon.value;
 
-    calculate_sendcost(String(f.od_b_zip.value));
+    if (!rb_deliveryless_order_only && f.od_b_zip) {
+        calculate_sendcost(String(f.od_b_zip.value));
+    }
 }
+
+var rb_file_order_only = <?php echo $rb_file_order_only ? 'true' : 'false'; ?>;
+var rb_deliveryless_order_only = <?php echo $rb_deliveryless_order_only ? 'true' : 'false'; ?>;
+
+$(function() {
+    if (!rb_deliveryless_order_only) {
+        return;
+    }
+
+    gumae2baesong();
+    $("#sod_frm_taker").hide();
+    $("#od_hope_date").prop("required", false).removeClass("required");
+    $("#sod_frm_taker").find(":input").prop("required", false).removeClass("required");
+});
 
 <?php if ($default['de_hope_date_use']) { ?>
 $(function(){

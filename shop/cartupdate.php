@@ -1,6 +1,21 @@
 <?php
 include_once('./_common.php');
 
+if (!function_exists('rb_shop_has_column')) {
+    function rb_shop_has_column($table, $column)
+    {
+        static $cache = array();
+        $key = $table . ':' . $column;
+        if (isset($cache[$key])) {
+            return $cache[$key];
+        }
+
+        $row = sql_fetch("SHOW COLUMNS FROM `{$table}` LIKE '" . sql_real_escape_string($column) . "'", false);
+        $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
+        return $cache[$key];
+    }
+}
+
 // print_r2($_POST); exit;
 
 // 보관기간이 지난 상품 삭제
@@ -26,6 +41,9 @@ $tmp_cart_id = preg_replace('/[^a-z0-9_\-]/i', '', $tmp_cart_id);
 $act = isset($_POST['act']) ? clean_xss_tags($_POST['act'], 1, 1) : '';
 $post_ct_chk = (isset($_POST['ct_chk']) && is_array($_POST['ct_chk'])) ? $_POST['ct_chk'] : array();
 $post_it_ids = (isset($_POST['it_id']) && is_array($_POST['it_id'])) ? $_POST['it_id'] : array();
+$rb_file_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
 
 // 레벨(권한)이 상품구입 권한보다 작다면 상품을 구입할 수 없음.
 if ($member['mb_level'] < $default['de_level_sell'])
@@ -168,11 +186,6 @@ else // 장바구니에 담기
         if($opt_count && isset($post_io_types[$it_id][0]) && $post_io_types[$it_id][0] != 0)
             alert('상품의 선택옵션을 선택해 주십시오.');
 
-        for($k=0; $k<$opt_count; $k++) {
-            if (isset($post_ct_qtys[$it_id][$k]) && $post_ct_qtys[$it_id][$k] < 1)
-                alert('수량은 1 이상 입력해 주십시오.');
-        }
-
         // 본인인증, 성인인증체크
         if(!$is_admin) {
             $msg = shop_member_cert_check($it_id, 'item');
@@ -184,6 +197,35 @@ else // 장바구니에 담기
         $it = get_shop_item($it_id, false);
         if(!$it['it_id'])
             alert('상품정보가 존재하지 않습니다.');
+
+        if(function_exists('rb_file_normalize_cart_row')) {
+            $it = rb_file_normalize_cart_row($it);
+        }
+
+        $rb_media_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
+            && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects')
+            && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
+        if(function_exists('rb_media_normalize_cart_row')) {
+            $it = rb_media_normalize_cart_row($it);
+        }
+
+        $rb_file_selection = ($rb_file_columns_ready && function_exists('rb_file_prepare_cart_selection')) ? rb_file_prepare_cart_selection($it) : array('picked_text' => '', 'picked_subjects' => '', 'picked_price' => 0);
+        $rb_media_selection = ($rb_media_columns_ready && function_exists('rb_media_prepare_cart_selection')) ? rb_media_prepare_cart_selection($it) : array('picked_text' => '', 'picked_subjects' => '', 'picked_price' => 0);
+        $rb_is_file_item = $rb_file_columns_ready && function_exists('rb_file_is_item') && rb_file_is_item($it);
+        $rb_is_media_item = $rb_media_columns_ready && function_exists('rb_media_is_item') && rb_media_is_item($it);
+        $rb_replace_cart_item = isset($it['it_types']) && in_array((int)$it['it_types'], array(1, 2, 3), true);
+
+        if ($rb_is_file_item) {
+            for($k=0; $k<$opt_count; $k++) {
+                $_POST['ct_qty'][$it_id][$k] = 1;
+                $post_ct_qtys[$it_id][$k] = 1;
+            }
+        }
+
+        for($k=0; $k<$opt_count; $k++) {
+            if (isset($post_ct_qtys[$it_id][$k]) && $post_ct_qtys[$it_id][$k] < 1)
+                alert('수량은 1 이상 입력해 주십시오.');
+        }
 
 
         // 최소, 최대 수량 체크
@@ -210,7 +252,7 @@ else // 장바구니에 담기
                               and ct_status = '쇼핑' ";
                 $row4 = sql_fetch($sql4);
 
-				$option_sum_qty = ( $act === 'optionmod' ) ? $sum_qty : $sum_qty + $row4['ct_sum'];
+				$option_sum_qty = (($act === 'optionmod') || $rb_replace_cart_item) ? $sum_qty : $sum_qty + $row4['ct_sum'];
 
                 if(($option_sum_qty) > $it['it_buy_max_qty'])
                     alert($it['it_name'].'의 선택옵션 개수 총합 '.number_format($it['it_buy_max_qty']).'개 이하로 주문해 주십시오.', './cart.php');
@@ -255,7 +297,7 @@ else // 장바구니에 담기
                 $sum_qty = $row['cnt'];
 
                 // 재고 구함
-                $ct_qty = isset($_POST['ct_qty'][$it_id][$k]) ? (int) $_POST['ct_qty'][$it_id][$k] : 0;
+                $ct_qty = $rb_is_file_item ? 1 : (isset($_POST['ct_qty'][$it_id][$k]) ? (int) $_POST['ct_qty'][$it_id][$k] : 0);
                 if(!$io_id)
                     $it_stock_qty = get_it_stock_qty($it_id);
                 else
@@ -269,8 +311,8 @@ else // 장바구니에 담기
         }
         //--------------------------------------------------------
 
-        // 옵션수정일 때 기존 장바구니 자료를 먼저 삭제
-        if($act == 'optionmod')
+        // 옵션수정 또는 교체형 상품일 때 기존 장바구니 자료를 먼저 삭제
+        if($act == 'optionmod' || $rb_replace_cart_item)
             sql_query(" delete from {$g5['g5_shop_cart_table']} where od_id = '$tmp_cart_id' and it_id = '$it_id' ");
 
         // 장바구니에 Insert
@@ -382,6 +424,16 @@ else // 장바구니에 담기
             "ct_notax", "io_id", "io_type", "io_price", "ct_time", "ct_ip",
             "ct_send_cost", "ct_direct", "ct_select", "ct_select_time"
         ];
+        if ($rb_file_columns_ready || $rb_media_columns_ready) {
+            $extra_columns = array();
+            if ($rb_file_columns_ready) {
+                $extra_columns = array_merge($extra_columns, array("ct_file_ids", "ct_file_subjects", "ct_file_price"));
+            }
+            if ($rb_media_columns_ready) {
+                $extra_columns = array_merge($extra_columns, array("ct_media_ids", "ct_media_subjects", "ct_media_price"));
+            }
+            array_splice($columns, 15, 0, $extra_columns);
+        }
 
         // 예약
         if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
@@ -429,7 +481,15 @@ else // 장바구니에 담기
                 continue;
 
             $io_price = isset($opt_list[$io_type][$io_id]['price']) ? $opt_list[$io_type][$io_id]['price'] : 0;
-            $ct_qty = isset($_POST['ct_qty'][$it_id][$k]) ? (int) $_POST['ct_qty'][$it_id][$k] : 0;
+            $ct_file_price = 0;
+            $ct_media_price = 0;
+            if($rb_file_columns_ready && function_exists('rb_file_is_item') && rb_file_is_item($it) && $io_type == '0') {
+                $ct_file_price = (int)$rb_file_selection['picked_price'];
+            }
+            if($rb_media_columns_ready && function_exists('rb_media_is_item') && rb_media_is_item($it) && $io_type == '0') {
+                $ct_media_price = (int)$rb_media_selection['picked_price'];
+            }
+            $ct_qty = $rb_is_file_item ? 1 : (isset($_POST['ct_qty'][$it_id][$k]) ? (int) $_POST['ct_qty'][$it_id][$k] : 0);
 
             // 구매가격이 음수인지 체크
             if($io_type) {
@@ -445,8 +505,14 @@ else // 장바구니에 담기
                         from {$g5['g5_shop_cart_table']}
                         where od_id = '$tmp_cart_id'
                           and it_id = '$it_id'
-                          and io_id = '$io_id'
-                          and ct_status = '쇼핑' ";
+                          and io_id = '$io_id' ";
+            if ($rb_file_columns_ready) {
+                $sql2 .= " and ct_file_ids = '" . sql_real_escape_string($rb_file_selection['picked_text']) . "' ";
+            }
+            if ($rb_media_columns_ready) {
+                $sql2 .= " and ct_media_ids = '" . sql_real_escape_string($rb_media_selection['picked_text']) . "' ";
+            }
+            $sql2 .= " and ct_status = '쇼핑' ";
             $row2 = sql_fetch($sql2);
             if(isset($row2['ct_id']) && $row2['ct_id']) {
                 // 재고체크
@@ -495,10 +561,27 @@ else // 장바구니에 담기
             $values = [
                 "'$tmp_cart_id'", "'{$member['mb_id']}'", "'{$it['it_id']}'", "'".addslashes($it['it_name'])."'",
                 "'{$it['it_sc_type']}'", "'{$it['it_sc_method']}'", "'{$it['it_sc_price']}'", "'{$it['it_sc_minimum']}'",
-                "'{$it['it_sc_qty']}'", "'쇼핑'", "'{$it['it_price']}'", "'$point'", "'0'", "'0'", "'$io_value'",
-                "'$ct_qty'", "'{$it['it_notax']}'", "'$io_id'", "'$io_type'", "'$io_price'", "'".G5_TIME_YMDHIS."'",
+                "'{$it['it_sc_qty']}'", "'쇼핑'", "'{$it['it_price']}'", "'$point'", "'0'", "'0'", "'$io_value'", "'$ct_qty'", "'{$it['it_notax']}'", "'$io_id'", "'$io_type'", "'$io_price'", "'".G5_TIME_YMDHIS."'",
                 "'$remote_addr'", "'$ct_send_cost'", "'$sw_direct'", "'$ct_select'", "'$ct_select_time'"
             ];
+            if ($rb_file_columns_ready || $rb_media_columns_ready) {
+                $extra_values = array();
+                if ($rb_file_columns_ready) {
+                    $extra_values = array_merge($extra_values, array(
+                        "'" . sql_real_escape_string($rb_file_selection['picked_text']) . "'",
+                        "'" . sql_real_escape_string($rb_file_selection['picked_subjects']) . "'",
+                        "'{$ct_file_price}'"
+                    ));
+                }
+                if ($rb_media_columns_ready) {
+                    $extra_values = array_merge($extra_values, array(
+                        "'" . sql_real_escape_string($rb_media_selection['picked_text']) . "'",
+                        "'" . sql_real_escape_string($rb_media_selection['picked_subjects']) . "'",
+                        "'{$ct_media_price}'"
+                    ));
+                }
+                array_splice($values, 15, 0, $extra_values);
+            }
 
             // 예약
             if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {

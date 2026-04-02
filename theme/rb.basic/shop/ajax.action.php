@@ -1,6 +1,21 @@
 <?php
 include_once('./_common.php');
 
+if (!function_exists('rb_shop_has_column')) {
+    function rb_shop_has_column($table, $column)
+    {
+        static $cache = array();
+        $key = $table . ':' . $column;
+        if (isset($cache[$key])) {
+            return $cache[$key];
+        }
+
+        $row = sql_fetch("SHOW COLUMNS FROM `{$table}` LIKE '" . sql_real_escape_string($column) . "'", false);
+        $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
+        return $cache[$key];
+    }
+}
+
 $action = isset($_REQUEST['action']) ? preg_replace('/[^a-z0-9_]/i', '', $_REQUEST['action']) : '';
 
 switch ($action) {
@@ -79,6 +94,12 @@ switch ($action) {
             die(json_encode(array('error' => '장바구니에 담을 상품을 선택하여 주십시오.')));
 
         $ct_count = 0;
+        $rb_file_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
+            && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects')
+            && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
+        $rb_media_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
+            && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects')
+            && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
         for($i=0; $i<$count; $i++) {
             $it_id = isset($_POST['it_id'][$i]) ? safe_replace_regex($_POST['it_id'][$i], 'it_id') : '';
             $opt_count = (isset($_POST['io_id'][$it_id]) && is_array($_POST['io_id'][$it_id])) ? count($_POST['io_id'][$it_id]) : 0;
@@ -87,6 +108,24 @@ switch ($action) {
             $it = get_shop_item($it_id, false);
             if(!$it['it_id'])
                 die(json_encode(array('error' => '상품정보가 존재하지 않습니다.')));
+
+            if(function_exists('rb_file_normalize_cart_row')) {
+                $it = rb_file_normalize_cart_row($it);
+            }
+            if(function_exists('rb_media_normalize_cart_row')) {
+                $it = rb_media_normalize_cart_row($it);
+            }
+
+            $rb_file_selection = ($rb_file_columns_ready && function_exists('rb_file_prepare_cart_selection')) ? rb_file_prepare_cart_selection($it) : array('picked_text' => '', 'picked_subjects' => '', 'picked_price' => 0);
+            $rb_media_selection = ($rb_media_columns_ready && function_exists('rb_media_prepare_cart_selection')) ? rb_media_prepare_cart_selection($it) : array('picked_text' => '', 'picked_subjects' => '', 'picked_price' => 0);
+            $rb_is_file_item = $rb_file_columns_ready && function_exists('rb_file_is_item') && rb_file_is_item($it);
+            $rb_is_media_item = $rb_media_columns_ready && function_exists('rb_media_is_item') && rb_media_is_item($it);
+            $rb_replace_cart_item = isset($it['it_types']) && in_array((int)$it['it_types'], array(1, 2, 3), true);
+            if ($rb_is_file_item) {
+                for($k=0; $k<$opt_count; $k++) {
+                    $_POST['ct_qty'][$it_id][$k] = 1;
+                }
+            }
 
             // 옵션정보를 얻어서 배열에 저장
             $opt_list = array();
@@ -108,7 +147,7 @@ switch ($action) {
                 die(json_encode(array('error' => '상품의 선택옵션을 선택해 주십시오.')));
 
             for($k=0; $k<$opt_count; $k++) {
-                $post_ct_qty = isset($_POST['ct_qty'][$it_id][$k]) ? (int) $_POST['ct_qty'][$it_id][$k] : 0;
+                $post_ct_qty = $rb_is_file_item ? 1 : (isset($_POST['ct_qty'][$it_id][$k]) ? (int) $_POST['ct_qty'][$it_id][$k] : 0);
                 if ($post_ct_qty < 1)
                     die(json_encode(array('error' => '수량은 1 이상 입력해 주십시오.')));
             }
@@ -143,9 +182,14 @@ switch ($action) {
                                   and ct_status = '쇼핑' ";
                     $row4 = sql_fetch($sql4);
 
-                    if(($sum_qty + $row4['ct_sum']) > $it['it_buy_max_qty'])
+                    $option_sum_qty = $rb_replace_cart_item ? $sum_qty : $sum_qty + $row4['ct_sum'];
+                    if($option_sum_qty > $it['it_buy_max_qty'])
                         die(json_encode(array('error' => $it['it_name'].'의 선택옵션 개수 총합 '.number_format($it['it_buy_max_qty']).'개 이하로 주문해 주십시오.', './cart.php')));
                 }
+            }
+
+            if($rb_replace_cart_item) {
+                sql_query(" delete from {$g5['g5_shop_cart_table']} where od_id = '$tmp_cart_id' and it_id = '$it_id' and ct_status = '쇼핑' ");
             }
 
             // 장바구니에 Insert
@@ -156,8 +200,14 @@ switch ($action) {
             // 장바구니에 Insert
             $comma = '';
             $sql = " INSERT INTO {$g5['g5_shop_cart_table']}
-                            ( od_id, mb_id, it_id, it_name, it_sc_type, it_sc_method, it_sc_price, it_sc_minimum, it_sc_qty, ct_status, ct_price, ct_point, ct_point_use, ct_stock_use, ct_option, ct_qty, ct_notax, io_id, io_type, io_price, ct_time, ct_ip, ct_send_cost, ct_direct, ct_select, ct_select_time )
+                            ( od_id, mb_id, it_id, it_name, it_sc_type, it_sc_method, it_sc_price, it_sc_minimum, it_sc_qty, ct_status, ct_price, ct_point, ct_point_use, ct_stock_use, ct_option<?php /* ct_file_* columns inserted dynamically below in PHP */ ?>, ct_qty, ct_notax, io_id, io_type, io_price, ct_time, ct_ip, ct_send_cost, ct_direct, ct_select, ct_select_time )
                         VALUES ";
+            $sql = "INSERT INTO {$g5['g5_shop_cart_table']} (" . implode(', ', array_merge(
+                array('od_id','mb_id','it_id','it_name','it_sc_type','it_sc_method','it_sc_price','it_sc_minimum','it_sc_qty','ct_status','ct_price','ct_point','ct_point_use','ct_stock_use','ct_option'),
+                $rb_file_columns_ready ? array('ct_file_ids','ct_file_subjects','ct_file_price') : array(),
+                $rb_media_columns_ready ? array('ct_media_ids','ct_media_subjects','ct_media_price') : array(),
+                array('ct_qty','ct_notax','io_id','io_type','io_price','ct_time','ct_ip','ct_send_cost','ct_direct','ct_select','ct_select_time')
+            )) . ") VALUES ";
 
             for($k=0; $k<$opt_count; $k++) {
                 $io_id = isset($_POST['io_id'][$it_id][$k]) ? preg_replace(G5_OPTION_ID_FILTER, '', $_POST['io_id'][$it_id][$k]) : '';
@@ -174,7 +224,15 @@ switch ($action) {
                     continue;
 
                 $io_price = isset($opt_list[$io_type][$io_id]['price']) ? $opt_list[$io_type][$io_id]['price'] : 0;
-                $ct_qty = isset($_POST['ct_qty'][$it_id][$k]) ? (int) $_POST['ct_qty'][$it_id][$k] : 0;
+                $ct_file_price = 0;
+                $ct_media_price = 0;
+                if($rb_file_columns_ready && function_exists('rb_file_is_item') && rb_file_is_item($it) && $io_type == '0') {
+                    $ct_file_price = (int)$rb_file_selection['picked_price'];
+                }
+                if($rb_media_columns_ready && function_exists('rb_media_is_item') && rb_media_is_item($it) && $io_type == '0') {
+                    $ct_media_price = (int)$rb_media_selection['picked_price'];
+                }
+                $ct_qty = $rb_is_file_item ? 1 : (isset($_POST['ct_qty'][$it_id][$k]) ? (int) $_POST['ct_qty'][$it_id][$k] : 0);
 
                 // 구매가격이 음수인지 체크
                 if($io_type) {
@@ -190,8 +248,14 @@ switch ($action) {
                             from {$g5['g5_shop_cart_table']}
                             where od_id = '$tmp_cart_id'
                               and it_id = '$it_id'
-                              and io_id = '$io_id'
-                              and ct_status = '쇼핑' ";
+                              and io_id = '$io_id' ";
+                if ($rb_file_columns_ready) {
+                    $sql2 .= " and ct_file_ids = '" . sql_real_escape_string($rb_file_selection['picked_text']) . "' ";
+                }
+                if ($rb_media_columns_ready) {
+                    $sql2 .= " and ct_media_ids = '" . sql_real_escape_string($rb_media_selection['picked_text']) . "' ";
+                }
+                $sql2 .= " and ct_status = '쇼핑' ";
                 $row2 = sql_fetch($sql2);
                 if(isset($row2['ct_id']) && $row2['ct_id']) {
                     // 재고체크
@@ -236,7 +300,26 @@ switch ($action) {
 
                 $io_value = sql_real_escape_string(strip_tags($io_value));
 
-                $sql .= $comma."( '$tmp_cart_id', '{$member['mb_id']}', '{$it['it_id']}', '".addslashes($it['it_name'])."', '{$it['it_sc_type']}', '{$it['it_sc_method']}', '{$it['it_sc_price']}', '{$it['it_sc_minimum']}', '{$it['it_sc_qty']}', '쇼핑', '{$it['it_price']}', '$point', '0', '0', '$io_value', '$ct_qty', '{$it['it_notax']}', '$io_id', '$io_type', '$io_price', '".G5_TIME_YMDHIS."', '".$_SERVER['REMOTE_ADDR']."', '$ct_send_cost', '$sw_direct', '$ct_select', '$ct_select_time' )";
+                $values = array(
+                    "'$tmp_cart_id'", "'{$member['mb_id']}'", "'{$it['it_id']}'", "'".addslashes($it['it_name'])."'",
+                    "'{$it['it_sc_type']}'", "'{$it['it_sc_method']}'", "'{$it['it_sc_price']}'", "'{$it['it_sc_minimum']}'", "'{$it['it_sc_qty']}'",
+                    "'쇼핑'", "'{$it['it_price']}'", "'$point'", "'0'", "'0'", "'$io_value'"
+                );
+                if ($rb_file_columns_ready) {
+                    $values[] = "'" . sql_real_escape_string($rb_file_selection['picked_text']) . "'";
+                    $values[] = "'" . sql_real_escape_string($rb_file_selection['picked_subjects']) . "'";
+                    $values[] = "'{$ct_file_price}'";
+                }
+                if ($rb_media_columns_ready) {
+                    $values[] = "'" . sql_real_escape_string($rb_media_selection['picked_text']) . "'";
+                    $values[] = "'" . sql_real_escape_string($rb_media_selection['picked_subjects']) . "'";
+                    $values[] = "'{$ct_media_price}'";
+                }
+                $values = array_merge($values, array(
+                    "'$ct_qty'", "'{$it['it_notax']}'", "'$io_id'", "'$io_type'", "'$io_price'", "'".G5_TIME_YMDHIS."'",
+                    "'".$_SERVER['REMOTE_ADDR']."'", "'$ct_send_cost'", "'$sw_direct'", "'$ct_select'", "'$ct_select_time'"
+                ));
+                $sql .= $comma."( " . implode(', ', $values) . " )";
                 $comma = ' , ';
                 $ct_count++;
             }

@@ -104,6 +104,13 @@ $sql = " update {$g5['g5_shop_order_table']}
             where od_id = '$od_id' ";
 sql_query($sql);
 
+if (function_exists('rb_file_issue_order_downloads')) {
+    rb_file_issue_order_downloads($od_id);
+}
+if (function_exists('rb_media_issue_order_rights')) {
+    rb_media_issue_order_rights($od_id);
+}
+
 // 장바구니 상태 변경
 if($cart_status) {
     $sql = " update {$g5['g5_shop_cart_table']}

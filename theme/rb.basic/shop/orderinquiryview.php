@@ -1,8 +1,88 @@
 <?php
 if (!defined("_GNUBOARD_")) exit; // 개별 페이지 접근 불가
 
+if (!function_exists('rb_shop_has_column')) {
+    function rb_shop_has_column($table, $column)
+    {
+        static $cache = array();
+        $key = $table . ':' . $column;
+        if (isset($cache[$key])) {
+            return $cache[$key];
+        }
+
+        $row = sql_fetch("SHOW COLUMNS FROM `{$table}` LIKE '" . sql_real_escape_string($column) . "'", false);
+        $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
+        return $cache[$key];
+    }
+}
+
+if (!function_exists('rb_shop_order_has_shipping_items')) {
+    function rb_shop_order_has_shipping_items($order_id, $selected_only = false)
+    {
+        global $g5;
+
+        $order_id = preg_replace('/[^A-Za-z0-9_\-]/', '', (string)$order_id);
+        if ($order_id === '') {
+            return false;
+        }
+
+        $selected_sql = $selected_only ? " AND a.ct_select = '1' " : '';
+        $row = sql_fetch("
+            SELECT COUNT(*) AS shipping_cnt
+            FROM {$g5['g5_shop_cart_table']} a
+            LEFT JOIN {$g5['g5_shop_item_table']} b ON a.it_id = b.it_id
+            WHERE a.od_id = '{$order_id}'
+              {$selected_sql}
+              AND a.io_type = '0'
+              AND COALESCE(NULLIF(b.it_types, ''), '0') = '0'
+        ", false);
+
+        return !empty($row['shipping_cnt']);
+    }
+}
+
 $g5['title'] = '주문상세내역';
 include_once('./_head.php');
+
+$rb_file_feature_ready = function_exists('rb_file_is_order_file_only') || function_exists('rb_file_order_has_files');
+$rb_file_order_only = function_exists('rb_file_is_order_file_only') ? rb_file_is_order_file_only($od_id) : false;
+$rb_media_feature_ready = function_exists('rb_media_is_order_media_only') || function_exists('rb_media_order_has_media');
+$rb_media_order_only = function_exists('rb_media_is_order_media_only') ? rb_media_is_order_media_only($od_id) : false;
+$rb_file_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
+$rb_media_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
+$rb_reservation_order_only = false;
+$rb_order_type_row = sql_fetch("
+    SELECT
+        SUM(CASE WHEN a.io_type = '0' AND COALESCE(NULLIF(b.it_types, ''), '0') = '1' THEN 1 ELSE 0 END) AS reservation_cnt,
+        SUM(CASE WHEN a.io_type = '0' AND COALESCE(NULLIF(b.it_types, ''), '0') = '2' THEN 1 ELSE 0 END) AS file_cnt,
+        SUM(CASE WHEN a.io_type = '0' AND COALESCE(NULLIF(b.it_types, ''), '0') = '3' THEN 1 ELSE 0 END) AS media_cnt,
+        SUM(CASE WHEN a.io_type = '0' AND COALESCE(NULLIF(b.it_types, ''), '0') = '0' THEN 1 ELSE 0 END) AS shipping_cnt
+    FROM {$g5['g5_shop_cart_table']} a
+    LEFT JOIN {$g5['g5_shop_item_table']} b ON a.it_id = b.it_id
+    WHERE a.od_id = '$od_id'
+", false);
+if (!empty($rb_order_type_row['reservation_cnt']) && empty($rb_order_type_row['shipping_cnt']) && empty($rb_order_type_row['file_cnt']) && empty($rb_order_type_row['media_cnt'])) {
+    $rb_reservation_order_only = true;
+}
+$rb_has_shipping_items = !empty($rb_order_type_row['shipping_cnt']);
+$rb_special_order_only = (
+    (!empty($rb_order_type_row['file_cnt']) || $rb_file_order_only)
+    || (!empty($rb_order_type_row['media_cnt']) || $rb_media_order_only)
+    || $rb_reservation_order_only
+);
+$rb_deliveryless_order_only = !$rb_has_shipping_items;
+$rb_file_has_files = ($rb_file_feature_ready && function_exists('rb_file_order_has_files')) ? rb_file_order_has_files($od_id) : false;
+$rb_media_has_items = ($rb_media_feature_ready && function_exists('rb_media_order_has_media')) ? rb_media_order_has_media($od_id) : false;
+if ($rb_file_has_files && !$is_member && empty($od['mb_id'])) {
+    set_session('rb_file_guest_' . $od_id, 1);
+}
+if ($rb_media_has_items && !$is_member && empty($od['mb_id'])) {
+    set_session('rb_media_guest_' . $od_id, 1);
+}
 
 // LG 현금영수증 JS
 if($od['od_pg'] == 'lg') {
@@ -13,6 +93,22 @@ if($od['od_pg'] == 'lg') {
     }
 }
 ?>
+
+<style>
+.rb-file-order-tag {
+    font-size: 12px !important;
+    padding: 3px 7px !important;
+    display: inline-block;
+    margin: 1px 6px 2px 0;
+    border-radius: 3px;
+    background: #e2eaf6;
+    line-height: 1em;
+    color: #3a8afd;
+}
+#sod_fin .rb_file_order_downloads{
+    margin-bottom:20px;
+}
+</style>
 
 <!-- 주문상세내역 시작 { -->
 <div id="sod_fin">
@@ -65,14 +161,18 @@ if($od['od_pg'] == 'lg') {
 
 
                     // 합계금액 계산 (예약상품일 경우 합계방식 변경)
-                    $price_calc = "((ct_price + io_price) * ct_qty)";
+$price_base = $rb_file_columns_ready ? "(ct_price + io_price + COALESCE(ct_file_price, 0))" : "(ct_price + io_price)";
+if ($rb_media_columns_ready) {
+    $price_base = preg_replace('/\)$/', " + COALESCE(ct_media_price, 0))", $price_base, 1);
+}
+$price_calc = "({$price_base} * ct_qty)";
                     if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($row['ct_types']) && $row['ct_types'] == 1) {
 
                         // it_opt_opt==1 일때만 인원추가금에 ct_qty(일수) 곱
                         $is_opt_opt = (isset($row['ct_opt_opt']) && (int)$row['ct_opt_opt'] === 1) ? 1 : 0;
                         $mul_qty = $is_opt_opt ? " * ct_qty" : "";
 
-                        $price_calc = "(((ct_price + io_price) * ct_qty) + COALESCE(ct_date_extra_price, 0) + COALESCE(ct_date_extra_price2, 0) +
+$price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0) + COALESCE(ct_date_extra_price2, 0) +
                                (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0){$mul_qty}) +
                                (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0){$mul_qty}) +
                                (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0){$mul_qty}))";
@@ -113,6 +213,12 @@ if($od['od_pg'] == 'lg') {
                         if(isset($row['ct_types']) && $row['ct_types'] == 1) {
                             $ct_send_cost = '-';
                         }
+                    }
+                    if(function_exists('rb_file_is_item') && rb_file_is_item($row['it_id'])) {
+                        $ct_send_cost = '콘텐츠';
+                    }
+                    if(function_exists('rb_media_is_item') && rb_media_is_item($row['it_id'])) {
+                        $ct_send_cost = '미디어';
                     }
 
                     if(isset($pa['pa_is']) && $pa['pa_is'] == 1) {
@@ -171,7 +277,15 @@ if($od['od_pg'] == 'lg') {
 	                	<div class="sod_img"><?php echo $image; ?></div>
 	                	<div class="sod_name" <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>style="width:200px"<?php } ?>>
 		                	<a href="<?php echo shop_item_url($row['it_id']); ?>"><?php echo $row['it_name']; ?></a><br>
-		                	<div class="sod_opt"><?php echo get_text($opt['ct_option']); ?></div>
+                            <?php
+                            $rb_ct_option = get_text($opt['ct_option']);
+                            if ((int)$opt['io_type'] === 0 && function_exists('rb_file_is_item') && rb_file_is_item($row['it_id']) && function_exists('rb_file_format_option_html')) {
+                                $rb_ct_option = rb_file_format_option_html($rb_ct_option, isset($opt['ct_file_subjects']) ? $opt['ct_file_subjects'] : '', $row['it_id'], isset($opt['ct_file_ids']) ? $opt['ct_file_ids'] : '', isset($opt['ct_qty']) ? $opt['ct_qty'] : 1);
+                            } else if ((int)$opt['io_type'] === 0 && function_exists('rb_media_is_item') && rb_media_is_item($row['it_id']) && function_exists('rb_media_format_option_html')) {
+                                $rb_ct_option = rb_media_format_option_html($rb_ct_option, isset($opt['ct_media_subjects']) ? $opt['ct_media_subjects'] : '', $row['it_id'], isset($opt['ct_media_ids']) ? $opt['ct_media_ids'] : '', isset($opt['ct_qty']) ? $opt['ct_qty'] : 1);
+                            }
+                            ?>
+		                	<div class="sod_opt"><?php echo $rb_ct_option; ?></div>
 	                	</div>
 	                	<?php
                         //예약정보 로드
@@ -244,7 +358,7 @@ if($od['od_pg'] == 'lg') {
         </div>
     </section>
     <div class="sod_left">
-        <h2>결제/배송 정보</h2>
+        <h2><?php echo $rb_deliveryless_order_only ? '결제 정보' : '결제/배송 정보'; ?></h2>
         <?php
         // 총계 = 주문상품금액합계 + 배송비 - 상품할인 - 결제할인 - 배송비할인
         $tot_price = $od['od_cart_price'] + $od['od_send_cost'] + $od['od_send_cost2']
@@ -333,6 +447,19 @@ if($od['od_pg'] == 'lg') {
             </div>
         </section>
 
+        <?php
+        $rb_file_order_downloads_file = G5_PATH.'/rb/rb.mod/file/order_downloads.inc.php';
+        if (is_file($rb_file_order_downloads_file)) {
+            include_once($rb_file_order_downloads_file);
+        }
+
+        $rb_media_order_downloads_file = G5_PATH.'/rb/rb.mod/media/order_media.inc.php';
+        if (is_file($rb_media_order_downloads_file)) {
+            include_once($rb_media_order_downloads_file);
+        }
+        ?>
+
+        <?php if (!$rb_deliveryless_order_only) { ?>
         <section id="sod_fin_receiver">
             <h3>받으시는 분</h3>
 
@@ -378,9 +505,10 @@ if($od['od_pg'] == 'lg') {
                 </table>
             </div>
         </section>
+        <?php } ?>
 
 
-        <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
+        <?php if(!$rb_deliveryless_order_only && isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
 
         <?php
         $sql_b = " select * from {$g5['g5_shop_cart_table']} where od_id = '$od_id' group by ct_partner order by ct_id ";
@@ -432,7 +560,7 @@ if($od['od_pg'] == 'lg') {
         </section>
         <?php } ?>
 
-        <?php } else { ?>
+        <?php } else if(!$rb_deliveryless_order_only) { ?>
 
         <section id="sod_fin_dvr">
             <h3>배송정보</h3>
@@ -486,19 +614,19 @@ if($od['od_pg'] == 'lg') {
                 <strong><?php echo number_format($od['od_coupon']); ?> 원</strong>
             </li>
             <?php } ?>
-            <?php if ($od['od_send_cost'] > 0) { ?>
+            <?php if (!$rb_deliveryless_order_only && $od['od_send_cost'] > 0) { ?>
             <li class="sod_bsk_dvr">
                 <span>배송비</span>
                 <strong><?php echo number_format($od['od_send_cost']); ?> 원</strong>
             </li>
             <?php } ?>
-            <?php if($od['od_send_coupon'] > 0) { ?>
+            <?php if(!$rb_deliveryless_order_only && $od['od_send_coupon'] > 0) { ?>
             <li class="sod_bsk_dvr">
                 <span>배송비 쿠폰할인</span>
                 <strong><?php echo number_format($od['od_send_coupon']); ?> 원</strong>
             </li>
             <?php } ?>
-            <?php if ($od['od_send_cost2'] > 0) { ?>
+            <?php if (!$rb_deliveryless_order_only && $od['od_send_cost2'] > 0) { ?>
             <li class="sod_bsk_dvr">
                 <span>추가배송비</span>
                 <strong><?php echo number_format($od['od_send_cost2']); ?> 원</strong>
@@ -854,16 +982,28 @@ $(function() {
 
 function fcancel_check(f)
 {
-    if(!confirm("주문을 정말 취소하시겠습니까?"))
-        return false;
-
     var memo = f.cancel_memo.value;
     if(memo == "") {
         alert("취소사유를 입력해 주십시오.");
         return false;
     }
 
-    return true;
+    rbConfirmCompat("주문을 정말 취소하시겠습니까?").then(function(ok) {
+        if (ok) {
+            f.submit();
+        }
+    });
+
+    return false;
+}
+
+function rbConfirmCompat(message)
+{
+    if (typeof rb_confirm === "function") {
+        return rb_confirm(message);
+    }
+
+    return Promise.resolve(confirm(message));
 }
 </script>
 

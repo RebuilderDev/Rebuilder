@@ -1,13 +1,50 @@
 <?php
 if (!defined("_GNUBOARD_")) exit; // 개별 페이지 접근 불가
 
+if (!function_exists('rb_shop_has_column')) {
+    function rb_shop_has_column($table, $column)
+    {
+        static $cache = array();
+        $key = $table . ':' . $column;
+        if (isset($cache[$key])) {
+            return $cache[$key];
+        }
+
+        $row = sql_fetch("SHOW COLUMNS FROM `{$table}` LIKE '" . sql_real_escape_string($column) . "'", false);
+        $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
+        return $cache[$key];
+    }
+}
+
 $g5['title'] = '장바구니';
 include_once('./_head.php');
+
+$rb_file_cart_only = function_exists('rb_file_is_cart_file_only') ? rb_file_is_cart_file_only($s_cart_id, false) : false;
+$rb_media_cart_only = function_exists('rb_media_is_cart_media_only') ? rb_media_is_cart_media_only($s_cart_id, false) : false;
+$rb_file_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
+$rb_media_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
 ?>
 
 <!-- 장바구니 시작 { -->
 <script src="<?php echo G5_JS_URL; ?>/shop.js?ver=<?php echo G5_JS_VER; ?>"></script>
 <script src="<?php echo G5_JS_URL; ?>/shop.override.js?ver=<?php echo G5_JS_VER; ?>"></script>
+<style>
+.rb-file-order-tag {
+        font-size: 12px !important;
+        padding: 3px 7px 3px 7px !important;
+        display: inline-block;
+        margin: 1px 2px 2px 0;
+        padding: 3px;
+        border-radius: 3px;
+        background: #e2eaf6;
+        line-height: 1em;
+        color: #3a8afd;
+    }
+</style>
 
 <div id="sod_bsk" class="od_prd_list">
 
@@ -42,11 +79,19 @@ include_once('./_head.php');
         }
 
         $select_it_opt_opt = $has_it_opt_opt ? ", b.it_opt_opt AS it_opt_opt" : "";
+        $select_rb_file_columns = $rb_file_columns_ready
+            ? "MAX(a.ct_file_ids) AS ct_file_ids,\n                        MAX(a.ct_file_subjects) AS ct_file_subjects,"
+            : "'' AS ct_file_ids,\n                        '' AS ct_file_subjects,";
+        $select_rb_media_columns = $rb_media_columns_ready
+            ? "MAX(a.ct_media_ids) AS ct_media_ids,\n                        MAX(a.ct_media_subjects) AS ct_media_subjects,"
+            : "'' AS ct_media_ids,\n                        '' AS ct_media_subjects,";
 
         // $s_cart_id 로 현재 장바구니 자료 쿼리
         $sql = " select a.ct_id,
                         a.it_id,
                         a.it_name,
+                        {$select_rb_file_columns}
+                        {$select_rb_media_columns}
                         a.ct_price,
                         a.ct_point,
                         a.ct_qty,
@@ -74,14 +119,18 @@ include_once('./_head.php');
             }
 
             // 합계금액 계산 (예약상품일 경우 합계방식 변경)
-            $price_calc = "((ct_price + io_price) * ct_qty)";
+$price_base = $rb_file_columns_ready ? "(ct_price + io_price + COALESCE(ct_file_price, 0))" : "(ct_price + io_price)";
+if ($rb_media_columns_ready) {
+    $price_base = preg_replace('/\)$/', " + COALESCE(ct_media_price, 0))", $price_base, 1);
+}
+$price_calc = "({$price_base} * ct_qty)";
             if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($resv['ct_types']) && $resv['ct_types'] == 1) {
 
                 // it_opt_opt==1 일때만 인원추가금에 ct_qty(일수) 곱
                 $is_opt_opt = (isset($row['it_opt_opt']) && (int)$row['it_opt_opt'] === 1) ? 1 : 0;
                 $mul_qty = $is_opt_opt ? " * ct_qty" : "";
 
-                $price_calc = "(((ct_price + io_price) * ct_qty) + COALESCE(ct_date_extra_price, 0) + COALESCE(ct_date_extra_price2, 0) +
+$price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0) + COALESCE(ct_date_extra_price2, 0) +
                (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0){$mul_qty}) +
                (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0){$mul_qty}) +
                (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0){$mul_qty}))";
@@ -108,8 +157,17 @@ include_once('./_head.php');
 
             $it_name = $a1 . stripslashes($row['it_name']) . $a2;
             $it_options = print_item_options($row['it_id'], $s_cart_id);
+            if(function_exists('rb_file_is_item') && rb_file_is_item($row['it_id']) && function_exists('rb_file_format_option_html')) {
+                $it_options = rb_file_format_option_html($it_options, isset($row['ct_file_subjects']) ? $row['ct_file_subjects'] : '', $row['it_id'], isset($row['ct_file_ids']) ? $row['ct_file_ids'] : '', isset($sum['qty']) ? $sum['qty'] : $row['ct_qty']);
+            } else if(function_exists('rb_media_is_item') && rb_media_is_item($row['it_id']) && function_exists('rb_media_format_option_html')) {
+                $it_options = rb_media_format_option_html($it_options, isset($row['ct_media_subjects']) ? $row['ct_media_subjects'] : '', $row['it_id'], isset($row['ct_media_ids']) ? $row['ct_media_ids'] : '', isset($sum['qty']) ? $sum['qty'] : $row['ct_qty']);
+            }
             if($it_options) {
-                if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
+                if(function_exists('rb_file_is_item') && rb_file_is_item($row['it_id'])) {
+                    $mod_options = '';
+                } else if(function_exists('rb_media_is_item') && rb_media_is_item($row['it_id'])) {
+                    $mod_options = '';
+                } else if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
                     if(isset($resv['ct_types']) && $resv['ct_types'] == 1) {
                         $mod_options = '';
                     } else {
@@ -147,8 +205,14 @@ include_once('./_head.php');
 
             if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
                 if(isset($resv['ct_types']) && $resv['ct_types'] == 1) {
-                    $ct_send_cost = '-';
+                    $ct_send_cost = '예약';
                 }
+            }
+
+            if(function_exists('rb_file_is_item') && rb_file_is_item($row['it_id'])) {
+                $ct_send_cost = '다운로드';
+            } else if(function_exists('rb_media_is_item') && rb_media_is_item($row['it_id'])) {
+                $ct_send_cost = '미디어';
             }
 
             $point      = $sum['point'];
@@ -227,7 +291,7 @@ include_once('./_head.php');
     <div id="sod_bsk_tot">
         <ul>
             <li class="sod_bsk_dvr">
-                <span>배송비</span>
+                <span><?php echo $rb_file_cart_only ? '다운로드' : '배송비'; ?></span>
                 <strong><?php echo number_format($send_cost); ?></strong> 원
             </li>
 

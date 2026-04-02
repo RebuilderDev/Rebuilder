@@ -2,6 +2,21 @@
 $sub_menu = '400400';
 include_once('./_common.php');
 
+if (!function_exists('rb_shop_has_column')) {
+    function rb_shop_has_column($table, $column)
+    {
+        static $cache = array();
+        $key = $table . ':' . $column;
+        if (isset($cache[$key])) {
+            return $cache[$key];
+        }
+
+        $row = sql_fetch("SHOW COLUMNS FROM `{$table}` LIKE '" . sql_real_escape_string($column) . "'", false);
+        $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
+        return $cache[$key];
+    }
+}
+
 $cart_title3 = '주문번호';
 $cart_title4 = '배송완료';
 
@@ -9,6 +24,14 @@ auth_check_menu($auth, $sub_menu, "w");
 
 $g5['title'] = "주문 내역 수정";
 include_once(G5_ADMIN_PATH.'/admin.head.php');
+$rb_file_price_column_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
+$rb_file_columns_ready = $rb_file_price_column_ready
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects');
+$rb_media_price_column_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
+$rb_media_columns_ready = $rb_media_price_column_ready
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
+    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects');
 
 $fr_date = isset($_REQUEST['fr_date']) ? preg_replace('/[^0-9 :\-]/i', '', $_REQUEST['fr_date']) : '';
 $to_date = isset($_REQUEST['to_date']) ? preg_replace('/[^0-9 :\-]/i', '', $_REQUEST['to_date']) : '';
@@ -200,14 +223,18 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
 
 
             // 합계금액 계산 (예약상품일 경우 합계방식 변경)
-            $price_calc = "((ct_price + io_price) * ct_qty)";
+            $price_base = $rb_file_price_column_ready ? "(ct_price + io_price + COALESCE(ct_file_price, 0))" : "(ct_price + io_price)";
+            if ($rb_media_price_column_ready) {
+                $price_base = preg_replace('/\)$/', " + COALESCE(ct_media_price, 0))", $price_base, 1);
+            }
+            $price_calc = "({$price_base} * ct_qty)";
             if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($row['ct_types']) && $row['ct_types'] == 1) {
 
                         // it_opt_opt==1 일때만 인원추가금에 ct_qty(일수) 곱
                         $is_opt_opt = (isset($row['ct_opt_opt']) && (int)$row['ct_opt_opt'] === 1) ? 1 : 0;
                         $mul_qty = $is_opt_opt ? " * ct_qty" : "";
 
-                        $price_calc = "(((ct_price + io_price) * ct_qty) + COALESCE(ct_date_extra_price, 0) + COALESCE(ct_date_extra_price2, 0) +
+                        $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0) + COALESCE(ct_date_extra_price2, 0) +
                                (COALESCE(ct_user_pri1, 0) * COALESCE(ct_user_qty1, 0){$mul_qty}) +
                                (COALESCE(ct_user_pri2, 0) * COALESCE(ct_user_qty2, 0){$mul_qty}) +
                                (COALESCE(ct_user_pri3, 0) * COALESCE(ct_user_qty3, 0){$mul_qty}))";
@@ -241,6 +268,12 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
 
                 if($sendcost == 0)
                     $ct_send_cost = '무료';
+            }
+
+            if (function_exists('rb_file_is_item') && rb_file_is_item($row['it_id'])) {
+                $ct_send_cost = '-';
+            } else if (function_exists('rb_media_is_item') && rb_media_is_item($row['it_id'])) {
+                $ct_send_cost = '-';
             }
 
 
@@ -309,10 +342,22 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                 <?php } ?>
                 <td class="td_left">
 
-                    <label for="ct_chk_<?php echo $chk_cnt; ?>" class="sound_only"><?php echo get_text($opt['ct_option']); ?></label>
+                    <?php
+                    $rb_admin_ct_option = get_text($opt['ct_option']);
+                    if (function_exists('rb_file_is_item') && rb_file_is_item($opt['it_id']) && $rb_admin_ct_option) {
+                        $rb_admin_ct_option = preg_replace('/\s*\/\s*\[파일\]\s*.+$/u', '', $rb_admin_ct_option);
+                        $rb_admin_ct_option = preg_replace('/\s*\/\s*파일:\s*.+$/u', '', $rb_admin_ct_option);
+                        $rb_admin_ct_option = trim((string)$rb_admin_ct_option);
+                    } else if (function_exists('rb_media_is_item') && rb_media_is_item($opt['it_id']) && $rb_admin_ct_option) {
+                        $rb_admin_ct_option = preg_replace('/\s*\/\s*\[미디어\]\s*.+$/u', '', $rb_admin_ct_option);
+                        $rb_admin_ct_option = preg_replace('/\s*\/\s*미디어:\s*.+$/u', '', $rb_admin_ct_option);
+                        $rb_admin_ct_option = trim((string)$rb_admin_ct_option);
+                    }
+                    ?>
+                    <label for="ct_chk_<?php echo $chk_cnt; ?>" class="sound_only"><?php echo strip_tags($rb_admin_ct_option); ?></label>
                     <input type="checkbox" name="ct_chk[<?php echo $chk_cnt; ?>]" id="ct_chk_<?php echo $chk_cnt; ?>" value="<?php echo $chk_cnt; ?>" class="sct_sel_<?php echo $i; ?>">
                     <input type="hidden" name="ct_id[<?php echo $chk_cnt; ?>]" value="<?php echo $opt['ct_id']; ?>">
-                    <?php echo get_text($opt['ct_option']); ?>
+                    <?php echo $rb_admin_ct_option; ?>
 
                     <?php if(isset($opt['ct_types']) && $opt['ct_types'] == 1) { ?>
 
@@ -453,12 +498,143 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                     <?php } ?>
 
                 <?php } ?>
+                <?php if($rb_media_columns_ready && function_exists('rb_media_is_item') && rb_media_is_item($opt['it_id']) && !empty($opt['ct_media_ids']) && $k == 0) { ?>
+                <?php
+                    $rb_media_ids = array();
+                    foreach (explode(',', $opt['ct_media_ids']) as $rb_media_id) {
+                        $rb_media_id = (int)trim($rb_media_id);
+                        if ($rb_media_id > 0) {
+                            $rb_media_ids[$rb_media_id] = $rb_media_id;
+                        }
+                    }
+
+                    $rb_media_rows = array();
+                    if ($rb_media_ids) {
+                        $rb_media_sql = "SELECT * FROM `rb_media_item` WHERE mi_id IN (" . implode(',', $rb_media_ids) . ") ORDER BY mi_sort ASC, mi_id ASC";
+                        $rb_media_result = sql_query($rb_media_sql, false);
+                        if ($rb_media_result) {
+                            while ($rb_media_row = sql_fetch_array($rb_media_result)) {
+                                $rb_media_rows[] = $rb_media_row;
+                            }
+                        }
+                    }
+                ?>
+                <?php if ($rb_media_rows) { ?>
+                    <div class="tbl_head01 tbl_wrap" style="min-width:350px; width:100%; margin-top:10px;">
+                        <table>
+                        <colgroup>
+                            <col style="width:32%;">
+                            <col style="width:17%;">
+                            <col style="width:17%;">
+                            <col style="width:17%;">
+                            <col style="width:17%;">
+                        </colgroup>
+                        <thead>
+                        <tr>
+                            <th colspan="5">
+                                <strong style="display:block; text-align:center; color:#0f172a;">선택 미디어</strong>
+                            </th>
+                        </tr>
+                        <tr>
+                            <th scope="col">미디어명</th>
+                            <th scope="col">확장자</th>
+                            <th scope="col">재생시간</th>
+                            <th scope="col">금액</th>
+                            <th scope="col">합계</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($rb_media_rows as $rb_media_row) { ?>
+                        <?php
+                            $rb_media_ext = strtoupper($rb_media_row['mi_ext'] ? $rb_media_row['mi_ext'] : pathinfo($rb_media_row['mi_name'], PATHINFO_EXTENSION));
+                            $rb_media_seconds = function_exists('rb_media_format_seconds') ? rb_media_format_seconds($rb_media_row['mi_seconds']) : '-';
+                            $rb_media_price = (int)$rb_media_row['mi_price'];
+                        ?>
+                        <tr>
+                            <td nowrap><?php echo get_text($rb_media_row['mi_title']); ?></td>
+                            <td nowrap><?php echo $rb_media_ext ? $rb_media_ext : '-'; ?></td>
+                            <td nowrap><?php echo $rb_media_seconds; ?></td>
+                            <td nowrap><?php echo number_format($rb_media_price); ?></td>
+                            <td nowrap><?php echo number_format($rb_media_price); ?></td>
+                        </tr>
+                        <?php } ?>
+                        </tbody>
+                        </table>
+                    </div>
+                <?php } ?>
+                <?php } ?>
+
+                <?php if($rb_file_columns_ready && function_exists('rb_file_is_item') && rb_file_is_item($opt['it_id']) && !empty($opt['ct_file_ids']) && $k == 0) { ?>
+                <?php
+                    $rb_file_ids = array();
+                    foreach (explode(',', $opt['ct_file_ids']) as $rb_file_id) {
+                        $rb_file_id = (int)trim($rb_file_id);
+                        if ($rb_file_id > 0) {
+                            $rb_file_ids[$rb_file_id] = $rb_file_id;
+                        }
+                    }
+
+                    $rb_file_rows = array();
+                    if ($rb_file_ids) {
+                        $rb_file_sql = "SELECT * FROM `rb_file_item` WHERE fi_id IN (" . implode(',', $rb_file_ids) . ") ORDER BY fi_sort ASC, fi_id ASC";
+                        $rb_file_result = sql_query($rb_file_sql, false);
+                        if ($rb_file_result) {
+                            while ($rb_file_row = sql_fetch_array($rb_file_result)) {
+                                $rb_file_rows[] = $rb_file_row;
+                            }
+                        }
+                    }
+                ?>
+                <?php if ($rb_file_rows) { ?>
+                    <div class="tbl_head01 tbl_wrap" style="min-width:350px; width:100%; margin-top:10px;">
+                        <table>
+                        <colgroup>
+                            <col style="width:32%;">
+                            <col style="width:17%;">
+                            <col style="width:17%;">
+                            <col style="width:17%;">
+                            <col style="width:17%;">
+                        </colgroup>
+                        <thead>
+                        <tr>
+                            <th colspan="5">
+                                <strong style="display:block; text-align:center; color:#0f172a;">선택 파일</strong>
+                            </th>
+                        </tr>
+                        <tr>
+                            <th scope="col">파일명</th>
+                            <th scope="col">확장자</th>
+                            <th scope="col">용량</th>
+                            <th scope="col">금액</th>
+                            <th scope="col">합계</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($rb_file_rows as $rb_file_row) { ?>
+                        <?php
+                            $rb_file_ext = strtoupper($rb_file_row['fi_ext'] ? $rb_file_row['fi_ext'] : pathinfo($rb_file_row['fi_name'], PATHINFO_EXTENSION));
+                            $rb_file_size = function_exists('rb_file_format_bytes') ? rb_file_format_bytes($rb_file_row['fi_bytes']) : number_format((int)$rb_file_row['fi_bytes']) . ' B';
+                            $rb_file_price = (int)$rb_file_row['fi_price'];
+                        ?>
+                        <tr>
+                            <td nowrap><?php echo get_text($rb_file_row['fi_subject']); ?></td>
+                            <td nowrap><?php echo $rb_file_ext ? $rb_file_ext : '-'; ?></td>
+                            <td nowrap><?php echo $rb_file_size; ?></td>
+                            <td nowrap><?php echo number_format($rb_file_price); ?></td>
+                            <td nowrap><?php echo number_format($rb_file_price); ?></td>
+                        </tr>
+                        <?php } ?>
+                        </tbody>
+                        </table>
+                    </div>
+                <?php } ?>
+                <?php } ?>
 
 
                 </td>
                 <td class="td_mngsmall"><?php echo $opt['ct_status']; ?></td>
                 <td class="td_num">
-                    <label for="ct_qty_<?php echo $chk_cnt; ?>" class="sound_only"><?php echo get_text($opt['ct_option']); ?> 수량</label>
+                    <label for="ct_qty_<?php echo $chk_cnt; ?>" class="sound_only"><?php echo strip_tags($rb_admin_ct_option); ?> 수량</label>
                     <input type="text" name="ct_qty[<?php echo $chk_cnt; ?>]" id="ct_qty_<?php echo $chk_cnt; ?>" value="<?php echo $opt['ct_qty']; ?>" required class="frm_input required" size="5">
                 </td>
                 <td class="td_num_right "><?php echo number_format($opt_price); ?></td>
@@ -472,7 +648,11 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                 <td class="td_mngsmall"><?php echo get_yn($opt['ct_stock_use']); ?></td>
 
 
-                <?php if(isset($opt['ct_types']) && $opt['ct_types'] == 1) { ?>
+                <?php if(
+                    (isset($opt['ct_types']) && $opt['ct_types'] == 1)
+                    || (function_exists('rb_file_is_item') && rb_file_is_item($opt['it_id']))
+                    || (function_exists('rb_media_is_item') && rb_media_is_item($opt['it_id']))
+                ) { ?>
 
                     <td colspan="3">-</td>
 

@@ -1,5 +1,6 @@
 <?php
 if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
+$rb_is_reservation_item = isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($it['it_types']) && (string)$it['it_types'] === '1';
 
 // add_stylesheet('css 구문', 출력순서); 숫자가 작을 수록 먼저 출력됨
 add_stylesheet('<link rel="stylesheet" href="'.G5_SHOP_CSS_URL.'/style.css">', 0);
@@ -17,6 +18,21 @@ if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
         }
     }
 }
+
+if (function_exists('rb_file_is_item') && rb_file_is_item($it)) {
+    $rb_file_item_files = G5_PATH.'/rb/rb.mod/file/item_files.inc.php';
+    if (is_file($rb_file_item_files)) {
+        include_once($rb_file_item_files);
+    }
+}
+
+if (function_exists('rb_media_is_item') && rb_media_is_item($it)) {
+    $rb_media_item_files = G5_PATH.'/rb/rb.mod/media/item_media.inc.php';
+    if (is_file($rb_media_item_files)) {
+        include_once($rb_media_item_files);
+    }
+}
+
 ?>
 
 <?php if ($default['de_rel_list_use']) { ?>
@@ -189,11 +205,23 @@ if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
                             <span class="sit_opt_subj"><?php echo $it['it_name']; ?></span>
                         </div>
                         <div class="opt_count">
+                            <?php if(function_exists('rb_file_is_item') && rb_file_is_item($it)) { ?>
+                            <?php
+                            $rb_file_item_info_locked_option = G5_PATH.'/rb/rb.mod/file/item_info_locked_option.inc.php';
+                            if (is_file($rb_file_item_info_locked_option)) {
+                                include_once($rb_file_item_info_locked_option);
+                            }
+                            ?>
+                            <?php } else if($rb_is_reservation_item) { ?>
+                            <input type="hidden" name="ct_copy_qty[<?php echo $it_id; ?>][]" value="<?php echo $it['it_buy_min_qty']; ?>" id="ct_qty_<?php echo $i; ?>">
+                            <span class="sit_opt_prc">+0원</span>
+                            <?php } else { ?>
                             <label for="ct_qty_<?php echo $i; ?>" class="sound_only">수량</label>
                             <button type="button" class="sit_qty_minus"><i class="fa fa-minus" aria-hidden="true"></i><span class="sound_only">감소</span></button>
                             <input type="text" name="ct_copy_qty[<?php echo $it_id; ?>][]" value="<?php echo $it['it_buy_min_qty']; ?>" id="ct_qty_<?php echo $i; ?>" class="num_input" size="5">
                             <button type="button" class="sit_qty_plus"><i class="fa fa-plus" aria-hidden="true"></i><span class="sound_only">증가</span></button>
                             <span class="sit_opt_prc">+0원</span>
+                            <?php } ?>
                         </div>
                     </li>
                     <?php } ?>
