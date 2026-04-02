@@ -35,7 +35,15 @@ if (function_exists('rb_media_is_item') && rb_media_is_item($it)) {
 
 ?>
 
-<?php if ($default['de_rel_list_use']) { ?>
+<?php
+$rel_exists = false;
+if ($default['de_rel_list_use']) {
+    $rel_cnt_sql = " select count(*) as cnt from {$g5['g5_shop_item_relation_table']} a left join {$g5['g5_shop_item_table']} b on (a.it_id2=b.it_id) where a.it_id = '{$it['it_id']}' and b.it_use='1' ";
+    $rel_cnt = sql_fetch($rel_cnt_sql);
+    $rel_exists = isset($rel_cnt['cnt']) && (int)$rel_cnt['cnt'] > 0;
+}
+?>
+<?php if ($rel_exists) { ?>
 <!-- 관련상품 시작 { -->
 <section id="sit_rel" class="<?php if(!$default['de_mobile_rel_list_use']) { ?>pc<?php } ?>">
     <h2>관련상품</h2>
