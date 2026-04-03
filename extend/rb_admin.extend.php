@@ -14,9 +14,9 @@ function rb_create_table_admin_widget()
 
     // 테이블 존재 확인
     $chk = sql_fetch(" SHOW TABLES LIKE '".sql_escape_string($table)."' ");
-    if (isset($chk[0]) && $chk[0]) {
+    if ($chk) {
         $col_span = sql_fetch(" SHOW COLUMNS FROM `{$table}` LIKE 'aw_span' ");
-        if (!(isset($col_span['Field']) && $col_span['Field'] === 'aw_span')) {
+        if (!$col_span) {
             sql_query(" ALTER TABLE `{$table}` ADD `aw_span` tinyint(1) NOT NULL DEFAULT 1 AFTER `aw_area` ", false);
         }
         return true; // 이미 있음
@@ -42,25 +42,7 @@ function rb_create_table_admin_widget()
     ";
     sql_query($sql, false);
 
-    // 최종 확인
-    $chk2 = sql_fetch(" SHOW TABLES LIKE '".sql_escape_string($table)."' ");
-    return (isset($chk2[0]) && $chk2[0]) ? true : false;
-}
-
-function rb_seed_table_admin_widget()
-{
-    global $g5;
-
-    $table = isset($g5['rb_admin_widget_table']) && $g5['rb_admin_widget_table']
-        ? $g5['rb_admin_widget_table']
-        : 'rb_admin_widget';
-
-    $cnt = sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$table}` ");
-    $count = isset($cnt['cnt']) ? (int)$cnt['cnt'] : 0;
-    if ($count > 0) {
-        return true;
-    }
-
+    // 최초 생성 시 기본 위젯 바로 입력
     $seed_rows = array(
         array('aw_key' => 'posts',    'aw_area' => 'main', 'aw_span' => 2, 'aw_sort' => 1),
         array('aw_key' => 'comments', 'aw_area' => 'main', 'aw_span' => 2, 'aw_sort' => 2),
@@ -89,9 +71,7 @@ function rb_seed_table_admin_widget()
     return true;
 }
 
-if (rb_create_table_admin_widget()) {
-    rb_seed_table_admin_widget();
-}
+rb_create_table_admin_widget();
 
 if (!function_exists('rb_adm_meta_filter')) {
     function rb_adm_meta_filter($buffer) {
