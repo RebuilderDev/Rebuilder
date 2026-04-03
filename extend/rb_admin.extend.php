@@ -47,7 +47,51 @@ function rb_create_table_admin_widget()
     return (isset($chk2[0]) && $chk2[0]) ? true : false;
 }
 
-rb_create_table_admin_widget();
+function rb_seed_table_admin_widget()
+{
+    global $g5;
+
+    $table = isset($g5['rb_admin_widget_table']) && $g5['rb_admin_widget_table']
+        ? $g5['rb_admin_widget_table']
+        : 'rb_admin_widget';
+
+    $cnt = sql_fetch(" SELECT COUNT(*) AS cnt FROM `{$table}` ");
+    $count = isset($cnt['cnt']) ? (int)$cnt['cnt'] : 0;
+    if ($count > 0) {
+        return true;
+    }
+
+    $seed_rows = array(
+        array('aw_key' => 'posts',    'aw_area' => 'main', 'aw_span' => 2, 'aw_sort' => 1),
+        array('aw_key' => 'comments', 'aw_area' => 'main', 'aw_span' => 2, 'aw_sort' => 2),
+        array('aw_key' => 'members',  'aw_area' => 'main', 'aw_span' => 1, 'aw_sort' => 3),
+        array('aw_key' => 'visitors', 'aw_area' => 'main', 'aw_span' => 1, 'aw_sort' => 4),
+        array('aw_key' => 'qa',       'aw_area' => 'main', 'aw_span' => 1, 'aw_sort' => 5),
+        array('aw_key' => 'points',   'aw_area' => 'main', 'aw_span' => 1, 'aw_sort' => 6),
+    );
+
+    foreach ($seed_rows as $row) {
+        $sql = "
+            INSERT INTO `{$table}`
+            SET aw_user = NULL,
+                aw_key = '".sql_escape_string($row['aw_key'])."',
+                aw_area = '".sql_escape_string($row['aw_area'])."',
+                aw_span = '".(int)$row['aw_span']."',
+                aw_sort = '".(int)$row['aw_sort']."',
+                aw_enabled = '1',
+                aw_conf = NULL,
+                aw_created = NOW(),
+                aw_updated = NOW()
+        ";
+        sql_query($sql, false);
+    }
+
+    return true;
+}
+
+if (rb_create_table_admin_widget()) {
+    rb_seed_table_admin_widget();
+}
 
 if (!function_exists('rb_adm_meta_filter')) {
     function rb_adm_meta_filter($buffer) {
