@@ -3,9 +3,6 @@ if (!defined("_GNUBOARD_")) exit; // 개별 페이지 접근 불가
 
 $q = isset($_GET['q']) ? clean_xss_tags($_GET['q'], 1, 1) : '';
 
-
-/********************/
-
 if(G5_IS_MOBILE) {
     include_once(G5_THEME_MSHOP_PATH.'/shop.head.php');
     return;
@@ -80,6 +77,158 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
 
         <?php if (!defined("_INDEX_")) { ?>
             <?php include_once(G5_PATH.'/rb/rb.config/topvisual.shop.php'); ?>
+        <?php } ?>
+
+        <?php
+        add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.theme/css/style.css?ver='.G5_SERVER_TIME.'">', 0);
+        add_javascript('<script src="'.G5_THEME_URL.'/rb.theme/js/rb.carousel.js?ver=3"></script>', 0);
+        ?>
+
+        <?php
+            $current_mode = 'shop';
+            $filtered_carousel = array_filter($rb_carousel_data, function($item) use ($current_mode) {
+                return $item['carousel_type_mode'] === $current_mode;
+            });
+            $filtered_carousel = array_values($filtered_carousel);
+
+            $carousel_use   = (int)$rb_theme_row['carousel_use_shop'];
+            $carousel_type  = $rb_theme_row['carousel_type_shop'];
+            $carousel_speed = (int)$rb_theme_row['carousel_speed_shop'];
+            $carousel_time  = (int)$rb_theme_row['carousel_time_shop'];
+            ?>
+        <?php if ($carousel_use === 1) { ?>
+        <?php if(defined('_INDEX_')) { ?>
+
+        <?php if (empty($filtered_carousel)) { ?>
+        <!-- 캐러셀 데이터가 없을 때 -->
+        <div class="rb_carousel" style="background-color: #25282B;">
+            <ul class="rb_carousel_img">
+                <li>
+                    <div class="bg">
+                        <div class="bg_bl"></div>
+                    </div>
+                    <div class="slogan">
+                        <div class="inner">
+                            <span class="text1 font-B" style="font-size: 32px; color: #ffffff; text-align: center;">
+                                하단의 테마설정 패널 에서 캐러셀을 설정해주세요.
+                            </span>
+                            <span class="text2 font-R">
+                                <p class="text2_sub" style="font-size: 16px; color: #cccccc; margin-top: 20px; text-align: center;">
+                                    캐러셀을 추가하시면 본 영역에 출력 됩니다.<br>
+                                    서브페이지 캐러셀은 캐러셀 설정에서 지정하실 수 있습니다.
+                                </p>
+                            </span>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <script>
+            $('.rb_carousel').rb_carousel({
+                type: '<?php echo $carousel_type; ?>',
+                speed: <?php echo $carousel_speed; ?>,
+                autoRollingTime: <?php echo $carousel_time; ?>
+            });
+        </script>
+        <?php } else { ?>
+        <!-- 캐러셀 데이터가 있을 때 -->
+        <div class="rb_carousel">
+            <ul class="rb_carousel_img">
+                <?php foreach ($filtered_carousel as $item) { ?>
+                <li>
+                    <?php if ($item['image_path']) { ?>
+                    <div class="bg" style="background:url('<?php echo $item['image_path']; ?>') no-repeat center /cover">
+                        <div class="bg_bl"></div>
+                    </div>
+                    <?php } ?>
+                    <div class="slogan">
+                        <div class="inner">
+                            <span class="text1 <?php echo $item['main_weight']; ?>" style="font-size: <?php echo $item['main_size']; ?>px; color: <?php echo $item['main_color']; ?>; text-align: <?php echo $item['main_align']; ?>;">
+                                <?php echo nl2br(stripslashes($item['main_text'])); ?>
+                            </span>
+                            <span class="text2 <?php echo $item['sub_weight']; ?>">
+                                <p class="text2_sub" style="font-size: <?php echo $item['sub_size']; ?>px; color: <?php echo $item['sub_color']; ?>; margin-top: <?php echo $item['sub_margin']; ?>px; text-align: <?php echo $item['sub_align']; ?>;">
+                                    <?php echo nl2br(stripslashes($item['sub_text'])); ?>
+                                </p>
+
+                                <?php if ($item['btn_text']) { ?>
+                                <div class="rb_carousel_btn_more" style="text-align: <?php echo $item['btn_align']; ?>;">
+                                    <button class="rb_carousel_link <?php echo isset($item['btn_weight']) ? $item['btn_weight'] : 'font-R'; ?>" onclick="<?php echo $item['btn_link_blank'] ? "window.open('" . $item['btn_link'] . "','_blank');" : "location.href='" . $item['btn_link'] . "';"; ?>" style="
+                                                    font-size: <?php echo $item['btn_size']; ?>px;
+                                                    border-radius: <?php echo $item['btn_radius']; ?>px;
+                                                    border: <?php echo $item['btn_border']; ?>px solid <?php echo $item['btn_border_color']; ?>;
+                                                    background-color: <?php echo $item['btn_bg_color']; ?>;
+                                                    color: <?php echo $item['btn_text_color']; ?>;
+                                                    padding: <?php echo $item['btn_padding']; ?>px <?php echo isset($item['btn_padding_lr']) ? $item['btn_padding_lr'] : 20; ?>px;
+                                                ">
+                                        <?php echo strip_tags(stripslashes($item['btn_text'])); ?>
+                                    </button>
+                                </div>
+                                <?php } ?>
+
+                            </span>
+                        </div>
+                    </div>
+                </li>
+                <?php } ?>
+            </ul>
+            <span class="rb_carousel_btn_prev">prev</span>
+            <span class="rb_carousel_btn_next">next</span>
+            <ul class="rb_carousel_btn"></ul>
+        </div>
+        <script>
+            $('.rb_carousel').rb_carousel({
+                type: '<?php echo $rb_theme_row['carousel_type']; ?>',
+                speed: <?php echo (int)$rb_theme_row['carousel_speed']; ?>,
+                autoRollingTime: <?php echo (int)$rb_theme_row['carousel_time']; ?>
+            });
+        </script>
+        <?php } ?>
+        <?php } else { ?>
+        <?php
+                    $sub_item = null;
+                    foreach ($filtered_carousel as $fitem) {
+                        if (!empty($fitem['is_sub'])) {
+                            $sub_item = $fitem;
+                            break;
+                        }
+                    }
+                    ?>
+        <div class="rb_carousel sub_rb_carousel_b">
+            <ul class="rb_carousel_img">
+                <li>
+                    <?php if ($sub_item && $sub_item['image_path']) { ?>
+                    <div class="bg" style="background:url('<?php echo $sub_item['image_path']; ?>') no-repeat center /cover">
+                        <div class="bg_bl"></div>
+                    </div>
+                    <?php } else { ?>
+                    <div class="bg" style="background-color:#000;">
+                        <div class="bg_bl"></div>
+                    </div>
+                    <?php } ?>
+                    <div class="slogan">
+                        <div class="inner">
+                            <span class="text1 font-B text-center"><?php echo get_head_title($g5['title']); ?></span>
+                        </div>
+                    </div>
+                </li>
+
+
+            </ul>
+            <span class="rb_carousel_btn_prev">prev</span>
+            <span class="rb_carousel_btn_next">next</span>
+            <ul class="rb_carousel_btn"></ul>
+        </div>
+        <script>
+            $('.rb_carousel').rb_carousel({
+                type: '<?php echo $rb_theme_row['carousel_type']; ?>', //모션타입 fade, slide
+                speed: <?php echo (int)$rb_theme_row['carousel_speed']; ?>, //속도
+                autoRollingTime: <?php echo (int)$rb_theme_row['carousel_time']; ?> //자동롤링(1000=1초)
+            });
+        </script>
+        <?php } ?>
+        <?php } else { ?>
+
         <?php } ?>
 
         <section class="<?php if (defined("_INDEX_")) { ?>index co_gap_pc_<?php echo $rb_core['gap_pc'] ?><?php } else { ?>sub co_gap_pc_<?php echo $rb_core['gap_pc'] ?><?php } ?>">
