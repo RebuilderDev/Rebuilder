@@ -2,6 +2,7 @@
 if (!defined('_GNUBOARD_')) {
     exit;
 }
+add_stylesheet('<link rel="stylesheet" href="'.G5_ADMIN_URL.'/fonts/Pretendard/Pretendard.css" />', 0);
 
 $g5_debug['php']['begin_time'] = $begin_time = get_microtime();
 
@@ -22,6 +23,7 @@ if (is_array($files)) {
 }
 
 require_once G5_PATH . '/head.sub.php';
+add_javascript('<script src="'.G5_ADMIN_URL.'/js/rb.common.js"></script>', 0);
 
 function print_menu1($key, $no = '')
 {
@@ -142,20 +144,83 @@ if ($weekday_num == 0) {
     <h1><?php echo $config['cf_title'] ?></h1>
     <div id="hd_top">
         <button type="button" id="btn_gnb" class="btn_gnb_close <?php echo $adm_menu_cookie['btn_gnb']; ?>">메뉴</button>
-        <div id="logo">
-        <a href="<?php echo correct_goto_url(G5_ADMIN_URL); ?>" title="<?php echo get_text($config['cf_title']); ?> 관리자모드"><strong>Administrator</strong></a>
-        <?php
-        if (defined('RB_VER')) {
-            echo "Rb <strong>".RB_VER."</strong>　";
-        } else {
-            echo '';
-        }
-        ?>
-        <span class="v_times"><?php echo date("Y년 n월 j일", $timestamp) . " <span style='color:{$color};'>{$week_kor}</span>"; ?></span>
+        <div id="logo" <?php if(is_mobile()) { ?>style="padding-left:90px;"<?php } ?>>
+        <a href="<?php echo correct_goto_url(G5_ADMIN_URL); ?>" title="<?php echo get_text($config['cf_title']); ?> 관리자모드"><strong>CMS</strong></a>
+        </div>
+
+
+        <div class="top_gnb_wrap">
+            <ul class="top_gnb_ul">
+            <?php
+            $jj = 1;
+            foreach ($amenu as $key => $value) {
+                // 링크 없으면 스킵
+                if (empty($menu['menu'.$key][0][2])) continue;
+
+                // 활성화 표시
+                $current_class = "";
+                if (isset($sub_menu) && (substr($sub_menu,0,3) === substr($menu['menu'.$key][0][0],0,3))) {
+                    $current_class = " on";
+                }
+
+                // 제목 안전하게 추출 (undefined 대비)
+                $button_title = isset($menu['menu'.$key][0][1]) ? (string)$menu['menu'.$key][0][1] : '';
+
+                // 공백만(스페이스/탭/개행/전각 공백)인지 체크
+                $is_blank_title = (preg_replace('/[\s\x{3000}]+/u', '', $button_title) === '');
+
+                if (!function_exists('rb_filter_empty_submenu')) {
+                    function rb_filter_empty_submenu($html) {
+                        $pattern = '~<li\b[^>]*>\s*<a\b[^>]*>(?:&nbsp;|&#160;|&#xA0;|[\s\x{3000}])*</a>\s*</li>~u';
+                        return preg_replace($pattern, '', $html);
+                    }
+                }
+                ?>
+                <li class="top-gnb-item<?php echo $current_class; ?>">
+                <button type="button"
+                        class="top-menu-<?php echo $key; ?> top-menu-order-<?php echo $jj; ?> top-gnb-btn"
+                        aria-haspopup="true" aria-expanded="false"
+                        title="<?php echo $button_title; ?>"><?php echo $button_title; ?></button>
+
+                <?php
+                // 드롭다운 렌더링 (제목이 비어있지 않을 때만)
+                $button_title = isset($menu['menu'.$key][0][1]) ? (string)$menu['menu'.$key][0][1] : '';
+                $is_blank_title = (preg_replace('/[\s\x{3000}]+/u', '', $button_title) === '');
+
+                if (!$is_blank_title) {
+                    ob_start();
+                    echo print_menu1('menu'.$key, 1);
+                    $submenu_html = ob_get_clean();
+                    // 공백 a 만 있는 li 제거
+                    $submenu_html = rb_filter_empty_submenu($submenu_html);
+
+                    // 모두 제거돼서 내용이 비면 드롭다운 자체를 출력하지 않음
+                    if (trim(strip_tags($submenu_html)) !== '') {
+                        ?>
+                        <div class="top_gnb_oparea_wr" role="menu">
+                            <div class="top_gnb_oparea">
+                                <h3><?php echo $button_title; ?></h3>
+                                <?php echo $submenu_html; ?>
+                            </div>
+                        </div>
+                        <?php
+                    }
+                }
+                ?>
+            </li>
+                <?php
+                $jj++;
+            } // end foreach
+            ?>
+            </ul>
         </div>
 
         <div id="tnb">
             <ul>
+                <li class="tnb_li adm-dark-toggle" id="admDarkToggle" role="button" aria-label="다크모드 토글" tabindex="0">
+                    <span class="adm-dark-toggle__knob"></span>
+                </li>
+
                 <?php if (defined('G5_USE_SHOP') && G5_USE_SHOP) { ?>
                     <li class="tnb_li"><a href="<?php echo G5_SHOP_URL ?>/" target="_blank" title="쇼핑몰 바로가기"><img src="<?php echo G5_ADMIN_URL ?>/img/sh.svg"></a></li>
                 <?php } ?>
@@ -164,13 +229,23 @@ if ($weekday_num == 0) {
                 <li class="tnb_li"><a href="<?php echo G5_ADMIN_URL ?>/service.php" class="tnb_service">부가서비스</a></li>
                 -->
                 <li><a href="<?php echo G5_ADMIN_URL ?>/member_form.php?w=u&amp;mb_id=<?php echo $member['mb_id'] ?>" title="관리자 정보수정"><img src="<?php echo G5_ADMIN_URL ?>/img/am.svg"></a></li>
-                <li id="tnb_logout"><a href="<?php echo G5_BBS_URL ?>/logout.php" title="로그아웃"><img src="<?php echo G5_ADMIN_URL ?>/img/pw.svg"></a></li>
+                <li id="tnb_logout"><a href="<?php echo G5_BBS_URL ?>/logout.php" title="로그아웃">로그아웃</a></li>
             </ul>
         </div>
     </div>
     <nav id="gnb" class="gnb_large <?php echo $adm_menu_cookie['gnb']; ?>">
         <h2>관리자 주메뉴</h2>
         <ul class="gnb_ul">
+             <li class="gnb_li gnb_intro <?php if(isset($sub_menu) && !$sub_menu) { ?>on<?php } ?>">
+                <button type="button" class="btn_op menu-intro" title="정보" onclick="location.href='<?php echo G5_ADMIN_URL ?>';">정보</button>
+                <div class="gnb_oparea_wr">
+                    <div class="gnb_oparea">
+                        <?php
+                        include_once(G5_ADMIN_PATH.'/rb/rb_admin.php');
+                        ?>
+                    </div>
+                </div>
+            </li>
             <?php
             $jj = 1;
             foreach ($amenu as $key => $value) {
@@ -207,6 +282,56 @@ if ($weekday_num == 0) {
     </nav>
 
 </header>
+
+<script>
+(function(){
+    function setCookie(name, value, days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        var expires = "expires=" + date.toUTCString();
+        document.cookie = name + "=" + encodeURIComponent(value) + ";" + expires + ";path=/;SameSite=Lax";
+    }
+
+    function delCookie(name) {
+        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Lax";
+    }
+
+    var el = document.getElementById('admDarkToggle');
+    if (!el) return;
+
+    function toggleDark(){
+        var isOn = document.body.classList.contains('adm-dark');
+        if (isOn) {
+            document.body.classList.remove('adm-dark');
+            delCookie('adm_dark');
+        } else {
+            document.body.classList.add('adm-dark');
+            setCookie('adm_dark', '1', 365);
+        }
+    }
+
+    el.addEventListener('click', toggleDark);
+    el.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleDark();
+        }
+    });
+})();
+</script>
+
+<script>
+jQuery(function($){
+  var $items = $('ul.top_gnb_ul > li.top-gnb-item');
+
+  // 드롭다운 내부 클릭은 닫히지 않도록
+  $('ul.top_gnb_ul').on('click', '.top_gnb_oparea_wr', function(e){
+    e.stopPropagation();
+  });
+
+});
+</script>
+
 <script>
     jQuery(function($) {
         var menu_cookie_key = 'g5_admin_btn_gnb';
@@ -229,6 +354,7 @@ if ($weekday_num == 0) {
             } catch (err) {}
 
             $("#container").toggleClass("container-small");
+            $("#container_title").toggleClass("container_title-small");
             $("#gnb").toggleClass("gnb_small");
             $("#logo").toggleClass("logo_small");
             $this.toggleClass("btn_gnb_open");

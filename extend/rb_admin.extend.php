@@ -4,12 +4,56 @@ if (!defined('_GNUBOARD_')) exit;
 // 관리자 화면에서만 동작
 if (!defined('G5_IS_ADMIN') || !G5_IS_ADMIN) return;
 
+function rb_create_table_admin_widget()
+{
+    global $g5;
+
+    $table = isset($g5['rb_admin_widget_table']) && $g5['rb_admin_widget_table']
+        ? $g5['rb_admin_widget_table']
+        : 'rb_admin_widget';
+
+    // 테이블 존재 확인
+    $chk = sql_fetch(" SHOW TABLES LIKE '".sql_escape_string($table)."' ");
+    if (isset($chk[0]) && $chk[0]) {
+        $col_span = sql_fetch(" SHOW COLUMNS FROM `{$table}` LIKE 'aw_span' ");
+        if (!(isset($col_span['Field']) && $col_span['Field'] === 'aw_span')) {
+            sql_query(" ALTER TABLE `{$table}` ADD `aw_span` tinyint(1) NOT NULL DEFAULT 1 AFTER `aw_area` ", false);
+        }
+        return true; // 이미 있음
+    }
+
+    // 생성
+    $sql = "
+    CREATE TABLE `{$table}` (
+      `aw_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+      `aw_user` varchar(50) DEFAULT NULL,
+      `aw_key` varchar(64) NOT NULL,
+      `aw_area` enum('main','side') NOT NULL,
+      `aw_span` tinyint(1) NOT NULL DEFAULT 1,
+      `aw_sort` int(11) NOT NULL DEFAULT 0,
+      `aw_enabled` tinyint(1) NOT NULL DEFAULT 1,
+      `aw_conf` text DEFAULT NULL,
+      `aw_created` datetime NOT NULL DEFAULT current_timestamp(),
+      `aw_updated` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+      PRIMARY KEY (`aw_id`),
+      KEY `aw_area` (`aw_area`,`aw_sort`),
+      KEY `aw_user` (`aw_user`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=25
+    ";
+    sql_query($sql, false);
+
+    // 최종 확인
+    $chk2 = sql_fetch(" SHOW TABLES LIKE '".sql_escape_string($table)."' ");
+    return (isset($chk2[0]) && $chk2[0]) ? true : false;
+}
+
+rb_create_table_admin_widget();
+
 if (!function_exists('rb_adm_meta_filter')) {
     function rb_adm_meta_filter($buffer) {
-        if (stripos($buffer, '</head>') === false) {
-            return $buffer;
-        }
+        if (stripos($buffer, '</head>') === false) return $buffer;
 
+        // 1) 기존 관련 메타 전부 제거
         $patterns = [
             '/<meta[^>]+(?:id=["\']meta_viewport["\']|name=["\']viewport["\'])[^>]*>\s*/i',
             '/<meta[^>]+name=["\']HandheldFriendly["\'][^>]*>\s*/i',
@@ -17,29 +61,62 @@ if (!function_exists('rb_adm_meta_filter')) {
             '/<meta[^>]+http-equiv=["\']imagetoolbar["\'][^>]*>\s*/i',
             '/<meta[^>]+http-equiv=["\']X-UA-Compatible["\'][^>]*>\s*/i',
         ];
-
         $buffer = preg_replace($patterns, '', $buffer);
 
-        $inject_list = [
+        // 2) 원하는 3개 메타만 주입 (PC/모바일 공통)
+        $inject = implode(PHP_EOL, [
             '<meta name="viewport" id="meta_viewport" content="width=device-width,initial-scale=0.9,minimum-scale=0,maximum-scale=10">',
             '<meta name="HandheldFriendly" content="true">',
             '<meta name="format-detection" content="telephone=no">',
-            '<link rel="stylesheet" href="'.G5_ADMIN_URL.'/css/admin_extend_rb_theme.css">',
-            '<script src="'.G5_URL.'/js/rb.common.js"></script>'
-        ];
+        ]) . PHP_EOL;
 
-        // 테마 사용중일 때만 테마 자원 추가
-        if (defined('G5_THEME_URL') && G5_THEME_URL) {
-            $inject_list[] = '<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.fonts/Pretendard/Pretendard.css">';
+        // 3) </head> 바로 앞에 1회 삽입
+        $buffer = preg_replace('/<\/head>/i', $inject.'</head>', $buffer, 1);
 
+        // 4) 쿠키 adm_dark 있을 때만 <body>에 adm-dark class 주입
+        $is_dark = false;
+        if (isset($_COOKIE['adm_dark'])) {
+            $v = trim((string)$_COOKIE['adm_dark']);
+            if ($v !== '' && $v !== '0') {
+                $is_dark = true;
+            }
         }
 
-        $inject = implode(PHP_EOL, $inject_list) . PHP_EOL;
+        if ($is_dark) {
+            $buffer = preg_replace_callback('/<body\b([^>]*)>/i', function($m) {
+                $attrs = $m[1];
 
-        return preg_replace('/<\/head>/i', $inject.'</head>', $buffer, 1);
+                // class="..." 또는 class='...'가 있는 경우
+                if (preg_match('/\bclass\s*=\s*([\'"])(.*?)\1/i', $attrs, $cm)) {
+                    $quote   = $cm[1];
+                    $classes = $cm[2];
+
+                    // 이미 adm-dark가 있으면 그대로
+                    if (preg_match('/(^|\s)adm-dark(\s|$)/i', $classes)) {
+                        return $m[0];
+                    }
+
+                    $new_classes = trim($classes . ' adm-dark');
+                    $new_attrs = preg_replace(
+                        '/\bclass\s*=\s*([\'"])(.*?)\1/i',
+                        'class=' . $quote . $new_classes . $quote,
+                        $attrs,
+                        1
+                    );
+
+                    return '<body' . $new_attrs . '>';
+                }
+
+                // class 속성이 없는 경우
+                return '<body' . $attrs . ' class="adm-dark">';
+            }, $buffer, 1);
+        }
+
+        return $buffer;
     }
 }
 
+// 가장 먼저 잡도록 버퍼 시작
 if (!headers_sent()) {
     ob_start('rb_adm_meta_filter');
 }
