@@ -86,6 +86,7 @@ $rb_gap_minus2 = $rb_gap_minus / 2;
     .index {width: var(--vw) !important; padding-left:var(--rb-gap); padding-right:var(--rb-gap);}
     .sub {width: var(--vw) !important; padding-left:var(--rb-gap); padding-right:var(--rb-gap);}
     .rb_module_wide  {min-width: 100% !important;}
+    .rb_carousel_img .inner {max-width: 100% !important; padding-left:var(--rb-gap); padding-right:var(--rb-gap);}
     .footer_gnb .inner {max-width: 100% !important; padding-left:var(--rb-gap); padding-right:var(--rb-gap);}
     .footer_copy .inner {max-width: 100% !important; padding-left:var(--rb-gap); padding-right:var(--rb-gap);}
     .rb_section_box .flex_box {width: calc(var(--vw) + var(--rb-gap)) !important; padding-left:var(--rb-gap); padding-right:var(--rb-gap);}
@@ -99,6 +100,7 @@ $rb_gap_minus2 = $rb_gap_minus / 2;
     .index {width: var(--vw) !important; padding-left:var(--rb-gap); padding-right:var(--rb-gap);}
     .sub {width: var(--vw) !important; padding-left:var(--rb-gap); padding-right:var(--rb-gap);}
     .rb_module_wide  {min-width: 100% !important;}
+    .rb_carousel_img .inner {max-width: 100% !important; padding-left:var(--rb-gap); padding-right:var(--rb-gap);}
     .footer_gnb .inner {max-width: 100% !important; padding-left:var(--rb-gap); padding-right:var(--rb-gap);}
     .footer_copy .inner {max-width: 100% !important; padding-left:var(--rb-gap); padding-right:var(--rb-gap);}
     .rb_section_box .flex_box {width: calc(var(--vw) + var(--rb-gap)) !important; padding-left:var(--rb-gap); padding-right:var(--rb-gap);}

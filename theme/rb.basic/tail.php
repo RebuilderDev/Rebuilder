@@ -656,6 +656,7 @@ if(G5_COMMUNITY_USE === false) {
 <?php
     //리빌드세팅
     if($is_admin) {
+        include_once(G5_THEME_PATH.'/rb.theme/rb.config.php'); //테마설정
         include_once(G5_PATH.'/rb/rb.config/right.php'); //환경설정
     }
 

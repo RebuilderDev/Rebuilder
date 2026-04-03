@@ -15,7 +15,19 @@ $theme_config = array();
 // 테마에서 커뮤니티 지원여부 설정
 // 커뮤니티 사용없이 쇼핑몰이 초기화면이라면 false로 설정
 // false 설정이면 게시판 head, tail 은 쇼핑몰의 그것이 적용됨
-if(! defined('G5_COMMUNITY_USE')) define('G5_COMMUNITY_USE', true);
+//if(! defined('G5_COMMUNITY_USE')) define('G5_COMMUNITY_USE', true);
+
+// 커뮤니티/쇼핑몰 헤더 모두사용 = 1/true
+// 쇼핑몰 헤더만사용 = 0/false
+
+if (!defined('G5_COMMUNITY_USE')) {
+    $rb_theme_key_tmp = isset($config['cf_theme']) ? trim($config['cf_theme']) : '';
+    $rb_theme_key_tmp = sql_real_escape_string($rb_theme_key_tmp);
+    $tmp_row = sql_fetch("SELECT use1_yn FROM rb_theme WHERE theme_key = '{$rb_theme_key_tmp}'");
+
+    $use1 = isset($tmp_row['use1_yn']) ? (int)$tmp_row['use1_yn'] : 1;
+    define('G5_COMMUNITY_USE', $use1 === 1);
+}
 
 // 갤러리 이미지 수 등의 설정을 지정하시면 게시판관리에서 해당 값을
 // 가져오기 기능을 통해 게시판 설정의 해당 필드에 바로 적용할 수 있습니다.
@@ -149,3 +161,6 @@ $theme_config = array(
     'ca_mobile_list_best_mod'       => 2,       // 모바일 상품리스트 베스트상품 1줄당 이미지 수
     'ca_mobile_list_best_row'       => 3,       // 모바일 상품리스트 베스트상품 이미지 줄 수
 );
+
+// Rb 테마 설정옵션
+if(!defined('RB_THEME_CONFIG')) define('RB_THEME_CONFIG', true);
