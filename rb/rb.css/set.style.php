@@ -110,6 +110,11 @@ $rb_gap_minus2 = $rb_gap_minus / 2;
     .gnb_wrap .logo_wrap {margin-right:20px;}
 }
 
+<?php if(isset($rb_main_width) && $rb_main_width == "960px") { ?>
+    .search_top_wrap {width:180px;}
+    .gnb_wrap .logo_wrap {margin-right:20px;}
+<?php } ?>
+
 
 @media all and (max-width:1024px){
    .search_top_wrap {width:100%;}
