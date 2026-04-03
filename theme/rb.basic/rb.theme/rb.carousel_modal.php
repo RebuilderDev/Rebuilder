@@ -700,6 +700,14 @@
         });
 
         function doSubmit(form) {
+
+            // 추가
+            if ($("#btn_use").is(":checked") && $("#btn_text").val().trim() === '') {
+                alert("버튼 텍스트를 입력해주세요.");
+                $("#btn_text").focus();
+                return;
+            }
+
             var formData = new FormData(form);
             formData.append("cf_theme", "<?php echo $config['cf_theme']; ?>");
             formData.set("main_text", $("#main_text").val());
@@ -767,16 +775,22 @@
                         html += '</div></div>';
                     });
 
-                    // swiper wrapper 안에 교체
-                    $("#carousel_list .rb-swiper-wrapper").html(html);
-
                     var $swiperEl = $("#carousel_list .rb_swiper");
                     if ($swiperEl.length) {
-                        if ($swiperEl.find('.rb-swiper-slide').length) {
-                            $swiperEl.find('.rb-swiper-slide').children('.rb_swiper_list').unwrap();
+                        // 기존 인스턴스 destroy
+                        var oldInstance = $swiperEl.data('rb-swiper-instance');
+                        if (oldInstance) {
+                            oldInstance.destroy(true, true);
+                            $swiperEl.removeData('rb-swiper-instance');
+                            $swiperEl.removeData('rb-swiper-mode'); // mode 초기화해야 재초기화됨
                         }
+
+                        // wrapper를 rb_swiper_list만 있는 상태로 교체
+                        $swiperEl.find('.rb-swiper-wrapper').html(html);
+
                         setupResponsiveSlider($swiperEl);
                     }
+
 
                     // carousel_list 없으면 새로 생성
                     if ($("#carousel_list").length === 0) {
