@@ -151,7 +151,7 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
                             </p>
 
                             <?php if ($item['btn_text']) { ?>
-                            <div class="rb_carousel_btn_more" style="text-align: <?php echo $item['btn_align']; ?>;">
+                            <div class="rb_carousel_btn_more" style="text-align: <?php echo $item['btn_align']; ?>; margin-top: <?php echo isset($item['btn_margin']) ? (int)$item['btn_margin'] : 0; ?>px;">
                                 <button class="rb_carousel_link <?php echo isset($item['btn_weight']) ? $item['btn_weight'] : 'font-R'; ?>" onclick="<?php echo $item['btn_link_blank'] ? "window.open('" . $item['btn_link'] . "','_blank');" : "location.href='" . $item['btn_link'] . "';"; ?>" style="
                                                 font-size: <?php echo $item['btn_size']; ?>px;
                                                 border-radius: <?php echo $item['btn_radius']; ?>px;

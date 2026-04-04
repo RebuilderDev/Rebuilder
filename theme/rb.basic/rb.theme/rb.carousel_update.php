@@ -1,6 +1,12 @@
 <?php
 include_once '../../../common.php';
 
+// btn_margin 컬럼 없으면 추가
+$chk = sql_query("SHOW COLUMNS FROM `rb_theme_carousel` LIKE 'btn_margin'");
+if (!sql_fetch_array($chk)) {
+    sql_query("ALTER TABLE `rb_theme_carousel` ADD COLUMN `btn_margin` INT NOT NULL DEFAULT 0 AFTER `btn_padding_lr`");
+}
+
 // 관리자 권한 체크
 if (!$is_admin) {
     echo json_encode(['success' => false, 'message' => '권한이 없습니다.']);
@@ -70,6 +76,7 @@ $btn_border_color = isset($_POST['btn_border_color']) ? $_POST['btn_border_color
 $btn_svg = isset($_POST['btn_svg']) ? trim($_POST['btn_svg']) : '';
 $btn_align = isset($_POST['btn_align']) ? $_POST['btn_align'] : 'left';
 $btn_weight = isset($_POST['btn_weight']) ? $_POST['btn_weight'] : 'font-R';
+$btn_margin = isset($_POST['btn_margin']) ? (int)$_POST['btn_margin'] : 0;
 
 $carousel_type_mode = isset($_POST['carousel_type_mode']) ? $_POST['carousel_type_mode'] : 'community';
 if (!in_array($carousel_type_mode, array('shop', 'community'))) {
@@ -151,6 +158,7 @@ if ($mode == 'update') {
             btn_border = '$btn_border',
             btn_padding = '$btn_padding',
             btn_padding_lr = '$btn_padding_lr',
+            btn_margin = '$btn_margin',
             btn_bg_color = '" . $btn_bg_color . "',
             btn_text_color = '" . $btn_text_color . "',
             btn_border_color = '" . $btn_border_color . "',
@@ -202,6 +210,7 @@ if ($mode == 'insert') {
             btn_border = '$btn_border',
             btn_padding = '$btn_padding',
             btn_padding_lr = '$btn_padding_lr',
+            btn_margin = '$btn_margin',
             btn_bg_color = '" . $btn_bg_color . "',
             btn_text_color = '" . $btn_text_color . "',
             btn_border_color = '" . $btn_border_color . "',

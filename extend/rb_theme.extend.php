@@ -94,6 +94,11 @@ if (!$col_check6) {
     sql_query("ALTER TABLE rb_theme_carousel ADD COLUMN btn_padding_lr int(11) NOT NULL DEFAULT 20 AFTER btn_padding");
 }
 
+$col_check7 = sql_fetch("SHOW COLUMNS FROM rb_theme_carousel LIKE 'btn_margin'");
+if (!$col_check7) {
+    sql_query("ALTER TABLE rb_theme_carousel ADD COLUMN btn_margin int(11) NOT NULL DEFAULT 0 AFTER btn_padding_lr");
+}
+
 // 현재 테마 키
 $rb_theme_key = isset($config['cf_theme']) ? trim($config['cf_theme']) : '';
 
@@ -162,6 +167,7 @@ while ($rb_carousel_f_row = sql_fetch_array($carousel_list)) {
         'btn_border' => $rb_carousel_f_row['btn_border'],
         'btn_padding'    => isset($rb_carousel_f_row['btn_padding'])    ? (int)$rb_carousel_f_row['btn_padding']    : 10,
         'btn_padding_lr' => isset($rb_carousel_f_row['btn_padding_lr']) ? (int)$rb_carousel_f_row['btn_padding_lr'] : 20,
+        'btn_margin'     => isset($rb_carousel_f_row['btn_margin'])     ? (int)$rb_carousel_f_row['btn_margin']     : 0,
         'btn_bg_color' => isset($rb_carousel_f_row['btn_bg_color']) ? $rb_carousel_f_row['btn_bg_color'] : '#ffffff',
         'btn_text_color' => isset($rb_carousel_f_row['btn_text_color']) ? $rb_carousel_f_row['btn_text_color'] : '#000000',
         'btn_border_color' => isset($rb_carousel_f_row['btn_border_color']) ? $rb_carousel_f_row['btn_border_color'] : '#000000',

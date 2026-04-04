@@ -234,7 +234,7 @@
 }
 
 #carousel_modal .rb_modal_body {
-    padding: 20px 30px;
+    padding: 0px 0px;
 }
 
 /* 미리보기 */
@@ -279,18 +279,13 @@
 #carousel_modal .preview_text_main {
     font-size: 20px;
     color: #000;
-    margin-bottom: 10px;
-    font-weight: bold;
     text-align: left;
-    line-height: 1.4;
 }
 
 #carousel_modal .preview_text_sub {
     font-size: 14px;
     color: #999;
-    margin-bottom: 20px;
     text-align: left;
-    line-height: 1.5;
 }
 
 #carousel_modal .preview_btn_wrap {
@@ -390,8 +385,7 @@
     display: flex;
     gap: 10px;
     justify-content: flex-end;
-    margin-top: 30px;
-    padding-top: 30px;
+    margin-top: 0px;
     border-top: 1px solid #e5e7eb;
 }
 
@@ -403,7 +397,10 @@
     font-size: 14px;
     font-weight: 500;
     transition: all 0.2s;
+    border:0;
 }
+
+#carousel_modal .form_buttons button:hover {}
 
 #carousel_modal .btn_submit {
     background: #3b82f6;
@@ -423,15 +420,6 @@
     background: #e5e7eb;
 }
 
-#carousel_modal .btn_delete {
-    background: #ef4444;
-    color: #fff;
-    margin-right: auto;
-}
-
-#carousel_modal .btn_delete:hover {
-    background: #dc2626;
-}
 
 /* 캐러셀 리스트 아이템 스타일 */
 #carousel_modal .rb_swiper_list {
@@ -495,7 +483,7 @@
 }
 
 #carousel_modal input {height:35px; border-radius: 6px; width: 100% !important;}
-#carousel_modal .rb_range_item {width: 100%; margin-top: 22px;}
+#carousel_modal .rb_range_item {width: 100%; margin-top: 18px;}
 
 #carousel_modal .rb_modal_content::-webkit-scrollbar {
     width: 5px;
@@ -532,3 +520,488 @@
     scrollbar-width: thin;
     scrollbar-color: #888 #f1f1f1;
 }
+
+
+
+#carousel_modal .rb_modal_content {
+    background: #fff;
+    border-radius: 20px;
+    max-width: 860px;
+    width: 96%;
+    max-height: 94vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 0px ;
+}
+
+#carousel_modal .rb_modal_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+    border-bottom: 1px solid #f2f2f2;
+    flex-shrink: 0;
+}
+
+#carousel_modal .rb_modal_header h3 {
+    font-size: 16px;
+    color: #111;
+    margin: 0;
+}
+
+#carousel_modal .rb_modal_close {
+    width: 30px;
+    height: 30px;
+    background: #f4f4f6;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+#carousel_modal .rb_modal_close svg path:last-child { fill: #777; }
+
+#carousel_modal .rb_modal_body {
+    display: grid;
+    grid-template-columns: 1fr 290px;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+}
+
+#carousel_modal .cm_left {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+    border-right: 1px solid #f2f2f2;
+    scrollbar-width: thin;
+    scrollbar-color: #e0e0e0 transparent;
+}
+
+#carousel_modal .cm_left::-webkit-scrollbar { width: 4px; }
+#carousel_modal .cm_left::-webkit-scrollbar-track { background: transparent; }
+#carousel_modal .cm_left::-webkit-scrollbar-thumb { background: #e4e4e4; border-radius: 4px; }
+
+#carousel_modal .cm_right {
+    background: #f9f9fb;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #e0e0e0 transparent;
+}
+
+#carousel_modal .cm_right::-webkit-scrollbar { width: 4px; }
+#carousel_modal .cm_right::-webkit-scrollbar-track { background: transparent; }
+#carousel_modal .cm_right::-webkit-scrollbar-thumb { background: #e4e4e4; border-radius: 4px; }
+
+#carousel_modal .cm_preview_box {
+    height: 220px;
+    background: #1c1c2e;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+}
+
+#carousel_modal .cm_preview_box::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.58) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+#carousel_modal .preview_inner {
+    position: absolute;
+    top:50%;
+    transform: translateY(-50%);
+    padding: 14px 18px 18px;
+    z-index: 1;
+}
+
+#carousel_modal .cm_tabs {
+    display: flex;
+    gap: 4px;
+    background: #f4f4f6;
+    border-radius: 10px;
+    padding: 4px;
+    flex-shrink: 0;
+}
+
+#carousel_modal .cm_tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 16px;
+    color: #888;
+    border-radius: 7px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    transition: background 0.15s, color 0.15s;
+}
+
+#carousel_modal .cm_tab.on {
+    background: #fff;
+    color: #111;
+    border: 0px ;
+}
+
+#carousel_modal .cm_tab_panel {
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#carousel_modal .cm_tab_panel.on { display: flex; }
+
+#carousel_modal .cm_field_label {
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 5px;
+    display: block;
+}
+
+#carousel_modal .cm_field_label .font-B { color: #25282B; }
+
+#carousel_modal .cm_field_row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+#carousel_modal .cm_left textarea,
+#carousel_modal .cm_left input[type="text"],
+#carousel_modal .cm_left select,
+#carousel_modal .cm_right input[type="text"],
+#carousel_modal .cm_right select {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #eee !important;
+    border-radius: 6px !important;
+    padding: 12px 15px;
+    font-size: 14px;
+    color: #333;
+    background-color: #fff !important;
+    outline: none;
+    resize: none;
+    appearance: none;
+    height: auto;
+    min-height: 12px;
+
+}
+
+#carousel_modal .cm_left select,
+#carousel_modal .cm_right select {
+    height: 34px;
+    padding: 0 10px;
+    background-color: #fafafa;
+}
+
+#carousel_modal .clr-field > button[aria-labelledby="clr-open-label"] {
+    display: none !important;
+}
+
+#carousel_modal .cm_left textarea:focus,
+#carousel_modal .cm_left input[type="text"]:focus,
+#carousel_modal .cm_left select:focus,
+#carousel_modal .cm_right input[type="text"]:focus,
+#carousel_modal .cm_right select:focus {
+    border-color: #000 !important;
+    background-color: #fff;
+}
+
+#carousel_modal .cm_r_card {
+    background: #fff;
+    border: 0px solid;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#carousel_modal .cm_r_card_title {
+    font-size: 13px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#carousel_modal .cm_file_btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1.5px dashed #e0e0e0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+    background: #fafafa;
+    position: relative;
+}
+
+#carousel_modal .cm_file_btn input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+}
+
+#carousel_modal .cm_file_icon {
+    width: 32px;
+    height: 32px;
+    background: #f0ebff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+#carousel_modal .cm_file_text { font-size: 14px; color: #777; }
+#carousel_modal .cm_file_sub { font-size: 12px; color: #bbb; margin-top: 1px; }
+
+#carousel_modal .cm_toggle_row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+#carousel_modal .cm_toggle_label {
+    font-size: 14px;
+    color: #444;
+}
+
+#carousel_modal .cm_toggle {
+    width: 36px;
+    height: 20px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.2s;
+    border: none;
+    padding: 0;
+}
+
+#carousel_modal .cm_toggle.on { background: #25282B; }
+
+#carousel_modal .cm_toggle::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    transition: left 0.2s;
+}
+
+#carousel_modal .cm_toggle.on::after { left: 19px; }
+
+#carousel_modal .cm_toggle_sub {
+    font-size: 12px;
+    color: #bbb;
+    line-height: 1.5;
+}
+
+#carousel_modal .cm_load_btn {
+    background: #25282B;
+    border: 0px;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 13px;
+    color: #fff;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+}
+
+
+#carousel_modal .cm_color_row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 0x !important;
+    border-radius: 6px !important;
+    padding: 6px 10px;
+    background: #fafafa;
+    cursor: pointer;
+}
+
+#carousel_modal .cm_color_swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.1);
+    flex-shrink: 0;
+}
+
+#carousel_modal .cm_color_row input[type="text"] {
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    font-size: 13px;
+    color: #444;
+    width: 100%;
+    outline: none;
+    height: auto;
+    min-height: 0;
+}
+
+#carousel_modal .cm_preview_actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: -6px;
+}
+
+#carousel_modal .cm_preview_hint {
+    font-size: 12px;
+    color: #c0c0c0;
+}
+
+#carousel_modal .cm_fullpreview_btn {
+    font-size: 12px;
+    color: #25282B;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+#carousel_modal .cm_new_tab_row {
+    font-size: 14px;
+    color: #555;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#carousel_modal .cm_new_tab_row input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    border: 1px solid #ccc !important;
+    border-radius: 4px !important;
+    accent-color: #25282B;
+    flex-shrink: 0;
+    cursor: pointer;
+    padding: 0 !important;
+    background: #fff !important;
+    min-height: 0;
+}
+
+#cm_fullpreview_popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    width: 100vw;
+    height: 400px;
+    z-index: 99999;
+    border-radius: 0;
+    overflow: hidden;
+    background: #1c1c2e;
+    background-size: cover;
+    background-position: center;
+    max-width: 860px;
+}
+
+#cm_fullpreview_popup .fp_inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 48px;
+    z-index: 1;
+}
+
+#cm_fullpreview_popup .fp_close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    background: rgba(0,0,0,0.4);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+#cm_fullpreview_overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 99998;
+}
+
+#carousel_modal .form_buttons {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 22px;
+    border-top: 1px solid #f2f2f2;
+    flex-shrink: 0;
+    background: #fff;
+}
+
+#carousel_modal .btn_delete {
+    padding: 8px 18px;
+    background: #fafafa;
+    border: 0px;
+    border-radius: 9px;
+    font-size: 14px;
+    color: #000;
+    cursor: pointer;
+}
+
+#carousel_modal .cm_btn_group { display: flex; gap: 8px; }
+
+#carousel_modal .btn_cancel {
+    padding: 8px 18px;
+    background: #f4f4f6;
+    border: none;
+    border-radius: 9px;
+    font-size: 14px;
+    color: #666;
+    cursor: pointer;
+}
+
+#carousel_modal .btn_submit {
+    padding: 8px 22px;
+    background: #25282B;
+    border: none;
+    border-radius: 9px;
+    font-size: 14px;
+    color: #fff;
+    cursor: pointer;
+}
+
+#carousel_modal .btn_submit:hover { background: #25282B; }
