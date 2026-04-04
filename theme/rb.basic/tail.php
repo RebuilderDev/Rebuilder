@@ -656,8 +656,8 @@ if(G5_COMMUNITY_USE === false) {
 <?php
     //리빌드세팅
     if($is_admin) {
-        include_once(G5_THEME_PATH.'/rb.theme/rb.config.php'); //테마설정
         include_once(G5_PATH.'/rb/rb.config/right.php'); //환경설정
+        include_once(G5_THEME_PATH.'/rb.theme/rb.config.php'); //테마설정
     }
 
     // HOOK 추가, (tail.php 가 로드되는 페이지에서만 / 쪽지, 로그인 등의 모듈 페이지에서는 실행 되지않게 하기위함.)
