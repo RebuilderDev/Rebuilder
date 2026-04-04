@@ -194,10 +194,11 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
                         }
                     }
                     ?>
+        <?php if ($sub_item) { ?>
         <div class="rb_carousel sub_rb_carousel_b">
             <ul class="rb_carousel_img">
                 <li>
-                    <?php if ($sub_item && $sub_item['image_path']) { ?>
+                    <?php if ($sub_item['image_path']) { ?>
                     <div class="bg" style="background:url('<?php echo $sub_item['image_path']; ?>') no-repeat center /cover">
                         <div class="bg_bl"></div>
                     </div>
@@ -212,8 +213,6 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
                         </div>
                     </div>
                 </li>
-
-
             </ul>
             <span class="rb_carousel_btn_prev">prev</span>
             <span class="rb_carousel_btn_next">next</span>
@@ -221,9 +220,9 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
         </div>
         <script>
             $('.rb_carousel').rb_carousel({
-                type: '<?php echo $rb_theme_row['carousel_type']; ?>', //모션타입 fade, slide
-                speed: <?php echo (int)$rb_theme_row['carousel_speed']; ?>, //속도
-                autoRollingTime: <?php echo (int)$rb_theme_row['carousel_time']; ?> //자동롤링(1000=1초)
+                type: '<?php echo $rb_theme_row['carousel_type_shop']; ?>',
+                speed: <?php echo (int)$rb_theme_row['carousel_speed_shop']; ?>,
+                autoRollingTime: <?php echo (int)$rb_theme_row['carousel_time_shop']; ?>
             });
         </script>
         <?php } ?>

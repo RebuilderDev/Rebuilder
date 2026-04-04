@@ -82,7 +82,7 @@ $carousel_type_mode = isset($_POST['carousel_type_mode']) ? $_POST['carousel_typ
 if (!in_array($carousel_type_mode, array('shop', 'community'))) {
     $carousel_type_mode = 'community';
 }
-$is_sub = isset($_POST['is_sub']) ? 1 : 0;
+$is_sub = (isset($_POST['is_sub']) && (int)$_POST['is_sub'] === 1) ? 1 : 0;
 
 
 $image_path = '';
