@@ -654,19 +654,32 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
     }
 </style>
 
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+function rb_update_mod_label_heights() {
     document.querySelectorAll('.rb-mod-label[data-mod-id]').forEach(function(label) {
         var modId = label.getAttribute('data-mod-id');
-        var contentBox = document.querySelector('.rb_module_shop_' + modId);
-        if (!contentBox) return;
-        var style = window.getComputedStyle(contentBox);
-        var paddingTop = parseFloat(style.paddingTop) || 0;
-        var paddingBottom = parseFloat(style.paddingBottom) || 0;
-        var innerH = Math.round(contentBox.clientHeight - paddingTop - paddingBottom);
+        var layoutBox = document.querySelector('.rb_layout_box[data-id="' + modId + '"]');
+        if (!layoutBox) return;
+        var moduleWrap = layoutBox.querySelector('.rb-module-wrap');
+        if (!moduleWrap) return;
+        var h = Math.round(moduleWrap.getBoundingClientRect().height);
         var hSpan = label.querySelector('.rb-mod-label-h');
-        if (hSpan) hSpan.textContent = innerH + 'px';
+        if (hSpan) hSpan.textContent = h + 'px';
     });
+}
+
+window.addEventListener('load', function() {
+    setTimeout(rb_update_mod_label_heights, 300);
+    var observer = new ResizeObserver(function() {
+        rb_update_mod_label_heights();
+    });
+    document.querySelectorAll('.rb_layout_box[data-id]').forEach(function(box) {
+        observer.observe(box);
+    });
+    setTimeout(function() {
+        observer.disconnect();
+    }, 7000);
 });
 </script>
 
