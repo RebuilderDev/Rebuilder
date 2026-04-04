@@ -344,8 +344,9 @@
                     현재 테마의 환경설정, 모듈, 섹션, 캐러셀,<br>
                     테마설정 데이터를 JSON 파일로 저장하거나, JSON 파일을<br>
                     업로드하여 데이터를 복원할 수 있습니다.<br><br>
-                    캐러셀에 등록한 이미지가 있는 경우 ZIP 파일로<br>
-                    캐러셀 이미지 파일을 포함 합니다.<br><br>
+
+                    캐러셀에 등록한 이미지가 있는 경우 캐러셀 이미지 파일을 포함하여 ZIP 파일로 저장 됩니다. <strong>서브상단 비주얼, 배너 이미지, 배너 데이터는 저장되지 않습니다.</strong><br><br>
+
                     <strong>불러오기 시 동일테마의 기존 데이터가 제거 됩니다.<br>내보내기를 통해 백업을 권장합니다.</strong>
                 </h6>
 
@@ -357,7 +358,7 @@
                             export
                         </li>
                         <li class="rows_inp_r mt-5">
-                            <button type="button" id="rb_data_export_btn">JSON 내보내기</button>
+                            <button type="button" id="rb_data_export_btn">설정 내보내기</button>
                         </li>
                         <div class="cb"></div>
                     </ul>
@@ -369,7 +370,7 @@
                         </li>
                         <li class="rows_inp_r mt-5">
                             <input type="file" id="rb_data_import_file" accept=".json" style="display:none;">
-                            <button type="button" id="rb_data_import_select_btn">파일 선택</button>
+                            <button type="button" id="rb_data_import_select_btn">JSON 파일 선택</button>
                         </li>
                         <div class="cb"></div>
                     </ul>
