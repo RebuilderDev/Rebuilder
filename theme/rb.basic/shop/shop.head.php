@@ -186,14 +186,14 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
         <?php } ?>
         <?php } else { ?>
         <?php
-                    $sub_item = null;
-                    foreach ($filtered_carousel as $fitem) {
-                        if (!empty($fitem['is_sub'])) {
-                            $sub_item = $fitem;
-                            break;
-                        }
-                    }
-                    ?>
+            $sub_item = null;
+            foreach ($filtered_carousel as $fitem) {
+                if (!empty($fitem['is_sub'])) {
+                    $sub_item = $fitem;
+                    break;
+                }
+            }
+        ?>
         <?php if ($sub_item) { ?>
         <div class="rb_carousel sub_rb_carousel_b">
             <ul class="rb_carousel_img">
@@ -225,6 +225,7 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
                 autoRollingTime: <?php echo (int)$rb_theme_row['carousel_time_shop']; ?>
             });
         </script>
+        <?php } ?>
         <?php } ?>
         <?php } else { ?>
 
