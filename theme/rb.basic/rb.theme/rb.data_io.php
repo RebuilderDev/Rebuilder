@@ -47,8 +47,7 @@ if ($mode === 'export') {
     foreach ($io_tables as $t) {
         $tname = $t['table'];
         $tcol  = $t['col'];
-
-        $rows = array();
+        $rows  = array();
 
         if ($tcol === '') {
             $sql = "SELECT * FROM `{$tname}`";
@@ -57,12 +56,9 @@ if ($mode === 'export') {
         }
 
         $res = sql_query($sql);
-
         if ($res) {
             while ($row = sql_fetch_array($res)) {
-                if ($t['pk'] !== '') {
-                    unset($row[$t['pk']]);
-                }
+                if ($t['pk'] !== '') unset($row[$t['pk']]);
                 $rows[] = $row;
             }
         }
@@ -70,13 +66,73 @@ if ($mode === 'export') {
         $export[$tname] = $rows;
     }
 
-    $filename = $theme_key . '_' . date('Ymd_His') . '.json';
+    $json_filename = $theme_key . '_' . date('Ymd_His') . '.json';
     $json_out = json_encode($export, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
-    header('Content-Type: application/json; charset=utf-8');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    header('Content-Length: ' . strlen($json_out));
-    echo $json_out;
+    // 이미지가 없으면 JSON 단독 다운로드
+    $has_images = false;
+    $carousel_img_dir = G5_DATA_PATH . '/' . $theme_key . '/carousel_img/';
+    if (isset($export['rb_theme_carousel']) && is_array($export['rb_theme_carousel'])) {
+        foreach ($export['rb_theme_carousel'] as $crow) {
+            if (!empty($crow['image_path'])) {
+                $img_file = $carousel_img_dir . basename($crow['image_path']);
+                if (file_exists($img_file)) {
+                    $has_images = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!$has_images || !class_exists('ZipArchive')) {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $json_filename . '"');
+        header('Content-Length: ' . strlen($json_out));
+        echo $json_out;
+        exit;
+    }
+
+    // ZIP 생성
+    $zip_filename = $theme_key . '_' . date('Ymd_His') . '.zip';
+    $tmp_zip = sys_get_temp_dir() . '/' . $zip_filename;
+
+    $zip = new ZipArchive();
+    if ($zip->open($tmp_zip, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+        // ZIP 생성 실패시 JSON 단독 다운로드
+        header('Content-Type: application/json; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $json_filename . '"');
+        header('Content-Length: ' . strlen($json_out));
+        echo $json_out;
+        exit;
+    }
+
+    // JSON 파일 추가
+    $zip->addFromString($json_filename, $json_out);
+
+    // 이미지 파일 추가
+    foreach ($export['rb_theme_carousel'] as $crow) {
+        if (empty($crow['image_path'])) continue;
+        $basename = basename($crow['image_path']);
+        $img_file = $carousel_img_dir . $basename;
+        if (file_exists($img_file)) {
+            $zip->addFile($img_file, 'data/' . $theme_key . '/carousel_img/' . $basename);
+        }
+    }
+
+    $zip->close();
+
+    if (!file_exists($tmp_zip)) {
+        echo json_encode(array('status' => 'error', 'msg' => 'ZIP 생성 실패'));
+        exit;
+    }
+
+    $zip_size = filesize($tmp_zip);
+    header('Content-Type: application/zip');
+    header('Content-Disposition: attachment; filename="' . $zip_filename . '"');
+    header('Content-Length: ' . $zip_size);
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    readfile($tmp_zip);
+    @unlink($tmp_zip);
     exit;
 }
 
