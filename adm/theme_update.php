@@ -13,16 +13,140 @@ $post_set_default_skin = isset($_POST['set_default_skin']) ? clean_xss_tags($_PO
 
 $theme_dir = get_theme_dir();
 
+// 백업 함수
+function rb_backup_theme_data($theme_key) {
+    $backup_dir = G5_DATA_PATH . '/rb.backup';
+
+    if (!is_dir($backup_dir)) {
+        @mkdir($backup_dir, G5_DIR_PERMISSION, true);
+        @chmod($backup_dir, G5_DIR_PERMISSION);
+    }
+
+    if (!is_dir($backup_dir)) return false;
+
+    $theme_key_esc = sql_real_escape_string($theme_key);
+
+    $tables = array(
+        'rb_module'         => 'md_theme',
+        'rb_module_shop'    => 'md_theme',
+        'rb_section'        => 'sec_theme',
+        'rb_section_shop'   => 'sec_theme',
+        'rb_theme'          => 'theme_key',
+        'rb_theme_carousel' => 'cf_theme',
+        'rb_config'         => 'co_theme',
+    );
+
+    $backup_data = array();
+
+    foreach ($tables as $tname => $tcol) {
+        $res = sql_query("SELECT * FROM `{$tname}` WHERE `{$tcol}` = '{$theme_key_esc}'", false);
+        if (!$res) continue;
+
+        $backup_data[$tname] = array();
+        while ($row = sql_fetch_array($res)) {
+            $backup_data[$tname][] = $row;
+        }
+    }
+
+    if (empty($backup_data)) return false;
+
+    $filename = $backup_dir . '/' . $theme_key . '_' . date('YmdHis') . '.json';
+    $result = file_put_contents($filename, json_encode($backup_data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+
+    return $result !== false;
+}
+
 if($post_type == 'reset') {
     $reset_theme = sql_real_escape_string(trim($config['cf_theme']));
 
     $sql = " update {$g5['config_table']} set cf_theme = '' ";
     sql_query($sql);
 
-    if($reset_theme !== '') {
-        //sql_query("UPDATE rb_config SET co_theme = '' WHERE co_theme = '{$reset_theme}'");
-        //sql_query("DELETE FROM rb_import_log");
+    die('');
+}
+
+if($post_type == 'reset_data') {
+    $reset_theme = sql_real_escape_string(trim($theme));
+
+    if ($reset_theme === '') die('테마 정보가 없습니다.');
+
+    $rb_json_io_tables_reset = array(
+        array('table' => 'rb_module',         'col' => 'md_theme',  'pk' => 'md_id'),
+        array('table' => 'rb_module_shop',    'col' => 'md_theme',  'pk' => 'md_id'),
+        array('table' => 'rb_section',        'col' => 'sec_theme', 'pk' => 'sec_id'),
+        array('table' => 'rb_section_shop',   'col' => 'sec_theme', 'pk' => 'sec_id'),
+        array('table' => 'rb_theme',          'col' => 'theme_key', 'pk' => ''),
+        array('table' => 'rb_theme_carousel', 'col' => 'cf_theme',  'pk' => 'id'),
+        array('table' => 'rb_config',         'col' => 'co_theme',  'pk' => 'co_id'),
+    );
+
+    // 백업 실행
+    rb_backup_theme_data($reset_theme);
+
+    // import_log 삭제
+    sql_query("DELETE FROM rb_import_log WHERE theme_key = '{$reset_theme}'");
+
+    // JSON 파일 로드
+    $reset_json_theme_path = G5_PATH . '/theme/' . $reset_theme;
+    $reset_json_files = glob($reset_json_theme_path . '/' . $reset_theme . '_*.json');
+
+    if (empty($reset_json_files)) die('JSON 파일이 없습니다.');
+
+    usort($reset_json_files, function($a, $b) { return strcmp($b, $a); });
+    $reset_json_file = $reset_json_files[0];
+    $reset_json_basename = basename($reset_json_file);
+    $reset_json_raw = file_get_contents($reset_json_file);
+    $reset_json_data = json_decode($reset_json_raw, true);
+
+    if (!is_array($reset_json_data) || empty($reset_json_data)) die('JSON 데이터가 없습니다.');
+
+    $reset_allowed = array();
+    $reset_pks = array();
+    foreach ($rb_json_io_tables_reset as $t) {
+        $reset_allowed[$t['table']] = $t['col'];
+        $reset_pks[$t['table']] = $t['pk'];
     }
+
+    $reset_table_cols = array();
+
+    foreach ($reset_json_data as $tname => $rows) {
+        if (!isset($reset_allowed[$tname])) continue;
+        if (!is_array($rows) || empty($rows)) continue;
+
+        $tcol = (string)$reset_allowed[$tname];
+        $pk = isset($reset_pks[$tname]) ? $reset_pks[$tname] : '';
+
+        if (!isset($reset_table_cols[$tname])) {
+            $reset_table_cols[$tname] = array();
+            $col_res = sql_query("SHOW COLUMNS FROM `{$tname}`");
+            while ($col_row = sql_fetch_array($col_res)) {
+                $reset_table_cols[$tname][] = $col_row['Field'];
+            }
+        }
+        $valid_cols = $reset_table_cols[$tname];
+
+        if ($tcol !== '') {
+            sql_query("DELETE FROM `{$tname}` WHERE `{$tcol}` = '{$reset_theme}'");
+        }
+
+        foreach ($rows as $row) {
+            if (!is_array($row) || empty($row)) continue;
+            if ($pk !== '') unset($row[$pk]);
+
+            $cols = array();
+            $vals = array();
+            foreach ($row as $k => $v) {
+                if (!in_array($k, $valid_cols)) continue;
+                $cols[] = '`' . addslashes((string)$k) . '`';
+                $vals[] = "'" . addslashes((string)$v) . "'";
+            }
+            if (empty($cols)) continue;
+
+            sql_query("INSERT INTO `{$tname}` (" . implode(', ', $cols) . ") VALUES (" . implode(', ', $vals) . ")");
+        }
+    }
+
+    sql_query("INSERT INTO rb_import_log (theme_key, import_done) VALUES ('{$reset_theme}', '" . addslashes($reset_json_basename) . "') ON DUPLICATE KEY UPDATE import_done = '" . addslashes($reset_json_basename) . "'");
 
     die('');
 }
@@ -50,24 +174,19 @@ if($post_set_default_skin == 1) {
                 if($val) {
                     if(!preg_match('#^theme/.+$#', $val))
                         $val = 'theme/'.$val;
-
                     $qa_sql_common[] = " $key = '$val' ";
                 }
-
                 continue;
             }
 
             if(preg_match('#^de_.+$#', $key)) {
                 if(!isset($default[$key]))
                     continue;
-
                 if($val) {
                     if(!preg_match('#^theme/.+$#', $val))
                         $val = 'theme/'.$val;
-
                     $de_sql_common[] = " $key = '$val' ";
                 }
-
                 continue;
             }
 
@@ -77,7 +196,6 @@ if($post_set_default_skin == 1) {
             if($val) {
                 if(!preg_match('#^theme/.+$#', $val))
                     $val = 'theme/'.$val;
-
                 $sql_common[] = " $key = '$val' ";
             }
         }
@@ -124,11 +242,24 @@ if (!empty($rb_json_files)) {
     $rb_done_row = sql_fetch("SELECT import_done FROM rb_import_log WHERE theme_key = '{$theme_key_esc}'");
     $rb_import_done = isset($rb_done_row['import_done']) ? (string)$rb_done_row['import_done'] : '';
 
-    if ($rb_import_done !== $rb_json_basename) {
+    // import_log 없는 기존 사용자 보호
+    if (empty($rb_import_done)) {
+        $existing_config = sql_fetch("SELECT co_id FROM rb_config WHERE co_theme = '{$theme_key_esc}' LIMIT 1");
+        if (!empty($existing_config)) {
+            sql_query("INSERT INTO rb_import_log (theme_key, import_done) VALUES ('{$theme_key_esc}', '" . addslashes($rb_json_basename) . "') ON DUPLICATE KEY UPDATE import_done = '" . addslashes($rb_json_basename) . "'");
+            $rb_import_done = $rb_json_basename;
+        }
+    }
+
+    if (empty($rb_import_done)) {
         $rb_json_raw = file_get_contents($rb_json_file);
         $rb_json_data = json_decode($rb_json_raw, true);
 
         if (is_array($rb_json_data) && !empty($rb_json_data)) {
+
+            // 백업 실행
+            rb_backup_theme_data($rb_cf_theme);
+
             $rb_json_allowed = array();
             $rb_json_pks = array();
             foreach ($rb_json_io_tables as $t) {
@@ -154,15 +285,11 @@ if (!empty($rb_json_files)) {
                 }
                 $valid_cols = $rb_json_table_cols[$tname];
 
-                // rb_config는 DELETE 없이 없을때만 INSERT
                 if ($tname === 'rb_config') {
+                    sql_query("DELETE FROM `rb_config` WHERE `co_theme` = '{$theme_key_esc}'");
                     foreach ($rows as $row) {
                         if (!is_array($row) || empty($row)) continue;
                         if ($pk !== '') unset($row[$pk]);
-
-                        $co_theme_val = isset($row['co_theme']) ? sql_real_escape_string((string)$row['co_theme']) : '';
-                        $exists = sql_fetch("SELECT co_id FROM rb_config WHERE co_theme = '{$co_theme_val}' LIMIT 1");
-                        if (!empty($exists)) continue;
 
                         $cols = array();
                         $vals = array();
