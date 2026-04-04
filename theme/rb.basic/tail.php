@@ -686,6 +686,20 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
 <!-- } 하단 끝 -->
 
 <script>
+// 페이지 로드 시 이미 뷰포트 안에 있는 요소는 즉시 animate 처리
+function rb_aos_force_visible() {
+    var windowH = window.innerHeight;
+    document.querySelectorAll('[data-aos]').forEach(function(el) {
+        var rect = el.getBoundingClientRect();
+        if (rect.top < windowH) {
+            el.classList.add('aos-animate');
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', rb_aos_force_visible);
+window.addEventListener('load', rb_aos_force_visible);
+
 function rb_update_mod_label_heights() {
     document.querySelectorAll('.rb-mod-label[data-mod-id]').forEach(function(label) {
         var modId = label.getAttribute('data-mod-id');
