@@ -38,7 +38,7 @@ if ($theme_key === '') {
     exit;
 }
 
-$theme_key_esc = addslashes($theme_key);
+$theme_key_esc = sql_real_escape_string($theme_key);
 
 // 내보내기
 if ($mode === 'export') {
@@ -178,6 +178,31 @@ if ($mode === 'import') {
         $allowed_pks[$t['table']] = $t['pk'];
     }
 
+    // 백업
+    $backup_dir = G5_DATA_PATH . '/rb.backup';
+    if (!is_dir($backup_dir)) {
+        @mkdir($backup_dir, G5_DIR_PERMISSION, true);
+    }
+
+    $backup_data = array();
+    foreach ($io_tables as $bt) {
+        $btname = $bt['table'];
+        $btcol  = $bt['col'];
+        $bres = ($btcol === '')
+            ? sql_query("SELECT * FROM `{$btname}`", false)
+            : sql_query("SELECT * FROM `{$btname}` WHERE `{$btcol}` = '{$theme_key_esc}'", false);
+        if (!$bres) continue;
+        $backup_data[$btname] = array();
+        while ($br = sql_fetch_array($bres)) {
+            $backup_data[$btname][] = $br;
+        }
+    }
+
+    if (!empty($backup_data)) {
+        $backup_file = $backup_dir . '/' . $theme_key . '_' . date('YmdHis') . '.json';
+        file_put_contents($backup_file, json_encode($backup_data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    }
+
     foreach ($import_data as $tname => $rows) {
         if (!isset($allowed_tables[$tname])) continue;
         if (!is_array($rows)) continue;
@@ -209,7 +234,7 @@ if ($mode === 'import') {
             foreach ($row as $k => $v) {
                 if (!in_array($k, $valid_cols)) continue;
                 $cols[] = '`' . addslashes($k) . '`';
-                $vals[] = "'" . addslashes((string)$v) . "'";
+                $vals[] = "'" . sql_real_escape_string((string)$v) . "'";
             }
 
             if (empty($cols)) continue;

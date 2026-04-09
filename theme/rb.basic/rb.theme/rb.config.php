@@ -749,10 +749,10 @@
                 },
                 success: function(res) {
                     if (res.has_data) {
-                        rb_confirm_wrap('이미 설정이 있습니다.\n파일이 업로드 되는 경우 동일테마의 기존 데이터는 제거 됩니다.\n기존 데이터의 백업이 권장됩니다.\n계속 하시겠습니까?')
+                        rb_confirm_wrap('이미 설정이 있습니다.\n파일이 업로드 되는 경우 동일테마의 기존 데이터는 제거 되며 기존 데이터는 /data/rb.backup/ 경로로 백업됩니다.\n계속 하시겠습니까?')
                         .then(function(ok1) {
                             if (!ok1) return;
-                            rb_confirm_wrap('기존 데이터가 유실 되며 되돌릴 수 없습니다.\n정말 데이터를 업로드 하시겠습니까?')
+                            rb_confirm_wrap('정말 데이터를 업로드 하시겠습니까?')
                             .then(function(ok2) {
                                 if (!ok2) return;
                                 doImport(jsonData);
