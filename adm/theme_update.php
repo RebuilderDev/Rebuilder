@@ -242,12 +242,14 @@ if (!empty($rb_json_files)) {
     $rb_done_row = sql_fetch("SELECT import_done FROM rb_import_log WHERE theme_key = '{$theme_key_esc}'");
     $rb_import_done = isset($rb_done_row['import_done']) ? (string)$rb_done_row['import_done'] : '';
 
-    // import_log 없는 기존 사용자 보호
+    // rb_module 또는 rb_module_shop 데이터 있으면 기존사용자로 판단
     if (empty($rb_import_done)) {
-        $existing_config = sql_fetch("SELECT co_id FROM rb_config WHERE co_theme = '{$theme_key_esc}' LIMIT 1");
-        if (!empty($existing_config)) {
-            sql_query("INSERT INTO rb_import_log (theme_key, import_done) VALUES ('{$theme_key_esc}', '" . addslashes($rb_json_basename) . "') ON DUPLICATE KEY UPDATE import_done = '" . addslashes($rb_json_basename) . "'");
-            $rb_import_done = $rb_json_basename;
+        $has_module = sql_fetch("SELECT md_id FROM rb_module LIMIT 1");
+        if (empty($has_module)) {
+            $has_module = sql_fetch("SELECT md_id FROM rb_module_shop LIMIT 1");
+        }
+        if (!empty($has_module)) {
+            $rb_import_done = 'protected';
         }
     }
 
