@@ -121,6 +121,19 @@ while ($cr = sql_fetch_array($res_cs)) {
     );
 }
 
+$top_collations = array();
+$res_top_col = sql_query("SELECT TABLE_COLLATION, COUNT(*) as cnt FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() GROUP BY TABLE_COLLATION ORDER BY cnt DESC LIMIT 2");
+while ($tc = sql_fetch_array($res_top_col)) {
+    if (!empty($tc['TABLE_COLLATION'])) $top_collations[] = (string)$tc['TABLE_COLLATION'];
+}
+
+$all_collations = array();
+$res_col = sql_query("show collation");
+while ($col = sql_fetch_array($res_col)) {
+    $cname = trim((string)($col['Collation'] ?? ''));
+    if ($cname !== '') $all_collations[] = $cname;
+}
+
 $engine_candidates  = array('InnoDB', 'MyISAM', 'Aria', 'MEMORY');
 $charset_candidates = array('utf8mb4', 'utf8', 'euckr');
 
@@ -407,20 +420,61 @@ $rb_auth_ok = (function_exists('get_session') && ((string)get_session('rb_dbtool
         </td>
     </tr>
     <tr>
-        <th scope="row">문자셋</th>
+    <th scope="row">콜레이션</th>
         <td>
-            <?php echo help('현재 DB에서 지원하는 엔진 중 자주 사용하는 항목입니다.') ?>
-            <select name="charset">
-                <?php
-                $default_charset = isset($supported_charsets['utf8mb4']) ? 'utf8mb4' : (isset($charset_options[0]) ? $charset_options[0] : '');
-                foreach ($charset_options as $cs) {
-                    $dc = (string)($supported_charsets[$cs]['default_collation'] ?? '');
-                    $label = $cs;
-                    if ($dc !== '') $label .= ' ('.$dc.')';
-                    echo '<option value="'.get_text($cs).'"'.get_selected($default_charset, $cs, true).'>'.get_text($label).'</option>';
+            <?php echo help('현재 DB에서 많이 사용중인 콜레이션이 표시됩니다.<br>내용을 지우면 콜레이션을 검색할 수 있습니다.') ?>
+            <div style="position:relative; max-width:400px;">
+                <input type="text" id="collation_search" placeholder="콜레이션 검색" class="frm_input" autocomplete="off" style="width:100%;">
+                <input type="hidden" name="charset" id="collation_value" value="<?php echo get_text(!empty($top_collations[0]) ? $top_collations[0] : 'utf8mb4_general_ci'); ?>">
+                <div id="collation_dropdown" style="border-radius:6px; margin-top:5px; display:none; position:absolute; z-index:999; background:#fff; border:1px solid #ccc; max-height:200px; overflow-y:auto; width:100%; box-sizing:border-box;"></div>
+            </div>
+            <script>
+            (function() {
+                var allCollations = <?php echo json_encode(array_values(array_merge($top_collations, array_diff($all_collations, $top_collations))), JSON_UNESCAPED_UNICODE); ?>;
+                var topCollations = <?php echo json_encode($top_collations, JSON_UNESCAPED_UNICODE); ?>;
+
+                var searchEl = document.getElementById('collation_search');
+                var valueEl  = document.getElementById('collation_value');
+                var dropdown = document.getElementById('collation_dropdown');
+                if (!searchEl || !valueEl || !dropdown) return;
+
+                // 초기값 표시
+                searchEl.value = valueEl.value;
+
+                function renderList(keyword) {
+                    dropdown.innerHTML = '';
+                    var kw = keyword.toLowerCase();
+                    var count = 0;
+                    for (var i = 0; i < allCollations.length; i++) {
+                        var col = allCollations[i];
+                        if (kw && col.toLowerCase().indexOf(kw) === -1) continue;
+                        var item = document.createElement('div');
+                        var isTop = topCollations.indexOf(col) !== -1;
+                        item.style.cssText = 'padding:5px 8px; cursor:pointer; font-size:13px;' + (isTop ? 'font-weight:normal;' : '');
+                        item.textContent = col;
+                        item.setAttribute('data-value', col);
+                        item.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
+                            valueEl.value = this.getAttribute('data-value');
+                            searchEl.value = this.getAttribute('data-value');
+                            dropdown.style.display = 'none';
+                        });
+                        item.addEventListener('mouseover', function() { this.style.background = '#f0f5f9'; });
+                        item.addEventListener('mouseout',  function() { this.style.background = ''; });
+                        dropdown.appendChild(item);
+                        count++;
+                        if (count >= 200) break;
+                    }
+                    dropdown.style.display = count > 0 ? 'block' : 'none';
                 }
-                ?>
-            </select>
+
+                searchEl.addEventListener('focus', function() { renderList(this.value); });
+                searchEl.addEventListener('input', function() { renderList(this.value); });
+                searchEl.addEventListener('blur',  function() {
+                    setTimeout(function() { dropdown.style.display = 'none'; }, 150);
+                });
+            })();
+            </script>
         </td>
     </tr>
     <tr>

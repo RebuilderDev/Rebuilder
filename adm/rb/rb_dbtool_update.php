@@ -495,12 +495,22 @@ if ($action === 'drop_table') {
 
     $new_table = isset($_POST['new_table']) ? trim((string)$_POST['new_table']) : '';
     $engine    = isset($_POST['engine']) ? trim((string)$_POST['engine']) : '';
-    $charset   = isset($_POST['charset']) ? trim((string)$_POST['charset']) : '';
+    $collation = isset($_POST['charset']) ? trim((string)$_POST['charset']) : '';
     $comment   = isset($_POST['comment']) ? trim((string)$_POST['comment']) : '';
 
     if (!rb_is_safe_ident($new_table)) alert('테이블명이 올바르지 않습니다.');
     if ($engine === '' || !isset($supported_engines[$engine])) alert('지원하지 않는 엔진입니다.');
-    if ($charset === '' || !isset($supported_charsets[$charset])) alert('지원하지 않는 문자셋입니다.');
+
+    $supported_collations = array();
+    $res_coll = sql_query("show collation");
+    while ($cl = sql_fetch_array($res_coll)) {
+        $co = trim((string)($cl['Collation'] ?? ''));
+        $cs = trim((string)($cl['Charset'] ?? ''));
+        if ($co !== '') $supported_collations[$co] = $cs;
+    }
+
+    if ($collation === '' || !isset($supported_collations[$collation])) alert('지원하지 않는 콜레이션입니다.');
+    $charset = $supported_collations[$collation];
 
     $with_id = isset($_POST['with_id']) ? 1 : 0;
 
@@ -523,7 +533,7 @@ if ($action === 'drop_table') {
     $comment_sql = '';
     if ($comment !== '') $comment_sql = " comment '".sql_escape_string($comment)."'";
 
-    $sql = "create table `{$new_table}` ({$defs}) engine={$engine} default charset={$charset}{$comment_sql}";
+    $sql = "create table `{$new_table}` ({$defs}) engine={$engine} default charset={$charset} collate={$collation}{$comment_sql}";
     sql_query($sql, false);
 
     goto_url($back_tables);
