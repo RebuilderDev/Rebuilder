@@ -69,15 +69,15 @@ $mb_mailling_default         = isset($_POST['mb_mailling_default'])         ? tr
 $mb_sms_default              = isset($_POST['mb_sms_default'])              ? trim($_POST['mb_sms_default'])              : "";
 $mb_thirdparty_agree_default = isset($_POST['mb_thirdparty_agree_default']) ? trim($_POST['mb_thirdparty_agree_default']) : "";
 
-$mb_name        = clean_xss_tags($mb_name, 1, 1);
+$mb_name        = addslashes(clean_xss_tags(stripslashes($mb_name), 1, 1));
 $mb_email       = get_email_address($mb_email);
-$mb_homepage    = clean_xss_tags($mb_homepage, 1, 1);
-$mb_tel         = clean_xss_tags($mb_tel, 1, 1);
+$mb_homepage    = addslashes(clean_xss_tags(stripslashes($mb_homepage), 1, 1));
+$mb_tel         = addslashes(clean_xss_tags(stripslashes($mb_tel), 1, 1));
 $mb_zip1        = preg_replace('/[^0-9]/', '', $mb_zip1);
 $mb_zip2        = preg_replace('/[^0-9]/', '', $mb_zip2);
-$mb_addr1       = clean_xss_tags($mb_addr1, 1, 1);
-$mb_addr2       = clean_xss_tags($mb_addr2, 1, 1);
-$mb_addr3       = clean_xss_tags($mb_addr3, 1, 1);
+$mb_addr1       = addslashes(clean_xss_tags(stripslashes($mb_addr1), 1, 1));
+$mb_addr2       = addslashes(clean_xss_tags(stripslashes($mb_addr2), 1, 1));
+$mb_addr3       = addslashes(clean_xss_tags(stripslashes($mb_addr3), 1, 1));
 $mb_addr_jibeon = preg_match("/^(N|R)$/", $mb_addr_jibeon) ? $mb_addr_jibeon : '';
 
 $mb_marketing_agree     = isset($_POST['mb_marketing_agree'])   ? trim($_POST['mb_marketing_agree'])    : "0";

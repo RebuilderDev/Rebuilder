@@ -9,6 +9,10 @@ if( isset($sort) && ! in_array($sort, array('it_name', 'it_sum_qty', 'it_price',
     $sort='';
 }
 
+if( !isset($sortodr) || !in_array(strtolower($sortodr), array('asc', 'desc')) ){
+    $sortodr='';
+}
+
 if (G5_IS_MOBILE) {
     include_once(G5_MSHOP_PATH.'/list.php');
     return;
