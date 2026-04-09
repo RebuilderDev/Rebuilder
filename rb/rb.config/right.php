@@ -1106,8 +1106,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
 
                         <h6 class="font-B">서브 사이드 영역 노출 설정</h6>
                         <h6 class="font-R rb_config_sub_txt">
-                            서브 사이드 영역을 현재페이지(노드) 에서 숨길 수 있습니다.<br>
-                            서브 사이드 영역 설정 여부와 무관하게 우선적용 됩니다.
+                            설정된 서브 사이드 영역을 현재페이지(노드) 에서 숨길 수 있습니다.
                         </h6>
 
                         <div class="font-12 rb_sub_page_cr">
