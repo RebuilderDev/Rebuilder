@@ -242,11 +242,11 @@ if (!empty($rb_json_files)) {
     $rb_done_row = sql_fetch("SELECT import_done FROM rb_import_log WHERE theme_key = '{$theme_key_esc}'");
     $rb_import_done = isset($rb_done_row['import_done']) ? (string)$rb_done_row['import_done'] : '';
 
-    // rb_module 또는 rb_module_shop 데이터 있으면 기존사용자로 판단
+    // rb_module 또는 rb_module_shop 에 같은 테마의 데이터 있으면 기존사용자로 판단
     if (empty($rb_import_done)) {
-        $has_module = sql_fetch("SELECT md_id FROM rb_module LIMIT 1");
+        $has_module = sql_fetch("SELECT md_id FROM rb_module WHERE md_theme = '{$theme_key_esc}' LIMIT 1");
         if (empty($has_module)) {
-            $has_module = sql_fetch("SELECT md_id FROM rb_module_shop LIMIT 1");
+            $has_module = sql_fetch("SELECT md_id FROM rb_module_shop WHERE md_theme = '{$theme_key_esc}' LIMIT 1");
         }
         if (!empty($has_module)) {
             $rb_import_done = 'protected';
