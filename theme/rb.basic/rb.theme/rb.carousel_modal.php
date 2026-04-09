@@ -696,9 +696,9 @@
                     dataType: "json",
                     success: function(response) {
                         if (response.success) {
-                            alert(response.message);
-                            $("#carousel_modal").fadeOut(200);
-                            refreshCarouselList();
+                            alert(response.message, function() {
+                                location.reload();
+                            });
                         } else {
                             alert(response.message);
                         }
@@ -864,9 +864,9 @@
                 dataType: "json",
                 success: function(response) {
                     if (response.success) {
-                        alert(response.message);
-                        $("#carousel_modal").fadeOut(200);
-                        refreshCarouselList();
+                        alert(response.message, function() {
+                            location.reload();
+                        });
                     } else {
                         alert(response.message);
                     }
