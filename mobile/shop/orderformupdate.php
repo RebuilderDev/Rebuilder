@@ -41,6 +41,11 @@ if (!function_exists('rb_shop_order_has_shipping_items')) {
 }
 include_once(G5_LIB_PATH.'/mailer.lib.php');
 
+// CSRF 방지: 무통장입금만 Origin/Referer 검증 (PG 결제는 PG사에서 검증하므로 제외)
+if (isset($od_settle_case) && $od_settle_case == '무통장' && function_exists('check_request_origin')) {
+    check_request_origin(G5_SHOP_URL);
+}
+
 $post_p_hash = isset($_POST['P_HASH']) ? $_POST['P_HASH'] : '';
 $post_enc_data = isset($_POST['enc_data']) ? $_POST['enc_data'] : '';
 $post_enc_info = isset($_POST['enc_info']) ? $_POST['enc_info'] : '';
@@ -1108,7 +1113,7 @@ if($config['cf_sms_use'] && ($default['de_sms_use2'] || $default['de_sms_use3'])
 
 
 // orderview 에서 사용하기 위해 session에 넣고
-$uid = md5($od_id.G5_TIME_YMDHIS.$REMOTE_ADDR);
+$uid = function_exists('get_shop_uid') ? get_shop_uid('order', $od_id, G5_TIME_YMDHIS, $REMOTE_ADDR) : md5($od_id.G5_TIME_YMDHIS.$REMOTE_ADDR);
 set_session('ss_orderview_uid', $uid);
 
 // 주문 정보 임시 데이터 삭제

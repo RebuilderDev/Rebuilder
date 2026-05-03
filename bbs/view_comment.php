@@ -55,7 +55,7 @@ for ($i=0; $row=sql_fetch_array($result); $i++)
     $pre_comment = sql_fetch(" select mb_id from {$write_table} where wr_parent = '{$wr_id}' and wr_is_comment = 1 and wr_comment = '{$row['wr_comment']}' and wr_comment_reply = '{$pre_comment_info}' ");
 
     $list[$i]['content'] = $list[$i]['content1']= '비밀글 입니다.';
-    if (!strstr($row['wr_option'], 'secret') ||
+    if (strpos($row['wr_option'], 'secret') === false ||
         $is_admin ||
         ($pre_comment['mb_id']==$member['mb_id'] && $member['mb_id']) ||
         ($write['mb_id']==$member['mb_id'] && $member['mb_id']) ||
