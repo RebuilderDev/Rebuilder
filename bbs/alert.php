@@ -108,7 +108,7 @@ if($error) {
 </style>
 
 <script>
-alert("<?php echo function_exists('get_js_safe_string') ? get_js_safe_string($alert_msg) : '""'; ?>", function(){
+alert(<?php echo function_exists('get_js_safe_string') ? get_js_safe_string($alert_msg) : '""'; ?>, function(){
 <?php if ($url) { ?>
     document.location.replace("<?php echo str_replace('&amp;', '&', $url); ?>");
 <?php } else { ?>
