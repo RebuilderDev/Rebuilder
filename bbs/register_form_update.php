@@ -73,7 +73,7 @@ $mb_zip2        = preg_replace('/[^0-9]/', '', $mb_zip2);
 $mb_addr1       = addslashes(clean_xss_tags(stripslashes($mb_addr1), 1, 1));
 $mb_addr2       = addslashes(clean_xss_tags(stripslashes($mb_addr2), 1, 1));
 $mb_addr3       = addslashes(clean_xss_tags(stripslashes($mb_addr3), 1, 1));
-$mb_addr_jibeon = preg_match("/^(N|R)$/", $mb_addr_jibeon) ? $mb_addr_jibeon : '';
+$$mb_addr_jibeon = preg_match("/^(N|R|J)$/", $mb_addr_jibeon) ? $mb_addr_jibeon : '';
 
 $mb_marketing_agree     = isset($_POST['mb_marketing_agree'])   ? trim($_POST['mb_marketing_agree'])    : "0";
 $mb_thirdparty_agree    = isset($_POST['mb_thirdparty_agree'])  ? trim($_POST['mb_thirdparty_agree'])   : "0";
@@ -277,7 +277,7 @@ if ($w == '') {
     if (!$config['cf_use_email_certify'])
         $sql .= " , mb_email_certify = '".G5_TIME_YMDHIS."' ";
 
-    $agree_items = [];
+    $agree_items = array();
     // 마케팅 목적의 개인정보 수집 및 이용
     if ($mb_marketing_agree == 1) {
         $sql .=  " , mb_marketing_date = '".G5_TIME_YMDHIS."' ";
@@ -398,7 +398,7 @@ if ($w == '') {
     if ($old_email != $mb_email && $config['cf_use_email_certify'])
         $sql_email_certify = " , mb_email_certify = '' ";
 
-    $agree_items = [];
+    $agree_items = array();
 
     // 마케팅 목적의 개인정보 수집 및 이용
     $sql_marketing_date = "";

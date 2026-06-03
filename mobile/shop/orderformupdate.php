@@ -702,14 +702,14 @@ $od_zip2          = substr($od_zip, 3);
 $od_addr1         = addslashes(clean_xss_tags(stripslashes($od_addr1)));
 $od_addr2         = addslashes(clean_xss_tags(stripslashes($od_addr2)));
 $od_addr3         = addslashes(clean_xss_tags(stripslashes($od_addr3)));
-$od_addr_jibeon   = preg_match("/^(N|R)$/", $od_addr_jibeon) ? $od_addr_jibeon : '';
+$od_addr_jibeon   = preg_match("/^(N|R|J)$/", $od_addr_jibeon) ? $od_addr_jibeon : '';
 $od_b_name        = addslashes(clean_xss_tags(stripslashes($od_b_name)));
 $od_b_tel         = addslashes(clean_xss_tags(stripslashes($od_b_tel)));
 $od_b_hp          = addslashes(clean_xss_tags(stripslashes($od_b_hp)));
 $od_b_addr1       = addslashes(clean_xss_tags(stripslashes($od_b_addr1)));
 $od_b_addr2       = addslashes(clean_xss_tags(stripslashes($od_b_addr2)));
 $od_b_addr3       = addslashes(clean_xss_tags(stripslashes($od_b_addr3)));
-$od_b_addr_jibeon = preg_match("/^(N|R)$/", $od_b_addr_jibeon) ? $od_b_addr_jibeon : '';
+$od_b_addr_jibeon = preg_match("/^(N|R|J)$/", $od_b_addr_jibeon) ? $od_b_addr_jibeon : '';
 $od_memo          = addslashes(clean_xss_tags(stripslashes($od_memo), 0, 1, 0, 0));
 $od_deposit_name  = addslashes(clean_xss_tags(stripslashes($od_deposit_name)));
 $od_tax_flag      = $default['de_tax_flag_use'];
@@ -898,8 +898,52 @@ if(!$result) {
 }
 
 // 회원이면서 포인트를 사용했다면 포인트 테이블에 사용을 추가
-if ($is_member && $od_receipt_point)
-    insert_point($member['mb_id'], (-1) * $od_receipt_point, "주문번호 $od_id 결제");
+// 동시 주문 race condition 방지 — 회원 단위 GET_LOCK + 잔액 재조회
+if ($is_member && $od_receipt_point) {
+    $point_lock_key = 'g5pt_order_'.md5($member['mb_id']);
+    $lock_row = sql_fetch(" select get_lock('$point_lock_key', 5) as lk ");
+
+    $lock_acquired = !empty($lock_row['lk']);
+    $point_shortage = false;
+
+
+    if ($lock_acquired) {
+        $current_point = (int) get_point_sum($member['mb_id']);
+
+        if ($current_point >= $od_receipt_point) {
+            insert_point($member['mb_id'], (-1) * $od_receipt_point, "주문번호 $od_id 결제");
+        } else {
+            $point_shortage = true;
+        }
+
+        sql_query(" do release_lock('$point_lock_key') ");
+
+    } else {
+        // lock timeout — 안전을 위해 결제 취소 처리
+        $point_shortage = true;
+    }
+
+    if ($point_shortage) {
+        // race condition 으로 잔액 부족 — PG 환불 + 장바구니 복구 + 주문 삭제
+        if ($tno) {
+            $cancel_msg = '포인트 잔액 부족으로 결제 취소 (동시 주문 race)';
+            include G5_SHOP_PATH.'/cancel_pg.inc.php';
+        }
+
+        // 장바구니 복구 (기존 line 839 동일 패턴)
+        sql_query(" update {$g5['g5_shop_cart_table']} set od_id = '$tmp_cart_id', ct_status = '쇼핑' where od_id = '$od_id' ", false);
+
+        // 주문 삭제
+        sql_query(" delete from {$g5['g5_shop_order_table']} where od_id = '$od_id' ");
+
+        if (function_exists('add_order_post_log')) {
+            add_order_post_log("동시 주문 race 로 인한 포인트 잔액 부족. 주문 $od_id 취소.");
+        }
+
+        die('<p>회원님의 포인트 잔액이 부족하여 주문이 완료되지 않았습니다.</p><p>'.strtoupper($od_pg).'를 이용한 전자결제(신용카드, 계좌이체, 가상계좌 등)은 자동 취소되었습니다.</p>');
+
+    }
+}
 
 $od_memo = nl2br(htmlspecialchars2(stripslashes($od_memo))) . "&nbsp;";
 

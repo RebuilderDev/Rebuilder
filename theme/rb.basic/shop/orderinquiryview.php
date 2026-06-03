@@ -918,7 +918,7 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
     ?>
     <p>관리자가 가상계좌 테스트를 한 경우에만 보입니다.</p>
     <div class="tbl_frm01 tbl_wrap">
-        <form method="post" action="http://devadmin.kcp.co.kr/Modules/Noti/TEST_Vcnt_Noti_Proc.jsp" target="_blank">
+        <form method="post" action="https://testadmin.kcp.co.kr/Modules/Noti/TEST_Vcnt_Noti.jsp" target="_blank">
         <table>
         <caption>모의입금처리</caption>
         <colgroup>

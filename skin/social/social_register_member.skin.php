@@ -127,8 +127,8 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
                                 <!-- (선택) 개인정보 제3자 제공 동의 -->
                                 <!-- SMS 사용시에만 -->
                                 <?php
-                                    $configKeys = ['cf_sms_use'];
-                                    $companies = ['icode' => '아이코드'];
+                                    $configKeys = array('cf_sms_use');
+                                    $companies = array('icode' => '아이코드');
 
                                     $usedCompanies = array();
                                     foreach ($configKeys as $key) {
@@ -296,12 +296,8 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
 
 -->
 
-<?php
-$path = __DIR__ . '/consent_modal.inc.php';
-if (is_file($path)) {
-    include_once $path;
-}
-?>
+
+<?php include_once(dirname(__FILE__) . '/consent_modal.inc.php'); ?>
 
 <script>
     $(function() {
