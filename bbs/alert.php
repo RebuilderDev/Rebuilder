@@ -32,7 +32,8 @@ add_javascript('<script src="'.G5_URL.'/js/rb.common.js"></script>', 0);
 // 공백이 없어야 합니다.
 
 $msg = isset($msg) ? strip_tags($msg) : '';
-$msg2 = str_replace("\\n", "<br>", $msg);
+$msg2 = str_replace(array("\\r\\n", "\\n", "\\r"), "<br>", $msg);
+$alert_msg = str_replace(array("\\r\\n", "\\n", "\\r"), "\n", $msg);
 
 $url = isset($url) ? clean_xss_tags($url, 1) : '';
 if (!$url) $url = isset($_SERVER['HTTP_REFERER']) ? clean_xss_tags($_SERVER['HTTP_REFERER'], 1) : '';
@@ -107,7 +108,7 @@ if($error) {
 </style>
 
 <script>
-alert("<?php echo function_exists('get_js_safe_string') ? get_js_safe_string($msg) : '""'; ?>", function(){
+alert("<?php echo function_exists('get_js_safe_string') ? get_js_safe_string($alert_msg) : '""'; ?>", function(){
 <?php if ($url) { ?>
     document.location.replace("<?php echo str_replace('&amp;', '&', $url); ?>");
 <?php } else { ?>

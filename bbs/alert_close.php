@@ -4,8 +4,8 @@ include_once(G5_PATH.'/head.sub.php');
 add_javascript('<script src="'.G5_URL.'/js/rb.common.js"></script>', 0);
 
 $msg = isset($msg) ? strip_tags($msg) : '';
-
-$msg2 = str_replace("\\n", "<br>", $msg);
+$msg2 = str_replace(array("\\r\\n", "\\n", "\\r"), "<br>", $msg);
+$alert_msg = str_replace(array("\\r\\n", "\\n", "\\r"), "\n", $msg);
 
 if($error) {
     $header2 = "다음 항목에 오류가 있습니다.";
@@ -73,7 +73,7 @@ if($error) {
 </style>
 
 <script>
-alert("<?php echo function_exists('get_js_safe_string') ? get_js_safe_string($msg) : '""'; ?>", function(){
+alert("<?php echo function_exists('get_js_safe_string') ? get_js_safe_string($alert_msg) : '""'; ?>", function(){
     try {
         window.close();
     } catch(error) {

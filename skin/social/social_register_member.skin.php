@@ -356,6 +356,10 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
                         $cert_url = G5_KCPCERT_URL.'/kcpcert_form.php';
                         $cert_type = 'kcp-hp';
                         break;
+                    case 'kcp_v2':
+                        $cert_url = G5_KCPCERT_V2_URL.'/kcpcert_form.php';
+                        $cert_type = 'kcp_v2-hp';
+                        break;
                     case 'lg':
                         $cert_url = G5_LGXPAY_URL.'/AuthOnlyReq.php';
                         $cert_type = 'lg-hp';
