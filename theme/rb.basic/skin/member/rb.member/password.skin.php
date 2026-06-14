@@ -6,6 +6,9 @@ if ($w == 'u') $g5['title'] = $delete_str."글 수정";
 else if ($w == 'd' || $w == 'x') $g5['title'] = $delete_str."글 삭제";
 else $g5['title'] = $g5['title'];
 
+$rb_password_title = html_entity_decode((string)$g5['title'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+$rb_password_title = get_text($rb_password_title);
+
 // add_stylesheet('css 구문', 출력순서); 숫자가 작을 수록 먼저 출력됨
 add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 0);
 ?>
@@ -46,7 +49,7 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
                     <?php } ?>
                 </li>
 
-                <li class="rb_reg_ok_text font-B"><?php echo $g5['title'] ?></li>
+                <li class="rb_reg_ok_text font-B"><?php echo $rb_password_title; ?></li>
                 <li class="rb_reg_sub_title">
                     <?php if ($w == 'u') { ?>
                     작성자만 글을 수정할 수 있어요.<br>
@@ -81,6 +84,3 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
 
     </div>
 </div>
-
-
-
