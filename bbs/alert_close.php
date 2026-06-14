@@ -7,6 +7,9 @@ $msg = isset($msg) ? strip_tags($msg) : '';
 $msg2 = str_replace(array("\\r\\n", "\\n", "\\r"), "<br>", $msg);
 $alert_msg = str_replace(array("\\r\\n", "\\n", "\\r"), "\n", $msg);
 
+$js_replace = array('\\' => '\\\\', '"' => '\\"', "'" => '\\u0027', '/' => '\\/', "\r" => '\\r', "\n" => '\\n', "\t" => '\\t', '<' => '\\u003C', '>' => '\\u003E', '&' => '\\u0026', "\xE2\x80\xA8" => '\\u2028', "\xE2\x80\xA9" => '\\u2029');
+$js_alert_msg = function_exists('get_js_safe_string') ? get_js_safe_string($alert_msg) : '"'.strtr((string)$alert_msg, $js_replace).'"';
+
 if($error) {
     $header2 = "다음 항목에 오류가 있습니다.";
     $msg3 = "새창을 닫으시고 이전 작업을 다시 시도해 주세요.";
@@ -73,7 +76,7 @@ if($error) {
 </style>
 
 <script>
-alert(<?php echo function_exists('get_js_safe_string') ? get_js_safe_string($alert_msg) : '""'; ?>, function(){
+alert(<?php echo $js_alert_msg; ?>, function(){
     try {
         window.close();
     } catch(error) {

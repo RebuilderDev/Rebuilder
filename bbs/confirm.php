@@ -16,6 +16,13 @@ $url3 = preg_replace($pattern2, "", $url3);
 $msg = isset($msg) ? $msg : '';
 $header = isset($header) ? $msg : '';
 
+$confirm_msg = str_replace(array('<br>', '<br/>', '<br />'), "\n", $msg);
+$confirm_msg = strip_tags($confirm_msg);
+$js_replace = array('\\' => '\\\\', '"' => '\\"', "'" => '\\u0027', '/' => '\\/', "\r" => '\\r', "\n" => '\\n', "\t" => '\\t', '<' => '\\u003C', '>' => '\\u003E', '&' => '\\u0026', "\xE2\x80\xA8" => '\\u2028', "\xE2\x80\xA9" => '\\u2029');
+$js_confirm_msg = function_exists('get_js_safe_string') ? get_js_safe_string($confirm_msg) : '"'.strtr((string)$confirm_msg, $js_replace).'"';
+$js_url1 = function_exists('get_js_safe_string') ? get_js_safe_string($url1) : '"'.strtr((string)$url1, $js_replace).'"';
+$js_url2 = function_exists('get_js_safe_string') ? get_js_safe_string($url2) : '"'.strtr((string)$url2, $js_replace).'"';
+
 // url 체크
 check_url_host($url1);
 check_url_host($url2);
@@ -76,13 +83,13 @@ check_url_host($url3);
 </style>
 
 <script>
-var conf = "<?php echo strip_tags($msg); ?>";
+var conf = <?php echo $js_confirm_msg; ?>;
 
 rb_confirm(conf).then(function(confirmed) {
     if (confirmed) {
-        document.location.replace("<?php echo $url1; ?>");
+        document.location.replace(<?php echo $js_url1; ?>);
     } else {
-        document.location.replace("<?php echo $url2; ?>");
+        document.location.replace(<?php echo $js_url2; ?>);
     }
 });
 </script>

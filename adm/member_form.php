@@ -293,7 +293,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                     <th scope="row"><label for="mb_level">회원 권한</label></th>
                     <td><?php echo get_member_level_select('mb_level', 1, $member['mb_level'], $mb['mb_level']) ?></td>
                     <th scope="row">포인트</th>
-                    <td><a href="./point_list.php?sfl=mb_id&amp;stx=<?php echo $mb['mb_id'] ?>" target="_blank"><?php echo number_format($mb['mb_point']) ?></a> 점</td>
+                    <td><a href="./point_list.php?sfl=mb_id&amp;stx=<?php echo $mb['mb_id'] ?>" target="_blank"><?php echo number_format(isset($mb['mb_point']) ? $mb['mb_point'] : 0) ?></a> 점</td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="mb_email">E-mail<strong class="sound_only">필수</strong></label></th>
@@ -356,7 +356,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                         <?php echo help('이미지 크기는 <strong>넓이 ' . $config['cf_member_icon_width'] . '픽셀 높이 ' . $config['cf_member_icon_height'] . '픽셀</strong>로 해주세요.') ?>
                         <input type="file" name="mb_icon" id="mb_icon">
                         <?php
-                        $mb_dir = substr($mb['mb_id'], 0, 2);
+                        $mb_dir = substr(isset($mb['mb_id']) ? $mb['mb_id'] : '', 0, 2);
                         $icon_file = G5_DATA_PATH . '/member/' . $mb_dir . '/' . get_mb_icon_name($mb['mb_id']) . '.gif';
                         if (file_exists($icon_file)) {
                             $icon_url = str_replace(G5_DATA_PATH, G5_DATA_URL, $icon_file);
@@ -373,7 +373,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                         <?php echo help('이미지 크기는 <strong>넓이 ' . $config['cf_member_img_width'] . '픽셀 높이 ' . $config['cf_member_img_height'] . '픽셀</strong>로 해주세요.') ?>
                         <input type="file" name="mb_img" id="mb_img">
                         <?php
-                        $mb_dir = substr($mb['mb_id'], 0, 2);
+                        $mb_dir = substr(isset($mb['mb_id']) ? $mb['mb_id'] : '', 0, 2);
                         $icon_file = G5_DATA_PATH . '/member_image/' . $mb_dir . '/' . get_mb_icon_name($mb['mb_id']) . '.gif';
                         if (file_exists($icon_file)) {
                             echo get_member_profile_img($mb['mb_id']);
@@ -577,7 +577,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                                                     <span class="provider_name"><?php echo $provider_name;   //서비스이름 ?> ( <?php echo $account['displayname']; ?> )</span>
                                                     <span class="account_hidden" style="display:none"><?php echo $account['mb_id']; ?></span>
                                                 </div>
-                                                <div class="btn_info"><a href="<?php echo G5_SOCIAL_LOGIN_URL . '/unlink.php?mp_no=' . $account['mp_no'] ?>" class="social_unlink" data-provider="<?php echo $account['mp_no']; ?>">연동해제</a> <span class="sound_only"><?php echo substr($account['mp_register_day'], 2, 14); ?></span></div>
+                                                <div class="btn_info"><a href="<?php echo G5_SOCIAL_LOGIN_URL . '/unlink.php?mp_no=' . $account['mp_no'] ?>" class="social_unlink" data-provider="<?php echo $account['mp_no']; ?>">연동해제</a> <span class="sound_only"><?php echo substr(isset($account['mp_register_day']) ? $account['mp_register_day'] : '', 2, 14); ?></span></div>
                                             </div>
                                         <?php } //end foreach ?>
                                     </li>
