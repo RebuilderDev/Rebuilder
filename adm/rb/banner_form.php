@@ -4,6 +4,12 @@ include_once('./_common.php');
 
 auth_check_menu($auth, $sub_menu, "w");
 
+// 디자인형 편집 및 프리셋 기능은 더 이상 제공하지 않는다.
+if (isset($_GET['rb_ajax']) && $_GET['rb_ajax']) {
+    http_response_code(404);
+    exit;
+}
+
 // ===== RB AJAX (디자인 불러오기/프리셋) =====
 if (isset($_GET['rb_ajax']) && $_GET['rb_ajax']) {
     $act = preg_replace('/[^a-z_]/', '', (string)$_GET['rb_ajax']);
@@ -482,32 +488,6 @@ include_once(G5_ADMIN_PATH . '/admin.head.php');
 <input type="hidden" name="bn_id" value="<?php echo $bn_id; ?>">
 
 
-<?php
-// // JSON hidden value 안전 출력
-function rb_json_attr($s){
-    $s = (string)$s;
-    if ($s === '') return '';
-    // // 혹시 \" 형태로 저장된 경우 대비
-    if (strpos($s, '\\"') !== false) $s = str_replace('\\"', '"', $s);
-    if (strpos($s, "\\'") !== false) $s = str_replace("\\'", "'", $s);
-    // // 슬래시 중복 방지
-    if (function_exists('stripslashes')) $s = stripslashes($s);
-    return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
-}
-?>
-
-<input type="hidden" name="bn_type" id="bn_type" value="<?php echo (isset($bn['bn_type']) && $bn['bn_type'] === 'design') ? 'design' : 'image'; ?>">
-<textarea name="bn_design_json" id="bn_design_json" style="display:none;"><?php echo isset($bn['bn_design_json']) ? $bn['bn_design_json'] : ''; ?></textarea>
-<textarea name="bn_stage_json" id="bn_stage_json" style="display:none;"><?php echo isset($bn['bn_stage_json']) ? $bn['bn_stage_json'] : ''; ?></textarea>
-
-<input type="hidden" name="rb_bg_copy_kind" id="rb_bg_copy_kind" value="">
-<input type="hidden" name="rb_bg_copy_id" id="rb_bg_copy_id" value="">
-
-<link rel='stylesheet' href='<?php echo G5_URL ?>/adm/rb/css/swiper.css' />
-<link rel='stylesheet' href='<?php echo G5_URL ?>/adm/rb/css/banner_form.css' />
-<script src="<?php echo G5_URL ?>/adm/rb/js/swiper.js"></script>
-
-
 <div class="tbl_frm01 tbl_wrap">
     <table>
     <caption><?php echo $g5['title']; ?></caption>
@@ -517,22 +497,12 @@ function rb_json_attr($s){
     </colgroup>
     <tbody>
 
-    <tr>
-        <th scope="row">배너 타입</th>
-        <td>
-            <label style="margin-right:12px;">
-                <input type="radio" name="bn_type_pick" value="image" checked> 이미지형
-            </label>
-            <label>
-                <input type="radio" name="bn_type_pick" value="design"> 디자인형
-            </label>
-        </td>
-    </tr>
-
-
     <tr id="rb_row_banner_image">
         <th scope="row">이미지</th>
         <td>
+            <?php if (isset($bn['bn_type']) && $bn['bn_type'] === 'design') { ?>
+            <?php echo help('기존 디자인형 배너입니다. 현재 디자인형 출력은 유지되며, 새 이미지를 업로드하여 저장하면 이미지형으로 전환됩니다.'); ?>
+            <?php } ?>
             <input type="file" name="bn_bimg">
             <?php
             $bimg_str = '';
@@ -571,6 +541,7 @@ function rb_json_attr($s){
 
 
 
+    <?php if (false) { // 기존 디자인형 출력 데이터 보존용 코드: 관리자 편집 기능은 비활성화 ?>
     <tr id="rb_row_stage" style="display:none;">
         <th scope="row">스테이지 설정</th>
         <td>
@@ -2575,6 +2546,7 @@ function rbEsc(s){
 })();
 
 </script>
+    <?php } ?>
 
 
 
@@ -2590,7 +2562,7 @@ function rbEsc(s){
     <tr>
         <th scope="row"><label for="bn_url">링크</label></th>
         <td>
-            <?php echo help("배너이미지 클릭시 이동하는 Url입니다.<br>디자인형 배너의 경우 전체영역에 링크가 추가 됩니다."); ?>
+            <?php echo help("배너이미지 클릭시 이동하는 Url입니다."); ?>
             <input type="text" name="bn_url" size="80" value="<?php echo isset($bn['bn_url']) ? $bn['bn_url'] : 'http://'; ?>" id="bn_url" class="frm_input">
         </td>
     </tr>

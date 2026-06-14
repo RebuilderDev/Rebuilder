@@ -29,22 +29,18 @@ $design_dir = G5_DATA_PATH . "/rb_display_design";
 @mkdir($alt_dir, G5_DIR_PERMISSION);
 @chmod($alt_dir, G5_DIR_PERMISSION);
 
-@mkdir($design_dir, G5_DIR_PERMISSION);
-@chmod($design_dir, G5_DIR_PERMISSION);
-
 $bn_id = isset($bn_id) ? (int)$bn_id : (isset($_POST['bn_id']) ? (int)$_POST['bn_id'] : 0);
 
 $bn_bimg_del = isset($bn_bimg_del) ? $bn_bimg_del : (isset($_POST['bn_bimg_del']) ? $_POST['bn_bimg_del'] : null);
 
-// // 타입/JSON (디자인형 저장)
-$bn_type = (isset($_POST['bn_type']) && $_POST['bn_type'] === 'design') ? 'design' : 'image';
-
-$bn_design_json_raw = isset($_POST['bn_design_json']) ? (string)$_POST['bn_design_json'] : '';
-$bn_stage_json_raw  = isset($_POST['bn_stage_json']) ? (string)$_POST['bn_stage_json'] : '';
-
-// // 슬래시가 껴서 들어오는 경우 대비
-$bn_design_json = trim(stripslashes($bn_design_json_raw));
-$bn_stage_json  = trim(stripslashes($bn_stage_json_raw));
+// 기존 디자인형 배너는 새 이미지를 업로드하기 전까지 출력 상태를 유지한다.
+$existing_bn_type = 'image';
+if ($w === 'u' && $bn_id > 0) {
+    $existing_banner = sql_fetch("SELECT bn_type FROM rb_banner WHERE bn_id = '" . (int)$bn_id . "' LIMIT 1");
+    if (isset($existing_banner['bn_type']) && $existing_banner['bn_type'] === 'design') {
+        $existing_bn_type = 'design';
+    }
+}
 
 $bn_url = isset($bn_url) ? clean_xss_tags($bn_url) : (isset($_POST['bn_url']) ? clean_xss_tags($_POST['bn_url']) : '');
 $bn_alt_raw = isset($bn_alt) ? $bn_alt : (isset($_POST['bn_alt']) ? $_POST['bn_alt'] : '');
@@ -69,14 +65,7 @@ $bn_order      = isset($bn_order) ? $bn_order : (isset($_POST['bn_order']) ? $_P
 $bn_bimg_tmp  = isset($_FILES['bn_bimg']['tmp_name']) ? $_FILES['bn_bimg']['tmp_name'] : null;
 $bn_bimg_name = isset($_FILES['bn_bimg']['name']) ? $_FILES['bn_bimg']['name'] : null;
 
-$bn_bgimg_tmp  = isset($_FILES['bn_bgimg']['tmp_name']) ? $_FILES['bn_bgimg']['tmp_name'] : null;
-$bn_bgimg_name = isset($_FILES['bn_bgimg']['name']) ? $_FILES['bn_bgimg']['name'] : null;
-
-// // 배경 복사 정보(디자인형 불러오기/프리셋 적용)
-$rb_bg_copy_kind = isset($_POST['rb_bg_copy_kind']) ? (string)$_POST['rb_bg_copy_kind'] : '';
-$rb_bg_copy_id   = isset($_POST['rb_bg_copy_id']) ? (string)$_POST['rb_bg_copy_id'] : '';
-$rb_bg_copy_kind = ($rb_bg_copy_kind === 'banner' || $rb_bg_copy_kind === 'preset') ? $rb_bg_copy_kind : '';
-$rb_bg_copy_id   = preg_replace('/[^0-9A-Za-z_\-]/', '', $rb_bg_copy_id);
+$bn_type = ($existing_bn_type === 'design' && !$bn_bimg_name) ? 'design' : 'image';
 
 
 // // 이미지형 삭제 체크(기존 저장부 유지 + rb_display에도 남아있을 수 있으니 같이 삭제)
@@ -95,11 +84,10 @@ function rb_is_valid_image_upload($tmp, $name) {
 }
 
 if (!rb_is_valid_image_upload($bn_bimg_tmp, $bn_bimg_name)) alert("이미지 파일만 업로드 할 수 있습니다.");
-if (!rb_is_valid_image_upload($bn_bgimg_tmp, $bn_bgimg_name)) alert("이미지 파일만 업로드 할 수 있습니다.");
 
-// // 신규 등록 시: 이미지형만 bn_bimg 필수
+// 신규 등록은 이미지형만 지원
 if ($w == "") {
-    if ($bn_type === 'image' && !$bn_bimg_name) alert('배너 이미지를 업로드 하세요.');
+    if (!$bn_bimg_name) alert('배너 이미지를 업로드 하세요.');
 
     $now = G5_TIME_YMDHIS;
 
@@ -119,9 +107,7 @@ if ($w == "") {
                     bn_time       = '" . rb_sql_escape($now) . "',
                     bn_hit        = '0',
                     bn_order      = '" . rb_sql_escape($bn_order) . "',
-                    bn_type       = '" . rb_sql_escape($bn_type) . "',
-                    bn_design_json= '" . addslashes($bn_design_json) . "',
-                    bn_stage_json = '" . addslashes($bn_stage_json) . "'";
+                    bn_type       = '" . rb_sql_escape($bn_type) . "'";
     sql_query($sql);
 
     $bn_id = sql_insert_id();
@@ -140,9 +126,7 @@ if ($w == "") {
                     bn_begin_time = '" . rb_sql_escape($bn_begin_time) . "',
                     bn_end_time   = '" . rb_sql_escape($bn_end_time) . "',
                     bn_order      = '" . rb_sql_escape($bn_order) . "',
-                    bn_type       = '" . rb_sql_escape($bn_type) . "',
-                    bn_design_json= '" . addslashes($bn_design_json) . "',
-                    bn_stage_json = '" . addslashes($bn_stage_json) . "'
+                    bn_type       = '" . rb_sql_escape($bn_type) . "'
               WHERE bn_id = '" . (int)$bn_id . "'";
     sql_query($sql);
 
@@ -156,69 +140,12 @@ if ($w == "") {
     sql_query($sql);
 }
 
-// // 업로드/디자인 배경 저장 처리
+// 이미지 업로드 처리
 if ($w == "" || $w == "u") {
 
-    // // 이미지형 배너 이미지 저장(기존 방식 유지: data/banners/{id})
+    // 이미지형 배너 이미지 저장(기존 방식 유지: data/banners/{id})
     if ($bn_type === 'image' && isset($_FILES['bn_bimg']['name']) && $_FILES['bn_bimg']['name']) {
         rb_upload_files($_FILES['bn_bimg']['tmp_name'], $bn_id, $save_dir);
-    }
-
-    // // 디자인형 배경이미지 저장(data/rb_display_design/{id})
-    if ($bn_type === 'design') {
-        // // JSON이 hasImage=0이면 서버 파일도 제거(명시적 제거)
-        $want_has = null;
-        if ($bn_design_json !== '') {
-            $tmp = json_decode($bn_design_json, true);
-            if (is_array($tmp) && isset($tmp['bg']) && is_array($tmp['bg']) && isset($tmp['bg']['hasImage'])) {
-                $want_has = (int)$tmp['bg']['hasImage'];
-            }
-        }
-
-        if ($want_has === 0) {
-            @unlink($design_dir . "/{$bn_id}");
-        }
-
-        if (isset($_FILES['bn_bgimg']['name']) && $_FILES['bn_bgimg']['name']) {
-            $dst = $design_dir . "/{$bn_id}";
-            @unlink($dst);
-            if (!@move_uploaded_file($_FILES['bn_bgimg']['tmp_name'], $dst)) {
-                alert('디자인 배경이미지 저장에 실패했습니다.');
-            }
-            @chmod($dst, G5_FILE_PERMISSION);
-        }
-
-        // // 업로드가 없을 때: 배경 복사(기존 배너/프리셋)
-        if (!$bn_bgimg_name && $rb_bg_copy_kind && $rb_bg_copy_id && $want_has !== 0) {
-            $dst = $design_dir . "/{$bn_id}";
-            $src = '';
-
-            if ($rb_bg_copy_kind === 'banner') {
-                $src = $design_dir . "/" . (int)$rb_bg_copy_id;
-            } else if ($rb_bg_copy_kind === 'preset') {
-                $pdir = G5_DATA_PATH . "/rb_banner_presets/" . $rb_bg_copy_id;
-                $meta = $pdir . "/meta.json";
-                $bgf  = '';
-
-                if (is_dir($pdir) && is_file($meta)) {
-                    $mr = @file_get_contents($meta);
-                    $ma = json_decode((string)$mr, true);
-                    if (is_array($ma) && isset($ma['bg_file'])) $bgf = (string)$ma['bg_file'];
-                }
-
-                if ($bgf && is_file($pdir . '/' . $bgf)) $src = $pdir . '/' . $bgf;
-                else if (is_file($pdir . '/bg.png')) $src = $pdir . '/bg.png';
-                else if (is_file($pdir . '/bg.jpg')) $src = $pdir . '/bg.jpg';
-                else if (is_file($pdir . '/bg.jpeg')) $src = $pdir . '/bg.jpeg';
-            }
-
-            if ($src && is_file($src)) {
-                @unlink($dst);
-                if (@copy($src, $dst)) {
-                    @chmod($dst, G5_FILE_PERMISSION);
-                }
-            }
-        }
     }
 
     goto_url("./banner_form.php?w=u&amp;bn_id={$bn_id}");
