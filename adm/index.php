@@ -241,6 +241,10 @@ foreach ($active_widgets as $w) {
             group: 'rbw',
             animation: 150,
             draggable: '.rb-card-wrap',
+            handle: '.rbw-drag-handle',
+            forceFallback: true,
+            fallbackOnBody: true,
+            fallbackTolerance: 3,
             onEnd: saveOrderDebounced
         });
     }
@@ -257,6 +261,14 @@ foreach ($active_widgets as $w) {
             const widgetName = wrap.dataset.awName || '';
             const widgetKey = wrap.dataset.awKey || '';
             if (!tools || !hd) return;
+            if (!hd.querySelector('.rbw-drag-handle')) {
+                const dragHandle = document.createElement('span');
+                dragHandle.className = 'rbw-drag-handle';
+                dragHandle.setAttribute('title', '드래그해서 이동');
+                dragHandle.setAttribute('aria-label', '위젯 이동');
+                dragHandle.textContent = 'MOVE';
+                hd.insertBefore(dragHandle, hd.firstChild);
+            }
             if (closeBtn && closeBtn.parentNode === hd) {
                 hd.insertBefore(tools, closeBtn);
             } else {
@@ -290,6 +302,29 @@ foreach ($active_widgets as $w) {
     style.textContent = `
   .rb-card-wrap { cursor: move; }
   .rb-card-wrap .rb-hd, .rb-card-wrap .rb-ttl { cursor: move; }
+  .rb-card-wrap, .rb-card-wrap .rb-hd, .rb-card-wrap .rb-ttl, .rbw-drag-handle {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .rbw-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    margin-right: 8px;
+    padding: 0 7px;
+    border-radius: 4px;
+    background: #f1f3f5;
+    color: #666;
+    font-size: 10px;
+    line-height: 1;
+    cursor: grab;
+    touch-action: none;
+  }
+  .rbw-drag-handle:active { cursor: grabbing; }
+  .rb-card-wrap img {
+    -webkit-user-drag: none;
+  }
   .rb-card-wrap a, .rb-card-wrap button { cursor: auto; }
 `;
     document.head.appendChild(style);
