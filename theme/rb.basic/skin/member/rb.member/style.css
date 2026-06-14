@@ -483,6 +483,7 @@
 .bbs_main_wrap_thumb_con .bbs_list_label.label6 {background-color: #D6DCE0; color:#000;}
 
 .bbs_main_wrap_thumb_con dd {border:1px solid #eee !important; border-radius: 10px; padding: 20px; box-sizing: border-box; min-height: 161px; cursor: pointer}
+.rb_profile_content .bbs_main_wrap_thumb_con dd {min-height: auto;}
 .bbs_main_wrap_thumb_con dd:hover {border:1px solid #ccc !important;}
 .bbs_main_wrap_thumb_con dd.no_data {margin-top: 0px;}
 
@@ -547,7 +548,7 @@
 
 
     /* 회원정보 테이블 */
-    .cont_info_wrap {
+    .rb_profile_content .cont_info_wrap {
         display: flex;
         border-bottom: 1px solid #f0f5f9;
         padding: 10px 0;
@@ -555,30 +556,30 @@
         margin: 0;
         gap: 0;
     }
-    .cont_info_wrap_l,
-    .cont_info_wrap_r {
+    .rb_profile_content .cont_info_wrap_l,
+    .rb_profile_content .cont_info_wrap_r {
         flex: 1;
         display: flex;
         flex-direction: column;
         gap: 4px;
         min-width: 0;
     }
-    .cont_info_wrap dd:first-child {
+    .rb_profile_content .cont_info_wrap dd:first-child {
         font-size: 11px;
         color: #aaa;
         letter-spacing: 0.2px;
     }
-    .cont_info_wrap dd:last-child {
+    .rb_profile_content .cont_info_wrap dd:last-child {
         font-size: 13px;
         color: #111;
         word-break: break-all;
     }
-    .cont_info_wrap dd a {
+    .rb_profile_content .cont_info_wrap dd a {
         color: #111;
         text-decoration: none;
     }
-    .cont_info_wrap dd a:hover { text-decoration: underline; }
-    .cont_info_wrap_mmt { margin-top: 20px; }
+    .rb_profile_content .cont_info_wrap dd a:hover { text-decoration: underline; }
+    .rb_profile_content .cont_info_wrap_mmt { margin-top: 20px; }
 
     .rb_profile_layout {
         display: flex;
