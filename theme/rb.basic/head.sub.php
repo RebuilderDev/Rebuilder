@@ -415,9 +415,8 @@ const is_shop = <?php echo defined('_SHOP_') ? 'true' : 'false'; ?>;
 </script>
 
 <?php
-if (isset($rb_core) && isset($rb_core['font'])) {
-    $font = $rb_core['font'];
-} else {
+$font = (isset($rb_core) && is_array($rb_core) && isset($rb_core['font'])) ? trim((string)$rb_core['font']) : '';
+if ($font === '') {
     $font = 'Pretendard';
 }
 

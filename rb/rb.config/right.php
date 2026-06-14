@@ -3947,6 +3947,10 @@ foreach ($rb_side_panels as $rb_side_panel) {
     }
 
 
+    <?php
+    $rb_config_co_header = (isset($rb_config) && is_array($rb_config) && isset($rb_config['co_header'])) ? (string)$rb_config['co_header'] : '';
+    $rb_core_header = (isset($rb_core) && is_array($rb_core) && isset($rb_core['header'])) ? (string)$rb_core['header'] : '';
+    ?>
     document.addEventListener('DOMContentLoaded', function() {
 
         //페이지 로드후 컬러감지 자동적용
@@ -3973,7 +3977,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
 
         }
 
-        var colorInfo2 = isLightColor2("<?php echo $rb_config['co_header'] ?>");
+        var colorInfo2 = isLightColor2(<?php echo json_encode($rb_config_co_header); ?>);
 
         if (colorInfo2.alpha < 0.2) {
             var newTextCode2 = 'black'; // 투명도가 낮으면 회색
@@ -3984,7 +3988,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
         }
 
         // 링크 태그의 href 속성 변경
-        $('link[href*="set.header.php"]').attr('href', '<?php echo G5_URL ?>/rb/rb.css/set.header.php?rb_header_set=<?php echo $rb_core['header'] ?>&rb_header_code=' + encodeURIComponent("<?php echo $rb_config['co_header'] ?>") + '&rb_header_txt=' + newTextCode2);
+        $('link[href*="set.header.php"]').attr('href', '<?php echo G5_URL ?>/rb/rb.css/set.header.php?rb_header_set=<?php echo rawurlencode($rb_core_header); ?>&rb_header_code=' + encodeURIComponent(<?php echo json_encode($rb_config_co_header); ?>) + '&rb_header_txt=' + newTextCode2);
 
         if (newTextCode2 == 'black') {
             <?php if (isset($rb_builder['bu_logo_mo']) && !empty($rb_builder['bu_logo_mo_w'])) { ?>
