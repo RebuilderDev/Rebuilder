@@ -3390,3 +3390,16 @@ a {
         grid-column: 1 / -1;
     }
 }
+
+.debug_bar_wrap {
+    height: auto;
+    position: relative;
+    z-index: 1 !important;
+}
+
+.debug_bar_content {
+    position: static;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+}
