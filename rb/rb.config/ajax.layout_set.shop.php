@@ -179,7 +179,7 @@ foreach ($layouts as $layout_no) {
 
         <div
               class="rb_layout_box <?php echo isset($row_mod['md_show']) ? $row_mod['md_show'] : ''; ?>"
-              style="width:<?php echo $row_mod['md_width']; ?><?php echo !empty($row_mod['md_size']) ? $row_mod['md_size'] : '%'; ?>; height:<?php echo $row_mod['md_height']; ?>;"
+              style="width:<?php echo $row_mod['md_width']; ?><?php echo !empty($row_mod['md_size']) ? $row_mod['md_size'] : '%'; ?>; height:<?php echo (is_numeric($row_mod['md_height']) && $row_mod['md_height'] > 0) ? $row_mod['md_height'].'px' : $row_mod['md_height']; ?>;"
               data-order-id="<?php echo $row_mod['md_order_id']; ?>"
               data-id="<?php echo $row_mod['md_id']; ?>"
               data-layout="<?php echo $row_mod['md_layout']; ?>"
