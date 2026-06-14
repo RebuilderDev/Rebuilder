@@ -656,12 +656,12 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
 
 
 <script>
-// 페이지 로드 시 이미 뷰포트 안에 있는 요소는 즉시 animate 처리
+// 뷰포트 안에 들어온 요소는 AOS 발동 위치와 관계없이 표시
 function rb_aos_force_visible() {
     var windowH = window.innerHeight;
     document.querySelectorAll('[data-aos]').forEach(function(el) {
         var rect = el.getBoundingClientRect();
-        if (rect.top < windowH) {
+        if (rect.top < windowH && rect.bottom > 0) {
             el.classList.add('aos-animate');
         }
     });
@@ -669,6 +669,26 @@ function rb_aos_force_visible() {
 
 document.addEventListener('DOMContentLoaded', rb_aos_force_visible);
 window.addEventListener('load', rb_aos_force_visible);
+
+(function() {
+    var ticking = false;
+    var trailingTimer = null;
+
+    function requestAosVisibleCheck() {
+        if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(function() {
+                rb_aos_force_visible();
+                ticking = false;
+            });
+        }
+        clearTimeout(trailingTimer);
+        trailingTimer = setTimeout(rb_aos_force_visible, 120);
+    }
+
+    window.addEventListener('scroll', requestAosVisibleCheck, { passive: true });
+    window.addEventListener('resize', requestAosVisibleCheck);
+})();
 
 function rb_update_mod_label_heights() {
     document.querySelectorAll('.rb-mod-label[data-mod-id]').forEach(function(label) {
