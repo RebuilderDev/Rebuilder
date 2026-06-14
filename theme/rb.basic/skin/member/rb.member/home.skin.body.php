@@ -54,6 +54,7 @@ function numberWithCommas(x) {
         return x;
     }
 }
+
 </script>
 
 <?php if(isset($rb_builder['bu_mini_use1']) && $rb_builder['bu_mini_use1'] == 1) { ?>
@@ -103,6 +104,9 @@ while ($row = sql_fetch_array($res)) {
         chart: {
             type: 'line',
             height: 260,
+            width: '100%',
+            redrawOnParentResize: true,
+            redrawOnWindowResize: true,
             toolbar: {
                 show: false
             },
@@ -247,6 +251,9 @@ for ($i = 6; $i >= 0; $i--) {
         chart: {
             type: 'bar',
             height: 260,
+            width: '100%',
+            redrawOnParentResize: true,
+            redrawOnWindowResize: true,
             toolbar: {
                 show: false
             },

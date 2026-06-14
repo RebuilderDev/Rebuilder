@@ -482,7 +482,7 @@ if(!defined('G5_IS_ADMIN'))
 ?>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    (function() {
         function setViewport() {
             var w = document.documentElement.clientWidth;
             document.documentElement.style.setProperty('--vw', w + 'px');
@@ -490,7 +490,7 @@ if(!defined('G5_IS_ADMIN'))
         }
         setViewport();
         window.addEventListener('resize', setViewport);
-    });
+    })();
 </script>
 
 </head>
