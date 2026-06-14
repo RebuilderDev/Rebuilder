@@ -5,42 +5,7 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 if($w == "") {
     if(isset($pa['pa_is']) && $pa['pa_is'] == 1 && isset($pa['pa_use']) && $pa['pa_use'] == 1) {
 
-        if(isset($pa['pa_add_use']) && $pa['pa_add_use'] == 1) {
-
-            if(isset($pa['pa_level']) && $pa['pa_level']) {
-                $re_level = $pa['pa_level'];
-            } else {
-                $re_level = $config['cf_register_level'];
-            }
-
-            memo_auto_send('입점 신청이 승인 되었습니다.', '', $mb_id, "system-msg");
-            memo_auto_send('입점사 가입 승인건이 있습니다.', '', $config['cf_admin'], "system-msg");
-
-        } else {
-            $re_level = $config['cf_register_level'];
-            memo_auto_send('입점 신청이 접수 되었습니다.', '', $mb_id, "system-msg");
-            memo_auto_send('입점사 가입 신청건이 있습니다.', '', $config['cf_admin'], "system-msg");
-        }
-
-
-        $sqls = "UPDATE {$g5['member_table']}
-                    SET mb_partner = '{$_POST['mb_partner']}',
-                        mb_partner_add_time = '" . G5_TIME_YMDHIS . "',
-                        mb_bank = '{$_POST['mb_bank']}',
-                        mb_level = '{$re_level}'
-                        where mb_id = '{$mb_id}' ";
-        sql_query($sqls);
-    }
-} else if ($w == "u") {
-
-    if(isset($pa['pa_is']) && $pa['pa_is'] == 1 && isset($pa['pa_use']) && $pa['pa_use'] == 1) {
-
-        $sqls = "UPDATE {$g5['member_table']}
-                    SET mb_bank = '{$_POST['mb_bank']}'
-                        where mb_id = '{$mb_id}' ";
-        sql_query($sqls);
-
-        if(isset($_POST['re']) && $_POST['re'] == "re") {
+        if($_POST['mb_partner'] == 2 || $_POST['mb_partner'] == 1) {
 
             if(isset($pa['pa_add_use']) && $pa['pa_add_use'] == 1) {
 
@@ -50,27 +15,69 @@ if($w == "") {
                     $re_level = $config['cf_register_level'];
                 }
 
-                memo_auto_send('입점 전환 신청이 승인 되었습니다.', '', $mb_id, "system-msg");
-                memo_auto_send('입점사 전환가입 승인건이 있습니다.', '', $config['cf_admin'], "system-msg");
+                memo_auto_send('입점 신청이 승인 되었습니다.', '', $mb_id, "system-msg");
+                memo_auto_send('입점사 가입 승인건이 있습니다.', '', $config['cf_admin'], "system-msg");
 
             } else {
-
                 $re_level = $config['cf_register_level'];
-
-                memo_auto_send('입점 전환 신청이 접수 되었습니다.', '', $mb_id, "system-msg");
-                memo_auto_send('입점사 전환가입 신청건이 있습니다.', '', $config['cf_admin'], "system-msg");
-
+                memo_auto_send('입점 신청이 접수 되었습니다.', '', $mb_id, "system-msg");
+                memo_auto_send('입점사 가입 신청건이 있습니다.', '', $config['cf_admin'], "system-msg");
             }
 
+
             $sqls = "UPDATE {$g5['member_table']}
-                    SET mb_partner = '{$_POST['mb_partner']}',
-                        mb_partner_add_time = '" . G5_TIME_YMDHIS . "',
-                        mb_bank = '{$_POST['mb_bank']}',
-                        mb_level = '{$re_level}'
-                        where mb_id = '{$mb_id}' ";
+                        SET mb_partner = '{$_POST['mb_partner']}',
+                            mb_partner_add_time = '" . G5_TIME_YMDHIS . "',
+                            mb_bank = '{$_POST['mb_bank']}',
+                            mb_level = '{$re_level}'
+                            where mb_id = '{$mb_id}' ";
+            sql_query($sqls);
+        }
+    }
+} else if ($w == "u") {
+
+    if(isset($pa['pa_is']) && $pa['pa_is'] == 1 && isset($pa['pa_use']) && $pa['pa_use'] == 1) {
+
+        if($_POST['mb_partner'] == 2 || $_POST['mb_partner'] == 1) {
+
+            $sqls = "UPDATE {$g5['member_table']}
+                        SET mb_bank = '{$_POST['mb_bank']}'
+                            where mb_id = '{$mb_id}' ";
             sql_query($sqls);
 
-            goto_url(G5_HTTP_BBS_URL.'/register_result.php?partner='.$_POST['mb_partner']);
+            if(isset($_POST['re']) && $_POST['re'] == "re") {
+
+                if(isset($pa['pa_add_use']) && $pa['pa_add_use'] == 1) {
+
+                    if(isset($pa['pa_level']) && $pa['pa_level']) {
+                        $re_level = $pa['pa_level'];
+                    } else {
+                        $re_level = $config['cf_register_level'];
+                    }
+
+                    memo_auto_send('입점 전환 신청이 승인 되었습니다.', '', $mb_id, "system-msg");
+                    memo_auto_send('입점사 전환가입 승인건이 있습니다.', '', $config['cf_admin'], "system-msg");
+
+                } else {
+
+                    $re_level = $config['cf_register_level'];
+
+                    memo_auto_send('입점 전환 신청이 접수 되었습니다.', '', $mb_id, "system-msg");
+                    memo_auto_send('입점사 전환가입 신청건이 있습니다.', '', $config['cf_admin'], "system-msg");
+
+                }
+
+                $sqls = "UPDATE {$g5['member_table']}
+                        SET mb_partner = '{$_POST['mb_partner']}',
+                            mb_partner_add_time = '" . G5_TIME_YMDHIS . "',
+                            mb_bank = '{$_POST['mb_bank']}',
+                            mb_level = '{$re_level}'
+                            where mb_id = '{$mb_id}' ";
+                sql_query($sqls);
+
+                goto_url(G5_HTTP_BBS_URL.'/register_result.php?partner='.$_POST['mb_partner']);
+            }
+
         }
 
     }
