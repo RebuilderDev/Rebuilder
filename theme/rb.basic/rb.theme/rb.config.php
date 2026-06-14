@@ -440,7 +440,14 @@
             data: data,
             success: function(res) {
                 if (res.status === 'success') {
-                    alert('설정이 저장되었습니다.');
+                    if (typeof alert === 'function' && alert.length > 1) {
+                        alert('설정이 저장되었습니다.', function() {
+                            location.reload();
+                        });
+                    } else {
+                        alert('설정이 저장되었습니다.');
+                        location.reload();
+                    }
                 } else {
                     alert(res.msg || '저장 실패');
                 }
