@@ -21,6 +21,12 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
 add_javascript('<script src="'.G5_JS_URL.'/jquery.register_form.js"></script>', 0);
 if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipin'] || $config['cf_cert_hp']))
     add_javascript('<script src="'.G5_JS_URL.'/certify.js?v='.G5_JS_VER.'"></script>', 0);
+
+$rb_sms_cert_use = (function_exists('rb_sms_cert_is_enabled') && rb_sms_cert_is_enabled()) ? 1 : 0;
+$rb_sms_cert_config = function_exists('rb_sms_cert_get_config') ? rb_sms_cert_get_config(false) : array();
+$rb_sms_cert_required = ($rb_sms_cert_use && !empty($rb_sms_cert_config['sms_cert_required'])) ? 1 : 0;
+$rb_sms_cert_member_verified = ($w == 'u' && isset($member['mb_certify']) && $member['mb_certify'] === 'hp') ? 1 : 0;
+$rb_sms_cert_show = ($rb_sms_cert_use && ($w == '' || ($w == 'u' && !$rb_sms_cert_member_verified))) ? 1 : 0;
 ?>
 
 <!-- 회원정보 입력/수정 시작 { -->
@@ -55,6 +61,41 @@ if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipi
     #rb_topvisual {
         display: none;
     }
+
+    .rb_sms_cert_wrap #rb_sms_cert_code,
+    .rb_sms_cert_wrap .btn_frmline {
+        height: 35px !important;
+        box-sizing: border-box !important;
+        border-radius: 6px !important;
+    }
+
+    .rb_sms_cert_wrap #rb_sms_cert_code {
+        width: 100px !important;
+        flex: 0 0 100px !important;
+    }
+
+    .rb_sms_cert_wrap {
+        justify-content: flex-start !important;
+        gap: 5px !important;
+    }
+
+    .rb_sms_cert_wrap #rb_sms_cert_time {
+        display: inline-flex;
+        align-items: center;
+        height: 35px;
+    }
+
+    .rb_sms_cert_wrap #rb_sms_cert_time {
+        margin-bottom: 0 !important;
+    }
+
+    .rb_sms_cert_wrap #rb_sms_cert_resend {
+        margin-left: auto !important;
+    }
+
+    .rb_sms_cert_wrap .btn_frmline {
+        margin-left: 0 !important;
+    }
 </style>
 
 <div class="rb_member">
@@ -67,6 +108,7 @@ if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipi
             <input type="hidden" name="agree2" value="<?php echo $agree2 ?>">
             <input type="hidden" name="cert_type" value="<?php echo $member['mb_certify']; ?>">
             <input type="hidden" name="cert_no" value="">
+            <input type="hidden" name="rb_sms_cert_verified" value="">
             <input type="hidden" name="re" value="<?php echo isset($re) ? $re : ''; ?>">
 
             <?php if (isset($member['mb_sex'])) {  ?><input type="hidden" name="mb_sex" value="<?php echo $member['mb_sex'] ?>"><?php }  ?>
@@ -257,12 +299,25 @@ if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipi
                 </li>
                 <?php }  ?>
 
-                <?php if ($config['cf_use_hp'] || ($config["cf_cert_use"] && ($config['cf_cert_hp'] || $config['cf_cert_simple']))) {  ?>
+                <?php if ($config['cf_use_hp'] || $rb_sms_cert_use || ($config["cf_cert_use"] && ($config['cf_cert_hp'] || $config['cf_cert_simple']))) {  ?>
                 <li>
                     <span>휴대전화</span>
-                    <input type="text" name="mb_hp" value="<?php echo get_text($member['mb_hp']) ?>" id="reg_mb_hp" <?php echo $hp_required; ?> <?php echo $hp_readonly; ?> class="input full_input <?php echo $hp_required; ?> <?php echo $hp_readonly; ?>" maxlength="20" placeholder="휴대전화번호">
+                    <input type="text" name="mb_hp" value="<?php echo get_text($member['mb_hp']) ?>" id="reg_mb_hp" <?php echo $hp_required; ?> <?php echo $hp_readonly; ?> <?php echo $rb_sms_cert_required ? 'required' : ''; ?> class="input full_input <?php echo $hp_required; ?> <?php echo $hp_readonly; ?> <?php echo $rb_sms_cert_required ? 'required' : ''; ?>" maxlength="20" placeholder="휴대전화번호">
                     <?php if ($config['cf_cert_use'] && ($config['cf_cert_hp'] || $config['cf_cert_simple'])) { ?>
                     <input type="hidden" name="old_mb_hp" value="<?php echo get_text($member['mb_hp']) ?>">
+                    <?php } ?>
+                    <?php if ($w == 'u' && $rb_sms_cert_use) { ?>
+                    <span class="help_text">휴대전화 번호가 변경되는 경우 인증이 취소처리 됩니다.</span>
+                    <?php } ?>
+                    <?php if ($rb_sms_cert_show) { ?>
+                    <div class="input_wrap mt-5 rb_sms_cert_wrap">
+                        <input type="text" id="rb_sms_cert_code" <?php echo $rb_sms_cert_required ? 'required' : ''; ?> class="input full_input <?php echo $rb_sms_cert_required ? 'required' : ''; ?>" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="인증번호">
+                        <span id="rb_sms_cert_time" class="font-B"></span>
+                        <button type="button" class="btn_frmline" id="rb_sms_cert_send">인증번호 발송</button>
+                        <button type="button" class="btn_frmline" id="rb_sms_cert_resend" style="display:none;">재발송</button>
+                        <button type="button" class="btn_frmline" id="rb_sms_cert_verify" style="display:none;">인증확인</button>
+                    </div>
+                    <span class="result_message main_color font-R" id="rb_sms_cert_msg"></span>
                     <?php } ?>
                 </li>
                 <?php }  ?>
@@ -728,6 +783,134 @@ if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipi
             return;
         });
         <?php } ?>
+
+        <?php if ($rb_sms_cert_show) { ?>
+        var rbSmsCertTimer = null;
+        var rbSmsCertRemain = 0;
+        var $rbSmsMsg = $('#rb_sms_cert_msg');
+        var $rbSmsTime = $('#rb_sms_cert_time');
+
+        function rbSmsCertSetMsg(msg, type) {
+            $rbSmsMsg.removeClass('success error');
+            if (msg) {
+                $rbSmsMsg.addClass(type === 'error' ? 'error' : 'success');
+            }
+            $rbSmsMsg.text(msg || '');
+        }
+
+        function rbSmsCertStartTimer(seconds) {
+            rbSmsCertRemain = parseInt(seconds, 10) || 0;
+            if (rbSmsCertTimer) {
+                clearInterval(rbSmsCertTimer);
+            }
+
+            function rbSmsCertTick() {
+                if (rbSmsCertRemain <= 0) {
+                    clearInterval(rbSmsCertTimer);
+                    rbSmsCertTimer = null;
+                    $('#rb_sms_cert_verify').hide();
+                    $rbSmsTime.text('');
+                    rbSmsCertSetMsg('인증시간이 만료되었습니다. 다시 발송해 주세요.', 'error');
+                    return;
+                }
+                var min = Math.floor(rbSmsCertRemain / 60);
+                var sec = rbSmsCertRemain % 60;
+                $rbSmsTime.text(min + ':' + (sec < 10 ? '0' : '') + sec);
+                rbSmsCertRemain--;
+            }
+
+            rbSmsCertTick();
+            rbSmsCertTimer = setInterval(rbSmsCertTick, 1000);
+        }
+
+        $('#rb_sms_cert_send, #rb_sms_cert_resend').on('click', function() {
+            var hp = $('#reg_mb_hp').val();
+
+            if (!$.trim(hp)) {
+                alert('휴대전화번호를 입력해 주세요.');
+                $('#reg_mb_hp').focus();
+                return;
+            }
+
+            $('input[name="rb_sms_cert_verified"]').val('');
+            $('input[name="cert_no"]').val('');
+            $('#rb_sms_cert_verify').hide();
+            $rbSmsTime.text('');
+
+            $.post('<?php echo G5_URL; ?>/rb/rb.mod/smscert/ajax.sms_cert_send.php', {
+                mb_hp: hp
+            }, function(res) {
+                if (res && res.status === 'success') {
+                    var sendLimit = res.daily_limit ? parseInt(res.daily_limit, 10) : 0;
+                    var sendCount = res.sent_count ? parseInt(res.sent_count, 10) : 0;
+                    var sendCountText = sendLimit > 0 ? ' (' + sendCount + '/' + sendLimit + ')' : '';
+                    alert('인증번호가 발송되었습니다.' + sendCountText);
+                    $('#rb_sms_cert_send').hide();
+                    $('#rb_sms_cert_resend').show();
+                    $('#rb_sms_cert_verify').show();
+                    rbSmsCertStartTimer(res.limit_seconds || 300);
+                } else {
+                    if (res && res.error_code === 'daily_limit') {
+                        alert('일일 발송제한 횟수를 초과 하였습니다.\n내일 다시 이용해주세요.');
+                    } else if (res && res.error_code === 'fail_limit') {
+                        alert('일일 실패차단 횟수를 초과 하였습니다.\n내일 다시 이용해주세요.');
+                    } else {
+                        alert('인증번호 발송에 실패 하였습니다. 관리자 에게 문의해주세요.');
+                    }
+                    rbSmsCertSetMsg('');
+                }
+            }, 'json').fail(function() {
+                alert('인증번호 발송에 실패 하였습니다. 관리자 에게 문의해주세요.');
+                rbSmsCertSetMsg('');
+            });
+        });
+
+        $('#rb_sms_cert_verify').on('click', function() {
+            if (!$.trim($('#rb_sms_cert_code').val())) {
+                alert('인증번호를 입력해주세요.');
+                $('#rb_sms_cert_code').focus();
+                return;
+            }
+
+            $.post('<?php echo G5_URL; ?>/rb/rb.mod/smscert/ajax.sms_cert_verify.php', {
+                mb_hp: $('#reg_mb_hp').val(),
+                cert_code: $('#rb_sms_cert_code').val()
+            }, function(res) {
+                if (res && res.status === 'success') {
+                    $('input[name="rb_sms_cert_verified"]').val('1');
+                    $('input[name="cert_no"]').val(res.cert_no || '');
+                    $('#reg_mb_hp, #rb_sms_cert_code').prop('readonly', true);
+                    if (rbSmsCertTimer) {
+                        clearInterval(rbSmsCertTimer);
+                        rbSmsCertTimer = null;
+                    }
+                    $rbSmsTime.text('');
+                    rbSmsCertSetMsg(res.msg || '휴대전화 인증이 완료되었습니다.');
+                } else {
+                    if (res && res.error_code === 'fail_limit') {
+                        alert('일일 실패차단 횟수를 초과 하였습니다.\n내일 다시 이용해주세요.');
+                    } else {
+                        var failLimit = res && res.fail_limit ? parseInt(res.fail_limit, 10) : 0;
+                        var failCount = res && res.fail_count ? parseInt(res.fail_count, 10) : 0;
+                        var failText = failLimit > 0 ? ' (' + failCount + '/' + failLimit + ')' : '';
+                        alert('인증번호가 잘못 되었습니다.\n다시 확인해주세요.' + failText);
+                    }
+                }
+            }, 'json').fail(function() {
+                alert('인증번호가 잘못 되었습니다.\n다시 확인해주세요.');
+            });
+        });
+
+        $('#reg_mb_hp').on('input', function() {
+            $('input[name="rb_sms_cert_verified"]').val('');
+            $('input[name="cert_no"]').val('');
+            $('#reg_mb_hp, #rb_sms_cert_code').prop('readonly', false);
+            $('#rb_sms_cert_send').show();
+            $('#rb_sms_cert_resend').hide();
+            $('#rb_sms_cert_verify').hide();
+            $rbSmsTime.text('');
+        });
+        <?php } ?>
     });
 
     // submit 최종 폼체크
@@ -786,6 +969,13 @@ if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipi
         // 본인확인 체크
         if (f.cert_no.value == "") {
             alert("회원가입을 위해서는 본인확인을 해주셔야 합니다.");
+            return false;
+        }
+        <?php } ?>
+
+        <?php if($rb_sms_cert_show && $rb_sms_cert_required) { ?>
+        if (f.rb_sms_cert_verified.value != "1") {
+            alert("SMS 인증이 완료되지 않았습니다.");
             return false;
         }
         <?php } ?>

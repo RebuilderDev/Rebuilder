@@ -88,12 +88,24 @@ if($w == "") {
 
 }
 
-if ($w == "" && function_exists('rb_sms_cert_is_enabled') && rb_sms_cert_is_enabled() && get_session('ss_rb_sms_cert_verified') === '1') {
+if (($w == "" || $w == "u") && function_exists('rb_sms_cert_is_enabled') && rb_sms_cert_is_enabled() && get_session('ss_rb_sms_cert_verified') === '1') {
     $rb_sms_cert_hp = function_exists('rb_sms_cert_normalize_hp') ? rb_sms_cert_normalize_hp(get_session('ss_rb_sms_cert_hp')) : preg_replace('/[^0-9]/', '', (string)get_session('ss_rb_sms_cert_hp'));
     if ($rb_sms_cert_hp !== '') {
         sql_query("UPDATE {$g5['member_table']}
             SET mb_hp = '" . sql_escape_string(hyphen_hp_number($rb_sms_cert_hp)) . "',
                 mb_certify = 'hp'
+            WHERE mb_id = '" . sql_escape_string($mb_id) . "'");
+    }
+}
+
+if ($w == "u") {
+    $rb_session_hp = get_session('ss_reg_mb_hp');
+    $rb_old_hp = $rb_session_hp !== '' ? preg_replace('/[^0-9]/', '', (string)$rb_session_hp) : (isset($member['mb_hp']) ? preg_replace('/[^0-9]/', '', (string)$member['mb_hp']) : '');
+    $rb_new_hp = isset($mb_hp) ? preg_replace('/[^0-9]/', '', (string)$mb_hp) : '';
+
+    if ($rb_old_hp !== $rb_new_hp && get_session('ss_rb_sms_cert_verified') !== '1') {
+        sql_query("UPDATE {$g5['member_table']}
+            SET mb_certify = ''
             WHERE mb_id = '" . sql_escape_string($mb_id) . "'");
     }
 }
