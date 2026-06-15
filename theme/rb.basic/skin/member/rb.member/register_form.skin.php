@@ -307,7 +307,7 @@ $rb_sms_cert_show = ($rb_sms_cert_use && ($w == '' || ($w == 'u' && !$rb_sms_cer
                     <input type="hidden" name="old_mb_hp" value="<?php echo get_text($member['mb_hp']) ?>">
                     <?php } ?>
                     <?php if ($w == 'u' && $rb_sms_cert_use) { ?>
-                    <span class="help_text">휴대전화 번호가 변경되는 경우 인증이 취소처리 됩니다.</span>
+                    <span class="help_text" id="rb_sms_hp_change_msg" data-default="<?php echo $rb_sms_cert_member_verified ? '휴대전화 번호가 변경되는 경우 인증이 취소처리 됩니다.' : '휴대전화번호 인증이 필요 합니다.'; ?>" data-changed="휴대전화 번호가 변경되는 경우 재인증이 필요합니다."><?php echo $rb_sms_cert_member_verified ? '휴대전화 번호가 변경되는 경우 인증이 취소처리 됩니다.' : '휴대전화번호 인증이 필요 합니다.'; ?></span>
                     <?php } ?>
                     <?php if ($rb_sms_cert_show) { ?>
                     <div class="input_wrap mt-5 rb_sms_cert_wrap">
@@ -854,6 +854,8 @@ $rb_sms_cert_show = ($rb_sms_cert_use && ($w == '' || ($w == 'u' && !$rb_sms_cer
                         alert('일일 발송제한 횟수를 초과 하였습니다.\n내일 다시 이용해주세요.');
                     } else if (res && res.error_code === 'fail_limit') {
                         alert('일일 실패차단 횟수를 초과 하였습니다.\n내일 다시 이용해주세요.');
+                    } else if (res && res.error_code === 'duplicate_hp') {
+                        alert('이미 등록된 휴대전화 번호가 있습니다.');
                     } else {
                         alert('인증번호 발송에 실패 하였습니다. 관리자 에게 문의해주세요.');
                     }
@@ -912,6 +914,19 @@ $rb_sms_cert_show = ($rb_sms_cert_use && ($w == '' || ($w == 'u' && !$rb_sms_cer
         });
         <?php } ?>
     });
+
+    <?php if ($w == 'u' && $rb_sms_cert_use) { ?>
+    function rbNormalizeHpValue(value) {
+        return String(value || '').replace(/[^0-9]/g, '');
+    }
+
+    var rbOriginalHp = rbNormalizeHpValue('<?php echo get_text($member['mb_hp']); ?>');
+    $('#reg_mb_hp').on('input', function() {
+        var $msg = $('#rb_sms_hp_change_msg');
+        var isChanged = rbNormalizeHpValue(this.value) !== rbOriginalHp;
+        $msg.text(isChanged ? $msg.data('changed') : $msg.data('default'));
+    }).trigger('input');
+    <?php } ?>
 
     // submit 최종 폼체크
     function fregisterform_submit(f) {
