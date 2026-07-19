@@ -8,6 +8,8 @@ if (function_exists('social_log_file_delete')) {
     social_log_file_delete(86400);
 }
 
+//5.6.31 변경없음
+
 $g5['title'] = '관리자메인';
 require_once './admin.head.php';
 

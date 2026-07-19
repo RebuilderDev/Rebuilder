@@ -325,7 +325,7 @@ for($i=0; $i<$count_ii_article; $i++) {
 }
 $it_info_value = addslashes(serialize($value_array));
 
-$it_name = isset($_POST['it_name']) ? strip_tags(clean_xss_attributes(trim($_POST['it_name']))) : '';
+$it_name = isset($_POST['it_name']) ? addslashes(strip_tags(clean_xss_attributes(trim(stripslashes($_POST['it_name']))))) : '';
 
 // KVE-2019-0708
 $check_sanitize_keys = array(
@@ -365,7 +365,7 @@ $check_sanitize_keys = array(
 );
 
 foreach( $check_sanitize_keys as $key ){
-    $$key = isset($_POST[$key]) ? strip_tags(clean_xss_attributes($_POST[$key])) : '';
+    $$key = isset($_POST[$key]) ? addslashes(strip_tags(clean_xss_attributes(stripslashes($_POST[$key])))) : '';
 }
 
 $it_basic = preg_replace('#<script(.*?)>(.*?)<\/script>#is', '', $it_basic);
@@ -374,31 +374,17 @@ $it_explan = isset($_POST['it_explan']) ? $_POST['it_explan'] : '';
 if ($it_name == "")
     alert("상품명을 입력해 주십시오.");
 
-// 스킨 경로 검증
-$it_skin = isset($_POST['it_skin']) ? strip_tags(clean_xss_attributes($_POST['it_skin'])) : '';
-$it_mobile_skin = isset($_POST['it_mobile_skin']) ? strip_tags(clean_xss_attributes($_POST['it_mobile_skin'])) : '';
+// 상품 스킨은 파일 경로가 아니라 스킨 디렉토리명(basic, theme/basic 등)을 저장한다.
+$it_skin = isset($_POST['it_skin']) ? trim(strip_tags(clean_xss_attributes(stripslashes($_POST['it_skin'])))) : '';
+$it_mobile_skin = isset($_POST['it_mobile_skin']) ? trim(strip_tags(clean_xss_attributes(stripslashes($_POST['it_mobile_skin'])))) : '';
 
-$check_files = array();
-if( !empty($it_skin) )          $check_files[] = $it_skin;
-if( !empty($it_mobile_skin) )   $check_files[] = $it_mobile_skin;
-
-foreach( $check_files as $file ){
-    if( empty($file) ) continue;
-
-    if( preg_match('#\.+(\/|\\\)#', $file) ){
-        alert('스킨파일명에 포함될수 없는 문자가 들어있습니다.');
-    }
-
-    if( ! is_include_path_check($file, 1) ){
-        alert('오류 : 데이터폴더가 포함된 path 또는 잘못된 path 를 포함할수 없습니다.');
-    }
-
-    $file_ext = pathinfo($file, PATHINFO_EXTENSION);
-
-    if( ! $file_ext || ! in_array($file_ext, array('php', 'htm', 'html')) || ! preg_match('/^.*\.(php|htm|html)$/i', $file) ) {
-        alert('스킨 파일 경로의 확장자는 php, htm, html 만 허용합니다.');
-    }
+if (function_exists('check_shop_skin_dir')) {
+    check_shop_skin_dir($it_skin, 'PC용 스킨');
+    check_shop_skin_dir($it_mobile_skin, '모바일용 스킨', true);
 }
+
+$it_skin = addslashes($it_skin);
+$it_mobile_skin = addslashes($it_mobile_skin);
 
 $sql_common = " ca_id               = '$ca_id',
                 ca_id2              = '$ca_id2',
@@ -422,7 +408,7 @@ $sql_common = " ca_id               = '$ca_id',
                 it_type5            = '$it_type5',
                 it_basic            = '$it_basic',
                 it_explan           = '$it_explan',
-                it_explan2          = '".strip_tags(trim(clean_xss_attributes($it_explan)))."',
+                it_explan2          = '".addslashes(strip_tags(trim(clean_xss_attributes(stripslashes($it_explan)))))."',
                 it_mobile_explan    = '$it_mobile_explan',
                 it_cust_price       = '$it_cust_price',
                 it_price            = '$it_price',
