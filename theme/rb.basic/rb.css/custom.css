@@ -1238,6 +1238,12 @@ footer .footer_gnb {background-color: #fff;}
 }
 
 /* 2.2.6.3 { */
+@media all and (max-width:1024px) {
+    .rb_layout_box {
+        height: auto !important;
+    }
+}
+
 .rb_latest_tabs_top .latest-tabs-wrap .bo_tab,
 .rb_latest_tabs_left .latest-tabs-wrap .bo_tab,
 .rb_latest_tabs_top .latest-tabs-wrap .bo_tab .bo_tab_ul,
