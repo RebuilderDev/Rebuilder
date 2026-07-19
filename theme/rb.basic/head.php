@@ -94,13 +94,15 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
         $carousel_type  = defined('_SHOP_') ? $rb_theme_row['carousel_type_shop']        : $rb_theme_row['carousel_type'];
         $carousel_speed = defined('_SHOP_') ? (int)$rb_theme_row['carousel_speed_shop']  : (int)$rb_theme_row['carousel_speed'];
         $carousel_time  = defined('_SHOP_') ? (int)$rb_theme_row['carousel_time_shop']   : (int)$rb_theme_row['carousel_time'];
+        $carousel_height_pc = max(1, (int)(defined('_SHOP_') ? $rb_theme_row['carousel_height_pc_shop'] : $rb_theme_row['carousel_height_pc']));
+        $carousel_height_mo = max(1, (int)(defined('_SHOP_') ? $rb_theme_row['carousel_height_mo_shop'] : $rb_theme_row['carousel_height_mo']));
         ?>
     <?php if ($carousel_use === 1) { ?>
     <?php if(defined('_INDEX_')) { ?>
 
     <?php if (empty($filtered_carousel)) { ?>
     <!-- 캐러셀 데이터가 없을 때 -->
-    <div class="rb_carousel" style="background-color: #25282B;">
+    <div class="rb_carousel rb_carousel_main" style="--rb-carousel-height-pc: <?php echo $carousel_height_pc; ?>px; --rb-carousel-height-mo: <?php echo $carousel_height_mo; ?>px; background-color: #25282B;">
         <ul class="rb_carousel_img">
             <li>
                 <div class="bg">
@@ -131,7 +133,7 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
     </script>
     <?php } else { ?>
     <!-- 캐러셀 데이터가 있을 때 -->
-    <div class="rb_carousel">
+    <div class="rb_carousel rb_carousel_main" style="--rb-carousel-height-pc: <?php echo $carousel_height_pc; ?>px; --rb-carousel-height-mo: <?php echo $carousel_height_mo; ?>px;">
         <ul class="rb_carousel_img">
             <?php foreach ($filtered_carousel as $item) { ?>
             <li>

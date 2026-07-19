@@ -17,6 +17,8 @@ $sql = "
         `carousel_type` varchar(20) NOT NULL DEFAULT 'fade',
         `carousel_time` int(11) NOT NULL DEFAULT 4000,
         `carousel_speed` int(11) NOT NULL DEFAULT 600,
+        `carousel_height_pc` int(11) NOT NULL DEFAULT 600,
+        `carousel_height_mo` int(11) NOT NULL DEFAULT 600,
 
         `reg_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `upd_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -79,6 +81,26 @@ if (!$col_check3) {
     sql_query("ALTER TABLE rb_theme ADD COLUMN carousel_speed_shop int(11) NOT NULL DEFAULT 600 AFTER carousel_time_shop");
 }
 
+$col_check_height_pc = sql_fetch("SHOW COLUMNS FROM rb_theme LIKE 'carousel_height_pc'");
+if (!$col_check_height_pc) {
+    sql_query("ALTER TABLE rb_theme ADD COLUMN carousel_height_pc int(11) NOT NULL DEFAULT 600 AFTER carousel_speed");
+}
+
+$col_check_height_mo = sql_fetch("SHOW COLUMNS FROM rb_theme LIKE 'carousel_height_mo'");
+if (!$col_check_height_mo) {
+    sql_query("ALTER TABLE rb_theme ADD COLUMN carousel_height_mo int(11) NOT NULL DEFAULT 600 AFTER carousel_height_pc");
+}
+
+$col_check_height_pc_shop = sql_fetch("SHOW COLUMNS FROM rb_theme LIKE 'carousel_height_pc_shop'");
+if (!$col_check_height_pc_shop) {
+    sql_query("ALTER TABLE rb_theme ADD COLUMN carousel_height_pc_shop int(11) NOT NULL DEFAULT 600 AFTER carousel_speed_shop");
+}
+
+$col_check_height_mo_shop = sql_fetch("SHOW COLUMNS FROM rb_theme LIKE 'carousel_height_mo_shop'");
+if (!$col_check_height_mo_shop) {
+    sql_query("ALTER TABLE rb_theme ADD COLUMN carousel_height_mo_shop int(11) NOT NULL DEFAULT 600 AFTER carousel_height_pc_shop");
+}
+
 $col_check4 = sql_fetch("SHOW COLUMNS FROM rb_theme_carousel LIKE 'is_sub'");
 if (!$col_check4) {
     sql_query("ALTER TABLE rb_theme_carousel ADD COLUMN is_sub tinyint(1) NOT NULL DEFAULT 0 AFTER carousel_type_mode");
@@ -114,11 +136,15 @@ $rb_theme_row = array(
     'carousel_type'  => 'fade',
     'carousel_time'  => 4000,
     'carousel_speed' => 600,
+    'carousel_height_pc' => 600,
+    'carousel_height_mo' => 600,
 
     'carousel_use_shop'   => 0,
     'carousel_type_shop'  => 'fade',
     'carousel_time_shop'  => 4000,
     'carousel_speed_shop' => 600,
+    'carousel_height_pc_shop' => 600,
+    'carousel_height_mo_shop' => 600,
 );
 
 // 테마별 설정 로드

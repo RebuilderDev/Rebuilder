@@ -27,6 +27,8 @@ $carousel_use   = isset($_POST['carousel_use']) ? (int)$_POST['carousel_use'] : 
 $carousel_type  = isset($_POST['carousel_type']) ? sql_real_escape_string((string)$_POST['carousel_type']) : 'fade';
 $carousel_time  = isset($_POST['carousel_time']) ? (int)$_POST['carousel_time'] : 4000;
 $carousel_speed = isset($_POST['carousel_speed']) ? (int)$_POST['carousel_speed'] : 600;
+$carousel_height_pc = isset($_POST['carousel_height_pc']) ? max(1, (int)$_POST['carousel_height_pc']) : 600;
+$carousel_height_mo = isset($_POST['carousel_height_mo']) ? max(1, (int)$_POST['carousel_height_mo']) : 600;
 
 
 // 기존 데이터 존재 확인
@@ -47,10 +49,14 @@ if ($row) {
             carousel_type  = IF('{$is_shop}'=1, carousel_type,  '{$carousel_type}'),
             carousel_time  = IF('{$is_shop}'=1, carousel_time,  '{$carousel_time}'),
             carousel_speed = IF('{$is_shop}'=1, carousel_speed, '{$carousel_speed}'),
+            carousel_height_pc = IF('{$is_shop}'=1, carousel_height_pc, '{$carousel_height_pc}'),
+            carousel_height_mo = IF('{$is_shop}'=1, carousel_height_mo, '{$carousel_height_mo}'),
             carousel_use_shop   = IF('{$is_shop}'=1, '{$carousel_use}',   carousel_use_shop),
             carousel_type_shop  = IF('{$is_shop}'=1, '{$carousel_type}',  carousel_type_shop),
             carousel_time_shop  = IF('{$is_shop}'=1, '{$carousel_time}',  carousel_time_shop),
-            carousel_speed_shop = IF('{$is_shop}'=1, '{$carousel_speed}', carousel_speed_shop)
+            carousel_speed_shop = IF('{$is_shop}'=1, '{$carousel_speed}', carousel_speed_shop),
+            carousel_height_pc_shop = IF('{$is_shop}'=1, '{$carousel_height_pc}', carousel_height_pc_shop),
+            carousel_height_mo_shop = IF('{$is_shop}'=1, '{$carousel_height_mo}', carousel_height_mo_shop)
 
         WHERE theme_key = '{$theme_key}'
     ";
@@ -72,10 +78,14 @@ if ($row) {
             carousel_type  = IF('{$is_shop}'=1, carousel_type,  '{$carousel_type}'),
             carousel_time  = IF('{$is_shop}'=1, carousel_time,  '{$carousel_time}'),
             carousel_speed = IF('{$is_shop}'=1, carousel_speed, '{$carousel_speed}'),
+            carousel_height_pc = IF('{$is_shop}'=1, carousel_height_pc, '{$carousel_height_pc}'),
+            carousel_height_mo = IF('{$is_shop}'=1, carousel_height_mo, '{$carousel_height_mo}'),
             carousel_use_shop   = IF('{$is_shop}'=1, '{$carousel_use}',   carousel_use_shop),
             carousel_type_shop  = IF('{$is_shop}'=1, '{$carousel_type}',  carousel_type_shop),
             carousel_time_shop  = IF('{$is_shop}'=1, '{$carousel_time}',  carousel_time_shop),
-            carousel_speed_shop = IF('{$is_shop}'=1, '{$carousel_speed}', carousel_speed_shop)
+            carousel_speed_shop = IF('{$is_shop}'=1, '{$carousel_speed}', carousel_speed_shop),
+            carousel_height_pc_shop = IF('{$is_shop}'=1, '{$carousel_height_pc}', carousel_height_pc_shop),
+            carousel_height_mo_shop = IF('{$is_shop}'=1, '{$carousel_height_mo}', carousel_height_mo_shop)
     ";
     sql_query($sql);
 }

@@ -102,11 +102,15 @@
                     $carousel_type  = $rb_theme_row['carousel_type_shop'];
                     $carousel_time  = (int)$rb_theme_row['carousel_time_shop'];
                     $carousel_speed = (int)$rb_theme_row['carousel_speed_shop'];
+                    $carousel_height_pc = max(1, (int)$rb_theme_row['carousel_height_pc_shop']);
+                    $carousel_height_mo = max(1, (int)$rb_theme_row['carousel_height_mo_shop']);
                 } else {
                     $carousel_use   = (int)$rb_theme_row['carousel_use'];
                     $carousel_type  = $rb_theme_row['carousel_type'];
                     $carousel_time  = (int)$rb_theme_row['carousel_time'];
                     $carousel_speed = (int)$rb_theme_row['carousel_speed'];
+                    $carousel_height_pc = max(1, (int)$rb_theme_row['carousel_height_pc']);
+                    $carousel_height_mo = max(1, (int)$rb_theme_row['carousel_height_mo']);
                 }
             ?>
             <?php if (defined('G5_USE_SHOP') && G5_USE_SHOP) { ?>
@@ -151,6 +155,19 @@
                         <li class="rows_inp_r mt-5">
                             <input type="radio" name="rb_carousel_use" id="rb_carousel_use_0" value="0" <?php echo ($carousel_use === 0) ? ' checked' : ''; ?>><label for="rb_carousel_use_0">사용안함</label>
                             <input type="radio" name="rb_carousel_use" id="rb_carousel_use_1" value="1" <?php echo ($carousel_use === 1) ? ' checked' : ''; ?>><label for="rb_carousel_use_1">사용함</label>
+                        </li>
+
+                        <div class="cb"></div>
+                    </ul>
+
+                    <ul class="rows_inp_lr mt-10">
+                        <li class="rows_inp_l rows_inp_l_span">
+                            <span class="font-B">높이</span><br>
+                            height
+                        </li>
+                        <li class="rows_inp_r mt-5">
+                            <input type="number" id="rb_carousel_height_pc" class="tiny_input w25 ml-0" name="rb_carousel_height_pc" min="1" placeholder="PC" value="<?php echo $carousel_height_pc; ?>"> <span class="font-12">px　</span>
+                            <input type="number" id="rb_carousel_height_mo" class="tiny_input w25 ml-0" name="rb_carousel_height_mo" min="1" placeholder="Mobile" value="<?php echo $carousel_height_mo; ?>"> <span class="font-12">px</span>
                         </li>
 
                         <div class="cb"></div>
@@ -432,6 +449,8 @@
         data.carousel_type = $('#rb_carousel_type').val() || 'fade';
         data.carousel_time = parseInt($('#rb_carousel_time').val(), 10) || 4000;
         data.carousel_speed = parseInt($('#rb_carousel_speed').val(), 10) || 600;
+        data.carousel_height_pc = parseInt($('#rb_carousel_height_pc').val(), 10) || 600;
+        data.carousel_height_mo = parseInt($('#rb_carousel_height_mo').val(), 10) || 600;
 
         $.ajax({
             url: '<?php echo G5_THEME_URL ?>/rb.theme/rb.config_update.php',
