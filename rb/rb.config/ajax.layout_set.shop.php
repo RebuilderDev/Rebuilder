@@ -178,6 +178,7 @@ foreach ($layouts as $layout_no) {
         ?>
 
         <div
+              id="rb-shop-module-<?php echo (int)$row_mod['md_id']; ?>"
               class="rb_layout_box <?php echo isset($row_mod['md_show']) ? $row_mod['md_show'] : ''; ?>"
               style="width:<?php echo $row_mod['md_width']; ?><?php echo !empty($row_mod['md_size']) ? $row_mod['md_size'] : '%'; ?>; height:<?php echo (is_numeric($row_mod['md_height']) && $row_mod['md_height'] > 0) ? $row_mod['md_height'].'px' : $row_mod['md_height']; ?>;"
               data-order-id="<?php echo $row_mod['md_order_id']; ?>"
@@ -640,7 +641,7 @@ foreach ($layouts as $layout_no) {
             ob_start();
         ?>
 
-           <div class="rb_section_box rb_section_<?php echo $row_sec['sec_id']; ?> <?php if (isset($row_sec['sec_width']) && $row_sec['sec_width'] == 1) { ?>rb_sec_wide<?php } ?>"
+           <div id="rb-shop-section-<?php echo (int)$row_sec['sec_id']; ?>" class="rb_section_box rb_section_<?php echo $row_sec['sec_id']; ?> <?php if (isset($row_sec['sec_width']) && $row_sec['sec_width'] == 1) { ?>rb_sec_wide<?php } ?>"
                  style="
                     <?php if (isset($row_sec['sec_width']) && $row_sec['sec_width'] == 1) { ?>
                     min-width:<?php if($is_index) { ?><?php echo $rb_core['main_width'] ?>px<?php } else { ?><?php echo $rb_core['sub_width'] ?>px<?php } ?>;
