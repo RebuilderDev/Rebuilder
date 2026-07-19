@@ -1236,3 +1236,14 @@ footer .footer_gnb {background-color: #fff;}
         overflow-x:hidden !important;
     }
 }
+
+/* 2.2.6.3 { */
+.rb_latest_tabs_top .latest-tabs-wrap .bo_tab,
+.rb_latest_tabs_left .latest-tabs-wrap .bo_tab,
+.rb_latest_tabs_top .latest-tabs-wrap .bo_tab .bo_tab_ul,
+.rb_latest_tabs_left .latest-tabs-wrap .bo_tab .bo_tab_ul,
+.rb_latest_tabs_top .latest-tabs-wrap .bo_tab li,
+.rb_latest_tabs_left .latest-tabs-wrap .bo_tab li {
+    height: auto !important;
+}
+/* } */
