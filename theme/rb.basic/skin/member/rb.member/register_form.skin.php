@@ -26,7 +26,9 @@ $rb_sms_cert_use = (function_exists('rb_sms_cert_is_enabled') && rb_sms_cert_is_
 $rb_sms_cert_config = function_exists('rb_sms_cert_get_config') ? rb_sms_cert_get_config(false) : array();
 $rb_sms_cert_required = ($rb_sms_cert_use && !empty($rb_sms_cert_config['sms_cert_required'])) ? 1 : 0;
 $rb_sms_cert_member_verified = ($w == 'u' && isset($member['mb_certify']) && $member['mb_certify'] === 'hp') ? 1 : 0;
-$rb_sms_cert_show = ($rb_sms_cert_use && ($w == '' || ($w == 'u' && !$rb_sms_cert_member_verified))) ? 1 : 0;
+$rb_sms_cert_render = ($rb_sms_cert_use && ($w == '' || $w == 'u')) ? 1 : 0;
+$rb_sms_cert_show = ($rb_sms_cert_render && ($w == '' || ($w == 'u' && !$rb_sms_cert_member_verified))) ? 1 : 0;
+$rb_sms_cert_initial_hidden = ($rb_sms_cert_render && !$rb_sms_cert_show) ? 1 : 0;
 ?>
 
 <!-- 회원정보 입력/수정 시작 { -->
@@ -309,15 +311,15 @@ $rb_sms_cert_show = ($rb_sms_cert_use && ($w == '' || ($w == 'u' && !$rb_sms_cer
                     <?php if ($w == 'u' && $rb_sms_cert_use) { ?>
                     <span class="help_text" id="rb_sms_hp_change_msg" data-default="<?php echo $rb_sms_cert_member_verified ? '휴대전화 번호가 변경되는 경우 인증이 취소처리 됩니다.' : '휴대전화번호 인증이 필요 합니다.'; ?>" data-changed="휴대전화 번호가 변경되는 경우 재인증이 필요합니다."><?php echo $rb_sms_cert_member_verified ? '휴대전화 번호가 변경되는 경우 인증이 취소처리 됩니다.' : '휴대전화번호 인증이 필요 합니다.'; ?></span>
                     <?php } ?>
-                    <?php if ($rb_sms_cert_show) { ?>
-                    <div class="input_wrap mt-5 rb_sms_cert_wrap">
-                        <input type="text" id="rb_sms_cert_code" <?php echo $rb_sms_cert_required ? 'required' : ''; ?> class="input full_input <?php echo $rb_sms_cert_required ? 'required' : ''; ?>" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="인증번호">
+                    <?php if ($rb_sms_cert_render) { ?>
+                    <div class="input_wrap mt-5 rb_sms_cert_wrap"<?php echo $rb_sms_cert_initial_hidden ? ' style="display:none;"' : ''; ?>>
+                        <input type="text" id="rb_sms_cert_code" <?php echo $rb_sms_cert_required ? 'required' : ''; ?> class="input full_input <?php echo $rb_sms_cert_required ? 'required' : ''; ?>" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="인증번호"<?php echo $rb_sms_cert_initial_hidden ? ' disabled' : ''; ?>>
                         <span id="rb_sms_cert_time" class="font-B"></span>
                         <button type="button" class="btn_frmline" id="rb_sms_cert_send">인증번호 발송</button>
                         <button type="button" class="btn_frmline" id="rb_sms_cert_resend" style="display:none;">재발송</button>
                         <button type="button" class="btn_frmline" id="rb_sms_cert_verify" style="display:none;">인증확인</button>
                     </div>
-                    <span class="result_message main_color font-R" id="rb_sms_cert_msg"></span>
+                    <span class="result_message main_color font-R" id="rb_sms_cert_msg"<?php echo $rb_sms_cert_initial_hidden ? ' style="display:none;"' : ''; ?>></span>
                     <?php } ?>
                 </li>
                 <?php }  ?>
@@ -717,6 +719,14 @@ $rb_sms_cert_show = ($rb_sms_cert_use && ($w == '' || ($w == 'u' && !$rb_sms_cer
 <?php include_once(dirname(__FILE__) . '/consent_modal.inc.php'); ?>
 
 <script>
+    <?php if ($w == 'u' && $rb_sms_cert_use) { ?>
+    function rbNormalizeHpValue(value) {
+        return String(value || '').replace(/[^0-9]/g, '');
+    }
+
+    var rbOriginalHp = rbNormalizeHpValue('<?php echo get_text($member['mb_hp']); ?>');
+    <?php } ?>
+
     $(function() {
         $("#reg_zip_find").css("display", "inline-block");
         var pageTypeParam = "pageType=register";
@@ -784,11 +794,13 @@ $rb_sms_cert_show = ($rb_sms_cert_use && ($w == '' || ($w == 'u' && !$rb_sms_cer
         });
         <?php } ?>
 
-        <?php if ($rb_sms_cert_show) { ?>
+        <?php if ($rb_sms_cert_render) { ?>
         var rbSmsCertTimer = null;
         var rbSmsCertRemain = 0;
         var $rbSmsMsg = $('#rb_sms_cert_msg');
         var $rbSmsTime = $('#rb_sms_cert_time');
+        var $rbSmsWrap = $('.rb_sms_cert_wrap');
+        var $rbSmsCode = $('#rb_sms_cert_code');
 
         function rbSmsCertSetMsg(msg, type) {
             $rbSmsMsg.removeClass('success error');
@@ -796,6 +808,30 @@ $rb_sms_cert_show = ($rb_sms_cert_use && ($w == '' || ($w == 'u' && !$rb_sms_cer
                 $rbSmsMsg.addClass(type === 'error' ? 'error' : 'success');
             }
             $rbSmsMsg.text(msg || '');
+        }
+
+        function rbSmsCertSetUiVisible(visible) {
+            $rbSmsWrap.css('display', visible ? '' : 'none');
+            $rbSmsMsg.css('display', visible ? '' : 'none');
+            $rbSmsCode.prop('disabled', !visible);
+        }
+
+        function rbSmsCertResetState() {
+            $('input[name="rb_sms_cert_verified"]').val('');
+            $('input[name="cert_no"]').val('');
+            $('#reg_mb_hp, #rb_sms_cert_code').prop('readonly', false);
+            $('#rb_sms_cert_code').val('');
+            $('#rb_sms_cert_send').show();
+            $('#rb_sms_cert_resend').hide();
+            $('#rb_sms_cert_verify').hide();
+
+            if (rbSmsCertTimer) {
+                clearInterval(rbSmsCertTimer);
+                rbSmsCertTimer = null;
+            }
+
+            $rbSmsTime.text('');
+            rbSmsCertSetMsg('');
         }
 
         function rbSmsCertStartTimer(seconds) {
@@ -904,29 +940,26 @@ $rb_sms_cert_show = ($rb_sms_cert_use && ($w == '' || ($w == 'u' && !$rb_sms_cer
         });
 
         $('#reg_mb_hp').on('input', function() {
-            $('input[name="rb_sms_cert_verified"]').val('');
-            $('input[name="cert_no"]').val('');
-            $('#reg_mb_hp, #rb_sms_cert_code').prop('readonly', false);
-            $('#rb_sms_cert_send').show();
-            $('#rb_sms_cert_resend').hide();
-            $('#rb_sms_cert_verify').hide();
-            $rbSmsTime.text('');
+            rbSmsCertResetState();
+
+            <?php if ($w == 'u') { ?>
+            var $changeMsg = $('#rb_sms_hp_change_msg');
+            var isChanged = rbNormalizeHpValue(this.value) !== rbOriginalHp;
+            $changeMsg.text(isChanged ? $changeMsg.data('changed') : $changeMsg.data('default'));
+
+            <?php if ($rb_sms_cert_member_verified) { ?>
+            rbSmsCertSetUiVisible(isChanged);
+            <?php } else { ?>
+            rbSmsCertSetUiVisible(true);
+            <?php } ?>
+            <?php } ?>
         });
+
+        <?php if ($w == 'u') { ?>
+        $('#reg_mb_hp').trigger('input');
+        <?php } ?>
         <?php } ?>
     });
-
-    <?php if ($w == 'u' && $rb_sms_cert_use) { ?>
-    function rbNormalizeHpValue(value) {
-        return String(value || '').replace(/[^0-9]/g, '');
-    }
-
-    var rbOriginalHp = rbNormalizeHpValue('<?php echo get_text($member['mb_hp']); ?>');
-    $('#reg_mb_hp').on('input', function() {
-        var $msg = $('#rb_sms_hp_change_msg');
-        var isChanged = rbNormalizeHpValue(this.value) !== rbOriginalHp;
-        $msg.text(isChanged ? $msg.data('changed') : $msg.data('default'));
-    }).trigger('input');
-    <?php } ?>
 
     // submit 최종 폼체크
     function fregisterform_submit(f) {
@@ -988,8 +1021,12 @@ $rb_sms_cert_show = ($rb_sms_cert_use && ($w == '' || ($w == 'u' && !$rb_sms_cer
         }
         <?php } ?>
 
-        <?php if($rb_sms_cert_show && $rb_sms_cert_required) { ?>
-        if (f.rb_sms_cert_verified.value != "1") {
+        <?php if($rb_sms_cert_render && $rb_sms_cert_required) { ?>
+        var rbSmsCertRequiredNow = true;
+        <?php if ($w == 'u' && $rb_sms_cert_member_verified) { ?>
+        rbSmsCertRequiredNow = rbNormalizeHpValue(f.mb_hp.value) !== rbOriginalHp;
+        <?php } ?>
+        if (rbSmsCertRequiredNow && f.rb_sms_cert_verified.value != "1") {
             alert("SMS 인증이 완료되지 않았습니다.");
             return false;
         }

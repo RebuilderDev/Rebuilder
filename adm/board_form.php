@@ -730,6 +730,8 @@ $pg_anchor = '<ul class="anchor">
                     echo option_selected("", $board['bo_use_cert'], "사용안함");
                     if ($config['cf_cert_use']) {
                         echo option_selected("cert", $board['bo_use_cert'], "본인확인된 회원전체");
+                    }
+                    if ($config['cf_cert_use'] && empty($config['rb_sms_cert_only'])) {
                         echo option_selected("adult", $board['bo_use_cert'], "본인확인된 성인회원만");
                     }
                     ?>
