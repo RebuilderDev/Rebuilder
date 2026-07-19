@@ -103,16 +103,63 @@ if ($mod_type === "mod_sync_state") {
     $table = $is_shop ? 'rb_module_shop' : 'rb_module';
     rb_ensure_module_section_columns($table);
 
-    $updated = array();
+    $normalized = array();
+    $seen_ids = array();
 
     foreach ($mods as $mod) {
-        $md_id = isset($mod['id']) ? to_int($mod['id']) : 0;
-        if ($md_id <= 0) continue;
+        if (!is_array($mod)) {
+            rb_json_exit(array('status' => 'error', 'message' => 'Invalid module state'));
+        }
 
+        $md_id = isset($mod['id']) ? to_int($mod['id']) : 0;
         $order_id = isset($mod['order_id']) ? to_int($mod['order_id']) : 0;
-        $layout   = isset($mod['layout']) ? esc($mod['layout']) : '';
-        $sec_key  = isset($mod['sec_key']) ? esc($mod['sec_key']) : '';
-        $sec_uid  = isset($mod['sec_uid']) ? esc($mod['sec_uid']) : '';
+        $layout_raw = isset($mod['layout']) ? trim((string)$mod['layout']) : '';
+
+        if ($md_id <= 0 || $order_id <= 0 || $layout_raw === '') {
+            rb_json_exit(array('status' => 'error', 'message' => 'Invalid module state', 'mod' => $mod));
+        }
+        if (isset($seen_ids[$md_id])) {
+            rb_json_exit(array('status' => 'error', 'message' => 'Duplicate module id', 'md_id' => $md_id));
+        }
+        $seen_ids[$md_id] = true;
+
+        $normalized[] = array(
+            'id' => $md_id,
+            'order_id' => $order_id,
+            'layout' => esc($layout_raw),
+            'sec_key' => isset($mod['sec_key']) ? esc($mod['sec_key']) : '',
+            'sec_uid' => isset($mod['sec_uid']) ? esc($mod['sec_uid']) : ''
+        );
+    }
+
+    $requested_ids = array_keys($seen_ids);
+    $id_list = implode(',', array_map('intval', $requested_ids));
+    $existing_ids = array();
+    $existing_result = sql_query("SELECT md_id FROM {$table} WHERE md_id IN ({$id_list})", false);
+    if (!$existing_result) {
+        rb_json_exit(array('status' => 'error', 'message' => 'Module validation query failed'));
+    }
+    while ($existing = sql_fetch_array($existing_result)) {
+        $existing_ids[] = (int)$existing['md_id'];
+    }
+    sort($requested_ids);
+    sort($existing_ids);
+    if ($requested_ids !== $existing_ids) {
+        rb_json_exit(array('status' => 'error', 'message' => 'Unknown module id in request'));
+    }
+
+    if (!sql_query('START TRANSACTION', false)) {
+        rb_json_exit(array('status' => 'error', 'message' => 'Could not start module save transaction'));
+    }
+
+    $updated = array();
+
+    foreach ($normalized as $mod) {
+        $md_id = $mod['id'];
+        $order_id = $mod['order_id'];
+        $layout = $mod['layout'];
+        $sec_key = $mod['sec_key'];
+        $sec_uid = $mod['sec_uid'];
 
         $sql = "UPDATE {$table}
                 SET md_order_id = {$order_id},
@@ -122,6 +169,7 @@ if ($mod_type === "mod_sync_state") {
                 WHERE md_id = {$md_id}";
         $res = sql_query($sql, false);
         if (!$res) {
+            sql_query('ROLLBACK', false);
             $db_error = isset($GLOBALS['g5']['connect_db']) ? mysqli_error($GLOBALS['g5']['connect_db']) : 'sql_query failed';
             rb_json_exit(array(
                 'status' => 'error',
@@ -139,6 +187,11 @@ if ($mod_type === "mod_sync_state") {
             'sec_key' => $sec_key,
             'sec_uid' => $sec_uid
         );
+    }
+
+    if (!sql_query('COMMIT', false)) {
+        sql_query('ROLLBACK', false);
+        rb_json_exit(array('status' => 'error', 'message' => 'Could not commit module save transaction'));
     }
 
     rb_json_exit(array('status' => 'success', 'updated' => $updated));

@@ -2282,13 +2282,9 @@ foreach ($rb_side_panels as $rb_side_panel) {
                 'data-sec-uid': secUid
             });
 
-            $fx.find('.rb_layout_box').each(function() {
-                $(this).attr({
-                    'data-layout': layout,
-                    'data-order-id': orderId,
-                    'data-sec-key': secKey,
-                    'data-sec-uid': secUid
-                });
+            $fx.children('.rb_layout_box').each(function(index) {
+                $(this).attr('data-order-id', index + 1).data('order-id', index + 1);
+                normalizeModuleAttrs($(this));
             });
         }
 
@@ -2297,24 +2293,48 @@ foreach ($rb_side_panels as $rb_side_panel) {
 
             var $parentFlex = $mod.parent('.flex_box');
             var layout = String($parentFlex.attr('data-layout') || $mod.attr('data-layout') || '').trim();
+            var moduleId = String($mod.attr('data-id') || '').trim();
             var $sec = $mod.closest('.rb_section_box');
+            var secKey = '';
+            var secUid = '';
 
             if ($sec.length) {
-                var secKey = String($sec.attr('data-sec-key') || '').trim();
+                secKey = String($sec.attr('data-sec-key') || '').trim();
                 var orderId = String($sec.attr('data-order-id') || '').trim();
-                var secUid = recomputeSecUid(secKey, orderId);
+                secUid = recomputeSecUid(secKey, orderId);
 
                 $mod.attr({
                     'data-layout': layout,
                     'data-sec-key': secKey,
                     'data-sec-uid': secUid
-                });
+                }).data('layout', layout).data('sec-key', secKey).data('sec-uid', secUid);
             } else {
-                $mod.attr('data-layout', layout);
+                $mod.attr('data-layout', layout).data('layout', layout);
                 $mod.removeAttr('data-sec-key');
                 $mod.removeAttr('data-sec-uid');
                 $mod.removeData('sec-key');
                 $mod.removeData('sec-uid');
+            }
+
+            // 부모 모듈의 레이아웃이 바뀌면 자식 레이아웃 경로도 함께 바뀌어야 한다.
+            var $innerFlex = $mod.children('.flex_box_inner.flex_box').first();
+            if ($innerFlex.length && layout && moduleId) {
+                var innerLayout = layout + '-' + moduleId;
+                $innerFlex.attr('data-layout', innerLayout).data('layout', innerLayout);
+
+                if ($sec.length) {
+                    $innerFlex.attr({
+                        'data-sec-key': secKey,
+                        'data-sec-uid': secUid
+                    }).data('sec-key', secKey).data('sec-uid', secUid);
+                } else {
+                    $innerFlex.removeAttr('data-sec-key data-sec-uid')
+                        .removeData('sec-key').removeData('sec-uid');
+                }
+
+                $innerFlex.children('.rb_layout_box').each(function() {
+                    normalizeModuleAttrs($(this));
+                });
             }
         }
 
@@ -2822,36 +2842,199 @@ foreach ($rb_side_panels as $rb_side_panel) {
                 $flex.find('> .flex_box_inner').length === 0;
         }
 
-        function moveModuleIntoInnerByPoint(clientX, clientY, $item) {
+        function getModulePointer(event) {
+            var original = event && (event.originalEvent || event);
+            if (!original) return null;
+
+            var touch = null;
+            if (original.touches && original.touches.length) touch = original.touches[0];
+            else if (original.changedTouches && original.changedTouches.length) touch = original.changedTouches[0];
+
+            var source = touch || original;
+            var clientX = (typeof source.clientX === 'number') ? source.clientX : null;
+            var clientY = (typeof source.clientY === 'number') ? source.clientY : null;
+
+            if (clientX === null && typeof source.pageX === 'number') {
+                clientX = source.pageX - (window.pageXOffset || document.documentElement.scrollLeft || 0);
+            }
+            if (clientY === null && typeof source.pageY === 'number') {
+                clientY = source.pageY - (window.pageYOffset || document.documentElement.scrollTop || 0);
+            }
+
+            if (clientX === null || clientY === null) return null;
+            return { clientX: clientX, clientY: clientY };
+        }
+
+        function rememberModulePointer($item, event) {
+            var point = getModulePointer(event);
+            if (!point || !$item || !$item.length) return;
+            $item.data('_rbLastClientX', point.clientX);
+            $item.data('_rbLastClientY', point.clientY);
+        }
+
+        function pointInsideElement(clientX, clientY, element) {
+            if (!element || clientX == null || clientY == null) return false;
+            var rect = element.getBoundingClientRect();
+            return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+        }
+
+        function syncModuleOrder($flex) {
+            if (!$flex || !$flex.length) return;
+            $flex.children('.rb_layout_box').each(function(index) {
+                $(this).attr('data-order-id', index + 1).data('order-id', index + 1);
+            });
+        }
+
+        function isValidModuleTarget($item, $targetFlex) {
+            if (!$item || !$item.length || !$targetFlex || !$targetFlex.length) return false;
+            if (!$targetFlex.hasClass('flex_box')) return false;
+            if ($item[0] === $targetFlex[0] || $.contains($item[0], $targetFlex[0])) return false;
+
+            if ($targetFlex.hasClass('flex_box_inner')) {
+                var $owner = $targetFlex.parent('.rb_layout_box');
+                if (!$owner.length || $owner[0] === $item[0] || $.contains($item[0], $owner[0])) return false;
+            }
+            return true;
+        }
+
+        function captureModuleDomSnapshot() {
+            var snapshot = { containers: [], modules: $('.rb_layout_box').get() };
+            $('.flex_box').each(function() {
+                snapshot.containers.push({
+                    element: this,
+                    children: $(this).children('.rb_layout_box, .rb_section_box, .add_module_wrap, .add_section_wrap').get()
+                });
+            });
+            return snapshot;
+        }
+
+        function restoreModuleDomSnapshot(snapshot) {
+            if (!snapshot || !snapshot.containers) return;
+
+            $('.flex_box').children('.rb-row-handle, .rb-row-break, .rb-row-break-end').remove();
+            snapshot.containers.forEach(function(container) {
+                if (!container.element) return;
+                container.children.forEach(function(child) {
+                    if (child) container.element.appendChild(child);
+                });
+            });
+
+            $('.flex_box').each(function() {
+                syncModuleOrder($(this));
+            });
+            $('.rb_layout_box').each(function() {
+                normalizeModuleAttrs($(this));
+            });
+        }
+
+        function validateModuleStructure(snapshot) {
+            var errors = [];
+            var seenIds = {};
+            var currentModules = $('.rb_layout_box').get();
+
+            if (snapshot && snapshot.modules) {
+                if (currentModules.length !== snapshot.modules.length) {
+                    errors.push('드래그 전후 모듈 개수가 일치하지 않습니다.');
+                }
+                snapshot.modules.forEach(function(module) {
+                    if (!document.documentElement.contains(module)) {
+                        errors.push('DOM에서 분리된 모듈이 있습니다.');
+                    }
+                });
+            }
+
+            currentModules.forEach(function(module) {
+                var $module = $(module);
+                var id = String($module.attr('data-id') || '').trim();
+                var $parentFlex = $module.parent('.flex_box');
+
+                if (!id) errors.push('ID가 없는 모듈이 있습니다.');
+                else if (seenIds[id]) errors.push('중복된 모듈 ID가 있습니다: ' + id);
+                else seenIds[id] = true;
+
+                if (!$parentFlex.length || module.parentNode !== $parentFlex[0]) {
+                    errors.push('정렬 컨테이너에서 분리된 모듈이 있습니다: ' + (id || 'unknown'));
+                    return;
+                }
+                if (!isValidModuleTarget($module, $parentFlex)) {
+                    errors.push('잘못된 부모/자식 관계가 있습니다: ' + (id || 'unknown'));
+                }
+                if (!String($parentFlex.attr('data-layout') || '').trim()) {
+                    errors.push('레이아웃 정보가 없는 모듈이 있습니다: ' + (id || 'unknown'));
+                }
+            });
+
+            return { valid: errors.length === 0, errors: errors, count: currentModules.length };
+        }
+
+        function suspendDescendantSortables($item) {
+            var states = [];
+            $item.find('.flex_box').each(function() {
+                var $container = $(this);
+                if (!$container.data('ui-sortable')) return;
+                var wasDisabled = !!$container.sortable('option', 'disabled');
+                states.push({ element: this, wasDisabled: wasDisabled });
+                if (!wasDisabled) $container.sortable('disable');
+            });
+            $item.data('_rbDescendantSortableStates', states);
+        }
+
+        function restoreDescendantSortables($item) {
+            var states = $item.data('_rbDescendantSortableStates') || [];
+            states.forEach(function(state) {
+                var $container = $(state.element);
+                if (!$container.data('ui-sortable')) return;
+                if (state.wasDisabled) $container.sortable('disable');
+                else $container.sortable('enable');
+            });
+            $item.removeData('_rbDescendantSortableStates');
+        }
+
+        function findModuleInnerTargetByPoint(clientX, clientY, $item) {
             if (clientX == null || clientY == null || !$item || !$item.length) return null;
 
             var hoveredEl = document.elementFromPoint(clientX, clientY);
             if (!hoveredEl) return null;
 
+            if ($(hoveredEl).closest('.ui-sortable-helper').length) return null;
+
             var $adminOv = $(hoveredEl).closest('.admin_ov');
             if (!$adminOv.length) return null;
 
             var $targetBox = $adminOv.closest('.rb_layout_box');
-            if (!$targetBox.length || $targetBox[0] === $item[0]) return null;
+            if (!$targetBox.length || $targetBox[0] === $item[0] || $.contains($item[0], $targetBox[0])) return null;
 
             var $targetInner = $targetBox.children('.flex_box_inner').first();
-            if (!$targetInner.length) return null;
+            if (!$targetInner.length || !isValidModuleTarget($item, $targetInner)) return null;
 
-            $targetInner.append($item);
+            return $targetInner;
+        }
 
-            $targetInner.children('.rb_layout_box').each(function(index) {
-                $(this).attr('data-order-id', index + 1);
-            });
+        function moveModuleIntoInner($targetInner, $item) {
+            if (!$targetInner || !$targetInner.length || !isValidModuleTarget($item, $targetInner)) return null;
+
+            if ($item.parent()[0] !== $targetInner[0]) {
+                try {
+                    $targetInner[0].appendChild($item[0]);
+                } catch (error) {
+                    console.error('모듈 자식 이동 실패:', error);
+                    return null;
+                }
+            }
+
+            syncModuleOrder($targetInner);
 
             normalizeModuleAttrs($item);
             return $targetInner;
+        }
+
+        function moveModuleIntoInnerByPoint(clientX, clientY, $item) {
+            return moveModuleIntoInner(findModuleInnerTargetByPoint(clientX, clientY, $item), $item);
         }
         // 모듈이동
         $(function() {
             $(".flex_box").each(function() {
                 var $flexBox = $(this);
-                var originalWidth, originalHeight;
-
                 // 기존 sortable 파괴
                 try {
                     if ($flexBox.data("ui-sortable")) $flexBox.sortable("destroy");
@@ -2859,6 +3042,9 @@ foreach ($rb_side_panels as $rb_side_panel) {
 
 
                 function enforceToolbarRule($flexBox, $item) {
+                    if (!$flexBox || !$flexBox.length || !$item || !$item.length) return;
+                    if ($item.parent()[0] !== $flexBox[0]) return;
+
                     var $toolbar = $flexBox.children(".add_module_wrap").first();
                     if (!$toolbar.length) return;
 
@@ -2884,23 +3070,34 @@ foreach ($rb_side_panels as $rb_side_panel) {
                 function refreshRowHandlesAfterDrop($flex) {
                     if (!$flex || !$flex.length) return;
 
-                    // 먼저 기존 핸들 제거 (잔상 방지)
-                    $flex.find('> .rb-row-handle').remove();
+                    // 이전 행 마커가 남아 있으면 드롭한 모듈을 다음 행으로 강제할 수 있다.
+                    var prevRaf1 = $flex.data('rbRaf1');
+                    var prevRaf2 = $flex.data('rbRaf2');
+                    var prevTimer = $flex.data('rbDropRefreshTimer');
+                    if (prevRaf1) cancelAnimationFrame(prevRaf1);
+                    if (prevRaf2) cancelAnimationFrame(prevRaf2);
+                    if (prevTimer) clearTimeout(prevTimer);
+
+                    $flex.children('.rb-row-handle, .rb-row-break, .rb-row-break-end').remove();
 
                     var id1 = requestAnimationFrame(function() {
-                        ensureRowBreaks($flex); // 1프레임: DOM 배치 반영 후 마커 재구성
+                        // 마커가 제거된 실제 flex 배치를 기준으로 행을 다시 계산한다.
+                        ensureRowBreaks($flex, true);
                         var id2 = requestAnimationFrame(function() {
-                            renderRowHandles($flex); // 2프레임: 핸들 위치 계산/부착
+                            renderRowHandles($flex);
                         });
                         $flex.data('rbRaf2', id2);
                     });
                     $flex.data('rbRaf1', id1);
 
                     // 일부 브라우저에서 jQuery UI 정리 타이밍이 늦는 경우 안전망
-                    setTimeout(function() {
-                        ensureRowBreaks($flex);
+                    var timer = setTimeout(function() {
+                        if ($flex.hasClass('rb-mod-sorting')) return;
+                        $flex.children('.rb-row-handle, .rb-row-break, .rb-row-break-end').remove();
+                        ensureRowBreaks($flex, true);
                         renderRowHandles($flex);
-                    }, 0);
+                    }, 50);
+                    $flex.data('rbDropRefreshTimer', timer);
                 }
 
                 function hideRowHandles($flex) {
@@ -2914,10 +3111,57 @@ foreach ($rb_side_panels as $rb_side_panel) {
                     tolerance: "intersect",
                     distance: 8,
                     delay: 60,
-                    helper: "clone",
+                    helper: function(event, item) {
+                        var $item = $(item);
+                        var pointer = getModulePointer(event);
+                        var pageX = (typeof event.pageX === 'number') ? event.pageX : ((pointer ? pointer.clientX : 0) + (window.pageXOffset || 0));
+                        var pageY = (typeof event.pageY === 'number') ? event.pageY : ((pointer ? pointer.clientY : 0) + (window.pageYOffset || 0));
+                        var helperWidth = 200;
+                        var helperHeight = 80;
+                        var title = String($item.attr('data-title') || '모듈');
+                        var offset = $item.offset() || { left: pageX, top: pageY };
+                        var itemWidth = Math.max(1, $item.outerWidth());
+                        var itemHeight = Math.max(1, $item.outerHeight());
+                        var cursorLeft = Math.max(8, Math.min(helperWidth - 8, Math.round((pageX - offset.left) * helperWidth / itemWidth)));
+                        var cursorTop = Math.max(8, Math.min(helperHeight - 8, Math.round((pageY - offset.top) * helperHeight / itemHeight)));
+
+                        $item.parent().sortable('option', 'cursorAt', { left: cursorLeft, top: cursorTop });
+
+                        var $helper = $('<div class="rb-mod-compact-helper"/>').css({
+                            width: helperWidth,
+                            height: helperHeight,
+                            minWidth: helperWidth,
+                            minHeight: helperHeight,
+                            maxWidth: helperWidth,
+                            maxHeight: helperHeight,
+                            margin: 0,
+                            padding: 0,
+                            boxSizing: 'border-box',
+                            border: '2px dashed #00d6ee',
+                            borderRadius: 0,
+                            background: '#fff',
+                            boxShadow: '5px 4px 25px rgba(0,0,0,0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 99999,
+                            pointerEvents: 'none'
+                        });
+                        return $helper.append(
+                            $('<div class="rb-mod-helper-inner"/>').text(title).css({
+                                fontSize: '14px',
+                                color: '#25282B',
+                                padding: '20px',
+                                textAlign: 'center',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                            })
+                        );
+                    },
                     appendTo: "body",
-                    forceHelperSize: true,
-                    forcePlaceholderSize: true,
+                    forceHelperSize: false,
+                    forcePlaceholderSize: false,
                     scroll: true,
                     dropOnEmpty: true,
                     refreshPositions: true,
@@ -2926,32 +3170,43 @@ foreach ($rb_side_panels as $rb_side_panel) {
                     cancel: '.rb-resize-s, .rb-resize-s-reset, .admin_set_btn',
 
                     start: function(event, ui) {
-                        var $originFlex = $(event.target).closest('.flex_box');
+                        var $originFlex = ui.item.parent('.flex_box');
                         if ($originFlex.length && $originFlex[0] !== $flexBox[0]) {
                             $flexBox.sortable('cancel');
                             return;
                         }
 
-                        $flexBox.addClass('rb-mod-sorting');
+                        ui.item.data('_fromFlex', $originFlex);
+                        ui.item.data('_rbDomSnapshot', captureModuleDomSnapshot());
+                        ui.item.data('_rbSaveWasVisible', $('#saveOrderButton').is(':visible'));
+                        ui.item.removeData('_rbDropInvalid');
+                        rememberModulePointer(ui.item, event);
+                        $(document).off('.rbModDragTrack').on('mousemove.rbModDragTrack pointermove.rbModDragTrack touchmove.rbModDragTrack', function(trackEvent) {
+                            rememberModulePointer(ui.item, trackEvent);
+                            var clientX = ui.item.data('_rbLastClientX');
+                            var clientY = ui.item.data('_rbLastClientY');
+                            var $innerTarget = findModuleInnerTargetByPoint(clientX, clientY, ui.item);
+                            if ($innerTarget && $innerTarget.length) ui.item.data('_rbInnerDropTarget', $innerTarget[0]);
+                            else ui.item.removeData('_rbInnerDropTarget');
+                        });
+
+                        suspendDescendantSortables(ui.item);
+                        $('.flex_box').addClass('rb-mod-sorting');
                         ui.helper.addClass("dragging");
                         $('.mobule_set_btn').css('display', 'none');
 
-                        originalWidth = ui.item.outerWidth();
-                        originalHeight = ui.item.outerHeight();
                         ui.helper.addClass("dragging").css({
-                            width: originalWidth,
-                            height: originalHeight,
                             zIndex: 99999,
                             pointerEvents: "none",
                         });
 
-                        $(".placeholders_box").css({
-                            width: originalWidth - 1,
-                            height: originalHeight,
-                            marginLeft: ui.item.css('margin-left'),
-                            marginRight: ui.item.css('margin-right'),
-                            marginTop: ui.item.css('margin-top'),
-                            marginBottom: ui.item.css('margin-bottom')
+                        ui.placeholder.css({
+                            width: ui.helper.outerWidth(),
+                            height: ui.helper.outerHeight(),
+                            minWidth: 200,
+                            minHeight: 80,
+                            margin: 5,
+                            boxSizing: 'border-box'
                         });
 
                         hideRowHandles($flexBox);
@@ -2960,28 +3215,35 @@ foreach ($rb_side_panels as $rb_side_panel) {
 
 
                     receive: function(event, ui) {
-
+                        if (!isValidModuleTarget(ui.item, $flexBox)) {
+                            ui.item.data('_rbDropInvalid', true);
+                            try {
+                                if (ui.sender && ui.sender.length) ui.sender.sortable('cancel');
+                            } catch (error) {}
+                            return;
+                        }
 
                         normalizeModuleAttrs(ui.item);
 
                         // 위치 보정
                         enforceToolbarRule($flexBox, ui.item);
+                        syncModuleOrder($flexBox);
                         normalizeModuleAttrs(ui.item);
-                        queueRowHandleRefresh($flexBox); // 타겟 컨테이너
-                        if (ui.sender) queueRowHandleRefresh($(ui.sender)); // 출발지 컨테이너도 갱신
                     },
 
                     update: function(event, ui) {
                         // 출발지 컨테이너 update 무시(되돌림 방지)
                         if (!$.contains(this, ui.item[0])) return;
+                        if (!isValidModuleTarget(ui.item, $flexBox)) {
+                            ui.item.data('_rbDropInvalid', true);
+                            return;
+                        }
 
                         // 같은 컨테이너 내 이동에서도 보정은 '필요할 때만'
                         enforceToolbarRule($flexBox, ui.item);
 
                         // data-order-id 재기입 (모듈만)
-                        $flexBox.children(".rb_layout_box").each(function(index) {
-                            $(this).attr("data-order-id", index + 1);
-                        });
+                        syncModuleOrder($flexBox);
 
                         // 순서 미리보기
                         window.currentOrder = $flexBox.children(".rb_layout_box").map(function() {
@@ -2989,49 +3251,88 @@ foreach ($rb_side_panels as $rb_side_panel) {
                         }).get();
 
                         $("#saveOrderButton").show();
-                        queueRowHandleRefresh($flexBox)
                     },
                     stop: function(event, ui) {
-                        $flexBox.removeClass('rb-mod-sorting');
-                        ui.item.removeClass("dragging");
+                        var $fromFlex = ui.item.data('_fromFlex');
+                        var snapshot = ui.item.data('_rbDomSnapshot');
+                        var $toFlex = ui.item.parent('.flex_box');
+                        var restored = false;
+                        var saveWasVisible = !!ui.item.data('_rbSaveWasVisible');
 
-                        var clientX = event.clientX || ui.item.data('_rbLastClientX') || 0;
-                        var clientY = event.clientY || ui.item.data('_rbLastClientY') || 0;
-                        var $innerTarget = moveModuleIntoInnerByPoint(clientX, clientY, ui.item);
-                        if ($innerTarget && $innerTarget.length) {
-                            $innerTarget.children('.rb_layout_box').each(function(index) {
-                                $(this).attr('data-order-id', index + 1);
+                        try {
+                            rememberModulePointer(ui.item, event);
+                            if (ui.item.data('_rbDropInvalid')) throw new Error('허용되지 않는 자식 위치입니다.');
+
+                            var clientX = ui.item.data('_rbLastClientX');
+                            var clientY = ui.item.data('_rbLastClientY');
+                            var $innerTarget = null;
+
+                            // Sortable이 이미 자식 영역에 넣었다면 그 결과를 우선한다.
+                            if ($toFlex.hasClass('flex_box_inner')) {
+                                $innerTarget = $toFlex;
+                            } else {
+                                var storedInner = ui.item.data('_rbInnerDropTarget');
+                                var $storedInner = storedInner ? $(storedInner) : $();
+                                var $storedOwner = $storedInner.parent('.rb_layout_box');
+                                if ($storedInner.length && $storedOwner.length &&
+                                    pointInsideElement(clientX, clientY, $storedOwner[0]) &&
+                                    isValidModuleTarget(ui.item, $storedInner)) {
+                                    $innerTarget = moveModuleIntoInner($storedInner, ui.item);
+                                } else {
+                                    $innerTarget = moveModuleIntoInnerByPoint(clientX, clientY, ui.item);
+                                }
+                            }
+                            if ($innerTarget && $innerTarget.length) $toFlex = $innerTarget;
+                            else $toFlex = ui.item.parent('.flex_box');
+
+                            if (!isValidModuleTarget(ui.item, $toFlex)) {
+                                throw new Error('모듈의 도착 위치를 확인할 수 없습니다.');
+                            }
+
+                            // 출발지가 아니라 실제 도착 컨테이너를 기준으로만 보정한다.
+                            enforceToolbarRule($toFlex, ui.item);
+                            normalizeModuleAttrs(ui.item);
+
+                            var $sec = ui.item.closest('.rb_section_box');
+                            if ($sec.length) propagateSectionAttrs($sec);
+                            normalizeModuleAttrs(ui.item);
+
+                            syncModuleOrder($fromFlex);
+                            syncModuleOrder($toFlex);
+
+                            var integrity = validateModuleStructure(snapshot);
+                            if (!integrity.valid) throw new Error(integrity.errors.join('\n'));
+
+                            $("#saveOrderButton").show();
+                        } catch (error) {
+                            restored = true;
+                            restoreModuleDomSnapshot(snapshot);
+                            $toFlex = ui.item.parent('.flex_box');
+                            console.error('모듈 이동을 복구했습니다:', error);
+                            alert('안전하지 않은 이동이 감지되어 모듈을 원래 위치로 복구했습니다.');
+                        } finally {
+                            $(document).off('.rbModDragTrack');
+                            restoreDescendantSortables(ui.item);
+                            $('.flex_box').removeClass('rb-mod-sorting');
+                            ui.item.removeClass('dragging');
+                            ui.item.removeData('_rbDropInvalid').removeData('_rbDomSnapshot')
+                                .removeData('_rbLastClientX').removeData('_rbLastClientY')
+                                .removeData('_rbInnerDropTarget').removeData('_rbSaveWasVisible').removeData('_fromFlex');
+
+                            var refreshTargets = [];
+                            [$fromFlex, $toFlex].forEach(function($target) {
+                                if (!$target || !$target.length) return;
+                                if (refreshTargets.indexOf($target[0]) === -1) refreshTargets.push($target[0]);
                             });
-                            queueRowHandleRefresh($innerTarget);
-                            var $fromFlex = ui.item.data('_fromFlex');
-                            if ($fromFlex && $fromFlex.length && $fromFlex[0] !== $innerTarget[0]) {
-                                $fromFlex.children('.rb_layout_box').each(function(index) {
-                                    $(this).attr('data-order-id', index + 1);
-                                });
-                                queueRowHandleRefresh($fromFlex);
+                            refreshTargets.forEach(function(target) {
+                                refreshRowHandlesAfterDrop($(target));
+                            });
+
+                            if (restored) {
+                                if (saveWasVisible) $("#saveOrderButton").show();
+                                else $("#saveOrderButton").hide();
                             }
                         }
-
-                        var $sec = ui.item.closest('.rb_section_box');
-                        if ($sec.length) propagateSectionAttrs($sec);
-                        normalizeModuleAttrs(ui.item);
-
-                        $("#saveOrderButton").show();
-                        enforceToolbarRule($flexBox, ui.item);
-                        queueRowHandleRefresh($flexBox); // 현재 컨테이너
-                        // 크롬 레이아웃 늦게 반영되는 케이스 보강
-                        setTimeout(function() {
-                            queueRowHandleRefresh($flexBox);
-                        }, 0);
-                    },
-                    deactivate: function(event, ui) {
-                        refreshRowHandlesAfterDrop($flexBox); // 현재 컨테이너
-                        if (ui && ui.sender && ui.sender.length) {
-                            refreshRowHandlesAfterDrop(ui.sender); // 출발지 컨테이너
-                        }
-                    },
-                    remove: function(event, ui) {
-                        refreshRowHandlesAfterDrop($flexBox);
                     }
                 }).disableSelection();
 
@@ -3052,13 +3353,27 @@ foreach ($rb_side_panels as $rb_side_panel) {
                 return false;
                 <?php } ?>
 
+                $('.flex_box').each(function() {
+                    syncModuleOrder($(this));
+                });
+                $('.rb_layout_box').each(function() {
+                    normalizeModuleAttrs($(this));
+                });
+
+                var integrity = validateModuleStructure();
+                if (!integrity.valid) {
+                    console.error('모듈 저장 전 구조 검사 실패:', integrity.errors);
+                    alert('모듈 배치에 오류가 있어 저장하지 않았습니다. 페이지를 새로고침한 후 다시 시도해주세요.');
+                    return false;
+                }
+
                 var modStates = [];
                 var idx = 1;
 
                 $(".flex_box").each(function() {
                     $(this).children(".rb_layout_box").each(function() {
                         var $mod = $(this);
-                        var modId = parseInt($mod.data('id'), 10);
+                        var modId = parseInt($mod.attr('data-id'), 10);
                         if (!modId) return;
 
                         var $sec = $mod.closest('.rb_section_box');
@@ -3091,6 +3406,12 @@ foreach ($rb_side_panels as $rb_side_panel) {
                         idx++;
                     });
                 });
+
+                if (modStates.length !== integrity.count) {
+                    console.error('모듈 저장 수집 개수 불일치:', { expected: integrity.count, collected: modStates.length });
+                    alert('일부 모듈의 저장 정보가 누락되어 저장하지 않았습니다.');
+                    return false;
+                }
 
                 var saveModules = function() {
                     if (!modStates.length) return $.Deferred().resolve().promise();
@@ -3589,12 +3910,22 @@ foreach ($rb_side_panels as $rb_side_panel) {
     }
 
     function cleanupModArtifacts() {
+        $(document).off('.rbModDragTrack');
         try {
             $(".flex_box").sortable("cancel");
         } catch (e) {}
         $(".rb_layout_box").removeClass("dragging clicked");
+        $(".flex_box").removeClass("rb-mod-sorting");
+        $(".rb-mod-compact-helper").remove();
         $(".flex_box").each(function() {
             var $c = $(this);
+            var raf1 = $c.data('rbRaf1');
+            var raf2 = $c.data('rbRaf2');
+            var timer = $c.data('rbDropRefreshTimer');
+            if (raf1) cancelAnimationFrame(raf1);
+            if (raf2) cancelAnimationFrame(raf2);
+            if (timer) clearTimeout(timer);
+            $c.removeData('rbRaf1').removeData('rbRaf2').removeData('rbDropRefreshTimer');
             try {
                 if ($c.data("ui-sortable")) $c.sortable("destroy");
             } catch (e) {}
