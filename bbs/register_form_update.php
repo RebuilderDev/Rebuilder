@@ -402,7 +402,7 @@ if ($w == '') {
 
     // 마케팅 목적의 개인정보 수집 및 이용
     $sql_marketing_date = "";
-    if ($mb_marketing_agree_default !== $mb_marketing_agree) {
+    if ($mb_marketing_agree_default !== null && $mb_marketing_agree_default !== $mb_marketing_agree) {
         $sql_marketing_date .= " , mb_marketing_date = '".G5_TIME_YMDHIS."' ";
         $agree_items[] = "마케팅 목적의 개인정보 수집 및 이용(" . ($mb_marketing_agree == 1 ? "동의" : "철회") . ")";
     }
