@@ -2765,6 +2765,10 @@ if($mod_type == "del_sec") { //섹션삭제
                 $sec_title_size = !empty($rb_section['sec_title_size']) ? $rb_section['sec_title_size'] : '26';
                 $sec_title_font = !empty($rb_section['sec_title_font']) ? $rb_section['sec_title_font'] : 'font-B';
                 $sec_title_align = !empty($rb_section['sec_title_align']) ? $rb_section['sec_title_align'] : 'center';
+                $sec_title_color_mo = !empty($rb_section['sec_title_color_mo']) ? $rb_section['sec_title_color_mo'] : $sec_title_color;
+                $sec_title_size_mo = !empty($rb_section['sec_title_size_mo']) ? $rb_section['sec_title_size_mo'] : $sec_title_size;
+                $sec_title_font_mo = !empty($rb_section['sec_title_font_mo']) ? $rb_section['sec_title_font_mo'] : $sec_title_font;
+                $sec_title_align_mo = !empty($rb_section['sec_title_align_mo']) ? $rb_section['sec_title_align_mo'] : $sec_title_align;
                 $sec_title_hide = !empty($rb_section['sec_title_hide']) ? $rb_section['sec_title_hide'] : '0';
 
                 $sec_sub_title = !empty($rb_section['sec_sub_title']) ? $rb_section['sec_sub_title'] : '';
@@ -2772,6 +2776,10 @@ if($mod_type == "del_sec") { //섹션삭제
                 $sec_sub_title_size = !empty($rb_section['sec_sub_title_size']) ? $rb_section['sec_sub_title_size'] : '18';
                 $sec_sub_title_font = !empty($rb_section['sec_sub_title_font']) ? $rb_section['sec_sub_title_font'] : 'font-R';
                 $sec_sub_title_align = !empty($rb_section['sec_sub_title_align']) ? $rb_section['sec_sub_title_align'] : 'center';
+                $sec_sub_title_color_mo = !empty($rb_section['sec_sub_title_color_mo']) ? $rb_section['sec_sub_title_color_mo'] : $sec_sub_title_color;
+                $sec_sub_title_size_mo = !empty($rb_section['sec_sub_title_size_mo']) ? $rb_section['sec_sub_title_size_mo'] : $sec_sub_title_size;
+                $sec_sub_title_font_mo = !empty($rb_section['sec_sub_title_font_mo']) ? $rb_section['sec_sub_title_font_mo'] : $sec_sub_title_font;
+                $sec_sub_title_align_mo = !empty($rb_section['sec_sub_title_align_mo']) ? $rb_section['sec_sub_title_align_mo'] : $sec_sub_title_align;
                 $sec_sub_title_hide = !empty($rb_section['sec_sub_title_hide']) ? $rb_section['sec_sub_title_hide'] : '0';
 
                 $sec_width = !empty($rb_section['sec_width']) ? $rb_section['sec_width'] : '0';
@@ -2817,7 +2825,7 @@ if($mod_type == "del_sec") { //섹션삭제
     <h6 class="font-B">섹션 타이틀 설정</h6>
     <h6 class="font-R rb_config_sub_txt">타이틀의 워딩 및 스타일을 설정할 수 있습니다.</h6>
     <div class="config_wrap">
-        <ul>
+        <ul class="mb-10">
 
             <input type="text" name="sec_title" class="input w100" value="<?php echo !empty($sec_title) ? $sec_title : ''; ?>" placeholder="타이틀을 입력하세요." autocomplete="off">
             <input type="hidden" name="sec_layout" value="<?php echo !empty($set_layout) ? $set_layout : ''; ?>">
@@ -2826,22 +2834,18 @@ if($mod_type == "del_sec") { //섹션삭제
 
         </ul>
 
-        <ul class="config_wrap_flex">
-
+        <ul class="config_wrap_flex rb-device-style-row">
+            <li class="rb-device-style-label font-R">PC</li>
             <div class="color_set_wrap square none_inp_cl" style="position: relative;">
                 <input type="text" class="coloris mod_sec_title_color" name="sec_title_color" value="<?php echo !empty($sec_title_color) ? $sec_title_color : '#25282B'; ?>" style="width:25px !important;">
             </div>컬러
-
-
             <input type="number" class="tiny_input" name="sec_title_size" value="<?php echo !empty($sec_title_size) ? $sec_title_size : '26'; ?>"> px
-
             <select class="select select_tiny" name="sec_title_font" id="sec_title_font">
                 <option value="">스타일</option>
                 <option value="font-R" <?php if (isset($sec_title_font) && $sec_title_font == "font-R") { ?>selected<?php } ?>>Regular</option>
                 <option value="font-B" <?php if (isset($sec_title_font) && $sec_title_font == "font-B") { ?>selected<?php } ?>>Bold</option>
                 <option value="font-H" <?php if (isset($sec_title_font) && $sec_title_font == "font-H") { ?>selected<?php } ?>>Heavy</option>
             </select>
-
             <select class="select select_tiny" name="sec_title_align" id="sec_title_align">
                 <option value="">정렬</option>
                 <option value="center" <?php if (isset($sec_title_align) && $sec_title_align == "center") { ?>selected<?php } ?>>Center</option>
@@ -2852,7 +2856,26 @@ if($mod_type == "del_sec") { //섹션삭제
             <div style="position: absolute; top:22px; right:0px;">
                 <input type="checkbox" name="sec_title_hide" id="sec_title_hide" class="magic-checkbox" value="1" <?php if (isset($sec_title_hide) && $sec_title_hide == "1") { ?>checked<?php } ?>><label for="sec_title_hide">숨김</label>
             </div>
+        </ul>
 
+        <ul class="config_wrap_flex rb-device-style-row">
+            <li class="rb-device-style-label font-R">Mobile</li>
+            <div class="color_set_wrap square none_inp_cl" style="position: relative;">
+                <input type="text" class="coloris mod_sec_title_color_mo" name="sec_title_color_mo" value="<?php echo !empty($sec_title_color_mo) ? $sec_title_color_mo : '#25282B'; ?>" style="width:25px !important;">
+            </div>컬러
+            <input type="number" class="tiny_input" name="sec_title_size_mo" value="<?php echo !empty($sec_title_size_mo) ? $sec_title_size_mo : '26'; ?>"> px
+            <select class="select select_tiny" name="sec_title_font_mo" id="sec_title_font_mo">
+                <option value="">스타일</option>
+                <option value="font-R" <?php if (isset($sec_title_font_mo) && $sec_title_font_mo == "font-R") { ?>selected<?php } ?>>Regular</option>
+                <option value="font-B" <?php if (isset($sec_title_font_mo) && $sec_title_font_mo == "font-B") { ?>selected<?php } ?>>Bold</option>
+                <option value="font-H" <?php if (isset($sec_title_font_mo) && $sec_title_font_mo == "font-H") { ?>selected<?php } ?>>Heavy</option>
+            </select>
+            <select class="select select_tiny" name="sec_title_align_mo" id="sec_title_align_mo">
+                <option value="">정렬</option>
+                <option value="center" <?php if (isset($sec_title_align_mo) && $sec_title_align_mo == "center") { ?>selected<?php } ?>>Center</option>
+                <option value="left" <?php if (isset($sec_title_align_mo) && $sec_title_align_mo == "left") { ?>selected<?php } ?>>Left</option>
+                <option value="right" <?php if (isset($sec_title_align_mo) && $sec_title_align_mo == "right") { ?>selected<?php } ?>>Right</option>
+            </select>
         </ul>
 
     </div>
@@ -2869,21 +2892,18 @@ if($mod_type == "del_sec") { //섹션삭제
             <textarea name="sec_sub_title" class="input w100 h100" placeholder="서브워딩을 입력하세요."><?php echo !empty($sec_sub_title) ? $sec_sub_title : ''; ?></textarea>
         </ul>
 
-        <ul class="config_wrap_flex">
-
+        <ul class="config_wrap_flex rb-device-style-row">
+            <li class="rb-device-style-label font-R">PC</li>
             <div class="color_set_wrap square none_inp_cl" style="position: relative;">
                 <input type="text" class="coloris mod_sec_sub_title_color" name="sec_sub_title_color" value="<?php echo !empty($sec_sub_title_color) ? $sec_sub_title_color : '#25282B'; ?>" style="width:25px !important;">
             </div>컬러
-
             <input type="number" class="tiny_input" name="sec_sub_title_size" value="<?php echo !empty($sec_sub_title_size) ? $sec_sub_title_size : '18'; ?>"> px
-
             <select class="select select_tiny" name="sec_sub_title_font" id="sec_sub_title_font">
                 <option value="">스타일</option>
                 <option value="font-R" <?php if (isset($sec_sub_title_font) && $sec_sub_title_font == "font-R") { ?>selected<?php } ?>>Regular</option>
                 <option value="font-B" <?php if (isset($sec_sub_title_font) && $sec_sub_title_font == "font-B") { ?>selected<?php } ?>>Bold</option>
                 <option value="font-H" <?php if (isset($sec_sub_title_font) && $sec_sub_title_font == "font-H") { ?>selected<?php } ?>>Heavy</option>
             </select>
-
             <select class="select select_tiny" name="sec_sub_title_align" id="sec_sub_title_align">
                 <option value="">정렬</option>
                 <option value="center" <?php if (isset($sec_sub_title_align) && $sec_sub_title_align == "center") { ?>selected<?php } ?>>Center</option>
@@ -2894,7 +2914,26 @@ if($mod_type == "del_sec") { //섹션삭제
             <div style="position: absolute; top:22px; right:0px;">
                 <input type="checkbox" name="sec_sub_title_hide" id="sec_sub_title_hide" class="magic-checkbox" value="1" <?php if (isset($sec_sub_title_hide) && $sec_sub_title_hide == "1") { ?>checked<?php } ?>><label for="sec_sub_title_hide">숨김</label>
             </div>
+        </ul>
 
+        <ul class="config_wrap_flex rb-device-style-row">
+            <li class="rb-device-style-label font-R">Mobile</li>
+            <div class="color_set_wrap square none_inp_cl" style="position: relative;">
+                <input type="text" class="coloris mod_sec_sub_title_color_mo" name="sec_sub_title_color_mo" value="<?php echo !empty($sec_sub_title_color_mo) ? $sec_sub_title_color_mo : '#25282B'; ?>" style="width:25px !important;">
+            </div>컬러
+            <input type="number" class="tiny_input" name="sec_sub_title_size_mo" value="<?php echo !empty($sec_sub_title_size_mo) ? $sec_sub_title_size_mo : '18'; ?>"> px
+            <select class="select select_tiny" name="sec_sub_title_font_mo" id="sec_sub_title_font_mo">
+                <option value="">스타일</option>
+                <option value="font-R" <?php if (isset($sec_sub_title_font_mo) && $sec_sub_title_font_mo == "font-R") { ?>selected<?php } ?>>Regular</option>
+                <option value="font-B" <?php if (isset($sec_sub_title_font_mo) && $sec_sub_title_font_mo == "font-B") { ?>selected<?php } ?>>Bold</option>
+                <option value="font-H" <?php if (isset($sec_sub_title_font_mo) && $sec_sub_title_font_mo == "font-H") { ?>selected<?php } ?>>Heavy</option>
+            </select>
+            <select class="select select_tiny" name="sec_sub_title_align_mo" id="sec_sub_title_align_mo">
+                <option value="">정렬</option>
+                <option value="center" <?php if (isset($sec_sub_title_align_mo) && $sec_sub_title_align_mo == "center") { ?>selected<?php } ?>>Center</option>
+                <option value="left" <?php if (isset($sec_sub_title_align_mo) && $sec_sub_title_align_mo == "left") { ?>selected<?php } ?>>Left</option>
+                <option value="right" <?php if (isset($sec_sub_title_align_mo) && $sec_sub_title_align_mo == "right") { ?>selected<?php } ?>>Right</option>
+            </select>
         </ul>
 
     </div>

@@ -15,6 +15,10 @@ $sec_title_color  = $_POST['sec_title_color']  ?? '#25282b';
 $sec_title_size   = $_POST['sec_title_size']   ?? '26';
 $sec_title_font   = $_POST['sec_title_font']   ?? 'font-B';
 $sec_title_align  = $_POST['sec_title_align']  ?? 'center';
+$sec_title_color_mo  = $_POST['sec_title_color_mo']  ?? $sec_title_color;
+$sec_title_size_mo   = $_POST['sec_title_size_mo']   ?? $sec_title_size;
+$sec_title_font_mo   = $_POST['sec_title_font_mo']   ?? $sec_title_font;
+$sec_title_align_mo  = $_POST['sec_title_align_mo']  ?? $sec_title_align;
 $sec_title_hide   = $_POST['sec_title_hide']   ?? '0';
 
 $sec_sub_title        = $_POST['sec_sub_title']        ?? '';
@@ -22,6 +26,10 @@ $sec_sub_title_color  = $_POST['sec_sub_title_color']  ?? '#25282b';
 $sec_sub_title_size   = $_POST['sec_sub_title_size']   ?? '18';
 $sec_sub_title_font   = $_POST['sec_sub_title_font']   ?? 'font-R';
 $sec_sub_title_align  = $_POST['sec_sub_title_align']  ?? 'center';
+$sec_sub_title_color_mo  = $_POST['sec_sub_title_color_mo']  ?? $sec_sub_title_color;
+$sec_sub_title_size_mo   = $_POST['sec_sub_title_size_mo']   ?? $sec_sub_title_size;
+$sec_sub_title_font_mo   = $_POST['sec_sub_title_font_mo']   ?? $sec_sub_title_font;
+$sec_sub_title_align_mo  = $_POST['sec_sub_title_align_mo']  ?? $sec_sub_title_align;
 $sec_sub_title_hide   = $_POST['sec_sub_title_hide']   ?? '0';
 
 $sec_width        = $_POST['sec_width']        ?? '0';
@@ -82,6 +90,23 @@ if (sql_num_rows($res) == 0) {
 $res = sql_query("SHOW COLUMNS FROM {$rb_section_tables} LIKE 'sec_uid'");
 if (sql_num_rows($res) == 0) {
     sql_query("ALTER TABLE {$rb_section_tables} ADD `sec_uid` VARCHAR(80) NOT NULL, ADD INDEX(`sec_uid`)");
+}
+
+$mobile_style_columns = [
+    'sec_title_color_mo'     => "VARCHAR(50) NOT NULL DEFAULT ''",
+    'sec_title_size_mo'      => "VARCHAR(20) NOT NULL DEFAULT ''",
+    'sec_title_font_mo'      => "VARCHAR(20) NOT NULL DEFAULT ''",
+    'sec_title_align_mo'     => "VARCHAR(20) NOT NULL DEFAULT ''",
+    'sec_sub_title_color_mo' => "VARCHAR(50) NOT NULL DEFAULT ''",
+    'sec_sub_title_size_mo'  => "VARCHAR(20) NOT NULL DEFAULT ''",
+    'sec_sub_title_font_mo'  => "VARCHAR(20) NOT NULL DEFAULT ''",
+    'sec_sub_title_align_mo' => "VARCHAR(20) NOT NULL DEFAULT ''",
+];
+foreach ($mobile_style_columns as $column => $definition) {
+    $res = sql_query("SHOW COLUMNS FROM {$rb_section_tables} LIKE '{$column}'", false);
+    if ($res && sql_num_rows($res) == 0) {
+        sql_query("ALTER TABLE {$rb_section_tables} ADD `{$column}` {$definition}", false);
+    }
 }
 
 function is_new_sec($v) {
@@ -163,6 +188,10 @@ if (is_new_sec($sec_id)) {
         sec_title_size   = '".esc($sec_title_size)."',
         sec_title_font   = '".esc($sec_title_font)."',
         sec_title_align  = '".esc($sec_title_align)."',
+        sec_title_color_mo  = '".esc($sec_title_color_mo)."',
+        sec_title_size_mo   = '".esc($sec_title_size_mo)."',
+        sec_title_font_mo   = '".esc($sec_title_font_mo)."',
+        sec_title_align_mo  = '".esc($sec_title_align_mo)."',
         sec_title_hide   = '".esc($sec_title_hide)."',
 
         sec_sub_title        = '".esc($sec_sub_title)."',
@@ -170,6 +199,10 @@ if (is_new_sec($sec_id)) {
         sec_sub_title_size   = '".esc($sec_sub_title_size)."',
         sec_sub_title_font   = '".esc($sec_sub_title_font)."',
         sec_sub_title_align  = '".esc($sec_sub_title_align)."',
+        sec_sub_title_color_mo  = '".esc($sec_sub_title_color_mo)."',
+        sec_sub_title_size_mo   = '".esc($sec_sub_title_size_mo)."',
+        sec_sub_title_font_mo   = '".esc($sec_sub_title_font_mo)."',
+        sec_sub_title_align_mo  = '".esc($sec_sub_title_align_mo)."',
         sec_sub_title_hide   = '".esc($sec_sub_title_hide)."',
 
         sec_width        = '".esc($sec_width)."',
@@ -242,6 +275,10 @@ if (is_new_sec($sec_id)) {
         sec_title_size   = '".esc($sec_title_size)."',
         sec_title_font   = '".esc($sec_title_font)."',
         sec_title_align  = '".esc($sec_title_align)."',
+        sec_title_color_mo  = '".esc($sec_title_color_mo)."',
+        sec_title_size_mo   = '".esc($sec_title_size_mo)."',
+        sec_title_font_mo   = '".esc($sec_title_font_mo)."',
+        sec_title_align_mo  = '".esc($sec_title_align_mo)."',
         sec_title_hide   = '".esc($sec_title_hide)."',
 
         sec_sub_title        = '".esc($sec_sub_title)."',
@@ -249,6 +286,10 @@ if (is_new_sec($sec_id)) {
         sec_sub_title_size   = '".esc($sec_sub_title_size)."',
         sec_sub_title_font   = '".esc($sec_sub_title_font)."',
         sec_sub_title_align  = '".esc($sec_sub_title_align)."',
+        sec_sub_title_color_mo  = '".esc($sec_sub_title_color_mo)."',
+        sec_sub_title_size_mo   = '".esc($sec_sub_title_size_mo)."',
+        sec_sub_title_font_mo   = '".esc($sec_sub_title_font_mo)."',
+        sec_sub_title_align_mo  = '".esc($sec_sub_title_align_mo)."',
         sec_sub_title_hide   = '".esc($sec_sub_title_hide)."',
 
         sec_width        = '".esc($sec_width)."',

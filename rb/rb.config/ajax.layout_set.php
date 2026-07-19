@@ -673,9 +673,19 @@ foreach ($layouts as $layout_no) {
                     data-shop="0"
                     >
 
+                    <?php
+                        $sec_title_color_device = IS_MOBILE() && !empty($row_sec['sec_title_color_mo']) ? $row_sec['sec_title_color_mo'] : (!empty($row_sec['sec_title_color']) ? $row_sec['sec_title_color'] : '#25282b');
+                        $sec_title_size_device = IS_MOBILE() && !empty($row_sec['sec_title_size_mo']) ? $row_sec['sec_title_size_mo'] : (!empty($row_sec['sec_title_size']) ? $row_sec['sec_title_size'] : '26');
+                        $sec_title_font_device = IS_MOBILE() && !empty($row_sec['sec_title_font_mo']) ? $row_sec['sec_title_font_mo'] : (!empty($row_sec['sec_title_font']) ? $row_sec['sec_title_font'] : 'font-B');
+                        $sec_title_align_device = IS_MOBILE() && !empty($row_sec['sec_title_align_mo']) ? $row_sec['sec_title_align_mo'] : (!empty($row_sec['sec_title_align']) ? $row_sec['sec_title_align'] : 'center');
+                        $sec_sub_title_color_device = IS_MOBILE() && !empty($row_sec['sec_sub_title_color_mo']) ? $row_sec['sec_sub_title_color_mo'] : (!empty($row_sec['sec_sub_title_color']) ? $row_sec['sec_sub_title_color'] : '#25282b');
+                        $sec_sub_title_size_device = IS_MOBILE() && !empty($row_sec['sec_sub_title_size_mo']) ? $row_sec['sec_sub_title_size_mo'] : (!empty($row_sec['sec_sub_title_size']) ? $row_sec['sec_sub_title_size'] : '26');
+                        $sec_sub_title_font_device = IS_MOBILE() && !empty($row_sec['sec_sub_title_font_mo']) ? $row_sec['sec_sub_title_font_mo'] : (!empty($row_sec['sec_sub_title_font']) ? $row_sec['sec_sub_title_font'] : 'font-R');
+                        $sec_sub_title_align_device = IS_MOBILE() && !empty($row_sec['sec_sub_title_align_mo']) ? $row_sec['sec_sub_title_align_mo'] : (!empty($row_sec['sec_sub_title_align']) ? $row_sec['sec_sub_title_align'] : 'center');
+                    ?>
                     <div class="rb_section_title">
-                        <h2 class="<?php echo !empty($row_sec['sec_title_font']) ? $row_sec['sec_title_font'] : 'font-B'; ?>" style="color:<?php echo !empty($row_sec['sec_title_color']) ? $row_sec['sec_title_color'] : '#25282b'; ?>; font-size:<?php echo !empty($row_sec['sec_title_size']) ? $row_sec['sec_title_size'] : '26'; ?>px; text-align:<?php echo !empty($row_sec['sec_title_align']) ? $row_sec['sec_title_align'] : 'center'; ?>; display:<?php echo (isset($row_sec['sec_title_hide']) && $row_sec['sec_title_hide'] == '1') ? 'none' : 'block'; ?>;"><?php echo $row_sec['sec_title'] ?></h2>
-                        <h6 class="<?php echo !empty($row_sec['sec_sub_title_font']) ? $row_sec['sec_sub_title_font'] : 'font-R'; ?>" style="color:<?php echo !empty($row_sec['sec_sub_title_color']) ? $row_sec['sec_sub_title_color'] : '#25282b'; ?>; font-size:<?php echo !empty($row_sec['sec_sub_title_size']) ? $row_sec['sec_sub_title_size'] : '26'; ?>px;  text-align:<?php echo !empty($row_sec['sec_sub_title_align']) ? $row_sec['sec_sub_title_align'] : 'center'; ?>; display:<?php echo (isset($row_sec['sec_sub_title_hide']) && $row_sec['sec_sub_title_hide'] == '1') ? 'none' : 'block'; ?>;"><?php echo nl2br($row_sec['sec_sub_title']); ?></h6>
+                        <h2 class="<?php echo $sec_title_font_device; ?>" style="color:<?php echo $sec_title_color_device; ?>; font-size:<?php echo $sec_title_size_device; ?>px; text-align:<?php echo $sec_title_align_device; ?>; display:<?php echo (isset($row_sec['sec_title_hide']) && $row_sec['sec_title_hide'] == '1') ? 'none' : 'block'; ?>;"><?php echo $row_sec['sec_title'] ?></h2>
+                        <h6 class="<?php echo $sec_sub_title_font_device; ?>" style="color:<?php echo $sec_sub_title_color_device; ?>; font-size:<?php echo $sec_sub_title_size_device; ?>px; text-align:<?php echo $sec_sub_title_align_device; ?>; display:<?php echo (isset($row_sec['sec_sub_title_hide']) && $row_sec['sec_sub_title_hide'] == '1') ? 'none' : 'block'; ?>;"><?php echo nl2br($row_sec['sec_sub_title']); ?></h6>
                     </div>
 
 

@@ -4832,6 +4832,10 @@ foreach ($rb_side_panels as $rb_side_panel) {
         var sec_title_size = $('input[name="sec_title_size"]').val();
         var sec_title_font = $('select[name="sec_title_font"]').val();
         var sec_title_align = $('select[name="sec_title_align"]').val();
+        var sec_title_color_mo = $('input[name="sec_title_color_mo"]').val();
+        var sec_title_size_mo = $('input[name="sec_title_size_mo"]').val();
+        var sec_title_font_mo = $('select[name="sec_title_font_mo"]').val();
+        var sec_title_align_mo = $('select[name="sec_title_align_mo"]').val();
         var sec_title_hide = $('input[name="sec_title_hide"]:checked').val();
 
         var sec_sub_title = $('textarea[name="sec_sub_title"]').val();
@@ -4839,6 +4843,10 @@ foreach ($rb_side_panels as $rb_side_panel) {
         var sec_sub_title_size = $('input[name="sec_sub_title_size"]').val();
         var sec_sub_title_font = $('select[name="sec_sub_title_font"]').val();
         var sec_sub_title_align = $('select[name="sec_sub_title_align"]').val();
+        var sec_sub_title_color_mo = $('input[name="sec_sub_title_color_mo"]').val();
+        var sec_sub_title_size_mo = $('input[name="sec_sub_title_size_mo"]').val();
+        var sec_sub_title_font_mo = $('select[name="sec_sub_title_font_mo"]').val();
+        var sec_sub_title_align_mo = $('select[name="sec_sub_title_align_mo"]').val();
         var sec_sub_title_hide = $('input[name="sec_sub_title_hide"]:checked').val();
 
         var sec_width = $('input[name="sec_width"]').val();
@@ -4913,6 +4921,10 @@ foreach ($rb_side_panels as $rb_side_panel) {
                     "sec_title_size": sec_title_size,
                     "sec_title_font": sec_title_font,
                     "sec_title_align": sec_title_align,
+                    "sec_title_color_mo": sec_title_color_mo,
+                    "sec_title_size_mo": sec_title_size_mo,
+                    "sec_title_font_mo": sec_title_font_mo,
+                    "sec_title_align_mo": sec_title_align_mo,
                     "sec_title_hide": sec_title_hide,
 
                     "sec_sub_title": sec_sub_title,
@@ -4920,6 +4932,10 @@ foreach ($rb_side_panels as $rb_side_panel) {
                     "sec_sub_title_size": sec_sub_title_size,
                     "sec_sub_title_font": sec_sub_title_font,
                     "sec_sub_title_align": sec_sub_title_align,
+                    "sec_sub_title_color_mo": sec_sub_title_color_mo,
+                    "sec_sub_title_size_mo": sec_sub_title_size_mo,
+                    "sec_sub_title_font_mo": sec_sub_title_font_mo,
+                    "sec_sub_title_align_mo": sec_sub_title_align_mo,
                     "sec_sub_title_hide": sec_sub_title_hide,
 
                     "sec_width": sec_width,
