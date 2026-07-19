@@ -1252,4 +1252,5 @@ footer .footer_gnb {background-color: #fff;}
 .rb_latest_tabs_left .latest-tabs-wrap .bo_tab li {
     height: auto !important;
 }
+.rb_member .rb_join #mem_img_img {width: 60px !important; height:60px !important;}
 /* } */
