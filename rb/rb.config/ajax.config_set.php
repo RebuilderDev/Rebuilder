@@ -1307,7 +1307,6 @@ if($mod_type == "del_sec") { //섹션삭제
             <h6 class="font-R rb_config_sub_txt">모듈 박스의 스타일을 설정할 수 있습니다.</h6>
             <div class="config_wrap">
 
-
                 <div class="config_wrap_bg">
 
                     <ul class="rows_inp_lr">
@@ -1780,6 +1779,12 @@ if($mod_type == "del_sec") { //섹션삭제
 
 
 
+                <div class="rb-device-setting-group" data-rb-device-group="margin" data-rb-device="pc">
+                    <div class="rb-device-setting-tabs" role="tablist" aria-label="기기별 모듈 간격 설정">
+                        <button type="button" class="rb-device-setting-tab active" role="tab" data-rb-device-tab="pc" aria-selected="true">PC</button>
+                        <button type="button" class="rb-device-setting-tab" role="tab" data-rb-device-tab="mobile" aria-selected="false" tabindex="-1">Mobile</button>
+                    </div>
+
                 <div class="config_wrap_bg">
 
                     <ul class="rows_inp_lr">
@@ -1788,8 +1793,8 @@ if($mod_type == "del_sec") { //섹션삭제
                             margin-top
                         </li>
                         <li class="rows_inp_r mt-5">
-                            <input type="number" id="md_margin_top_pc" class="tiny_input w30 ml-0" name="md_margin_top_pc" placeholder="PC" value="<?php echo (isset($md_margin_top_pc) && $md_margin_top_pc !== '') ? $md_margin_top_pc : ''; ?>"> <span class="font-12">px　</span>
-                            <input type="number" id="md_margin_top_mo" class="tiny_input w30 ml-0" name="md_margin_top_mo" placeholder="Mobile" value="<?php echo (isset($md_margin_top_mo) && $md_margin_top_mo !== '') ? $md_margin_top_mo : ''; ?>"> <span class="font-12">px</span>
+                            <span class="rb-device-setting-field" data-rb-device-field="pc"><input type="number" id="md_margin_top_pc" class="tiny_input w30 ml-0" name="md_margin_top_pc" placeholder="PC" value="<?php echo (isset($md_margin_top_pc) && $md_margin_top_pc !== '') ? $md_margin_top_pc : ''; ?>"> <span class="font-12">px</span></span>
+                            <span class="rb-device-setting-field" data-rb-device-field="mobile" hidden><input type="number" id="md_margin_top_mo" class="tiny_input w30 ml-0" name="md_margin_top_mo" placeholder="Mobile" value="<?php echo (isset($md_margin_top_mo) && $md_margin_top_mo !== '') ? $md_margin_top_mo : ''; ?>"> <span class="font-12">px</span></span>
                         </li>
 
                         <div class="cb"></div>
@@ -1814,8 +1819,8 @@ if($mod_type == "del_sec") { //섹션삭제
                             margin-bottom
                         </li>
                         <li class="rows_inp_r mt-5">
-                            <input type="number" id="md_margin_btm_pc" class="tiny_input w30 ml-0" name="md_margin_btm_pc" placeholder="PC" value="<?php echo (isset($md_margin_btm_pc) && $md_margin_btm_pc !== '') ? $md_margin_btm_pc : ''; ?>"> <span class="font-12">px　</span>
-                            <input type="number" id="md_margin_btm_mo" class="tiny_input w30 ml-0" name="md_margin_btm_mo" placeholder="Mobile" value="<?php echo (isset($md_margin_btm_mo) && $md_margin_btm_mo !== '') ? $md_margin_btm_mo : ''; ?>"> <span class="font-12">px</span>
+                            <span class="rb-device-setting-field" data-rb-device-field="pc"><input type="number" id="md_margin_btm_pc" class="tiny_input w30 ml-0" name="md_margin_btm_pc" placeholder="PC" value="<?php echo (isset($md_margin_btm_pc) && $md_margin_btm_pc !== '') ? $md_margin_btm_pc : ''; ?>"> <span class="font-12">px</span></span>
+                            <span class="rb-device-setting-field" data-rb-device-field="mobile" hidden><input type="number" id="md_margin_btm_mo" class="tiny_input w30 ml-0" name="md_margin_btm_mo" placeholder="Mobile" value="<?php echo (isset($md_margin_btm_mo) && $md_margin_btm_mo !== '') ? $md_margin_btm_mo : ''; ?>"> <span class="font-12">px</span></span>
                         </li>
 
                         <div class="cb"></div>
@@ -1856,8 +1861,14 @@ if($mod_type == "del_sec") { //섹션삭제
                             <aside role="tooltip" class="rb-help-pop" aria-hidden="true"></aside>
                         </div>
                     </ul>
-
                 </div>
+                </div>
+
+                <div class="rb-device-setting-group" data-rb-device-group="padding" data-rb-device="pc">
+                    <div class="rb-device-setting-tabs" role="tablist" aria-label="기기별 모듈 내부 여백 설정">
+                        <button type="button" class="rb-device-setting-tab active" role="tab" data-rb-device-tab="pc" aria-selected="true">PC</button>
+                        <button type="button" class="rb-device-setting-tab" role="tab" data-rb-device-tab="mobile" aria-selected="false" tabindex="-1">Mobile</button>
+                    </div>
 
                 <div class="config_wrap_bg">
 
@@ -1868,8 +1879,8 @@ if($mod_type == "del_sec") { //섹션삭제
                         </li>
 
                         <li class="rows_inp_r mt-5">
-                            <input type="number" id="md_padding_lr_pc" class="tiny_input w30 ml-0" name="md_padding_lr_pc" placeholder="PC" value="<?php echo (isset($md_padding_lr_pc) && $md_padding_lr_pc !== '') ? $md_padding_lr_pc : ''; ?>"> <span class="font-12">px</span>
-                            <input type="number" id="md_padding_lr_mo" class="tiny_input w30 ml-0" name="md_padding_lr_mo" placeholder="Mobile" value="<?php echo (isset($md_padding_lr_mo) && $md_padding_lr_mo !== '') ? $md_padding_lr_mo : ''; ?>"> <span class="font-12">px</span>
+                            <span class="rb-device-setting-field" data-rb-device-field="pc"><input type="number" id="md_padding_lr_pc" class="tiny_input w30 ml-0" name="md_padding_lr_pc" placeholder="PC" value="<?php echo (isset($md_padding_lr_pc) && $md_padding_lr_pc !== '') ? $md_padding_lr_pc : ''; ?>"> <span class="font-12">px</span></span>
+                            <span class="rb-device-setting-field" data-rb-device-field="mobile" hidden><input type="number" id="md_padding_lr_mo" class="tiny_input w30 ml-0" name="md_padding_lr_mo" placeholder="Mobile" value="<?php echo (isset($md_padding_lr_mo) && $md_padding_lr_mo !== '') ? $md_padding_lr_mo : ''; ?>"> <span class="font-12">px</span></span>
                         </li>
                         <div class="cb"></div>
                         <div class="rb-help" data-open="false">
@@ -1892,8 +1903,8 @@ if($mod_type == "del_sec") { //섹션삭제
                         </li>
 
                         <li class="rows_inp_r mt-5">
-                            <input type="number" id="md_padding_tb_pc" class="tiny_input w30 ml-0" name="md_padding_tb_pc" placeholder="PC" value="<?php echo (isset($md_padding_tb_pc) && $md_padding_tb_pc !== '') ? $md_padding_tb_pc : ''; ?>"> <span class="font-12">px</span>
-                            <input type="number" id="md_padding_tb_mo" class="tiny_input w30 ml-0" name="md_padding_tb_mo" placeholder="Mobile" value="<?php echo (isset($md_padding_tb_mo) && $md_padding_tb_mo !== '') ? $md_padding_tb_mo : ''; ?>"> <span class="font-12">px</span>
+                            <span class="rb-device-setting-field" data-rb-device-field="pc"><input type="number" id="md_padding_tb_pc" class="tiny_input w30 ml-0" name="md_padding_tb_pc" placeholder="PC" value="<?php echo (isset($md_padding_tb_pc) && $md_padding_tb_pc !== '') ? $md_padding_tb_pc : ''; ?>"> <span class="font-12">px</span></span>
+                            <span class="rb-device-setting-field" data-rb-device-field="mobile" hidden><input type="number" id="md_padding_tb_mo" class="tiny_input w30 ml-0" name="md_padding_tb_mo" placeholder="Mobile" value="<?php echo (isset($md_padding_tb_mo) && $md_padding_tb_mo !== '') ? $md_padding_tb_mo : ''; ?>"> <span class="font-12">px</span></span>
                         </li>
                         <div class="cb"></div>
 
@@ -1971,7 +1982,57 @@ if($mod_type == "del_sec") { //섹션삭제
                         </div>
                     </ul>
                 </div>
+                </div>
 
+                <script type="text/javascript">
+                    (function($) {
+                        var $groups = $('.rb-device-setting-group');
+                        if (!$groups.length) return;
+
+                        window.RB_MODULE_SETTING_DEVICES = window.RB_MODULE_SETTING_DEVICES || {};
+
+                        function setDevice($group, device, focusTab) {
+                            device = device === 'mobile' ? 'mobile' : 'pc';
+                            var groupKey = $group.attr('data-rb-device-group');
+                            window.RB_MODULE_SETTING_DEVICES[groupKey] = device;
+                            $group.attr('data-rb-device', device);
+
+                            $group.find('.rb-device-setting-tab').each(function() {
+                                var $tab = $(this);
+                                var active = $tab.attr('data-rb-device-tab') === device;
+                                $tab.toggleClass('active', active)
+                                    .attr('aria-selected', active ? 'true' : 'false')
+                                    .attr('tabindex', active ? '0' : '-1');
+                            });
+
+                            $group.find('.rb-device-setting-field').each(function() {
+                                var active = $(this).attr('data-rb-device-field') === device;
+                                $(this).prop('hidden', !active).attr('aria-hidden', active ? 'false' : 'true');
+                            });
+
+                            if (focusTab) {
+                                $group.find('.rb-device-setting-tab[data-rb-device-tab="' + device + '"]').trigger('focus');
+                            }
+                        }
+
+                        $groups.each(function() {
+                            var $group = $(this);
+                            var groupKey = $group.attr('data-rb-device-group');
+
+                            $group.off('.rbDeviceSettingTabs')
+                                .on('click.rbDeviceSettingTabs', '.rb-device-setting-tab', function() {
+                                    setDevice($group, $(this).attr('data-rb-device-tab'), false);
+                                })
+                                .on('keydown.rbDeviceSettingTabs', '.rb-device-setting-tab', function(event) {
+                                    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                                    event.preventDefault();
+                                    setDevice($group, $(this).attr('data-rb-device-tab') === 'pc' ? 'mobile' : 'pc', true);
+                                });
+
+                            setDevice($group, window.RB_MODULE_SETTING_DEVICES[groupKey] || 'pc', false);
+                        });
+                    })(jQuery);
+                </script>
 
 
             </div>
@@ -2907,6 +2968,12 @@ if($mod_type == "del_sec") { //섹션삭제
 
         </div>
 
+        <div class="rb-device-setting-group rb-section-device-setting-group" data-rb-device-group="section-margin" data-rb-device="pc">
+            <div class="rb-device-setting-tabs" role="tablist" aria-label="기기별 섹션 간격 설정">
+                <button type="button" class="rb-device-setting-tab active" role="tab" data-rb-device-tab="pc" aria-selected="true">PC</button>
+                <button type="button" class="rb-device-setting-tab" role="tab" data-rb-device-tab="mobile" aria-selected="false" tabindex="-1">Mobile</button>
+            </div>
+
         <div class="config_wrap_bg">
 
             <ul class="rows_inp_lr">
@@ -2915,8 +2982,8 @@ if($mod_type == "del_sec") { //섹션삭제
                     margin-top
                 </li>
                 <li class="rows_inp_r mt-5">
-                    <input type="number" id="sec_margin_top_pc" class="tiny_input w25 ml-0" name="sec_margin_top_pc" placeholder="PC" value="<?php echo (isset($sec_margin_top_pc) && $sec_margin_top_pc !== '') ? $sec_margin_top_pc : ''; ?>"> <span class="font-12">px　</span>
-                    <input type="number" id="sec_margin_top_mo" class="tiny_input w25 ml-0" name="sec_margin_top_mo" placeholder="Mobile" value="<?php echo (isset($sec_margin_top_mo) && $sec_margin_top_mo !== '') ? $sec_margin_top_mo : ''; ?>"> <span class="font-12">px</span>
+                    <span class="rb-device-setting-field" data-rb-device-field="pc"><input type="number" id="sec_margin_top_pc" class="tiny_input w25 ml-0" name="sec_margin_top_pc" placeholder="PC" value="<?php echo (isset($sec_margin_top_pc) && $sec_margin_top_pc !== '') ? $sec_margin_top_pc : ''; ?>"> <span class="font-12">px</span></span>
+                    <span class="rb-device-setting-field" data-rb-device-field="mobile" hidden><input type="number" id="sec_margin_top_mo" class="tiny_input w25 ml-0" name="sec_margin_top_mo" placeholder="Mobile" value="<?php echo (isset($sec_margin_top_mo) && $sec_margin_top_mo !== '') ? $sec_margin_top_mo : ''; ?>"> <span class="font-12">px</span></span>
                 </li>
 
                 <div class="cb"></div>
@@ -2941,8 +3008,8 @@ if($mod_type == "del_sec") { //섹션삭제
                     margin-bottom
                 </li>
                 <li class="rows_inp_r mt-5">
-                    <input type="number" id="sec_margin_btm_pc" class="tiny_input w25 ml-0" name="sec_margin_btm_pc" placeholder="PC" value="<?php echo (isset($sec_margin_btm_pc) && $sec_margin_btm_pc !== '') ? $sec_margin_btm_pc : ''; ?>"> <span class="font-12">px　</span>
-                    <input type="number" id="sec_margin_btm_mo" class="tiny_input w25 ml-0" name="sec_margin_btm_mo" placeholder="Mobile" value="<?php echo (isset($sec_margin_btm_mo) && $sec_margin_btm_mo !== '') ? $sec_margin_btm_mo : ''; ?>"> <span class="font-12">px</span>
+                    <span class="rb-device-setting-field" data-rb-device-field="pc"><input type="number" id="sec_margin_btm_pc" class="tiny_input w25 ml-0" name="sec_margin_btm_pc" placeholder="PC" value="<?php echo (isset($sec_margin_btm_pc) && $sec_margin_btm_pc !== '') ? $sec_margin_btm_pc : ''; ?>"> <span class="font-12">px</span></span>
+                    <span class="rb-device-setting-field" data-rb-device-field="mobile" hidden><input type="number" id="sec_margin_btm_mo" class="tiny_input w25 ml-0" name="sec_margin_btm_mo" placeholder="Mobile" value="<?php echo (isset($sec_margin_btm_mo) && $sec_margin_btm_mo !== '') ? $sec_margin_btm_mo : ''; ?>"> <span class="font-12">px</span></span>
                 </li>
 
                 <div class="cb"></div>
@@ -2960,8 +3027,15 @@ if($mod_type == "del_sec") { //섹션삭제
                 </div>
             </ul>
         </div>
+        </div>
 
 
+
+        <div class="rb-device-setting-group rb-section-device-setting-group" data-rb-device-group="section-padding" data-rb-device="pc">
+            <div class="rb-device-setting-tabs" role="tablist" aria-label="기기별 섹션 내부 여백 설정">
+                <button type="button" class="rb-device-setting-tab active" role="tab" data-rb-device-tab="pc" aria-selected="true">PC</button>
+                <button type="button" class="rb-device-setting-tab" role="tab" data-rb-device-tab="mobile" aria-selected="false" tabindex="-1">Mobile</button>
+            </div>
 
         <div class="config_wrap_bg">
                     <ul class="rows_inp_lr">
@@ -2971,8 +3045,8 @@ if($mod_type == "del_sec") { //섹션삭제
                         </li>
 
                         <li class="rows_inp_r mt-5">
-                            <input type="number" id="sec_padding_lr_pc" class="tiny_input w30 ml-0" name="sec_padding_lr_pc" placeholder="PC" value="<?php echo (isset($sec_padding_lr_pc) && $sec_padding_lr_pc !== '') ? $sec_padding_lr_pc : ''; ?>"> <span class="font-12">px</span>
-                            <input type="number" id="sec_padding_lr_mo" class="tiny_input w30 ml-0" name="sec_padding_lr_mo" placeholder="Mobile" value="<?php echo (isset($sec_padding_lr_mo) && $sec_padding_lr_mo !== '') ? $sec_padding_lr_mo : ''; ?>"> <span class="font-12">px</span>
+                            <span class="rb-device-setting-field" data-rb-device-field="pc"><input type="number" id="sec_padding_lr_pc" class="tiny_input w30 ml-0" name="sec_padding_lr_pc" placeholder="PC" value="<?php echo (isset($sec_padding_lr_pc) && $sec_padding_lr_pc !== '') ? $sec_padding_lr_pc : ''; ?>"> <span class="font-12">px</span></span>
+                            <span class="rb-device-setting-field" data-rb-device-field="mobile" hidden><input type="number" id="sec_padding_lr_mo" class="tiny_input w30 ml-0" name="sec_padding_lr_mo" placeholder="Mobile" value="<?php echo (isset($sec_padding_lr_mo) && $sec_padding_lr_mo !== '') ? $sec_padding_lr_mo : ''; ?>"> <span class="font-12">px</span></span>
                         </li>
                         <div class="cb"></div>
                         <div class="rb-help" data-open="false">
@@ -2995,8 +3069,8 @@ if($mod_type == "del_sec") { //섹션삭제
                         </li>
 
                         <li class="rows_inp_r mt-5">
-                            <input type="number" id="sec_padding_tb_pc" class="tiny_input w30 ml-0" name="sec_padding_tb_pc" placeholder="PC" value="<?php echo (isset($sec_padding_tb_pc) && $sec_padding_tb_pc !== '') ? $sec_padding_tb_pc : ''; ?>"> <span class="font-12">px</span>
-                            <input type="number" id="sec_padding_tb_mo" class="tiny_input w30 ml-0" name="sec_padding_tb_mo" placeholder="Mobile" value="<?php echo (isset($sec_padding_tb_mo) && $sec_padding_tb_mo !== '') ? $sec_padding_tb_mo : ''; ?>"> <span class="font-12">px</span>
+                            <span class="rb-device-setting-field" data-rb-device-field="pc"><input type="number" id="sec_padding_tb_pc" class="tiny_input w30 ml-0" name="sec_padding_tb_pc" placeholder="PC" value="<?php echo (isset($sec_padding_tb_pc) && $sec_padding_tb_pc !== '') ? $sec_padding_tb_pc : ''; ?>"> <span class="font-12">px</span></span>
+                            <span class="rb-device-setting-field" data-rb-device-field="mobile" hidden><input type="number" id="sec_padding_tb_mo" class="tiny_input w30 ml-0" name="sec_padding_tb_mo" placeholder="Mobile" value="<?php echo (isset($sec_padding_tb_mo) && $sec_padding_tb_mo !== '') ? $sec_padding_tb_mo : ''; ?>"> <span class="font-12">px</span></span>
                         </li>
                         <div class="cb"></div>
 
@@ -3055,6 +3129,57 @@ if($mod_type == "del_sec") { //섹션삭제
                     <input type="hidden" id="sec_padding_mo" class="tiny_input w25 ml-0" name="sec_padding_mo" placeholder="Mobile" value="<?php echo !empty($sec_padding_mo) ? $sec_padding_mo : ''; ?>">
 
         </div>
+        </div>
+
+        <script type="text/javascript">
+            (function($) {
+                var $groups = $('.rb-section-device-setting-group');
+                if (!$groups.length) return;
+
+                window.RB_SECTION_SETTING_DEVICES = window.RB_SECTION_SETTING_DEVICES || {};
+
+                function setSectionDevice($group, device, focusTab) {
+                    device = device === 'mobile' ? 'mobile' : 'pc';
+                    var groupKey = $group.attr('data-rb-device-group');
+                    window.RB_SECTION_SETTING_DEVICES[groupKey] = device;
+                    $group.attr('data-rb-device', device);
+
+                    $group.find('.rb-device-setting-tab').each(function() {
+                        var $tab = $(this);
+                        var active = $tab.attr('data-rb-device-tab') === device;
+                        $tab.toggleClass('active', active)
+                            .attr('aria-selected', active ? 'true' : 'false')
+                            .attr('tabindex', active ? '0' : '-1');
+                    });
+
+                    $group.find('.rb-device-setting-field').each(function() {
+                        var active = $(this).attr('data-rb-device-field') === device;
+                        $(this).prop('hidden', !active).attr('aria-hidden', active ? 'false' : 'true');
+                    });
+
+                    if (focusTab) {
+                        $group.find('.rb-device-setting-tab[data-rb-device-tab="' + device + '"]').trigger('focus');
+                    }
+                }
+
+                $groups.each(function() {
+                    var $group = $(this);
+                    var groupKey = $group.attr('data-rb-device-group');
+
+                    $group.off('.rbSectionDeviceSettingTabs')
+                        .on('click.rbSectionDeviceSettingTabs', '.rb-device-setting-tab', function() {
+                            setSectionDevice($group, $(this).attr('data-rb-device-tab'), false);
+                        })
+                        .on('keydown.rbSectionDeviceSettingTabs', '.rb-device-setting-tab', function(event) {
+                            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                            event.preventDefault();
+                            setSectionDevice($group, $(this).attr('data-rb-device-tab') === 'pc' ? 'mobile' : 'pc', true);
+                        });
+
+                    setSectionDevice($group, window.RB_SECTION_SETTING_DEVICES[groupKey] || 'pc', false);
+                });
+            })(jQuery);
+        </script>
 
     </div>
 </ul>

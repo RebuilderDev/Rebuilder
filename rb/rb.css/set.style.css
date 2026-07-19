@@ -344,3 +344,56 @@ section.co_gap_pc_30 {margin-top: -10px;}
 .flex_box_inner .rb_layout_box .add_module_wrap {display: none !important;}
 
 .ui-sortable-handle {margin-left: -1px; margin-right: -1px;}
+.config_wrap label:not(:last-child) {margin-right: 7px;}
+
+/* 2.2.6.3 { */
+.rb-device-setting-group {margin-top: 20px;}
+
+.rb-device-setting-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+    width: max-content;
+    position: relative;
+    z-index: 2;
+    margin: 0 14px -1px auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.rb-device-setting-tab {
+    min-width: 44px;
+    height: 20px;
+    padding: 0 9px;
+    border: 1px solid #ddd;
+    border-bottom: 0;
+    border-radius: 5px 5px 0 0;
+    background: #f5f6f7;
+    color: #8a9097;
+    font-size: 11px;
+    line-height: 19px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.rb-device-setting-tab + .rb-device-setting-tab {margin-left: -1px;}
+.rb-device-setting-tab:hover {color: #25282b;}
+.rb-device-setting-tab.active {
+    z-index: 1;
+    background: #fff;
+    color: #25282b;
+    box-shadow: none;
+}
+.rb-device-setting-tab:focus-visible {outline: 2px solid #00d6ee; outline-offset: 1px;}
+
+.rb-device-setting-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.rb-device-setting-tabs + .config_wrap_bg {margin-top: 0;}
+.rb-device-setting-field .tiny_input {width: 64px !important;}
+.rb-device-setting-field[hidden] {display: none !important;}
+/* } */
