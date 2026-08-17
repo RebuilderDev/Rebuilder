@@ -28,6 +28,8 @@ $rb_license_state_labels = array(
     'not_required' => '테스트 사용',
     'required' => '라이선스 필요',
     'pending' => '확인 중',
+    'suspended' => '중지',
+    'released' => '해제',
 );
 ?>
 
