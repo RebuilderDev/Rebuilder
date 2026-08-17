@@ -4,7 +4,8 @@ include_once('./_common.php');
 include_once('./rb_license.lib.php');
 
 auth_check_menu($auth, $sub_menu, "w");
-add_stylesheet('<link rel="stylesheet" href="./css/style.css">', 0);
+$rb_admin_style_version = @filemtime(__DIR__.'/css/style.css');
+add_stylesheet('<link rel="stylesheet" href="./css/style.css?ver='.(int) $rb_admin_style_version.'">', 0);
 
 $g5['title'] = '빌더설정';
 include_once (G5_ADMIN_PATH.'/admin.head.php');
@@ -656,37 +657,6 @@ $pg_anchor = '<ul class="anchor">
 
 위와 같은 사이트에 리빌더를 사용하는 경우 라이선스 해지 및 사용 제한 조치가 즉시 이루어질 수 있으며, 리빌더를 통해 제작된 사이트의 법적 책임과 운영에 대한 모든 책임은 사용자 본인에게 있습니다.
 
-15. 게시물 규제정책
-다음 내용에 해당하는 게시물은 운영정책에 따라 열람 또는 게시가 제한되거나 조치될 수 있습니다.
-
-- 인종이나 성(性), 국적, 종교적, 정치적 분쟁 등 사회문화적 편견에 기반을 둔 내용의 글
-- 영리를 목적으로 하거나 광고 및 홍보 또는 그와 유사한 내용임이 객관적으로 확인되는 글
-- 허위사실을 유포하거나 다수의 이용자에게 오해를 불러일으킬 수 있는 내용의 글
-- 타인에게 불쾌감이나 혐오감을 줄 수 있는 글
-- 도배 또는 욕설, 음란한 단어 및 표현을 포함한 글
-- 자신 또는 타인의 전화번호, 주민등록번호, 실명 등의 개인정보를 포함하고 있는 글
-- 회사 또는 타인을 비방하거나 중상모략으로 명예를 훼손시키거나 모욕을 주는 글
-- 이용자 또는 제3자에게 불쾌감을 주거나 비방함으로써 명예를 손상시키는 글
-- 계정거래, 금전거래 등 불법적인 시도 또는 타 이용자들을 선동하는 글
-- 공공질서 및 미풍양속에 위반되는 내용이나 링크를 포함한 글
-- 불법복제 또는 해킹을 조장하는 내용의 글
-- 프로그램의 보안 취약점을 소개하거나 취약점을 이용했다고 판단되는 글
-- 자신이나 제3자에게 부당하게 이익을 준다고 판단되는 글
-- 내용을 알 수 없는 실행파일 등이 첨부된 글
-- 회사에서 판매하였거나 판매하는 제품을 허락 없이 재판매하는 글
-- 회사의 자산을 악의적으로 평가 저하시키려는 내용이 포함된 글
-- 회사가 인정하지 않는 프로그램, 부적절한 파일 등의 유포나 사용을 유도하는 글
-- 회사 또는 회사 임직원을 사칭하거나 회사 및 회사 임직원을 비방하는 글
-- 이용약관 및 관련 법령에 위배되는 내용의 글
-- 저작권 침해 및 이와 유사한 내용을 담은 글
-- 현행법상 처벌의 근거가 되는 글
-- 관계 법령에 위배된다고 판단되는 글
-- 기타 정당한 권한 없이 타인의 권리를 침해하는 내용의 글
-- 기타 게시판의 성격에 맞지 않는다고 판단되는 글
-
-16. 기타 이용정책
-휴대전화 인증이 되지 않은 사용자의 경우 정보 열람 및 게시물 작성 등의 커뮤니티 활동이 제한됩니다.
-
 최종 수정일: 2026년 8월 18일
 적용 버전: 빌더 2.2.7 이상
 </textarea>
@@ -698,12 +668,11 @@ $pg_anchor = '<ul class="anchor">
 
         <h2 class="h2_frm">설치 토큰</h2>
 
-        <div class="local_desc01 local_desc">
-            <label for="install_token"><strong>설치 토큰</strong></label><br>
+        <div class="rb-license-token-form">
             <input type="text" name="install_token" id="install_token" value="" class="frm_input" maxlength="80" autocomplete="off" placeholder="설치 토큰 입력" required style="width:100%;max-width:640px;">
         </div>
 
-        <div class="btn_confirm01 btn_confirm">
+        <div class="btn_confirm01 btn_confirm rb-license-token-actions">
             <input type="submit" value="설치 토큰 등록" class="btn_submit btn">
         </div>
     </form>

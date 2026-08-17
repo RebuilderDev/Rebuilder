@@ -51,7 +51,7 @@ function rb_license_admin_notice_tail()
     ?>
     <style>
     .rb-license-notice-layer{position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
-    .rb-license-notice-text{width:min(520px,100%);padding:28px;background:#f0f5f9;border:0;border-radius:10px;color:#222;font-size:15px;line-height:1.7;text-align:center;white-space:pre-line;box-shadow:0 18px 50px rgba(0,0,0,.22);box-sizing:border-box}
+    .rb-license-notice-text{width:min(520px,100%);padding:28px;background:#fff;border:1px solid #ddd;color:#222;font-size:15px;line-height:1.7;text-align:center;white-space:pre-line;box-shadow:0 18px 50px rgba(0,0,0,.22);box-sizing:border-box}
     </style>
     <div class="rb-license-notice-layer" id="rb-license-notice-layer" role="dialog" aria-modal="true" aria-label="빌더 설치 안내">
         <div class="rb-license-notice-text"><?php echo htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></div>
