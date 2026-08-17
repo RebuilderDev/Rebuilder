@@ -16,10 +16,15 @@ function rb_license_admin_notice_tail()
         return;
     }
 
+    $current_script = isset($_SERVER['SCRIPT_NAME']) ? str_replace('\\', '/', $_SERVER['SCRIPT_NAME']) : '';
+    if (preg_match('~/adm/rb/rb_form\.php$~', $current_script)) {
+        return;
+    }
+
     $client = rb_license_client_get();
     $message = '';
     if (empty($client['registered_at'])) {
-        $message = '빌더 설치 인증이 필요합니다. 빌더설정에서 설치 토큰을 등록해 주세요.';
+        $message = "빌더 설치가 필요합니다.\n빌더설정 메뉴에서 빌더를 설치해주세요.";
     } else {
         $checked_at = (int) get_session('ss_rb_license_remote_checked_at');
         if ($checked_at < time() - 300) {
@@ -46,7 +51,7 @@ function rb_license_admin_notice_tail()
     ?>
     <style>
     .rb-license-notice-layer{position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
-    .rb-license-notice-text{width:min(520px,100%);padding:28px;background:#f0f5f9;border:0;border-radius:10px;color:#222;font-size:15px;line-height:1.7;box-shadow:0 18px 50px rgba(0,0,0,.22);box-sizing:border-box}
+    .rb-license-notice-text{width:min(520px,100%);padding:28px;background:#f0f5f9;border:0;border-radius:10px;color:#222;font-size:15px;line-height:1.7;text-align:center;white-space:pre-line;box-shadow:0 18px 50px rgba(0,0,0,.22);box-sizing:border-box}
     </style>
     <div class="rb-license-notice-layer" id="rb-license-notice-layer" role="dialog" aria-modal="true" aria-label="빌더 설치 안내">
         <div class="rb-license-notice-text"><?php echo htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></div>
@@ -63,4 +68,3 @@ function rb_license_admin_notice_tail()
 }
 
 add_event('tail_sub', 'rb_license_admin_notice_tail', G5_HOOK_DEFAULT_PRIORITY);
-

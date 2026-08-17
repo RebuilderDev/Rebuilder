@@ -160,7 +160,6 @@ if (!function_exists('rb_license_status_html')) {
 <div class="rb-license-box">
     <div class="rb-lic-row">
         <span class="rb-lic-label"><?php echo $label; ?></span>
-        <a href="<?php echo G5_ADMIN_URL; ?>/rb/rb_form.php" class="rb-lic-btn rb-lic-out">확인</a>
     </div>
 </div>
 <?php

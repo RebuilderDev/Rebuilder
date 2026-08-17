@@ -579,7 +579,7 @@ $pg_anchor = '<ul class="anchor">
         <h2 class="h2_frm">라이선스 정책</h2>
 
         <div class="local_desc01 local_desc">
-<textarea name="mb_signature" readonly style="height:200px">
+<textarea name="mb_signature" readonly style="height:200px;padding:20px;box-sizing:border-box">
 리빌더(REBUILDER) 소프트웨어 이용 및 라이선스 정책
 
 본 정책은 리빌더 소프트웨어와 관련 업데이트, 부가기능 및 부가서비스의 설치·복제·사용 조건을 정합니다. 소프트웨어를 다운로드하거나 설치·업데이트·사용하면 본 정책에 동의한 것으로 봅니다.
@@ -694,7 +694,11 @@ $pg_anchor = '<ul class="anchor">
 <br><br>
             <input type="checkbox" value="1" id="agrees">
             <label for="agrees">상기 내용을 모두 확인하였으며, 라이선스 정책에 동의 합니다.</label>
-            <br><br>
+        </div>
+
+        <h2 class="h2_frm">설치 토큰</h2>
+
+        <div class="local_desc01 local_desc">
             <label for="install_token"><strong>설치 토큰</strong></label><br>
             <input type="text" name="install_token" id="install_token" value="" class="frm_input" maxlength="80" autocomplete="off" placeholder="설치 토큰 입력" required style="width:100%;max-width:640px;">
         </div>
