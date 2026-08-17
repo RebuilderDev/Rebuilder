@@ -24,12 +24,20 @@ function rb_license_admin_notice_tail()
     $client = rb_license_client_get();
     $message = '';
     if (empty($client['registered_at'])) {
-        $message = "빌더 설치가 필요합니다.\n빌더설정 메뉴에서 빌더를 설치해주세요.";
+        $builder_table = sql_fetch("SELECT COUNT(*) AS cnt
+                                      FROM information_schema.TABLES
+                                     WHERE TABLE_SCHEMA='".sql_real_escape_string(G5_MYSQL_DB)."'
+                                       AND TABLE_NAME='rb_builder'", false);
+        if (!empty($builder_table['cnt'])) {
+            $message = "빌더 토큰 등록이 필요합니다.\n빌더설정 메뉴에서 토큰을 등록해주세요.";
+        } else {
+            $message = "빌더 설치가 필요합니다.\n빌더설정 메뉴에서 빌더를 설치해주세요.";
+        }
     } else {
-        $checked_at = (int) get_session('ss_rb_license_remote_checked_at');
-        if ($checked_at < time() - 300) {
+        $checked_once = (int) get_session('ss_rb_license_remote_checked_once');
+        if (!$checked_once) {
+            set_session('ss_rb_license_remote_checked_once', 1);
             $check = rb_license_check_remote();
-            set_session('ss_rb_license_remote_checked_at', time());
             if (!empty($check['success']) && isset($check['data'])) {
                 $client = rb_license_client_get();
                 if (isset($check['data']['state']) && $check['data']['state'] === 'clone_pending') {
