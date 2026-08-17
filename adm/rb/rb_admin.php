@@ -151,22 +151,6 @@ include_once(__DIR__.'/rb_license.lib.php');
 
 
 
-if (!function_exists('rb_license_status_html')) {
-    function rb_license_status_html() {
-        $client = rb_license_client_get();
-        $registered = !empty($client['registered_at']);
-        $label = $registered ? '설치 인증 완료' : '설치 인증 필요';
-        ob_start(); ?>
-<div class="rb-license-box">
-    <div class="rb-lic-row">
-        <span class="rb-lic-label"><?php echo $label; ?></span>
-    </div>
-</div>
-<?php
-        return ob_get_clean();
-    }
-}
-
 ?>
 
 
@@ -185,8 +169,6 @@ if (!function_exists('rb_license_status_html')) {
         <div class="rb-info-grid">
             <div class="rb-kv"><span class="k">그누보드(영카트)</span><span class="v"><?php echo G5_GNUBOARD_VER ?></span></div>
             <div class="rb-kv"><span class="k">빌더</span><span class="v"><?php echo RB_VER ?></span></div>
-
-            <?php echo rb_license_status_html(); ?>
 
             <div class="rb-kv-top">
                 <div class="rb-kv"><span class="k">유효회원</span><span class="v"><?php echo number_format($member_cnt) ?> 명</span></div>

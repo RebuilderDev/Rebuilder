@@ -41,7 +41,7 @@ function rb_license_admin_notice_tail()
             if (!empty($check['success']) && isset($check['data'])) {
                 $client = rb_license_client_get();
                 if (isset($check['data']['state']) && $check['data']['state'] === 'clone_pending') {
-                    $message = isset($check['data']['notice']) ? $check['data']['notice'] : '복제된 설치환경의 확인이 필요합니다.';
+                    $message = isset($check['data']['notice']) ? $check['data']['notice'] : "복제된 설치환경입니다.\n빌더설정에서 새 설치 토큰을 등록해주세요.";
                 }
             }
         }

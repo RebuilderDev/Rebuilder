@@ -68,6 +68,45 @@ function rb_license_uuid_v4()
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
+function rb_license_create_identity()
+{
+    $uuid = rb_license_uuid_v4();
+    $secret_bytes = rb_license_random_bytes(32);
+    if ($uuid === '' || $secret_bytes === false) {
+        return array('error' => '안전한 설치 인증정보를 생성할 수 없는 서버 환경입니다.');
+    }
+    return array(
+        'installation_uuid' => $uuid,
+        'installation_secret' => 'RBC'.strtoupper(bin2hex($secret_bytes)),
+    );
+}
+
+// 복제 등록 응답이 유실되어도 같은 토큰으로 같은 새 식별정보를 다시 만들 수 있게 합니다.
+function rb_license_create_clone_identity($client, $install_token)
+{
+    if (empty($client['installation_uuid']) || empty($client['installation_secret'])) {
+        return array('error' => '복제 원본의 설치 인증정보를 확인할 수 없습니다.');
+    }
+    $fingerprint = rb_license_server_fingerprint();
+    $domain = rb_license_current_domain();
+    $key = (string) $install_token.'|'.(string) $client['installation_secret'];
+    $uuid_bytes = substr(hash_hmac(
+        'sha256',
+        'clone-uuid|'.$client['installation_uuid'].'|'.$fingerprint.'|'.$domain,
+        $key,
+        true
+    ), 0, 16);
+    $uuid_bytes[6] = chr((ord($uuid_bytes[6]) & 0x0f) | 0x40);
+    $uuid_bytes[8] = chr((ord($uuid_bytes[8]) & 0x3f) | 0x80);
+    $uuid = vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($uuid_bytes), 4));
+    $secret = 'RBC'.strtoupper(hash_hmac(
+        'sha256',
+        'clone-secret|'.$client['installation_uuid'].'|'.$fingerprint.'|'.$domain,
+        $key
+    ));
+    return array('installation_uuid' => $uuid, 'installation_secret' => $secret);
+}
+
 function rb_license_prepare_identity()
 {
     $client = rb_license_client_get();
@@ -75,12 +114,12 @@ function rb_license_prepare_identity()
         return $client;
     }
 
-    $uuid = rb_license_uuid_v4();
-    $secret_bytes = rb_license_random_bytes(32);
-    if ($uuid === '' || $secret_bytes === false) {
-        return array('error' => '안전한 설치 인증정보를 생성할 수 없는 서버 환경입니다.');
+    $identity = rb_license_create_identity();
+    if (isset($identity['error'])) {
+        return $identity;
     }
-    $secret = 'RBC'.strtoupper(bin2hex($secret_bytes));
+    $uuid = $identity['installation_uuid'];
+    $secret = $identity['installation_secret'];
     $now = defined('G5_TIME_YMDHIS') ? G5_TIME_YMDHIS : date('Y-m-d H:i:s');
     $saved = sql_query("INSERT INTO rb_license_client
             (client_id, installation_uuid, installation_secret, registration_status,
@@ -251,26 +290,74 @@ function rb_license_save_status($data, $registered = false)
                        WHERE client_id=1", false) ? true : false;
 }
 
+function rb_license_save_replacement_identity($identity, $data)
+{
+    if (empty($identity['installation_uuid']) || empty($identity['installation_secret'])) {
+        return false;
+    }
+    $registration_status = isset($data['installation_status'])
+        ? substr((string) $data['installation_status'], 0, 24)
+        : (isset($data['state']) ? substr((string) $data['state'], 0, 24) : 'registered');
+    $usage_type = isset($data['usage_type']) ? substr((string) $data['usage_type'], 0, 32) : '';
+    $environment = isset($data['environment_type']) ? substr((string) $data['environment_type'], 0, 20) : 'unknown';
+    $license_state = isset($data['license_state']) ? substr((string) $data['license_state'], 0, 24) : 'pending';
+    $notice = isset($data['notice']) ? substr((string) $data['notice'], 0, 255) : '';
+    return sql_query("UPDATE rb_license_client
+                         SET installation_uuid='".sql_real_escape_string($identity['installation_uuid'])."',
+                             installation_secret='".sql_real_escape_string($identity['installation_secret'])."',
+                             registration_status='".sql_real_escape_string($registration_status)."',
+                             usage_type='".sql_real_escape_string($usage_type)."',
+                             environment_type='".sql_real_escape_string($environment)."',
+                             license_state='".sql_real_escape_string($license_state)."',
+                             status_notice='".sql_real_escape_string($notice)."',
+                             registered_at=NOW(), last_checked_at=NOW(), updated_at=NOW()
+                       WHERE client_id=1", false) ? true : false;
+}
+
 function rb_license_register_token($install_token)
 {
     $install_token = strtoupper(preg_replace('/[^A-Z0-9]/', '', (string) $install_token));
     if (!preg_match('/^RBI[A-F0-9]{32}$/', $install_token)) {
         return array('success' => false, 'message' => '설치 토큰 형식을 확인해 주세요.');
     }
-    $client = rb_license_prepare_identity();
+    $client = rb_license_client_get();
+    $is_clone_registration = !empty($client['registered_at'])
+        && isset($client['registration_status'])
+        && $client['registration_status'] === 'clone_pending';
+    if (!$is_clone_registration) {
+        $client = rb_license_prepare_identity();
+    }
     if (isset($client['error'])) {
         return array('success' => false, 'message' => $client['error']);
     }
-    if (!empty($client['registered_at']) && $client['registration_status'] !== 'pending') {
+    if (!empty($client['registered_at']) && $client['registration_status'] !== 'pending' && !$is_clone_registration) {
         return array('success' => false, 'message' => '이미 설치 토큰이 등록된 빌더입니다.');
     }
-    $payload = rb_license_api_payload($client);
+    $request_client = $client;
+    if ($is_clone_registration) {
+        $identity = rb_license_create_clone_identity($client, $install_token);
+        if (isset($identity['error'])) {
+            return array('success' => false, 'message' => $identity['error']);
+        }
+        $request_client['installation_uuid'] = $identity['installation_uuid'];
+        $request_client['installation_secret'] = $identity['installation_secret'];
+    }
+    $payload = rb_license_api_payload($request_client);
     $payload['install_token'] = $install_token;
+    if ($is_clone_registration) {
+        $payload['source_installation_uuid'] = $client['installation_uuid'];
+        $payload['source_installation_secret'] = $client['installation_secret'];
+    }
     $response = rb_license_http_post('register.php', $payload);
     if (empty($response['success'])) {
         return $response;
     }
-    rb_license_save_status($response['data'], true);
+    $saved = $is_clone_registration
+        ? rb_license_save_replacement_identity($identity, $response['data'])
+        : rb_license_save_status($response['data'], true);
+    if (!$saved) {
+        return array('success' => false, 'message' => '새 설치 인증정보를 저장하지 못했습니다. DB 권한을 확인해 주세요.');
+    }
     return array('success' => true, 'data' => $response['data']);
 }
 

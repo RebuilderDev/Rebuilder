@@ -14,6 +14,9 @@ include_once (G5_ADMIN_PATH.'/admin.head.php');
 $rbx = sql_fetch(" select COUNT(*) AS cnt FROM information_schema.TABLES WHERE `TABLE_NAME` = 'rb_builder' AND TABLE_SCHEMA = '".G5_MYSQL_DB."' ");
 $is_rb = $rbx['cnt'];
 $rb_license_client = rb_license_client_get();
+$rb_license_is_clone = !empty($rb_license_client['registered_at'])
+    && isset($rb_license_client['registration_status'])
+    && $rb_license_client['registration_status'] === 'clone_pending';
 $rb_license_environment_labels = array(
     'local' => '로컬환경',
     'temporary' => '임시도메인',
@@ -70,8 +73,12 @@ $pg_anchor = '<ul class="anchor">
                     <tr>
                         <th scope="row">설치 인증</th>
                         <td colspan="3">
-                            <?php if (empty($rb_license_client['registered_at'])) { ?>
-                                <?php echo help('빌더 2.2.7 최초 설치 또는 업데이트에 설치 토큰이 필요합니다.<br>발급받은 토큰을 입력한 뒤 등록해 주세요.') ?>
+                            <?php if (empty($rb_license_client['registered_at']) || $rb_license_is_clone) { ?>
+                                <?php if ($rb_license_is_clone) { ?>
+                                    <?php echo help('복제된 설치환경입니다.<br>복제본에서 사용할 용도의 새 설치 토큰을 등록해 주세요.') ?>
+                                <?php } else { ?>
+                                    <?php echo help('빌더 2.2.7 최초 설치 또는 업데이트에 설치 토큰이 필요합니다.<br>발급받은 토큰을 입력한 뒤 등록해 주세요.') ?>
+                                <?php } ?>
                                 <form action="./rb_license_register.php" method="post" class="rb-license-token-form">
                                     <input type="hidden" name="token" value="<?php echo get_admin_token(); ?>">
                                     <input type="text" name="install_token" value="" class="frm_input" maxlength="80" autocomplete="off" placeholder="설치 토큰 입력" required>
@@ -609,7 +616,7 @@ $pg_anchor = '<ul class="anchor">
 
 6. 복제 및 이전 설치
 설치된 빌더를 다른 서버나 별도 환경으로 복제하면 새로운 설치환경으로 확인될 수 있습니다.
-복제본은 계정에서 확인·승인 절차를 거쳐야 하며 운영 도메인으로 사용하는 경우 별도의 사용 가능한 라이선스가 필요할 수 있습니다.
+복제본에서 사용할 용도의 새 설치 토큰을 등록해야 하며 운영 도메인으로 사용하는 경우 해당 용도의 사용 가능한 라이선스가 필요할 수 있습니다.
 
 7. 부가기능 및 부가서비스
 부가기능, 테마 및 부가서비스는 빌더 라이선스와 별도의 판매·이용조건이 적용될 수 있습니다.

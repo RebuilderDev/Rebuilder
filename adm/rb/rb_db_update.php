@@ -23,7 +23,7 @@ if (empty($client['registered_at'])) {
     if (empty($check['success'])) {
         $message = isset($check['message']) ? $check['message'] : '설치 인증상태를 확인하지 못했습니다.';
     } elseif (isset($check['data']['state']) && $check['data']['state'] === 'clone_pending') {
-        $message = isset($check['data']['notice']) ? $check['data']['notice'] : '복제된 설치환경의 확인이 필요합니다.';
+        $message = isset($check['data']['notice']) ? $check['data']['notice'] : '복제된 설치환경입니다. 빌더설정에서 새 설치 토큰을 등록해주세요.';
     } else {
         $response = rb_license_fetch_schema();
         if (empty($response['success'])) {
@@ -60,4 +60,3 @@ if (empty($client['registered_at'])) {
 
 <?php
 include_once('../admin.tail.php');
-
