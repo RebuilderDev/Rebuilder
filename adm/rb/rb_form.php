@@ -1,6 +1,7 @@
 <?php
 $sub_menu = '000000';
 include_once('./_common.php');
+include_once('./rb_license.lib.php');
 
 auth_check_menu($auth, $sub_menu, "w");
 add_stylesheet('<link rel="stylesheet" href="./css/style.css">', 0);
@@ -11,6 +12,19 @@ include_once (G5_ADMIN_PATH.'/admin.head.php');
 // 설치여부 (테이블조회)
 $rbx = sql_fetch(" select COUNT(*) AS cnt FROM information_schema.TABLES WHERE `TABLE_NAME` = 'rb_builder' AND TABLE_SCHEMA = '".G5_MYSQL_DB."' ");
 $is_rb = $rbx['cnt'];
+$rb_license_client = rb_license_client_get();
+$rb_license_environment_labels = array(
+    'local' => '로컬환경',
+    'temporary' => '임시도메인',
+    'production' => '운영도메인',
+    'unknown' => '확인 전',
+);
+$rb_license_state_labels = array(
+    'active' => '적용',
+    'not_required' => '테스트 사용',
+    'required' => '라이선스 필요',
+    'pending' => '확인 중',
+);
 ?>
 
 <?php if($rbx['cnt'] > 0) { ?>
@@ -53,61 +67,34 @@ $pg_anchor = '<ul class="anchor">
 
                     </tr>
                     <tr>
-                        <th scope="row">라이선스키</th>
+                        <th scope="row">설치 인증</th>
                         <td colspan="3">
-                            <?php echo help('최초설치 > DB 업데이트시에 자동 생성 됩니다.<br>라이선스키를 공식홈페이지 > 마이페이지 에서 등록해주세요.<br>키 등록이 되지않았거나, 키를 임의로 변경하시는 경우 빌더 업데이트가 불가능 합니다.') ?>
-                            <?php
-                            $key_info = sql_fetch (" select key_no from rb_key limit 1 ");
-                            ?>
-                            <?php echo !empty($key_info['key_no']) ? $key_info['key_no'] : '라이선스키가 없습니다. DB업데이트를 진행해주세요.'; ?>
-                            <?php if(!empty($key_info['key_no'])) { ?>
-                             <br><a href="javascript:void(0);" class="btn_frmline" style="height:25px; line-height:25px;" id="data-copy">복사하기</a>
-                             <a href="https://rebuilder.co.kr" target="_blank" class="btn_frmline" style="height:25px; line-height:25px;">라이선스키 등록</a>
-                             <a href="javascript:void(0);" class="btn_frmline" style="height:25px; line-height:25px;" id="data-new">재발급</a>
-
-
-                            <input type="hidden" id="data-area" class="data-area" value="<?php echo !empty($key_info['key_no']) ? $key_info['key_no'] : ''; ?>">
-                            <script>
-                                $(document).ready(function() {
-
-                                    $('#data-copy').click(function() {
-                                        $('#data-area').attr('type', 'text'); // 화면에서 hidden 처리한 input box type을 text로 일시 변환
-                                        $('#data-area').select(); // input에 담긴 데이터를 선택
-                                        var copy = document.execCommand('copy'); // clipboard에 데이터 복사
-                                        $('#data-area').attr('type', 'hidden'); // input box를 다시 hidden 처리
-                                        if (copy) {
-                                            alert("라이선스키가 클립보드에 복사 되었습니다."); // 사용자 알림
-                                        }
-                                    });
-
-                                });
-
-                                // 재발급 기능
-                                $('#data-new').click(function() {
-                                    if (typeof rb_confirm === 'function') {
-                                        // rb_confirm 함수가 있으면 사용
-                                        rb_confirm('라이선스키를 재발급 하시겠습니까?\n기존 키는 사용할 수 없으며, 라이선스 서버에 자동 등록 됩니다.').then(function(ok) {
-                                            if (ok) {
-                                                location.href = './rb_key_regenerate.php';
-                                            }
-                                        });
-                                    } else {
-                                        // rb_confirm 함수가 없으면 기본 confirm 사용
-                                        if (confirm('라이선스키를 재발급 하시겠습니까?\n기존 키는 사용할 수 없으며, 라이선스 서버에 자동 등록 됩니다.')) {
-                                            location.href = './rb_key_regenerate.php';
-                                        }
-                                    }
-                                });
-                            </script>
+                            <?php if (empty($rb_license_client['registered_at'])) { ?>
+                                <?php echo help('빌더 2.2.7 최초 설치 또는 업데이트에 설치 토큰이 필요합니다.<br>발급받은 토큰을 입력한 뒤 등록해 주세요.') ?>
+                                <form action="./rb_license_register.php" method="post" class="rb-license-token-form">
+                                    <input type="hidden" name="token" value="<?php echo get_admin_token(); ?>">
+                                    <input type="text" name="install_token" value="" class="frm_input" maxlength="80" autocomplete="off" placeholder="설치 토큰 입력" required>
+                                    <button type="submit" class="btn_submit btn">설치 토큰 등록</button>
+                                </form>
+                            <?php } else { ?>
+                                <strong>설치 인증 완료</strong>
+                                <span style="margin-left:10px;">
+                                    환경: <?php echo isset($rb_license_environment_labels[$rb_license_client['environment_type']]) ? $rb_license_environment_labels[$rb_license_client['environment_type']] : '확인 전'; ?> /
+                                    라이선스: <?php echo isset($rb_license_state_labels[$rb_license_client['license_state']]) ? $rb_license_state_labels[$rb_license_client['license_state']] : '확인 중'; ?>
+                                </span>
+                                <?php if (!empty($rb_license_client['status_notice'])) { ?>
+                                    <div class="local_desc01 local_desc" style="margin-top:10px;">
+                                        <?php echo htmlspecialchars($rb_license_client['status_notice'], ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
+                                <?php } ?>
                             <?php } ?>
                         </td>
-
                     </tr>
                     <tr>
                         <th scope="row">DB업데이트</th>
                         <td colspan="3">
-                            <?php echo help('업데이트된 DB가 있는지 확인합니다.') ?>
-                            <a href="./rb_db_update.php" class="btn_frmline">DB 업데이트 실행</a>
+                            <?php echo help('설치 인증을 확인한 뒤 필요한 DB 구조를 받아 자동으로 설치·업데이트합니다.') ?>
+                            <a href="./rb_db_update.php" class="btn_frmline">DB 설치 및 업데이트</a>
                         </td>
 
                     </tr>
@@ -564,7 +551,7 @@ $pg_anchor = '<ul class="anchor">
         빌더 구동에 필요한 테이블이 설치 됩니다.<br><br>
         rb_ 로 시작하는 동일한 테이블명이 있는경우 테이블 생성이 되지 않을 수 있으며<br>
         성능 보장을 위해 가급적 PHP7.X ~ PHP8.X 버전을 사용해주세요.<br>
-        <strong>DB 테이블 설치 후 빌더설정 > [DB 업데이트 실행] 를 반드시 클릭해주세요.</strong><br><br>
+        <strong>설치 토큰 등록 후 [DB 설치 및 업데이트]를 실행해 주세요.</strong><br><br>
 
         테이블 설치 후 <b>환경설정 > 테마설정</b> 메뉴에서<br>
         <b>rb.Basic 테마를 적용</b> 해주시고<br>
@@ -586,116 +573,152 @@ $pg_anchor = '<ul class="anchor">
 </section>
 
 <section>
-    <form name="rb_form" id="rb_form" action="./rb_form_update.php" method="post">
+    <?php if (empty($rb_license_client['registered_at'])) { ?>
+    <form name="rb_form" id="rb_form" action="./rb_license_register.php" method="post">
+        <input type="hidden" name="token" value="<?php echo get_admin_token(); ?>">
         <h2 class="h2_frm">라이선스 정책</h2>
 
         <div class="local_desc01 local_desc">
 <textarea name="mb_signature" readonly style="height:200px">
-리빌더(REBUILDER) 최종 사용자 라이선스 계약서 (EULA)
+리빌더(REBUILDER) 소프트웨어 이용 및 라이선스 정책
 
-본 최종 사용자 라이선스 계약서(이하 “본 계약”)는 리빌더(REBUILDER) 소프트웨어의 사용에 관한 법적 계약입니다.
-본 소프트웨어를 설치, 복사 또는 사용함으로써 사용자는 본 계약의 모든 조건에 동의한 것으로 간주됩니다.
+본 정책은 리빌더 소프트웨어와 관련 업데이트, 부가기능 및 부가서비스의 설치·복제·사용 조건을 정합니다. 소프트웨어를 다운로드하거나 설치·업데이트·사용하면 본 정책에 동의한 것으로 봅니다.
 
+1. 소프트웨어의 성격
+리빌더는 그누보드 기반에서 동작하는 별도의 확장 소프트웨어입니다. 그누보드의 라이선스는 별도로 적용됩니다.
 
-제1조 (정의)
-“본 소프트웨어”란 리빌더(REBUILDER) 웹 빌더 및 관련 파일, 문서, 업데이트, 수정본 일체를 의미합니다.
-“사용자”란 본 소프트웨어를 설치·사용하는 개인 또는 법인을 의미합니다.
-“공급자”란 rebuilder.co.kr을 운영하는 주체를 의미합니다.
+2. 적용 버전과 기존 설치
+빌더 2.2.7 이상을 새로 설치하거나 이전 버전에서 2.2.7 이상으로 업데이트하는 경우 설치 토큰 및 신규 라이선스 정책이 적용됩니다.
+2.2.6.3 이하 버전을 그대로 사용하는 기존 설치는 종전의 무료 사용 상태를 유지합니다. 다만 2.2.7 이상으로 업데이트하면 기존 라이선스 키는 설치 인증수단으로 사용할 수 없고 새 설치 토큰 등록이 필요합니다.
 
+3. 설치 토큰
+빌더 2.2.7 이상의 최초 설치와 2.2.7로의 최초 업데이트에는 회원 계정에서 발급한 일회용 설치 토큰이 반드시 필요합니다.
+설치 토큰은 회원 계정과 하나의 빌더 설치본을 연결하는 확인값이며 운영 도메인 라이선스 자체는 아닙니다.
+토큰 등록이 완료된 설치본에 한하여 설치·업데이트에 필요한 DB 구조가 제공됩니다.
 
-제2조 (소프트웨어의 성격)
-본 소프트웨어는 그누보드 기반에서 동작하는 확장 프로그램입니다.
-본 소프트웨어는 그누보드와는 별개의 독립적인 소프트웨어입니다.
-그누보드의 라이선스 정책은 본 계약과 별도로 적용됩니다.
+4. 테스트 환경과 운영 도메인
+로컬 환경과 허용된 호스팅 임시도메인에서는 라이선스를 사용하지 않고 설치·테스트할 수 있습니다.
+운영 도메인이 연결되면 설치 토큰에서 선택한 용도와 같은 종류의 보유 라이선스가 적용됩니다.
+자사용에는 자사용 라이선스, 고객에게 제작·납품·이전하는 설치에는 납품용 라이선스가 필요합니다.
 
+5. 라이선스 사용 단위
+별도의 표시가 없는 라이선스는 1도메인 1카피를 기본 단위로 합니다.
+구매 또는 관리자가 지급한 이용권 수량만큼 운영 도메인을 활성화할 수 있습니다.
+이용권의 종류·수량·유효기간·판매조건은 구매 시 표시된 내용을 따릅니다.
 
-제3조 (라이선스의 부여)
-공급자는 사용자에게 다음과 같은 제한적 사용 권한을 부여합니다.
+6. 복제 및 이전 설치
+설치된 빌더를 다른 서버나 별도 환경으로 복제하면 새로운 설치환경으로 확인될 수 있습니다.
+복제본은 계정에서 확인·승인 절차를 거쳐야 하며 운영 도메인으로 사용하는 경우 별도의 사용 가능한 라이선스가 필요할 수 있습니다.
 
-무료 사용 범위
-본 소프트웨어는 사용자 본인 또는 사용자가 직접 운영하는 웹사이트(이하 자사용)에 한하여 무료로 설치 및 사용할 수 있습니다.
-“자사용”은 다음 각 호에 해당하는 경우를 의미합니다.
-- 사용자가 직접 소유하거나 운영하는 웹사이트
-- 사용자의 개인, 사업자 또는 법인 명의로 운영되는 서비스
+7. 부가기능 및 부가서비스
+부가기능, 테마 및 부가서비스는 빌더 라이선스와 별도의 판매·이용조건이 적용될 수 있습니다.
+허용된 범위와 수량을 초과해 복제·공유·재판매하거나 제3자가 내려받도록 배포할 수 없습니다.
 
-다만, 다음의 경우는 “자사용”에 포함되지 않습니다.
-- 타인의 요청에 따라 제작, 구축 또는 납품하는 경우
-- 제3자를 위해 사이트를 제작하거나 제공하는 경우
+8. 설치 확인정보의 처리
+설치 인증, 복제 확인, 라이선스 적용 및 업데이트 제공을 위해 설치 식별값, 회원 식별정보, 도메인, 접속 IP, 빌더·그누보드·PHP 버전, 서버환경 구분용 해시값과 확인일시가 처리될 수 있습니다.
+설치 토큰 원문과 설치 인증 비밀값 원문은 인증 서버 DB에 저장하지 않습니다.
 
-납품 및 상업적 제공의 정의
-다음 각 호에 해당하는 경우 “납품용 사용” 또는 “상업적 제공”으로 간주합니다.
-- 제3자(개인, 사업자, 법인 등)를 대상으로 웹사이트를 제작하여 제공하는 경우
-- 외주, 용역, 계약 등을 통해 결과물을 제공하는 경우
-- 제작 후 소유권 또는 운영권을 제3자에게 이전하는 경우
-- 구축, 커스터마이징, 유지보수, 운영 대행 등의 형태로 제공하는 경우
-- 동일 또는 유사한 구조의 사이트를 복수 도메인에 생성하여 타인에게 제공하는 경우
+9. 금지행위
+- 설치 토큰, 설치 확인 또는 라이선스 검증을 삭제·변조·우회하는 행위
+- 허용 수량을 초과하여 설치·복제·활성화하거나 인증정보를 공유하는 행위
+- 리빌더 또는 구성요소를 무단 재배포·재판매·대여·리스하거나 공개 배포하는 행위
+- 소스코드를 역공학·디컴파일·역어셈블하는 행위
+- 저작권·라이선스 표시를 제거하거나 권리자의 권리를 침해하는 행위
+- 관계 법령에 위반되는 불법·유해 사이트의 제작 또는 운영에 사용하는 행위
 
-유료 라이선스의 필요
-제3조에 해당하는 납품용 사용 또는 상업적 제공의 경우, 본 소프트웨어의 무료 사용 범위에 포함되지 않으며,
-반드시 리빌더 공식 홈페이지를 통해 별도의 라이선스를 구매해야 합니다.
+10. 업데이트와 서비스
+공급자는 보안·기능개선·정책변경을 위해 소프트웨어와 설치·라이선스 체계를 업데이트할 수 있습니다.
+인터넷 또는 인증 서버 장애, 호스팅 보안설정, CA 인증서 문제 등 외부 환경으로 설치 확인이나 업데이트가 일시적으로 지연될 수 있습니다.
 
-라이선스의 성격
-본 라이선스는 비독점적이며, 양도 및 재판매가 불가능합니다.
+11. 권리와 책임
+리빌더 소프트웨어의 지적재산권은 공급자에게 귀속되며 사용자는 허용된 범위의 사용권만 취득합니다.
+소프트웨어는 현재 상태로 제공되며 관련 법령이 허용하는 범위에서 특정 목적 적합성이나 무중단·무오류 동작을 보증하지 않습니다.
 
+12. 위반과 이용 제한
+정책 위반, 결제 취소·환불, 부정 사용 또는 관계 법령 위반이 확인되면 해당 이용권·활성화·기술지원 또는 업데이트 제공이 제한되거나 철회될 수 있습니다.
 
-제4조 (사용 제한)
-사용자는 다음 행위를 해서는 안 됩니다.
-인증 시스템 또는 라이선스 검증을 변조·우회하는 행위
-본 소프트웨어의 재배포, 재판매, 대여, 리스 행위
-소스코드의 역공학, 디컴파일, 역어셈블 행위
-저작권 표시 또는 라이선스 정보의 제거·변경 행위
+13. 정책 변경
+정책 변경은 정책 페이지를 통해 공지하며 관계 법령에서 별도 동의가 필요한 경우 해당 절차를 따릅니다.
 
+14. 불법사이트 규제정책
+리빌더는 그누보드를 기반으로 한 웹 빌더로, 누구나 손쉽게 웹사이트를 구축할 수 있도록 제공되고 있습니다.
+일부 사용자에 의해 불법 또는 사회적으로 부적절한 사이트 제작에 사용되는 사례가 확인되고 있어 이에 대한 정책을 아래와 같이 안내합니다.
 
-제5조 (지적재산권)
-본 소프트웨어에 대한 모든 지적재산권은 공급자에게 귀속됩니다.
-본 계약은 소유권 이전이 아닌 사용권만을 부여합니다.
-사용자가 생성한 콘텐츠의 권리는 사용자에게 귀속됩니다.
+[사용 제한 대상 사이트 유형 예시]
+- 불법 도박 사이트
+- 불법 사행성 콘텐츠 운영 사이트
+- 피싱 및 사기성 사이트
+- 허가되지 않은 음란물 및 성인 콘텐츠 제공 사이트(불법 촬영물 포함)
+- 불법 저작물 공유 및 다운로드 사이트
+- 의약품·의료기기 불법 판매 사이트
+- 마약, 대포폰, 불법 총기 등 관련 거래 사이트
+- 기타 관계 법령에 위반되는 사이트
 
+위와 같은 사이트에 리빌더를 사용하는 경우 라이선스 해지 및 사용 제한 조치가 즉시 이루어질 수 있으며, 리빌더를 통해 제작된 사이트의 법적 책임과 운영에 대한 모든 책임은 사용자 본인에게 있습니다.
 
-제6조 (보증의 부인)
-본 소프트웨어는 “있는 그대로(AS-IS)” 제공됩니다.
-무료로 제공되는 본 소프트웨어에 대해서는 법령이 허용하는 범위 내에서 어떠한 책임도 부담하지 않습니다.
-공급자는 본 소프트웨어의 무오류성, 특정 목적 적합성, 중단 없는 운영을 보증하지 않습니다.
+15. 게시물 규제정책
+다음 내용에 해당하는 게시물은 운영정책에 따라 열람 또는 게시가 제한되거나 조치될 수 있습니다.
 
+- 인종이나 성(性), 국적, 종교적, 정치적 분쟁 등 사회문화적 편견에 기반을 둔 내용의 글
+- 영리를 목적으로 하거나 광고 및 홍보 또는 그와 유사한 내용임이 객관적으로 확인되는 글
+- 허위사실을 유포하거나 다수의 이용자에게 오해를 불러일으킬 수 있는 내용의 글
+- 타인에게 불쾌감이나 혐오감을 줄 수 있는 글
+- 도배 또는 욕설, 음란한 단어 및 표현을 포함한 글
+- 자신 또는 타인의 전화번호, 주민등록번호, 실명 등의 개인정보를 포함하고 있는 글
+- 회사 또는 타인을 비방하거나 중상모략으로 명예를 훼손시키거나 모욕을 주는 글
+- 이용자 또는 제3자에게 불쾌감을 주거나 비방함으로써 명예를 손상시키는 글
+- 계정거래, 금전거래 등 불법적인 시도 또는 타 이용자들을 선동하는 글
+- 공공질서 및 미풍양속에 위반되는 내용이나 링크를 포함한 글
+- 불법복제 또는 해킹을 조장하는 내용의 글
+- 프로그램의 보안 취약점을 소개하거나 취약점을 이용했다고 판단되는 글
+- 자신이나 제3자에게 부당하게 이익을 준다고 판단되는 글
+- 내용을 알 수 없는 실행파일 등이 첨부된 글
+- 회사에서 판매하였거나 판매하는 제품을 허락 없이 재판매하는 글
+- 회사의 자산을 악의적으로 평가 저하시키려는 내용이 포함된 글
+- 회사가 인정하지 않는 프로그램, 부적절한 파일 등의 유포나 사용을 유도하는 글
+- 회사 또는 회사 임직원을 사칭하거나 회사 및 회사 임직원을 비방하는 글
+- 이용약관 및 관련 법령에 위배되는 내용의 글
+- 저작권 침해 및 이와 유사한 내용을 담은 글
+- 현행법상 처벌의 근거가 되는 글
+- 관계 법령에 위배된다고 판단되는 글
+- 기타 정당한 권한 없이 타인의 권리를 침해하는 내용의 글
+- 기타 게시판의 성격에 맞지 않는다고 판단되는 글
 
-제7조 (책임의 제한)
-관련 법령이 허용하는 최대 범위 내에서, 공급자는 본 소프트웨어의 사용 또는 사용 불능으로 인해 발생하는 어떠한 손해에 대해서도 책임을 지지 않습니다.
-본 소프트웨어와 관련하여 공급자의 전체 책임은 유료 부가기능 또는 부가서비스에 대해 사용자가 실제로 지불한 금액을 초과하지 않습니다.
+16. 기타 이용정책
+휴대전화 인증이 되지 않은 사용자의 경우 정보 열람 및 게시물 작성 등의 커뮤니티 활동이 제한됩니다.
 
-
-제8조 (계약의 해지)
-사용자가 본 계약을 위반할 경우, 공급자는 사전 통보 없이 본 계약을 해지할 수 있으며,
-사용자는 즉시 본 소프트웨어 사용을 중단하고 모든 복제본을 삭제해야 합니다.
-
-
-제9조 (준거법 및 관할)
-본 계약은 대한민국 법률에 따라 해석됩니다.
-본 계약과 관련된 분쟁은 공급자의 본사 소재지 관할 법원을 전속 관할로 합니다.
-
-최종 수정일: 2026년 04월 01일
-버전: 2.0
-Copyright (c) 2026 rebuilder All rights reserved.
+최종 수정일: 2026년 8월 18일
+적용 버전: 빌더 2.2.7 이상
 </textarea>
 
 <br><br>
-
-            기타 문의사항 및 기술지원은<br>
-            공식홈페이지 <a href="https://rebuilder.co.kr" target="_blank"><strong>https://rebuilder.co.kr</strong></a> 를 이용해주세요.<br><br>
-
             <input type="checkbox" value="1" id="agrees">
             <label for="agrees">상기 내용을 모두 확인하였으며, 라이선스 정책에 동의 합니다.</label>
+            <br><br>
+            <label for="install_token"><strong>설치 토큰</strong></label><br>
+            <input type="text" name="install_token" id="install_token" value="" class="frm_input" maxlength="80" autocomplete="off" placeholder="설치 토큰 입력" required style="width:100%;max-width:640px;">
         </div>
 
         <div class="btn_confirm01 btn_confirm">
-            <input type="submit" value="DB 테이블 설치하기" class="btn_submit btn">
+            <input type="submit" value="설치 토큰 등록" class="btn_submit btn">
         </div>
     </form>
+    <?php } else { ?>
+    <h2 class="h2_frm">설치 인증 완료</h2>
+    <div class="local_desc01 local_desc">
+        설치 토큰 등록이 완료되었습니다. 아래 버튼을 눌러 빌더 DB를 설치해 주세요.
+    </div>
+    <div class="btn_confirm01 btn_confirm">
+        <a href="./rb_db_update.php" class="btn_submit btn">DB 설치 및 업데이트</a>
+    </div>
+    <?php } ?>
 </section>
 
+<?php if (empty($rb_license_client['registered_at'])) { ?>
 <script>
         $(document).ready(function() {
             $("#rb_form").on("submit", function(event) {
-                if (confirm("상기 주의사항 및 라이선스 정책을 확인해주세요.\nDB 테이블을 설치 하시겠습니까?")) {
+                if (confirm("상기 주의사항 및 라이선스 정책을 확인해주세요.\n설치 토큰을 등록하시겠습니까?")) {
                     if (!$("#agrees").is(":checked")) {
                         alert("라이선스 정책에 동의 하셔야 빌더를 사용할 수 있습니다.");
                         event.preventDefault();
@@ -706,6 +729,7 @@ Copyright (c) 2026 rebuilder All rights reserved.
             });
         });
 </script>
+<?php } ?>
 <?php } ?>
 
 

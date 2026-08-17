@@ -5,3 +5,10 @@
 .td_name.sv_use a .profile_img img {height:22px;}
 .td_name.sv_use div .sv_wrap .sv {width: 100px !important;}
 .sv_wrap .sv a {display: block !important;}
+
+.rb-license-token-form{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rb-license-token-form .frm_input,#install_token{min-height:38px;border:1px solid #d8dee5;border-radius:10px;box-sizing:border-box}
+.rb-license-token-form .frm_input{width:min(520px,100%)}
+.rb-license-token-form .btn_submit,#rb_form .btn_submit{min-height:38px;padding:0 18px;border:0;border-radius:10px;background:#AA20FF;color:#fff}
+#rb_form .local_desc01{border:0;border-radius:10px;background:#f0f5f9}
+.btn_confirm .btn_submit,.btn_confirm a.btn_submit{border-radius:10px;background:#AA20FF;color:#fff}

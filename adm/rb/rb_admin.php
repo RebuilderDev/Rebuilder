@@ -1,5 +1,6 @@
 <?php
 if (!defined('_GNUBOARD_')) exit;
+include_once(__DIR__.'/rb_license.lib.php');
 
     global $g5;
     function rb_human_bytes($bytes, $decimals = 2)
@@ -150,61 +151,18 @@ if (!defined('_GNUBOARD_')) exit;
 
 
 
-// 라이선스 키 조회
-if (!function_exists('rb_get_license_key')) {
-    function rb_get_license_key() {
-        $row = sql_fetch("SELECT key_no FROM rb_key LIMIT 1");
-        return isset($row['key_no']) ? trim($row['key_no']) : '';
-    }
-}
-
-if (!function_exists('rb_license_key_html')) {
-    function rb_license_key_html($opts = array()) {
-        $defaults = array(
-            'copy_button'   => true,
-            'register_url'  => 'https://rebuilder.co.kr',
-            'generate_url'  => G5_ADMIN_URL.'/rb/rb_db_update.php',
-            'generate_text' => 'DB 업데이트',
-            'wrap_class'    => 'rb-license-box',
-            'label_text'    => '라이선스',
-        );
-        foreach ($defaults as $k => $v) if (!isset($opts[$k])) $opts[$k] = $v;
-
-        $key = rb_get_license_key();
-
+if (!function_exists('rb_license_status_html')) {
+    function rb_license_status_html() {
+        $client = rb_license_client_get();
+        $registered = !empty($client['registered_at']);
+        $label = $registered ? '설치 인증 완료' : '설치 인증 필요';
         ob_start(); ?>
-<div class="<?php echo $opts['wrap_class']; ?>">
-    <?php if ($key !== '') { ?>
+<div class="rb-license-box">
     <div class="rb-lic-row">
-        <span class="rb-lic-label"><?php echo $opts['label_text']; ?></span>
-        <?php if (!empty($opts['copy_button'])) { ?>
-        <button type="button" class="rb-lic-btn" id="rb-lic-copy">복사</button>
-        <?php } ?>
-        <a href="<?php echo G5_ADMIN_URL; ?>/rb/rb_form.php" class="rb-lic-btn rb-lic-out">보기</a>
+        <span class="rb-lic-label"><?php echo $label; ?></span>
+        <a href="<?php echo G5_ADMIN_URL; ?>/rb/rb_form.php" class="rb-lic-btn rb-lic-out">확인</a>
     </div>
-    <input type="hidden" id="rb-lic-hidden" value="<?php echo get_text($key); ?>">
-    <?php } ?>
-
 </div>
-
-<script>
-    (function() {
-        var btn = document.getElementById('rb-lic-copy');
-        if (!btn) return;
-        btn.addEventListener('click', function() {
-            var input = document.getElementById('rb-lic-hidden');
-            if (!input) return;
-            try {
-                input.type = 'text';
-                input.select();
-                document.execCommand('copy');
-                input.type = 'hidden';
-                alert('라이선스키가 클립보드에 복사되었습니다.');
-            } catch (e) {}
-        });
-    })();
-</script>
-
 <?php
         return ob_get_clean();
     }
@@ -229,7 +187,7 @@ if (!function_exists('rb_license_key_html')) {
             <div class="rb-kv"><span class="k">그누보드(영카트)</span><span class="v"><?php echo G5_GNUBOARD_VER ?></span></div>
             <div class="rb-kv"><span class="k">빌더</span><span class="v"><?php echo RB_VER ?></span></div>
 
-            <?php echo rb_license_key_html(); ?>
+            <?php echo rb_license_status_html(); ?>
 
             <div class="rb-kv-top">
                 <div class="rb-kv"><span class="k">유효회원</span><span class="v"><?php echo number_format($member_cnt) ?> 명</span></div>
