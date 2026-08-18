@@ -221,6 +221,23 @@
 	text-align: left
 }
 
+.notification-msg .notification-heading {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.notification-msg .notification-heading svg {
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	fill: #09244B;
+}
+
+.notification-msg .notification-heading .al_date {
+	margin-left: 2px;
+}
+
 .wrapper-notification.main .notification-heading,
 .wrapper-notification.main .notification-custom-heading {
 	font-size: 116.6666%;

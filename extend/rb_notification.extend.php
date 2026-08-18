@@ -27,6 +27,61 @@ function rb_notification_table_ready()
     return $ready;
 }
 
+function rb_notification_retention_days()
+{
+    global $rb_builder;
+
+    $days = isset($rb_builder['bu_notification_retention_days'])
+        ? (int) $rb_builder['bu_notification_retention_days']
+        : 180;
+    if ($days < 1) {
+        $days = 180;
+    }
+    return min(180, $days);
+}
+
+function rb_notification_polling_seconds()
+{
+    global $rb_builder;
+
+    $seconds = isset($rb_builder['bu_notification_polling_seconds'])
+        ? (int) $rb_builder['bu_notification_polling_seconds']
+        : 60;
+    if ($seconds < 10 || $seconds > 3600) {
+        $seconds = 60;
+    }
+    return $seconds;
+}
+
+function rb_notification_cleanup_expired()
+{
+    if (!rb_notification_table_ready()) {
+        return false;
+    }
+
+    $days = rb_notification_retention_days();
+    $cutoff = date('Y-m-d H:i:s', G5_SERVER_TIME - ($days * 86400));
+    return (bool) sql_query("DELETE FROM rb_notification
+                              WHERE noti_created_at < '".sql_real_escape_string($cutoff)."'", false);
+}
+
+/** 그누보드의 쪽지 자동삭제와 같은 최고관리자 일일 DB 정리 주기에 실행합니다. */
+function rb_notification_run_daily_cleanup()
+{
+    global $config, $member, $is_admin;
+
+    if ($is_admin !== 'super'
+        || empty($member['mb_id'])
+        || (string) $member['mb_id'] !== (string) $config['cf_admin']
+        || !isset($config['cf_optimize_date'])
+        || (string) $config['cf_optimize_date'] >= G5_TIME_YMD) {
+        return;
+    }
+    rb_notification_cleanup_expired();
+}
+
+rb_notification_run_daily_cleanup();
+
 function rb_notification_preference_table_ready()
 {
     static $ready = null;
@@ -139,6 +194,157 @@ function rb_notification_categories()
         'notice' => '공지',
         'other' => '기타',
     );
+}
+
+function rb_notification_visible_categories()
+{
+    $categories = rb_notification_categories();
+
+    if (!defined('G5_USE_SHOP') || !G5_USE_SHOP) {
+        unset($categories['shop']);
+    }
+    if (empty($GLOBALS['sb']['sb_use']) || (int) $GLOBALS['sb']['sb_use'] !== 1) {
+        unset($categories['subscribe']);
+    }
+
+    return $categories;
+}
+
+function rb_notification_unread_count($mb_id)
+{
+    $mb_id = trim((string) $mb_id);
+    if ($mb_id === '' || !rb_notification_table_ready()) {
+        return 0;
+    }
+
+    $row = sql_fetch("SELECT COUNT(*) AS cnt
+                        FROM rb_notification
+                       WHERE noti_recv_mb_id='".sql_real_escape_string($mb_id)."'
+                         AND noti_read_at IS NULL", false);
+    return isset($row['cnt']) ? (int) $row['cnt'] : 0;
+}
+
+function rb_notification_member_item($row)
+{
+    if (empty($row['noti_id'])) {
+        return array();
+    }
+
+    $categories = rb_notification_categories();
+    $category = isset($row['noti_category']) ? (string) $row['noti_category'] : 'other';
+    if (!isset($categories[$category])) {
+        $category = 'other';
+    }
+
+    return array(
+        'id' => (int) $row['noti_id'],
+        'category' => $category,
+        'category_label' => $categories[$category],
+        'title' => isset($row['noti_title']) ? (string) $row['noti_title'] : '',
+        'content' => isset($row['noti_content']) ? (string) $row['noti_content'] : '',
+        'url' => isset($row['noti_link']) ? (string) $row['noti_link'] : '',
+        'read_at' => isset($row['noti_read_at']) ? (string) $row['noti_read_at'] : '',
+        'created_at' => isset($row['noti_created_at']) ? (string) $row['noti_created_at'] : '',
+        'is_read' => !empty($row['noti_read_at']) ? 1 : 0,
+    );
+}
+
+function rb_notification_member_list($mb_id, $category = 'all', $limit = 50)
+{
+    $mb_id = trim((string) $mb_id);
+    if ($mb_id === '' || !rb_notification_table_ready()) {
+        return array();
+    }
+
+    $categories = rb_notification_categories();
+    $category = strtolower(trim((string) $category));
+    $category_sql = isset($categories[$category])
+        ? " AND noti_category='".sql_real_escape_string($category)."'"
+        : '';
+    $limit = max(1, min(100, (int) $limit));
+
+    $items = array();
+    $result = sql_query("SELECT noti_id, noti_category, noti_title, noti_content, noti_link,
+                                noti_read_at, noti_created_at
+                           FROM rb_notification
+                          WHERE noti_recv_mb_id='".sql_real_escape_string($mb_id)."'"
+                          .$category_sql."
+                          ORDER BY noti_id DESC
+                          LIMIT {$limit}", false);
+    while ($result && $row = sql_fetch_array($result)) {
+        $items[] = rb_notification_member_item($row);
+    }
+    return $items;
+}
+
+function rb_notification_member_get($mb_id, $notification_id, $mark_read = false)
+{
+    $mb_id = trim((string) $mb_id);
+    $notification_id = (int) $notification_id;
+    if ($mb_id === '' || $notification_id < 1 || !rb_notification_table_ready()) {
+        return array();
+    }
+
+    $escaped_mb_id = sql_real_escape_string($mb_id);
+    if ($mark_read) {
+        sql_query("UPDATE rb_notification
+                      SET noti_read_at='".sql_real_escape_string(G5_TIME_YMDHIS)."'
+                    WHERE noti_id='{$notification_id}'
+                      AND noti_recv_mb_id='{$escaped_mb_id}'
+                      AND noti_read_at IS NULL", false);
+    }
+
+    $row = sql_fetch("SELECT noti_id, noti_category, noti_title, noti_content, noti_link,
+                             noti_read_at, noti_created_at
+                        FROM rb_notification
+                       WHERE noti_id='{$notification_id}'
+                         AND noti_recv_mb_id='{$escaped_mb_id}'
+                       LIMIT 1", false);
+    return rb_notification_member_item($row);
+}
+
+function rb_notification_member_delete($mb_id, $notification_id)
+{
+    $mb_id = trim((string) $mb_id);
+    $notification_id = (int) $notification_id;
+    if ($mb_id === '' || $notification_id < 1 || !rb_notification_table_ready()) {
+        return false;
+    }
+
+    return (bool) sql_query("DELETE FROM rb_notification
+                              WHERE noti_id='{$notification_id}'
+                                AND noti_recv_mb_id='".sql_real_escape_string($mb_id)."'", false);
+}
+
+function rb_notification_member_delete_all($mb_id)
+{
+    $mb_id = trim((string) $mb_id);
+    if ($mb_id === '' || !rb_notification_table_ready()) {
+        return false;
+    }
+
+    return (bool) sql_query("DELETE FROM rb_notification
+                              WHERE noti_recv_mb_id='".sql_real_escape_string($mb_id)."'", false);
+}
+
+function rb_notification_action_token()
+{
+    $token = trim((string) get_session('ss_rb_notification_action_token'));
+    if ($token === '') {
+        $token = get_random_token_string(32);
+        set_session('ss_rb_notification_action_token', $token);
+    }
+    return $token;
+}
+
+function rb_notification_action_token_valid($token)
+{
+    $saved = trim((string) get_session('ss_rb_notification_action_token'));
+    $token = trim((string) $token);
+    if ($saved === '' || $token === '') {
+        return false;
+    }
+    return function_exists('hash_equals') ? hash_equals($saved, $token) : $saved === $token;
 }
 
 function rb_notification_detect_category_from_link($link_url)

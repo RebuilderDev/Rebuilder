@@ -21,21 +21,20 @@ include_once(G5_ADMIN_PATH.'/admin.head.php');
 $categories = function_exists('rb_notification_categories') ? rb_notification_categories() : array(
     'board' => '게시물', 'shop' => '쇼핑', 'subscribe' => '구독', 'notice' => '공지', 'other' => '기타'
 );
+$filter_categories = function_exists('rb_notification_visible_categories')
+    ? rb_notification_visible_categories()
+    : $categories;
 $sfl = isset($_GET['sfl']) ? (string) $_GET['sfl'] : 'noti_recv_mb_id';
 $stx = isset($_GET['stx']) ? trim((string) $_GET['stx']) : '';
 $sca = isset($_GET['sca']) ? (string) $_GET['sca'] : '';
-$read_state = isset($_GET['read_state']) ? (string) $_GET['read_state'] : '';
 $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $allowed_fields = array('noti_recv_mb_id', 'noti_send_mb_id', 'noti_title', 'noti_content');
 if (!in_array($sfl, $allowed_fields, true)) $sfl = 'noti_recv_mb_id';
-if (!isset($categories[$sca])) $sca = '';
-if (!in_array($read_state, array('', 'unread', 'read'), true)) $read_state = '';
+if (!isset($filter_categories[$sca])) $sca = '';
 
 $where = " WHERE 1=1 ";
 if ($stx !== '') $where .= " AND `{$sfl}` LIKE '%".sql_real_escape_string($stx)."%' ";
 if ($sca !== '') $where .= " AND noti_category='".sql_real_escape_string($sca)."' ";
-if ($read_state === 'unread') $where .= " AND noti_read_at IS NULL ";
-if ($read_state === 'read') $where .= " AND noti_read_at IS NOT NULL ";
 
 $total_count = 0;
 $unread_count = 0;
@@ -53,11 +52,47 @@ if ($table_ready) {
     $result = sql_query("SELECT * FROM rb_notification {$where} ORDER BY noti_id DESC LIMIT {$from_record}, {$rows}", false);
 }
 $admin_token = get_admin_token();
-$qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urlencode($sca).'&amp;read_state='.urlencode($read_state);
+$retention_days = function_exists('rb_notification_retention_days')
+    ? rb_notification_retention_days()
+    : 180;
+$polling_seconds = function_exists('rb_notification_polling_seconds')
+    ? rb_notification_polling_seconds()
+    : 60;
+$qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urlencode($sca);
 ?>
 
+<section id="rb_notification_config">
+    <h2 class="h2_frm">알림 설정</h2>
+    <form action="./notification_config_update.php" method="post">
+        <input type="hidden" name="token" value="<?php echo $admin_token; ?>">
+        <div class="tbl_frm01 tbl_wrap">
+            <table>
+                <caption>알림 설정</caption>
+                <colgroup><col class="grid_4"><col></colgroup>
+                <tbody>
+                <tr>
+                    <th scope="row"><label for="notification_retention_days">알림 보관일수</label></th>
+                    <td>
+                        <?php echo help('설정한 보관기간이 지난 알림은 하루 한 번 자동으로 삭제됩니다. 최대 180일까지 설정할 수 있습니다.'); ?>
+                        <input type="number" name="notification_retention_days" value="<?php echo $retention_days; ?>" id="notification_retention_days" required min="1" max="180" class="frm_input required" size="5"> 일
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="notification_polling_seconds">알림 폴링주기</label></th>
+                    <td>
+                        <?php echo help('새 알림을 확인하는 주기입니다. 10초부터 3600초까지 설정할 수 있습니다.'); ?>
+                        <input type="number" name="notification_polling_seconds" value="<?php echo $polling_seconds; ?>" id="notification_polling_seconds" required min="10" max="3600" class="frm_input required" size="5"> 초
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="btn_confirm01 btn_confirm"><button type="submit" class="btn_submit">설정 저장</button></div>
+    </form>
+</section>
+
 <section id="rb_notification_send">
-    <h2 class="h2_frm">공지 발송</h2>
+    <h2 class="h2_frm">공지 알림 발송</h2>
     <div class="local_desc01 local_desc">
         <p>관리자가 보내는 알림은 공지로 저장됩니다. 여러 아이디는 쉼표 또는 공백으로 구분해 입력할 수 있습니다.</p>
     </div>
@@ -65,7 +100,7 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
         <input type="hidden" name="token" value="<?php echo $admin_token; ?>">
         <div class="tbl_frm01 tbl_wrap">
             <table>
-                <caption>공지 발송</caption>
+                <caption>공지 알림 발송</caption>
                 <colgroup><col class="grid_4"><col></colgroup>
                 <tbody>
                 <tr>
@@ -99,18 +134,23 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
                     <td><textarea name="noti_content" id="noti_content" required class="required" rows="6"></textarea></td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="noti_link">연결 주소</label></th>
+                    <th scope="row"><label for="noti_link">링크 URL</label></th>
                     <td><input type="text" name="noti_link" id="noti_link" class="frm_input" size="100" maxlength="1000" placeholder="비워두면 알림 내용만 표시됩니다."></td>
                 </tr>
                 </tbody>
             </table>
         </div>
-        <div class="btn_confirm01 btn_confirm"><button type="submit" class="btn_submit">공지 발송</button></div>
+        <div class="btn_confirm01 btn_confirm"><button type="submit" class="btn_submit">공지 알림 발송</button></div>
     </form>
 </section>
 
 <section id="rb_notification_list">
     <h2 class="h2_frm">알림 내역</h2>
+    <div class="local_ov01 local_ov">
+        <a href="./notification_form.php" class="ov_listall">전체목록</a>
+        <span class="btn_ov01"><span class="ov_txt">검색 </span><span class="ov_num"><?php echo number_format($total_count); ?>건</span></span>
+        <span class="btn_ov01"><span class="ov_txt">미확인 </span><span class="ov_num"><?php echo number_format($unread_count); ?>건</span></span>
+    </div>
     <form class="local_sch01 local_sch" method="get">
         <select name="sfl">
             <option value="noti_recv_mb_id"<?php echo get_selected($sfl, 'noti_recv_mb_id'); ?>>수신 아이디</option>
@@ -121,22 +161,15 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
         <input type="text" name="stx" value="<?php echo get_text($stx); ?>" class="frm_input">
         <select name="sca">
             <option value="">전체 종류</option>
-            <?php foreach ($categories as $code => $label) { ?>
+            <?php foreach ($filter_categories as $code => $label) { ?>
             <option value="<?php echo $code; ?>"<?php echo get_selected($sca, $code); ?>><?php echo $label; ?></option>
             <?php } ?>
         </select>
-        <select name="read_state">
-            <option value="">전체 상태</option>
-            <option value="unread"<?php echo get_selected($read_state, 'unread'); ?>>읽지 않음</option>
-            <option value="read"<?php echo get_selected($read_state, 'read'); ?>>읽음</option>
-        </select>
         <button type="submit" class="btn_submit">검색</button>
-        <a href="./notification_form.php" class="ov_listall">전체목록</a>
-        <span class="btn_ov01"><span class="ov_txt">검색 </span><span class="ov_num"><?php echo number_format($total_count); ?>건</span></span>
-        <span class="btn_ov01"><span class="ov_txt">전체 미확인 </span><span class="ov_num"><?php echo number_format($unread_count); ?>건</span></span>
+        <button type="submit" form="rb_notification_list_form" class="btn btn_02" style="float:right">선택삭제</button>
     </form>
 
-    <form method="post" action="./notification_list_update.php" onsubmit="return rb_notification_list_check(this);">
+    <form id="rb_notification_list_form" method="post" action="./notification_list_update.php" onsubmit="return rb_notification_list_check(this);">
         <input type="hidden" name="token" value="<?php echo $admin_token; ?>">
         <input type="hidden" name="qstr" value="<?php echo get_text($qstr_noti); ?>">
         <input type="hidden" name="page" value="<?php echo $page; ?>">
@@ -181,7 +214,6 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
                 </tbody>
             </table>
         </div>
-        <div class="btn_fixed_top"><button type="submit" class="btn btn_02">선택삭제</button></div>
     </form>
     <?php echo get_paging(G5_IS_MOBILE ? $config['cf_mobile_pages'] : $config['cf_write_pages'], $page, $total_page, './notification_form.php?'.$qstr_noti.'&amp;page='); ?>
 </section>
@@ -199,7 +231,7 @@ function rb_notification_send_check(form) {
         alert('발송할 회원 레벨을 선택해 주세요.'); return false;
     }
     var target = form.target_type.options[form.target_type.selectedIndex].text;
-    return confirm(target + ' 대상으로 공지를 발송하시겠습니까?');
+    return confirm(target + ' 대상으로 공지 알림을 발송하시겠습니까?');
 }
 function rb_notification_list_check(form) {
     if (!is_checked('noti_id[]')) { alert('삭제할 알림을 선택해 주세요.'); return false; }

@@ -83,8 +83,12 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
                     <ul>
                         <input type="checkbox" name="mb_open" value="1" id="reg_mb_open" <?php echo ($w == '' || !empty($member['mb_open'])) ? 'checked' : ''; ?>>
                         <label for="reg_mb_open">프로필 정보공개 / 쪽지수신 동의</label>
+                        <button type="button" class="js-open-consent" data-title="프로필 정보공개 / 쪽지수신 동의" data-template="#tpl_profile_open" data-check="#reg_mb_open" aria-controls="consentDialog">자세히보기</button>
                         <input type="hidden" name="mb_open_default" value="<?php echo isset($member['mb_open']) ? (int) $member['mb_open'] : 0; ?>">
                     </ul>
+                    <template id="tpl_profile_open">
+                        프로필 정보를 공개해야만 쪽지를 발송하거나, 다른 사용자에게 쪽지를 수신할 수 있습니다.
+                    </template>
                     <input type="hidden" name="rb_notification_preference_present" value="1">
                     <ul>
                         <input type="checkbox" name="rb_notification_agree" value="1" id="reg_rb_notification_agree" <?php echo $rb_notification_parent_checked ? 'checked' : ''; ?> class="selec_chk parent-notification">
@@ -108,7 +112,7 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
                         <?php if ($rb_notification_push_available) { ?>
                         앱 Push 알림을 받으면 새로운 활동 소식을 앱 알림으로 확인할 수 있습니다.<br>
                         <?php } ?>
-                        사이트 내 알림을 받으면 내 게시물과 댓글, 주문·구독 등 활동과 관련된 소식을 사이트 안에서 확인할 수 있습니다.
+                        사이트 내 알림은 주요공지, 게시물 및 댓글 등의 활동과 관련된 소식을 실시간 알림으로 받아 보실 수 있습니다.
                     </template>
                 </div>
             </li>

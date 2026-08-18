@@ -17,7 +17,7 @@
 <style>
 #consentDialog { padding:0; border:none; border-radius:12px; }
 #consentDialog::backdrop { background: rgba(0,0,0,.45); backdrop-filter: blur(5px);}
-.cd-card { min-width: 320px; max-width: 560px; background:#fff; border-radius:12px; }
+.cd-card { min-width:320px; max-width:400px; background:#fff; border-radius:12px; }
 .cd-head { display:flex; align-items:center; justify-content:space-between; padding:16px; }
 .cd-title { margin:0; font-size:18px; font-weight:bold; }
 .cd-body { max-height:500px; overflow-y:auto; padding:16px; border-top:1px solid #e6e6e9; border-bottom:1px solid #e6e6e9; line-height:1.6; font-size:14px; color:#222; }

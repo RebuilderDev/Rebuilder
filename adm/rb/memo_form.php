@@ -213,7 +213,7 @@ function fitemqalist_submit(f)
 <form name="fmemoform" id="fmemoform" action="./memo_update.php" onsubmit="return fmemoform_submit(this);" method="post">
 
     <section>
-    <h2 class="h2_frm">시스템메세지 전체 발송</h2>
+    <h2 class="h2_frm">관리자 쪽지 발송</h2>
 
     <div class="local_desc01 local_desc">
         <p>
@@ -245,7 +245,7 @@ function fitemqalist_submit(f)
 
         </tr>
         <tr>
-            <th scope="row"><label for="de_admin_company_name">시스템메세지</label></th>
+            <th scope="row"><label for="me_memo">쪽지 내용</label></th>
             <td>
                 <textarea name="me_memo" id="me_memo" required></textarea>
             </td>
