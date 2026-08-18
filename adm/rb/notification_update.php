@@ -15,14 +15,16 @@ if (!function_exists('rb_notification_database_table_exists')
 }
 
 $target_type = isset($_POST['target_type']) ? (string) $_POST['target_type'] : '';
-$title = isset($_POST['noti_title']) ? trim((string) $_POST['noti_title']) : '';
 $content = isset($_POST['noti_content']) ? trim((string) $_POST['noti_content']) : '';
 $link = isset($_POST['noti_link']) ? trim((string) $_POST['noti_link']) : '';
 if (!in_array($target_type, array('member', 'level', 'all'), true)) alert('발송 대상을 확인해 주세요.');
-if ($title === '' || $content === '') alert('제목과 내용을 입력해 주세요.');
-$title_length = function_exists('mb_strlen') ? mb_strlen($title, 'UTF-8') : strlen($title);
-if ($title_length > 255 || strlen($link) > 1000) alert('제목 또는 연결 주소가 너무 깁니다.');
+if ($content === '') alert('내용을 입력해 주세요.');
+if (strlen($link) > 1000) alert('링크 URL이 너무 깁니다.');
 if ($link !== '' && !preg_match('#^(https?://|/)#i', $link)) alert('연결 주소는 http(s) 주소 또는 /로 시작하는 내부 주소만 입력할 수 있습니다.');
+
+$title = trim((string) preg_replace('/\s+/u', ' ', strip_tags($content)));
+if ($title === '') $title = '알림';
+$title = function_exists('mb_substr') ? mb_substr($title, 0, 255, 'UTF-8') : substr($title, 0, 255);
 
 $recipient_ids = array();
 $target_value = '';

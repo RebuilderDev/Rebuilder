@@ -226,17 +226,11 @@
 }
 #notification_box_wrap .rb_notification_item_meta b {color:#25282B;}
 #notification_box_wrap .rb_notification_item_meta em {font-style:normal;}
-#notification_box_wrap .rb_notification_item_open strong,
 #notification_box_wrap .rb_notification_item_content {
     display:block;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
-}
-#notification_box_wrap .rb_notification_item_open strong {
-    margin-bottom:5px;
-    font-family:'font-B';
-    font-size:14px;
 }
 #notification_box_wrap .rb_notification_item_content {
     color:#777;
@@ -274,18 +268,8 @@
     color:#999;
     font-size:12px;
 }
-#notification_box_wrap .rb_notification_view_title {
-    display:block;
-    margin-bottom:15px;
-    font-family:'font-B';
-    font-size:16px;
-    line-height:1.5;
-    word-break:break-word;
-}
 #notification_box_wrap .rb_notification_view_content {
     min-height:80px;
-    padding-top:18px;
-    border-top:1px solid #eee;
     color:#555;
     font-size:14px;
     line-height:1.7;

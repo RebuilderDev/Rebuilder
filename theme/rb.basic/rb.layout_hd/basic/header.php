@@ -228,7 +228,6 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
                                         <span class="rb_notification_view_date"></span>
                                     </div>
                                     <div class="rb_notification_view_inner">
-                                        <strong class="rb_notification_view_title"></strong>
                                         <div class="rb_notification_view_content"></div>
                                         <div class="rb_notification_view_links"></div>
                                     </div>
@@ -408,7 +407,6 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
                                             .append($('<em>').text(item.created_at || ''));
                                         var $text = $('<span>', {'class': 'rb_notification_item_text'})
                                             .append($meta)
-                                            .append($('<strong>').text(item.title || '알림'))
                                             .append($('<span>', {'class': 'rb_notification_item_content'}).text(content));
 
                                         $open.append($categoryIcon).append($text);
@@ -498,7 +496,6 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
                                     addNotificationLink(item.url);
 
                                     $('.rb_notification_view_date').text(item.created_at || '');
-                                    $('.rb_notification_view_title').text(item.title || '알림');
                                     $('.rb_notification_view_content').text(contentText || item.title || '');
 
                                     var $links = $('.rb_notification_view_links').empty();

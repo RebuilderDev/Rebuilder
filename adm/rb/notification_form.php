@@ -28,7 +28,7 @@ $sfl = isset($_GET['sfl']) ? (string) $_GET['sfl'] : 'noti_recv_mb_id';
 $stx = isset($_GET['stx']) ? trim((string) $_GET['stx']) : '';
 $sca = isset($_GET['sca']) ? (string) $_GET['sca'] : '';
 $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-$allowed_fields = array('noti_recv_mb_id', 'noti_send_mb_id', 'noti_title', 'noti_content');
+$allowed_fields = array('noti_recv_mb_id', 'noti_send_mb_id', 'noti_content');
 if (!in_array($sfl, $allowed_fields, true)) $sfl = 'noti_recv_mb_id';
 if (!isset($filter_categories[$sca])) $sca = '';
 
@@ -126,10 +126,6 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="noti_title">제목</label></th>
-                    <td><input type="text" name="noti_title" id="noti_title" required class="frm_input required" size="80" maxlength="255"></td>
-                </tr>
-                <tr>
                     <th scope="row"><label for="noti_content">내용</label></th>
                     <td><textarea name="noti_content" id="noti_content" required class="required" rows="6"></textarea></td>
                 </tr>
@@ -155,7 +151,6 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
         <select name="sfl">
             <option value="noti_recv_mb_id"<?php echo get_selected($sfl, 'noti_recv_mb_id'); ?>>수신 아이디</option>
             <option value="noti_send_mb_id"<?php echo get_selected($sfl, 'noti_send_mb_id'); ?>>발신 아이디</option>
-            <option value="noti_title"<?php echo get_selected($sfl, 'noti_title'); ?>>제목</option>
             <option value="noti_content"<?php echo get_selected($sfl, 'noti_content'); ?>>내용</option>
         </select>
         <input type="text" name="stx" value="<?php echo get_text($stx); ?>" class="frm_input">
@@ -179,7 +174,7 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
                 <thead><tr>
                     <th scope="col"><input type="checkbox" id="noti_chkall" onclick="rb_notification_check_all(this)"></th>
                     <th scope="col" id="noti_category">종류</th><th scope="col" id="noti_recv">받음</th><th scope="col" id="noti_send">보냄</th>
-                    <th scope="col" id="noti_title">제목</th><th scope="col" id="noti_content">내용</th><th scope="col" id="noti_state">상태</th><th scope="col" id="noti_date">발송일</th>
+                    <th scope="col" id="noti_content">내용</th><th scope="col" id="noti_state">상태</th><th scope="col" id="noti_date">발송일</th>
                 </tr></thead>
                 <tbody>
                 <?php $i=0; if ($result) { while ($row=sql_fetch_array($result)) {
@@ -203,14 +198,13 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
                     <td headers="noti_category" class="td_category"><?php echo isset($categories[$row['noti_category']]) ? $categories[$row['noti_category']] : '기타'; ?></td>
                     <td headers="noti_recv" class="td_name sv_use" style="text-align:center !important"><div style="display:inline-block;text-align:left"><?php echo $recv_sideview; ?></div></td>
                     <td headers="noti_send" class="td_name sv_use" style="text-align:center !important"><div style="display:inline-block;text-align:left"><?php echo $send_sideview; ?></div></td>
-                    <td headers="noti_title" class="td_center"><strong><?php echo get_text($row['noti_title']); ?></strong></td>
                     <td headers="noti_content" class="td_left" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px">
                         <?php if ($valid_link) { ?><a href="<?php echo get_text($row['noti_link']); ?>" target="_blank" rel="noopener"><?php } ?><?php echo get_text($content_one_line); ?><?php if ($valid_link) { ?></a><?php } ?>
                     </td>
                     <td headers="noti_state" class="td_mng"><?php echo $row['noti_read_at'] ? '읽음' : '읽지 않음'; ?></td>
                     <td headers="noti_date" class="td_datetime"><?php echo get_text($row['noti_created_at']); ?></td>
                 </tr>
-                <?php $i++; }} if (!$i) { ?><tr><td colspan="8" class="empty_table">알림 내역이 없습니다.</td></tr><?php } ?>
+                <?php $i++; }} if (!$i) { ?><tr><td colspan="7" class="empty_table">알림 내역이 없습니다.</td></tr><?php } ?>
                 </tbody>
             </table>
         </div>
