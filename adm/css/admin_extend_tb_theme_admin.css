@@ -285,10 +285,13 @@
 }
 
 
+html {
+    overflow-x: hidden;
+}
+
 body {
     font-family: var(--rb-adm-font);
     background-color: var(--rb-adm-bg);
-    overflow-x: hidden;
 }
 
 h1,

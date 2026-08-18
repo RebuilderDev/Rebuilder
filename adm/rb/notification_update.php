@@ -71,13 +71,13 @@ foreach ($recipient_ids as $recv_id) {
     ));
     if ($sent === false) {
         sql_query('ROLLBACK', false);
-        alert('공지 알림 저장 중 오류가 발생했습니다. 발송된 알림 없이 취소했습니다.');
+        alert('공지 저장 중 오류가 발생했습니다. 발송된 알림 없이 취소했습니다.');
     }
     if ($sent) $sent_count++;
 }
 if (!$sent_count) {
     sql_query('ROLLBACK', false);
-    alert('공지 알림을 저장하지 못했습니다.');
+    alert('공지를 저장하지 못했습니다.');
 }
 
 $now = defined('G5_TIME_YMDHIS') ? G5_TIME_YMDHIS : date('Y-m-d H:i:s');
@@ -96,8 +96,8 @@ $dispatch_saved = sql_query("INSERT INTO rb_notification_dispatch SET
             dispatch_ip='".sql_real_escape_string($ip)."'", false);
 if (!$dispatch_saved) {
     sql_query('ROLLBACK', false);
-    alert('공지 알림 발송내역을 저장하지 못했습니다. 발송된 알림 없이 취소했습니다.');
+    alert('공지 발송내역을 저장하지 못했습니다. 발송된 알림 없이 취소했습니다.');
 }
 sql_query('COMMIT', false);
 
-alert(number_format($sent_count).'명에게 공지 알림을 발송했습니다.', './notification_form.php');
+alert(number_format($sent_count).'명에게 공지를 발송했습니다.', './notification_form.php');

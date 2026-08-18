@@ -267,7 +267,7 @@ function rb_notification_send($category, $title, $content, $link_url, $recv_id, 
         && (!isset($options['push']) || (bool) $options['push'])
         && (!isset($options['app_push']) || (bool) $options['app_push']);
     $labels = rb_notification_categories();
-    $push_title = isset($labels[$category]) ? $labels[$category].' 알림' : '새 알림';
+    $push_title = isset($labels[$category]) ? $labels[$category] : '기타';
 
     if ($pwa_push && function_exists('send_pwa_if_needed')) {
         send_pwa_if_needed($recv_id, $send_id, $push_title, $link_url, $title);

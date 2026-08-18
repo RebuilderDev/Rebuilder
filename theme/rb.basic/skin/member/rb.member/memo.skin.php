@@ -17,29 +17,6 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
             <li class="<?php if ($kind == 'send') {  ?>selected<?php }  ?>"><a href="./memo.php?kind=send">보낸쪽지</a></li>
             <li><a href="./memo_form.php">쪽지쓰기</a></li>
 
-            <li class="selected system_del_btn"><a href="javascript:void(0);" id="system_del">시스템메세지 삭제</a></li>
-
-            <script>
-                document.getElementById('system_del').addEventListener('click', function() {
-                    var userConfirmed = confirm('시스템메세지를 일괄 삭제 합니다. 사용자에게 받은 쪽지는 삭제되지 않습니다.\n시스템메세지를 일괄 삭제 하시겠습니까?');
-
-                    if (userConfirmed) {
-                       $.ajax({
-                            url: '<?php echo G5_URL ?>/rb/rb.lib/ajax.memo_system_delete.php',
-                            method: 'POST',
-                            //data: { order: orderData, mod_type: "mod_order" },
-                            success: function(response) {
-                                location.reload();
-                            },
-                            error: function(xhr, status, error) {
-                                alert('삭제처리에 문제가 있습니다. 관리자에게 문의해주세요.');
-                            }
-                        });
-                    } else {
-
-                    }
-                });
-            </script>
             <div class="cb"></div>
         </ul>
 

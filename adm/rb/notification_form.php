@@ -57,15 +57,15 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
 ?>
 
 <section id="rb_notification_send">
-    <h2 class="h2_frm">공지 알림 발송</h2>
+    <h2 class="h2_frm">공지 발송</h2>
     <div class="local_desc01 local_desc">
-        <p>관리자가 보내는 알림은 공지 알림으로 저장됩니다. 여러 아이디는 쉼표 또는 공백으로 구분해 입력할 수 있습니다.</p>
+        <p>관리자가 보내는 알림은 공지로 저장됩니다. 여러 아이디는 쉼표 또는 공백으로 구분해 입력할 수 있습니다.</p>
     </div>
     <form action="./notification_update.php" method="post" onsubmit="return rb_notification_send_check(this);">
         <input type="hidden" name="token" value="<?php echo $admin_token; ?>">
         <div class="tbl_frm01 tbl_wrap">
             <table>
-                <caption>공지 알림 발송</caption>
+                <caption>공지 발송</caption>
                 <colgroup><col class="grid_4"><col></colgroup>
                 <tbody>
                 <tr>
@@ -105,7 +105,7 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
                 </tbody>
             </table>
         </div>
-        <div class="btn_confirm01 btn_confirm"><button type="submit" class="btn_submit">공지 알림 발송</button></div>
+        <div class="btn_confirm01 btn_confirm"><button type="submit" class="btn_submit">공지 발송</button></div>
     </form>
 </section>
 
@@ -145,25 +145,39 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
                 <caption>알림 내역</caption>
                 <thead><tr>
                     <th scope="col"><input type="checkbox" id="noti_chkall" onclick="rb_notification_check_all(this)"></th>
-                    <th scope="col">종류</th><th scope="col">받음</th><th scope="col">보냄</th>
-                    <th scope="col">제목·내용</th><th scope="col">상태</th><th scope="col">발송일</th>
+                    <th scope="col" id="noti_category">종류</th><th scope="col" id="noti_recv">받음</th><th scope="col" id="noti_send">보냄</th>
+                    <th scope="col" id="noti_title">제목</th><th scope="col" id="noti_content">내용</th><th scope="col" id="noti_state">상태</th><th scope="col" id="noti_date">발송일</th>
                 </tr></thead>
                 <tbody>
-                <?php $i=0; if ($result) { while ($row=sql_fetch_array($result)) { ?>
+                <?php $i=0; if ($result) { while ($row=sql_fetch_array($result)) {
+                    $recv_mb = get_member($row['noti_recv_mb_id'], 'mb_id, mb_nick, mb_email, mb_homepage');
+                    $recv_sideview = !empty($recv_mb['mb_id'])
+                        ? get_sideview($recv_mb['mb_id'], get_text($recv_mb['mb_nick']), $recv_mb['mb_email'], $recv_mb['mb_homepage'])
+                        : get_text($row['noti_recv_mb_id']);
+
+                    $send_sideview = '시스템';
+                    if ($row['noti_send_mb_id'] !== 'system-msg') {
+                        $send_mb = get_member($row['noti_send_mb_id'], 'mb_id, mb_nick, mb_email, mb_homepage');
+                        $send_sideview = !empty($send_mb['mb_id'])
+                            ? get_sideview($send_mb['mb_id'], get_text($send_mb['mb_nick']), $send_mb['mb_email'], $send_mb['mb_homepage'])
+                            : get_text($row['noti_send_mb_id']);
+                    }
+                    $content_one_line = trim((string) preg_replace('/\s+/u', ' ', preg_replace('/<br\s*\/?>/i', ' ', (string) $row['noti_content'])));
+                    $valid_link = $row['noti_link'] && preg_match('#^(https?://|/)#i', $row['noti_link']);
+                ?>
                 <tr>
                     <td class="td_chk"><input type="checkbox" name="noti_id[]" value="<?php echo (int) $row['noti_id']; ?>"></td>
-                    <td class="td_category"><?php echo isset($categories[$row['noti_category']]) ? $categories[$row['noti_category']] : '기타'; ?></td>
-                    <td class="td_name"><?php echo get_text($row['noti_recv_mb_id']); ?></td>
-                    <td class="td_name"><?php echo get_text($row['noti_send_mb_id']); ?></td>
-                    <td class="td_left">
-                        <strong><?php echo get_text($row['noti_title']); ?></strong>
-                        <div style="margin-top:5px;color:#777"><?php echo nl2br(get_text($row['noti_content'])); ?></div>
-                        <?php if ($row['noti_link'] && preg_match('#^(https?://|/)#i', $row['noti_link'])) { ?><div style="margin-top:5px"><a href="<?php echo get_text($row['noti_link']); ?>" target="_blank" rel="noopener"><?php echo get_text($row['noti_link']); ?></a></div><?php } ?>
+                    <td headers="noti_category" class="td_category"><?php echo isset($categories[$row['noti_category']]) ? $categories[$row['noti_category']] : '기타'; ?></td>
+                    <td headers="noti_recv" class="td_name sv_use" style="text-align:center !important"><div style="display:inline-block;text-align:left"><?php echo $recv_sideview; ?></div></td>
+                    <td headers="noti_send" class="td_name sv_use" style="text-align:center !important"><div style="display:inline-block;text-align:left"><?php echo $send_sideview; ?></div></td>
+                    <td headers="noti_title" class="td_center"><strong><?php echo get_text($row['noti_title']); ?></strong></td>
+                    <td headers="noti_content" class="td_left" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px">
+                        <?php if ($valid_link) { ?><a href="<?php echo get_text($row['noti_link']); ?>" target="_blank" rel="noopener"><?php } ?><?php echo get_text($content_one_line); ?><?php if ($valid_link) { ?></a><?php } ?>
                     </td>
-                    <td class="td_mng"><?php echo $row['noti_read_at'] ? '읽음' : '읽지 않음'; ?></td>
-                    <td class="td_datetime"><?php echo get_text($row['noti_created_at']); ?></td>
+                    <td headers="noti_state" class="td_mng"><?php echo $row['noti_read_at'] ? '읽음' : '읽지 않음'; ?></td>
+                    <td headers="noti_date" class="td_datetime"><?php echo get_text($row['noti_created_at']); ?></td>
                 </tr>
-                <?php $i++; }} if (!$i) { ?><tr><td colspan="7" class="empty_table">알림 내역이 없습니다.</td></tr><?php } ?>
+                <?php $i++; }} if (!$i) { ?><tr><td colspan="8" class="empty_table">알림 내역이 없습니다.</td></tr><?php } ?>
                 </tbody>
             </table>
         </div>
@@ -185,7 +199,7 @@ function rb_notification_send_check(form) {
         alert('발송할 회원 레벨을 선택해 주세요.'); return false;
     }
     var target = form.target_type.options[form.target_type.selectedIndex].text;
-    return confirm(target + ' 대상으로 공지 알림을 발송하시겠습니까?');
+    return confirm(target + ' 대상으로 공지를 발송하시겠습니까?');
 }
 function rb_notification_list_check(form) {
     if (!is_checked('noti_id[]')) { alert('삭제할 알림을 선택해 주세요.'); return false; }

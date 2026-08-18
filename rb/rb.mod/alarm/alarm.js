@@ -49,7 +49,7 @@ function show_alarm(data) {
     html += '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>';
     if (url) html += '<a href="' + rb_alarm_escape(url) + '" onclick="mark_recv_notification(' + id + ')">';
     else html += '<a href="#" onclick="set_recv_notification(' + id + '); return false;">';
-    html += '<div class="notification-heading"><span class="font-B">' + category + ' 알림</span>　<span class="al_date">' + createdAt + '</span></div>';
+    html += '<div class="notification-heading"><span class="font-B">' + category + '</span>　<span class="al_date">' + createdAt + '</span></div>';
     html += '<div class="notification-content cursor">' + body + '</div></a></div></div>';
 
     $('body').prepend(html);
