@@ -15,6 +15,14 @@ if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipi
     add_javascript('<script src="'.G5_JS_URL.'/certify.js?v='.G5_JS_VER.'"></script>', 15);
 
 $email_msg = $is_exists_email ? '등록할 이메일이 중복되었습니다.다른 이메일을 입력해 주세요.' : '';
+$rb_notification_preference = function_exists('rb_notification_get_preference')
+    ? rb_notification_get_preference(isset($member['mb_id']) ? $member['mb_id'] : '')
+    : array('notify_push' => 1, 'notify_site' => 1);
+$rb_notification_push_checked = !empty($rb_notification_preference['notify_push']);
+$rb_notification_site_checked = !empty($rb_notification_preference['notify_site']);
+$rb_notification_push_available = isset($app) && is_array($app)
+    && !empty($app['ap_title']) && !empty($app['ap_pid']) && !empty($app['ap_key']);
+$rb_notification_parent_checked = (($rb_notification_push_available && $rb_notification_push_checked) || $rb_notification_site_checked);
 
 add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 0);
 ?>
@@ -69,6 +77,42 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
                 </div>
             </li>
 
+            <li>
+                <span>프로필 정보공개 및 알림수신</span>
+                <div class="alt_boxs">
+                    <ul>
+                        <input type="checkbox" name="mb_open" value="1" id="reg_mb_open" <?php echo ($w == '' || !empty($member['mb_open'])) ? 'checked' : ''; ?>>
+                        <label for="reg_mb_open">프로필 정보공개 / 쪽지수신 동의</label>
+                        <input type="hidden" name="mb_open_default" value="<?php echo isset($member['mb_open']) ? (int) $member['mb_open'] : 0; ?>">
+                    </ul>
+                    <input type="hidden" name="rb_notification_preference_present" value="1">
+                    <ul>
+                        <input type="checkbox" name="rb_notification_agree" value="1" id="reg_rb_notification_agree" <?php echo $rb_notification_parent_checked ? 'checked' : ''; ?> class="selec_chk parent-notification">
+                        <label for="reg_rb_notification_agree">알림수신 동의</label>
+                        <button type="button" class="js-open-consent" data-title="알림수신 동의" data-template="#tpl_notification" data-check="#reg_rb_notification_agree" data-check-group=".child-notification" aria-controls="consentDialog">자세히보기</button>
+                    </ul>
+                    <div id="desc_notification" class="sound_only"><?php echo $rb_notification_push_available ? '앱 Push 알림과 사이트 내 알림' : '사이트 내 알림'; ?> 수신에 대한 안내입니다.</div>
+                    <?php if ($rb_notification_push_available) { ?>
+                    <ul class="desc_sub">
+                        <input type="checkbox" name="rb_notify_push" value="1" id="reg_rb_notify_push" <?php echo $rb_notification_push_checked ? 'checked' : ''; ?> class="selec_chk child-notification">
+                        <label for="reg_rb_notify_push">앱 Push 알림 동의</label>
+                    </ul>
+                    <?php } else { ?>
+                    <input type="hidden" name="rb_notify_push" value="<?php echo $rb_notification_push_checked ? '1' : '0'; ?>">
+                    <?php } ?>
+                    <ul class="desc_sub">
+                        <input type="checkbox" name="rb_notify_site" value="1" id="reg_rb_notify_site" <?php echo $rb_notification_site_checked ? 'checked' : ''; ?> class="selec_chk child-notification">
+                        <label for="reg_rb_notify_site">사이트 내 알림 동의</label>
+                    </ul>
+                    <template id="tpl_notification">
+                        <?php if ($rb_notification_push_available) { ?>
+                        앱 Push 알림을 받으면 새로운 활동 소식을 앱 알림으로 확인할 수 있습니다.<br>
+                        <?php } ?>
+                        사이트 내 알림을 받으면 내 게시물과 댓글, 주문·구독 등 활동과 관련된 소식을 사이트 안에서 확인할 수 있습니다.
+                    </template>
+                </div>
+            </li>
+
 
             <?php if (isset($config['cf_use_promotion']) && (int)$config['cf_use_promotion'] === 1) { ?>
 
@@ -115,7 +159,7 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
                                 <?php if (!empty($config['cf_use_hp']) || !empty($config['cf_req_hp']) || !empty($app['ap_title']) && !empty($app['ap_key']) && !empty($app['ap_pid'])) { ?>
                                 <ul class="desc_sub">
                                     <input type="checkbox" name="mb_sms" value="1" id="reg_mb_sms" <?php echo !empty($member['mb_sms']) ? 'checked' : ''; ?> class="selec_chk child-promo">
-                                    <label for="reg_mb_sms">광고성 SMS / 알림톡 <?php if (!empty($app['ap_title']) && !empty($app['ap_key']) && !empty($app['ap_pid'])) { ?><?php if($config['cf_use_hp']) { ?>/ <?php } ?>Push 알림 <?php } ?>수신동의</label>
+                                    <label for="reg_mb_sms">광고성 SMS / 알림톡 수신동의</label>
                                 </ul>
                                 <input type="hidden" name="mb_sms_default" value="<?php echo isset($member['mb_sms']) ? htmlspecialchars((string)$member['mb_sms'], ENT_QUOTES, 'UTF-8') : ''; ?>">
                                 <?php } ?>
@@ -465,6 +509,25 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
 
         parentPromo.addEventListener('change', syncChildrenFromParent);
         childPromo.forEach(cb => cb.addEventListener('change', syncParentFromChildren));
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const parentNotification = document.getElementById('reg_rb_notification_agree');
+        const childNotification = Array.from(document.querySelectorAll('.child-notification'));
+        if (!parentNotification || childNotification.length === 0) return;
+
+        const syncParentFromChildren = () => {
+            parentNotification.checked = childNotification.some(cb => cb.checked);
+        };
+        const syncChildrenFromParent = () => {
+            childNotification.forEach(cb => {
+                cb.checked = parentNotification.checked;
+            });
+        };
+
+        syncParentFromChildren();
+        parentNotification.addEventListener('change', syncChildrenFromParent);
+        childNotification.forEach(cb => cb.addEventListener('change', syncParentFromChildren));
     });
 </script>
 

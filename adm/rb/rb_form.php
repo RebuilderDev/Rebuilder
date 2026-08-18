@@ -44,7 +44,7 @@ $pg_anchor = '<ul class="anchor">
     <li><a href="#anc_rb1">로고설정</a></li>
     <li><a href="#anc_rb2">회사정보</a></li>
     <li><a href="#anc_rb3">로딩인디케이터</a></li>
-    <li><a href="#anc_rb6">시스템메세지</a></li>
+    <li><a href="#anc_rb6">시스템 알림</a></li>
     <li><a href="#anc_rb5">모바일설정</a></li>
     <li><a href="#anc_rb7">미니홈설정</a></li>
     <li><a href="#anc_rb4">운영채널</a></li>
@@ -372,7 +372,7 @@ $pg_anchor = '<ul class="anchor">
 
 
     <section id="anc_rb6">
-        <h2 class="h2_frm">시스템메세지</h2>
+        <h2 class="h2_frm">시스템 알림</h2>
         <?php echo $pg_anchor ?>
 
         <div class="tbl_frm01 tbl_wrap">
@@ -388,7 +388,7 @@ $pg_anchor = '<ul class="anchor">
                     <tr>
                         <th scope="row">수신여부</th>
                         <td colspan="3">
-                        <?php echo help('시스템메세지 관리자 수신 여부를 설정할 수 있습니다.<br>신규 게시물등록, 주문접수, 회원가입 등 웹사이트에서 일어나는 주요 활동에 대한 알림 입니다.') ?>
+                        <?php echo help('관리자의 시스템 알림 수신 여부를 설정할 수 있습니다.<br>신규 게시물 등록, 주문 접수, 회원가입 등 웹사이트에서 일어나는 주요 활동 알림입니다.') ?>
                         <input type="checkbox" name="bu_systemmsg_use" value="1" id="bu_systemmsg_use" <?php echo isset($bu['bu_systemmsg_use']) && $bu['bu_systemmsg_use'] ? 'checked' : ''; ?>> <label for="bu_systemmsg_use">수신함</label>
                         </td>
                     </tr>

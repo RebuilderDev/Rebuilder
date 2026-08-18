@@ -1,6 +1,22 @@
 <?php
 if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 
+// 새 알림 설정 UI가 포함된 회원가입/정보수정 요청만 별도 설정을 저장합니다.
+// 테이블 구조는 빌더가 만들지 않고 공식 홈페이지 API의 DB 업데이트로만 설치합니다.
+if (($w === '' || $w === 'u')
+    && isset($_POST['rb_notification_preference_present'])
+    && (string) $_POST['rb_notification_preference_present'] === '1'
+    && function_exists('rb_notification_save_preference')) {
+    $rb_notification_agree = isset($_POST['rb_notification_agree']) && (string) $_POST['rb_notification_agree'] === '1';
+    $rb_notify_push = $rb_notification_agree
+        && isset($_POST['rb_notify_push'])
+        && (string) $_POST['rb_notify_push'] === '1';
+    $rb_notify_site = $rb_notification_agree
+        && isset($_POST['rb_notify_site'])
+        && (string) $_POST['rb_notify_site'] === '1';
+    rb_notification_save_preference($mb_id, $rb_notify_push, $rb_notify_site);
+}
+
 //추가정보 저장
 $rb_post_mb_partner = isset($_POST['mb_partner']) ? (int)$_POST['mb_partner'] : 0;
 $rb_post_mb_bank = isset($_POST['mb_bank']) ? sql_escape_string($_POST['mb_bank']) : '';

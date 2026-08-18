@@ -417,6 +417,103 @@ function rb_license_apply_bootstrap_sql($statements, &$changed)
     return '';
 }
 
+function rb_license_schema_table_options($table, $info, &$error)
+{
+    global $g5;
+    $error = '';
+    if (empty($info['options'])) {
+        return '';
+    }
+    if (!is_array($info['options'])) {
+        $error = '['.$table.'] 테이블 옵션이 올바르지 않습니다.';
+        return '';
+    }
+
+    $engine = isset($info['options']['engine']) ? (string) $info['options']['engine'] : '';
+    $charset = isset($info['options']['charset']) ? strtolower((string) $info['options']['charset']) : '';
+    $collation = isset($info['options']['collation']) ? strtolower((string) $info['options']['collation']) : '';
+    if ($charset === 'g5_member' || $collation === 'g5_member') {
+        $member_table = isset($g5['member_table']) ? (string) $g5['member_table'] : '';
+        $member_charset = array();
+        if (rb_license_valid_identifier($member_table)) {
+            $member_charset = sql_fetch("SELECT CCSA.CHARACTER_SET_NAME AS charset_name,
+                                                T.TABLE_COLLATION AS collation_name
+                                           FROM information_schema.TABLES T
+                                           JOIN information_schema.COLLATION_CHARACTER_SET_APPLICABILITY CCSA
+                                             ON CCSA.COLLATION_NAME=T.TABLE_COLLATION
+                                          WHERE T.TABLE_SCHEMA='".sql_real_escape_string(G5_MYSQL_DB)."'
+                                            AND T.TABLE_NAME='".sql_real_escape_string($member_table)."'
+                                          LIMIT 1", false);
+        }
+        $detected_charset = !empty($member_charset['charset_name']) ? strtolower($member_charset['charset_name']) : 'utf8mb4';
+        $detected_collation = !empty($member_charset['collation_name']) ? strtolower($member_charset['collation_name']) : 'utf8mb4_unicode_ci';
+        if (!in_array($detected_charset, array('utf8', 'utf8mb4'), true)
+            || !preg_match('/^[a-z0-9_]{1,64}$/', $detected_collation)
+            || strpos($detected_collation, $detected_charset.'_') !== 0) {
+            $detected_charset = 'utf8mb4';
+            $detected_collation = 'utf8mb4_unicode_ci';
+        }
+        $charset = $detected_charset;
+        $collation = $detected_collation;
+    }
+    if ($engine !== '' && !in_array(strtolower($engine), array('innodb', 'myisam'), true)) {
+        $error = '['.$table.'] 테이블 엔진을 확인할 수 없습니다.';
+        return '';
+    }
+    if ($charset !== '' && !in_array($charset, array('utf8', 'utf8mb4'), true)) {
+        $error = '['.$table.'] 문자셋을 확인할 수 없습니다.';
+        return '';
+    }
+    if ($collation !== ''
+        && (!preg_match('/^[a-z0-9_]{1,64}$/', $collation)
+            || $charset === ''
+            || strpos($collation, $charset.'_') !== 0)) {
+        $error = '['.$table.'] 정렬규칙을 확인할 수 없습니다.';
+        return '';
+    }
+
+    $sql = '';
+    if ($engine !== '') {
+        $sql .= ' ENGINE='.$engine;
+    }
+    if ($charset !== '') {
+        $sql .= ' DEFAULT CHARACTER SET '.$charset;
+    }
+    if ($collation !== '') {
+        $sql .= ' COLLATE '.$collation;
+    }
+    return $sql;
+}
+
+function rb_license_schema_indexes($table, $info, &$error)
+{
+    $error = '';
+    $indexes = array();
+    if (empty($info['indexes'])) {
+        return $indexes;
+    }
+    if (!is_array($info['indexes'])) {
+        $error = '['.$table.'] 인덱스 구조가 올바르지 않습니다.';
+        return $indexes;
+    }
+    foreach ($info['indexes'] as $index_name => $columns) {
+        if (!rb_license_valid_identifier($index_name) || !is_array($columns) || !$columns) {
+            $error = '['.$table.'] 인덱스 정보를 확인할 수 없습니다.';
+            return array();
+        }
+        $safe_columns = array();
+        foreach ($columns as $column) {
+            if (!rb_license_valid_identifier($column)) {
+                $error = '['.$table.'] 인덱스 컬럼을 확인할 수 없습니다.';
+                return array();
+            }
+            $safe_columns[] = '`'.$column.'`';
+        }
+        $indexes[$index_name] = $safe_columns;
+    }
+    return $indexes;
+}
+
 function rb_license_apply_schema_tables($schema, &$changed)
 {
     if (empty($schema['tables']) || !is_array($schema['tables'])) {
@@ -426,6 +523,18 @@ function rb_license_apply_schema_tables($schema, &$changed)
         if (!rb_license_valid_identifier($table) || empty($info['columns']) || !is_array($info['columns'])) {
             return 'DB 업데이트 테이블 정보를 확인할 수 없습니다.';
         }
+
+        $option_error = '';
+        $table_options = rb_license_schema_table_options($table, $info, $option_error);
+        if ($option_error !== '') {
+            return $option_error;
+        }
+        $index_error = '';
+        $indexes = rb_license_schema_indexes($table, $info, $index_error);
+        if ($index_error !== '') {
+            return $index_error;
+        }
+
         $exists = sql_fetch("SELECT COUNT(*) AS cnt
                                FROM information_schema.TABLES
                               WHERE TABLE_SCHEMA='".sql_real_escape_string(G5_MYSQL_DB)."'
@@ -447,7 +556,10 @@ function rb_license_apply_schema_tables($schema, &$changed)
                 }
                 $definitions[] = 'PRIMARY KEY (`'.$info['primary_key'].'`)';
             }
-            if (!sql_query('CREATE TABLE `'.$table.'` ('.implode(', ', $definitions).')', false)) {
+            foreach ($indexes as $index_name => $index_columns) {
+                $definitions[] = 'KEY `'.$index_name.'` ('.implode(', ', $index_columns).')';
+            }
+            if (!sql_query('CREATE TABLE `'.$table.'` ('.implode(', ', $definitions).')'.$table_options, false)) {
                 return '['.$table.'] 테이블 생성 실패: '.mysqli_error($GLOBALS['g5']['connect_db']);
             }
             $changed = true;
@@ -475,6 +587,42 @@ function rb_license_apply_schema_tables($schema, &$changed)
         }
         if ($add_columns) {
             $changed = true;
+        }
+
+        if (!empty($info['enforce_options']) && !empty($info['options'])) {
+            $current = sql_fetch("SELECT ENGINE, TABLE_COLLATION
+                                    FROM information_schema.TABLES
+                                   WHERE TABLE_SCHEMA='".sql_real_escape_string(G5_MYSQL_DB)."'
+                                     AND TABLE_NAME='".sql_real_escape_string($table)."'
+                                   LIMIT 1", false);
+            $wanted_engine = isset($info['options']['engine']) ? strtolower((string) $info['options']['engine']) : '';
+            if ($wanted_engine !== '' && strtolower((string) $current['ENGINE']) !== $wanted_engine) {
+                if (!sql_query('ALTER TABLE `'.$table.'` ENGINE='.$info['options']['engine'], false)) {
+                    return '['.$table.'] 테이블 엔진 업데이트 실패: '.mysqli_error($GLOBALS['g5']['connect_db']);
+                }
+                $changed = true;
+            }
+            if (preg_match('/DEFAULT CHARACTER SET ([a-z0-9_]+) COLLATE ([a-z0-9_]+)/i', $table_options, $option_match)
+                && strtolower((string) $current['TABLE_COLLATION']) !== strtolower($option_match[2])) {
+                if (!sql_query('ALTER TABLE `'.$table.'` CONVERT TO CHARACTER SET '.$option_match[1].' COLLATE '.$option_match[2], false)) {
+                    return '['.$table.'] 문자셋 업데이트 실패: '.mysqli_error($GLOBALS['g5']['connect_db']);
+                }
+                $changed = true;
+            }
+        }
+
+        foreach ($indexes as $index_name => $index_columns) {
+            $index = sql_fetch("SELECT COUNT(*) AS cnt
+                                  FROM information_schema.STATISTICS
+                                 WHERE TABLE_SCHEMA='".sql_real_escape_string(G5_MYSQL_DB)."'
+                                   AND TABLE_NAME='".sql_real_escape_string($table)."'
+                                   AND INDEX_NAME='".sql_real_escape_string($index_name)."'", false);
+            if (empty($index['cnt'])) {
+                if (!sql_query('ALTER TABLE `'.$table.'` ADD KEY `'.$index_name.'` ('.implode(', ', $index_columns).')', false)) {
+                    return '['.$table.'] 인덱스 업데이트 실패: '.mysqli_error($GLOBALS['g5']['connect_db']);
+                }
+                $changed = true;
+            }
         }
     }
     return '';
