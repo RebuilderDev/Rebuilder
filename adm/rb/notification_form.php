@@ -59,7 +59,7 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
 <section id="rb_notification_send">
     <h2 class="h2_frm">공지 알림 발송</h2>
     <div class="local_desc01 local_desc">
-        <p>관리자가 보내는 알림은 공지 알림으로 저장됩니다. 아이디 입력은 한 명 또는 여러 명을 줄바꿈·쉼표로 구분할 수 있습니다.</p>
+        <p>관리자가 보내는 알림은 공지 알림으로 저장됩니다. 여러 아이디는 쉼표 또는 공백으로 구분해 입력할 수 있습니다.</p>
     </div>
     <form action="./notification_update.php" method="post" onsubmit="return rb_notification_send_check(this);">
         <input type="hidden" name="token" value="<?php echo $admin_token; ?>">
@@ -80,7 +80,7 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
                 </tr>
                 <tr id="target_member_row">
                     <th scope="row"><label for="target_members">회원 아이디</label></th>
-                    <td><textarea name="target_members" id="target_members" rows="3" placeholder="예: member1, member2"></textarea></td>
+                    <td><input type="text" name="target_members" id="target_members" value="" class="frm_input" size="60" autocomplete="off" placeholder="예: member1, member2"></td>
                 </tr>
                 <tr id="target_level_row" style="display:none">
                     <th scope="row">회원 레벨</th>

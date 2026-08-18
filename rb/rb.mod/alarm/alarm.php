@@ -31,10 +31,17 @@ if (!in_array(basename($_SERVER['PHP_SELF']), $except_alarm_page)) {
         $dirs_chk = str_replace('/', '', $dirs);
         ?>
 
-        <?php if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === ($app['ap_title'] ?? '')) { ?>
-        <script src="<?php echo $alarm_url ?>/alarm.app.js"></script>
+        <?php
+        $alarm_request_header = trim((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+        $alarm_app_title = trim((string) ($app['ap_title'] ?? ''));
+        $is_alarm_app = $alarm_request_header !== ''
+            && $alarm_app_title !== ''
+            && $alarm_request_header === $alarm_app_title;
+        ?>
+        <?php if ($is_alarm_app) { ?>
+        <script src="<?php echo $alarm_url ?>/alarm.app.js?ver=<?php echo time(); ?>"></script>
         <?php } else { ?>
-        <script src="<?php echo $alarm_url ?>/alarm.js"></script>
+        <script src="<?php echo $alarm_url ?>/alarm.js?ver=<?php echo time(); ?>"></script>
         <?php } ?>
         <script type="text/javascript">
             $(function() {
