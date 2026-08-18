@@ -1,3 +1,9 @@
+/* 레이아웃 CSS */
+@media all and (max-width:1024px) {
+    .gnb_wrap .inner {padding-left: 0px !important; padding-right: 0px !important;}
+    .gnb_wrap .snb_wrap .qm_wrap > a {width:auto;}
+}
+
 .cbp-hrmenu .cbp-hrsub-inner > div {min-width: 140px;}
 .cbp-hrmenu .cbp-hrsub {margin-left: -30px;}
 #cbp-hrmenu .cbp-hrsub .cbp-hrsub-inner > div > ul > li{position: relative; min-height:32.2px;}
@@ -61,7 +67,6 @@
 #notification_top_btn svg path:last-child {fill:#09244B;}
 #rb_memo_top_btn > span,
 #notification_top_btn > span {top:0;}
-#notification_top_btn.notification_open svg path:last-child {fill:#AA20FF;}
 
 #notification_box_wrap {
     display:none;
@@ -106,7 +111,7 @@
 
 #notification_box_wrap .rb_notification_tabs {
     display:flex;
-    padding:0 0px;
+    padding:0;
     border-bottom:1px solid #eee;
     background-color:#f9f9f9;
     white-space:nowrap;
@@ -129,7 +134,12 @@
     height:369px;
     overflow-y:auto;
     overscroll-behavior:contain;
+    scrollbar-width:thin;
+    scrollbar-color:#d8dde3 transparent;
 }
+#notification_box_wrap .rb_notification_body::-webkit-scrollbar {width:4px;}
+#notification_box_wrap .rb_notification_body::-webkit-scrollbar-track {background:transparent;}
+#notification_box_wrap .rb_notification_body::-webkit-scrollbar-thumb {border-radius:4px; background:#d8dde3;}
 #notification_box_wrap .rb_notification_footer {
     display:flex;
     align-items:center;
@@ -296,7 +306,7 @@
     text-align:center;
 }
 
-@media all and (max-width:1024px) {
+@media all and (max-width:768px) {
     #notification_box_wrap {
         position:fixed;
         top:80px;
@@ -306,7 +316,4 @@
         border-radius:0;
     }
     #notification_box_wrap .rb_notification_body {height:calc(100vh - 181px);}
-    .gnb_wrap .inner {padding-left: 0px !important; padding-right: 0px !important;}
-    .gnb_wrap .snb_wrap .qm_wrap > a {width:auto; padding-left: 5px;}
-    .gnb_wrap .snb_wrap .qm_wrap button {padding-left: 5px;}
 }
