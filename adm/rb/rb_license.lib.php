@@ -361,6 +361,46 @@ function rb_license_register_token($install_token)
     return array('success' => true, 'data' => $response['data']);
 }
 
+/**
+ * 공식 인증 서버가 설치정보 없음 또는 사용중지를 명확히 응답한 경우에만
+ * 로컬 표시상태를 동기화합니다. 통신·SSL 장애에는 기존 인증을 유지합니다.
+ */
+function rb_license_handle_remote_auth_failure($response)
+{
+    if (!is_array($response) || !empty($response['success']) || empty($response['code'])) {
+        return '';
+    }
+
+    $code = (string) $response['code'];
+    $now = defined('G5_TIME_YMDHIS') ? G5_TIME_YMDHIS : date('Y-m-d H:i:s');
+    if ($code === 'invalid_credential') {
+        $updated = sql_query("UPDATE rb_license_client
+                                SET installation_uuid='', installation_secret='',
+                                    registration_status='pending', usage_type='',
+                                    environment_type='unknown', license_state='pending',
+                                    status_notice='', registered_at=NULL,
+                                    last_checked_at='".sql_real_escape_string($now)."',
+                                    updated_at='".sql_real_escape_string($now)."'
+                              WHERE client_id=1", false);
+        return $updated ? 'token_required' : '';
+    }
+
+    if ($code === 'installation_disabled') {
+        $notice = isset($response['message']) && trim((string) $response['message']) !== ''
+            ? trim((string) $response['message'])
+            : '사용이 중지된 설치입니다.';
+        $updated = sql_query("UPDATE rb_license_client
+                                SET registration_status='disabled', license_state='suspended',
+                                    status_notice='".sql_real_escape_string(substr($notice, 0, 255))."',
+                                    last_checked_at='".sql_real_escape_string($now)."',
+                                    updated_at='".sql_real_escape_string($now)."'
+                              WHERE client_id=1", false);
+        return $updated ? 'disabled' : '';
+    }
+
+    return '';
+}
+
 function rb_license_check_remote()
 {
     $client = rb_license_client_get();
@@ -370,6 +410,15 @@ function rb_license_check_remote()
     $response = rb_license_http_post('check.php', rb_license_api_payload($client));
     if (!empty($response['success'])) {
         rb_license_save_status($response['data'], false);
+    } else {
+        $failure_state = rb_license_handle_remote_auth_failure($response);
+        if ($failure_state === 'token_required') {
+            return array(
+                'success' => false,
+                'code' => 'token_required',
+                'message' => '설치 토큰을 다시 등록해 주세요.',
+            );
+        }
     }
     return $response;
 }
@@ -383,7 +432,16 @@ function rb_license_fetch_schema()
     $payload = rb_license_api_payload($client);
     $payload['g5_table_prefix'] = defined('G5_TABLE_PREFIX') ? G5_TABLE_PREFIX : 'g5_';
     $payload['g5_shop_table_prefix'] = defined('G5_SHOP_TABLE_PREFIX') ? G5_SHOP_TABLE_PREFIX : 'g5_shop_';
-    return rb_license_http_post('schema.php', $payload);
+    $response = rb_license_http_post('schema.php', $payload);
+    $failure_state = rb_license_handle_remote_auth_failure($response);
+    if ($failure_state === 'token_required') {
+        return array(
+            'success' => false,
+            'code' => 'token_required',
+            'message' => '설치 토큰을 다시 등록해 주세요.',
+        );
+    }
+    return $response;
 }
 
 function rb_license_valid_identifier($name)

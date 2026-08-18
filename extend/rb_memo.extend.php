@@ -17,8 +17,9 @@ function add_admin_bbs_menu_memo($admin_menu){ // 메뉴추가
         if (isset($menu_item[0]) && $menu_item[0] === $notification_menu[0]) {
             return $admin_menu;
         }
-        if (isset($menu_item[0]) && $menu_item[0] === '000210') {
-            $insert_at = $index + 1;
+        if (isset($menu_item[0]) && $menu_item[0] === '000300') {
+            $insert_at = $index;
+            break;
         }
     }
 

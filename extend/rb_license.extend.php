@@ -38,12 +38,20 @@ function rb_license_admin_notice_tail()
         if (!$checked_once) {
             set_session('ss_rb_license_remote_checked_once', 1);
             $check = rb_license_check_remote();
-            if (!empty($check['success']) && isset($check['data'])) {
-                $client = rb_license_client_get();
+            $client = rb_license_client_get();
+            if (empty($client['registered_at'])) {
+                $message = "빌더 토큰 등록이 필요합니다.\n빌더설정 메뉴에서 토큰을 등록해주세요.";
+            } elseif (!empty($check['success']) && isset($check['data'])) {
                 if (isset($check['data']['state']) && $check['data']['state'] === 'clone_pending') {
                     $message = isset($check['data']['notice']) ? $check['data']['notice'] : "복제된 설치환경입니다.\n빌더설정에서 새 설치 토큰을 등록해주세요.";
                 }
             }
+        }
+        if ($message === '' && isset($client['registration_status'])
+            && $client['registration_status'] === 'disabled') {
+            $message = !empty($client['status_notice'])
+                ? $client['status_notice']
+                : '사용이 중지된 설치입니다.';
         }
         if ($message === '' && isset($client['environment_type'], $client['license_state'])
             && $client['environment_type'] === 'production' && $client['license_state'] !== 'active') {
