@@ -11,6 +11,24 @@ if (!$installed) {
 $bc = rb_console_config(true);
 $partner_installed = is_file(G5_PATH.'/rb/rb.mod/partner/partner.lib.php');
 $ad_installed = is_file(G5_PATH.'/rb/rb.mod/advertising/advertising.lib.php');
+$reservation_installed = is_file(G5_EXTEND_PATH.'/rb_reservation.extend.php');
+$file_installed = is_file(G5_EXTEND_PATH.'/rb_file.extend.php');
+$media_installed = is_file(G5_EXTEND_PATH.'/rb_media.extend.php');
+$deposit_installed = is_file(G5_EXTEND_PATH.'/rb_point_c_ac.extend.php');
+$point_charge_installed = is_file(G5_EXTEND_PATH.'/rb_point_ac.extend.php');
+
+$business_features = array(
+    array('name' => '입점', 'description' => '상품·주문·문의·후기·정산을 입점사가 직접 관리합니다.', 'installed' => $partner_installed, 'manage_url' => './partner_form.php', 'manage_label' => '입점 설정'),
+    array('name' => '광고 관리', 'description' => '광고 신청·결제·심사·캘린더·유입 분석을 연동합니다.', 'installed' => $ad_installed, 'manage_url' => './ad_config.php', 'manage_label' => '광고 설정'),
+    array('name' => '예약상품 관리', 'description' => '입점사의 예약상품 등록과 예약 현황·시즌 관리를 연동합니다.', 'installed' => $reservation_installed, 'manage_url' => './reservation_set.php', 'manage_label' => '예약 설정'),
+    array('name' => '콘텐츠상품 관리', 'description' => '파일상품 등록과 다운로드 권한·이력 관리를 연동합니다.', 'installed' => $file_installed, 'manage_url' => './file_set.php', 'manage_label' => '콘텐츠 설정'),
+    array('name' => '미디어상품 관리', 'description' => '미디어상품 등록과 시청·다운로드·진도 관리를 연동합니다.', 'installed' => $media_installed, 'manage_url' => './media_set.php', 'manage_label' => '미디어 설정'),
+    array('name' => '예치금', 'description' => '콘솔 잔액·충전과 광고비 결제 및 입점 정산에 예치금을 연동합니다.', 'installed' => $deposit_installed, 'manage_url' => './point_c_set.php', 'manage_label' => '예치금 설정'),
+    array('name' => '포인트 충전', 'description' => '콘솔의 포인트 충전과 광고비 포인트 결제를 연동합니다.', 'installed' => $point_charge_installed, 'manage_url' => './point_set.php', 'manage_label' => '포인트 설정'),
+);
+if (function_exists('run_replace')) {
+    $business_features = run_replace('rb_business_console_features', $business_features, $bc);
+}
 $g5['title'] = '비즈니스 콘솔 설정';
 include_once(G5_ADMIN_PATH.'/admin.head.php');
 ?>
@@ -26,7 +44,26 @@ include_once(G5_ADMIN_PATH.'/admin.head.php');
 <tr><th scope="row"><label for="bc_support_url">고객지원 URL</label></th><td><input class="frm_input" size="70" maxlength="500" id="bc_support_url" name="bc_support_url" value="<?php echo rb_console_h($bc['bc_support_url']); ?>"></td></tr>
 <tr><th scope="row"><label for="bc_notice">상단 공지</label></th><td><textarea name="bc_notice" id="bc_notice" rows="5"><?php echo rb_console_h($bc['bc_notice']); ?></textarea></td></tr>
 </tbody></table></div></section>
-<section><h2 class="h2_frm">설치된 비즈니스 기능</h2><div class="tbl_head01 tbl_wrap"><table><thead><tr><th>기능</th><th>설치상태</th><th>관리</th></tr></thead><tbody><tr><td>입점 기능</td><td><?php echo $partner_installed ? '설치됨' : '미설치'; ?></td><td class="td_mng"><?php if($partner_installed){?><a class="btn btn_03" href="./partner_form.php">입점 설정</a><?php } ?></td></tr><tr><td>광고 기능</td><td><?php echo $ad_installed ? '설치됨' : '미설치'; ?></td><td class="td_mng"><?php if($ad_installed){?><a class="btn btn_03" href="./ad_config.php">광고 설정</a><?php } ?></td></tr></tbody></table></div></section>
+<section>
+<h2 class="h2_frm">설치된 비즈니스 기능</h2>
+<div class="tbl_head01 tbl_wrap"><table>
+<thead><tr><th>기능</th><th>콘솔 연동 내용</th><th>설치상태</th><th>관리</th></tr></thead>
+<tbody>
+<?php foreach ($business_features as $feature) {
+    $feature_installed = !empty($feature['installed']);
+    $feature_manage_url = isset($feature['manage_url']) ? (string) $feature['manage_url'] : '';
+    $feature_manage_file = $feature_manage_url ? G5_ADMIN_PATH.'/rb/'.basename($feature_manage_url) : '';
+?>
+<tr>
+    <td><?php echo rb_console_h(isset($feature['name']) ? $feature['name'] : ''); ?></td>
+    <td class="td_left"><?php echo rb_console_h(isset($feature['description']) ? $feature['description'] : ''); ?></td>
+    <td><?php echo $feature_installed ? '설치됨' : '미설치'; ?></td>
+    <td class="td_mng"><?php if ($feature_installed && $feature_manage_url && is_file($feature_manage_file)) { ?><a class="btn btn_03" href="<?php echo rb_console_h($feature_manage_url); ?>"><?php echo rb_console_h(isset($feature['manage_label']) ? $feature['manage_label'] : '관리'); ?></a><?php } ?></td>
+</tr>
+<?php } ?>
+</tbody>
+</table></div>
+</section>
 <div class="btn_fixed_top">
     <a href="<?php echo G5_URL; ?>/rb/business.php" target="_blank" class="btn btn_02">콘솔 보기</a>
     <button type="submit" class="btn_submit btn">저장</button>
