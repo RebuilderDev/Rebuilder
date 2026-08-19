@@ -2,6 +2,28 @@
 if (!defined('_GNUBOARD_')) {
     exit;
 }
+
+// 부가기능별 상품관리 화면에서 상품등록 폼을 바로 열 때 상품타입을 미리 선택합니다.
+if (basename(isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '') === 'itemform.php'
+    && (!isset($w) || $w === '')
+    && isset($it) && is_array($it)
+    && isset($_GET['rb_item_type'])) {
+    $rb_requested_item_type = (string) $_GET['rb_item_type'];
+    $rb_item_type_available = false;
+
+    if ($rb_requested_item_type === '1') {
+        $rb_item_type_available = isset($rb_item_res['res_is']) && (int) $rb_item_res['res_is'] === 1;
+    } elseif ($rb_requested_item_type === '2') {
+        $rb_item_type_available = function_exists('rb_file_is_enabled') && rb_file_is_enabled();
+    } elseif ($rb_requested_item_type === '3') {
+        $rb_item_type_available = function_exists('rb_media_is_enabled') && rb_media_is_enabled();
+    }
+
+    if ($rb_item_type_available) {
+        $it['it_types'] = (int) $rb_requested_item_type;
+    }
+}
+
 add_stylesheet('<link rel="stylesheet" href="'.G5_ADMIN_URL.'/fonts/Pretendard/Pretendard.css" />', 0);
 
 $g5_debug['php']['begin_time'] = $begin_time = get_microtime();
@@ -225,6 +247,7 @@ if ($weekday_num == 0) {
                     <li class="tnb_li"><a href="<?php echo G5_SHOP_URL ?>/" target="_blank" title="쇼핑몰 바로가기"><img src="<?php echo G5_ADMIN_URL ?>/img/sh.svg"></a></li>
                 <?php } ?>
                 <li class="tnb_li"><a href="<?php echo G5_URL ?>/" target="_blank" title="커뮤니티 바로가기"><img src="<?php echo G5_ADMIN_URL ?>/img/hm.svg"></a></li>
+                <?php include_once G5_ADMIN_PATH.'/rb/admin_notification.php'; ?>
                 <!--
                 <li class="tnb_li"><a href="<?php echo G5_ADMIN_URL ?>/service.php" class="tnb_service">부가서비스</a></li>
                 -->

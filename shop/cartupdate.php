@@ -4,21 +4,6 @@ include_once('./_common.php');
 // CSRF 방지: Origin/Referer 헤더로 요청 출처 검증
 if (function_exists('check_request_origin')) check_request_origin(G5_SHOP_URL);
 
-if (!function_exists('rb_shop_has_column')) {
-    function rb_shop_has_column($table, $column)
-    {
-        static $cache = array();
-        $key = $table . ':' . $column;
-        if (isset($cache[$key])) {
-            return $cache[$key];
-        }
-
-        $row = sql_fetch("SHOW COLUMNS FROM `{$table}` LIKE '" . sql_real_escape_string($column) . "'", false);
-        $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
-        return $cache[$key];
-    }
-}
-
 // print_r2($_POST); exit;
 
 // 보관기간이 지난 상품 삭제
@@ -44,9 +29,9 @@ $tmp_cart_id = preg_replace('/[^a-z0-9_\-]/i', '', $tmp_cart_id);
 $act = isset($_POST['act']) ? clean_xss_tags($_POST['act'], 1, 1) : '';
 $post_ct_chk = (isset($_POST['ct_chk']) && is_array($_POST['ct_chk'])) ? $_POST['ct_chk'] : array();
 $post_it_ids = (isset($_POST['it_id']) && is_array($_POST['it_id'])) ? $_POST['it_id'] : array();
-$rb_file_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects')
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
+$rb_file_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects')
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
 
 // 레벨(권한)이 상품구입 권한보다 작다면 상품을 구입할 수 없음.
 if ($member['mb_level'] < $default['de_level_sell'])
@@ -205,9 +190,9 @@ else // 장바구니에 담기
             $it = rb_file_normalize_cart_row($it);
         }
 
-        $rb_media_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
-            && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects')
-            && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
+        $rb_media_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
+            && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects')
+            && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
         if(function_exists('rb_media_normalize_cart_row')) {
             $it = rb_media_normalize_cart_row($it);
         }
@@ -217,8 +202,102 @@ else // 장바구니에 담기
         $rb_is_file_item = $rb_file_columns_ready && function_exists('rb_file_is_item') && rb_file_is_item($it);
         $rb_is_media_item = $rb_media_columns_ready && function_exists('rb_media_is_item') && rb_media_is_item($it);
         $rb_replace_cart_item = isset($it['it_types']) && in_array((int)$it['it_types'], array(1, 2, 3), true);
+        $rb_reservation_period = array();
 
-        if ($rb_is_file_item) {
+        // 예약상품의 기간과 수량은 브라우저 값을 신뢰하지 않고 서버에서 다시 계산한다.
+        if (isset($it['it_types']) && (int)$it['it_types'] === 1 && function_exists('rb_reservation_calculate_period')) {
+            $ct_date_s = isset($_POST['ct_date_s']) ? trim((string)$_POST['ct_date_s']) : '';
+            $ct_date_e = isset($_POST['ct_date_e']) ? trim((string)$_POST['ct_date_e']) : '';
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $ct_date_s) || !strtotime($ct_date_s)) {
+                alert('예약 날짜를 선택해 주세요.');
+            }
+
+            $rb_reservation_mode = function_exists('rb_reservation_effective_mode') ? rb_reservation_effective_mode($it) : (!empty($it['it_date_g']) ? 'period' : 'date');
+            $rb_reservation_range = in_array($rb_reservation_mode, array('stay', 'period'), true);
+            if ($rb_reservation_range) {
+                if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $ct_date_e) || !strtotime($ct_date_e)) {
+                    alert('예약 종료 날짜를 선택해 주세요.');
+                }
+            } else {
+                $ct_date_e = '';
+                $_POST['ct_date_e'] = '';
+            }
+
+            $rb_reservation_period = rb_reservation_calculate_period($it, $ct_date_s, $ct_date_e);
+            if (empty($rb_reservation_period['units'])) {
+                alert('예약 기간을 올바르게 선택해 주세요.');
+            }
+            if ($rb_reservation_mode === 'stay' && strtotime($ct_date_e) <= strtotime($ct_date_s)) {
+                alert('퇴실일은 입실일 다음 날짜부터 선택해 주세요.');
+            }
+
+            $min_units = isset($it['it_date_min']) ? (int)$it['it_date_min'] : 0;
+            $max_units = isset($it['it_date_max']) ? (int)$it['it_date_max'] : 0;
+            if ($min_units > 0 && $rb_reservation_period['units'] < $min_units) {
+                alert('최소 예약 가능 기간은 '.$min_units.($rb_reservation_mode === 'stay' ? '박' : '일').'입니다.');
+            }
+            if ($max_units > 0 && $rb_reservation_period['units'] > $max_units) {
+                alert('최대 예약 가능 기간은 '.$max_units.($rb_reservation_mode === 'stay' ? '박' : '일').'입니다.');
+            }
+
+            if (!empty($it['it_date_s']) && $it['it_date_s'] !== '0000-00-00' && $ct_date_s < $it['it_date_s']) {
+                alert('예약 가능 시작일 이전 날짜입니다.');
+            }
+            $range_last_date = $ct_date_e !== '' ? $ct_date_e : $ct_date_s;
+            if (!empty($it['it_date_e']) && $it['it_date_e'] !== '0000-00-00' && $range_last_date > $it['it_date_e']) {
+                alert('예약 가능 종료일 이후 날짜입니다.');
+            }
+
+            if ($rb_reservation_mode === 'time') {
+                $selected_time = isset($_POST['ct_date_t']) ? trim((string)$_POST['ct_date_t']) : '';
+                $available_times = preg_split('/\r\n|\r|\n/', (string)$it['it_date_t']);
+                $available_times = array_values(array_filter(array_map('trim', $available_times), 'strlen'));
+                if ($selected_time === '' || !in_array($selected_time, $available_times, true)) {
+                    alert('예약 시간을 선택해 주세요.');
+                }
+            }
+
+            if (function_exists('rb_reservation_validate_selection')) {
+                $rb_reservation_error = rb_reservation_validate_selection($it, $ct_date_s, $ct_date_e);
+                if ($rb_reservation_error !== '') alert($rb_reservation_error);
+            }
+
+            $rb_total_people = 0;
+            for ($rb_people_no=1; $rb_people_no<=3; $rb_people_no++) {
+                $rb_use_field = 'it_user_use'.$rb_people_no;
+                $rb_min_field = 'it_user_min'.$rb_people_no;
+                $rb_max_field = 'it_user_max'.$rb_people_no;
+                $rb_qty_field = 'ct_user_qty'.$rb_people_no;
+                $rb_text_field = 'ct_user_txt'.$rb_people_no;
+                $rb_price_field = 'ct_user_pri'.$rb_people_no;
+                $rb_qty = !empty($it[$rb_use_field]) && isset($_POST[$rb_qty_field]) ? max(0, (int)$_POST[$rb_qty_field]) : 0;
+                $rb_min = isset($it[$rb_min_field]) ? (int)$it[$rb_min_field] : 0;
+                $rb_max = isset($it[$rb_max_field]) ? (int)$it[$rb_max_field] : 0;
+                if (!empty($it[$rb_use_field]) && $rb_min > 0 && $rb_qty < $rb_min) {
+                    alert(get_text($it[$rb_text_field]).' 최소 인원은 '.$rb_min.'명입니다.');
+                }
+                if (!empty($it[$rb_use_field]) && $rb_max > 0 && $rb_qty > $rb_max) {
+                    alert(get_text($it[$rb_text_field]).' 최대 인원은 '.$rb_max.'명입니다.');
+                }
+                $_POST[$rb_qty_field] = $rb_qty;
+                $_POST[$rb_text_field] = !empty($it[$rb_use_field]) ? (string)$it[$rb_text_field] : '';
+                $_POST[$rb_price_field] = !empty($it[$rb_use_field]) ? (int)$it[$rb_price_field] : 0;
+                $rb_total_people += $rb_qty;
+            }
+            $rb_people_min = isset($it['it_user_min']) ? (int)$it['it_user_min'] : 0;
+            $rb_people_max = isset($it['it_user_max']) ? (int)$it['it_user_max'] : 0;
+            if ($rb_people_min > 0 && $rb_total_people < $rb_people_min) alert('전체 최소 인원은 '.$rb_people_min.'명입니다.');
+            if ($rb_people_max > 0 && $rb_total_people > $rb_people_max) alert('전체 최대 인원은 '.$rb_people_max.'명입니다.');
+
+            $_POST['ct_types'] = 1;
+            $_POST['ct_date_d'] = (int)$rb_reservation_period['units'];
+            for ($k=0; $k<$opt_count; $k++) {
+                $_POST['ct_qty'][$it_id][$k] = (int)$rb_reservation_period['units'];
+                $post_ct_qtys[$it_id][$k] = (int)$rb_reservation_period['units'];
+            }
+        }
+
+        if ($rb_is_file_item || $rb_is_media_item) {
             for($k=0; $k<$opt_count; $k++) {
                 $_POST['ct_qty'][$it_id][$k] = 1;
                 $post_ct_qtys[$it_id][$k] = 1;
@@ -232,7 +311,7 @@ else // 장바구니에 담기
 
 
         // 최소, 최대 수량 체크
-        if($it['it_buy_min_qty'] || $it['it_buy_max_qty']) {
+        if(!$rb_replace_cart_item && ($it['it_buy_min_qty'] || $it['it_buy_max_qty'])) {
             $sum_qty = 0;
             for($k=0; $k<$opt_count; $k++) {
                 if($_POST['io_type'][$it_id][$k] == 0)
@@ -282,7 +361,7 @@ else // 장바구니에 담기
         //  재고 검사, 바로구매일 때만 체크
         //--------------------------------------------------------
         // 이미 주문폼에 있는 같은 상품의 수량합계를 구한다.
-        if($sw_direct) {
+        if($sw_direct && !$rb_replace_cart_item) {
             for($k=0; $k<$opt_count; $k++) {
                 $io_id = isset($_POST['io_id'][$it_id][$k]) ? preg_replace(G5_OPTION_ID_FILTER, '', $_POST['io_id'][$it_id][$k]) : '';
                 $io_type = isset($_POST['io_type'][$it_id][$k]) ? preg_replace('#[^01]#', '', $_POST['io_type'][$it_id][$k]) : '';
@@ -300,7 +379,7 @@ else // 장바구니에 담기
                 $sum_qty = $row['cnt'];
 
                 // 재고 구함
-                $ct_qty = $rb_is_file_item ? 1 : (isset($_POST['ct_qty'][$it_id][$k]) ? (int) $_POST['ct_qty'][$it_id][$k] : 0);
+                $ct_qty = ($rb_is_file_item || $rb_is_media_item) ? 1 : (isset($_POST['ct_qty'][$it_id][$k]) ? (int) $_POST['ct_qty'][$it_id][$k] : 0);
                 if(!$io_id)
                     $it_stock_qty = get_it_stock_qty($it_id);
                 else
@@ -397,7 +476,10 @@ else // 장바구니에 담기
 
                     // 선택된 날짜 범위의 추가요금 계산
                     $start_date = strtotime($ct_date_s);
-                    $end_date = $ct_date_e ? strtotime($ct_date_e) : $start_date;
+                    $charge_end_date = function_exists('rb_reservation_charge_end_date')
+                        ? rb_reservation_charge_end_date($it, $ct_date_s, $ct_date_e)
+                        : $ct_date_e;
+                    $end_date = $charge_end_date ? strtotime($charge_end_date) : $start_date;
 
                     for($ts = $start_date; $ts <= $end_date; $ts += 86400) {
                         $check_date = date('Y-m-d', $ts);
@@ -492,7 +574,7 @@ else // 장바구니에 담기
             if($rb_media_columns_ready && function_exists('rb_media_is_item') && rb_media_is_item($it) && $io_type == '0') {
                 $ct_media_price = (int)$rb_media_selection['picked_price'];
             }
-            $ct_qty = $rb_is_file_item ? 1 : (isset($_POST['ct_qty'][$it_id][$k]) ? (int) $_POST['ct_qty'][$it_id][$k] : 0);
+            $ct_qty = ($rb_is_file_item || $rb_is_media_item) ? 1 : (isset($_POST['ct_qty'][$it_id][$k]) ? (int) $_POST['ct_qty'][$it_id][$k] : 0);
 
             // 구매가격이 음수인지 체크
             if($io_type) {
@@ -525,7 +607,7 @@ else // 장바구니에 담기
                 else
                     $tmp_it_stock_qty = get_option_stock_qty($it_id, $io_id, $row2['io_type']);
 
-                if ($tmp_ct_qty + $ct_qty > $tmp_it_stock_qty)
+                if (!$rb_replace_cart_item && $tmp_ct_qty + $ct_qty > $tmp_it_stock_qty)
                 {
                     alert($io_value." 의 재고수량이 부족합니다.\\n\\n현재 재고수량 : " . number_format($tmp_it_stock_qty) . " 개");
                 }

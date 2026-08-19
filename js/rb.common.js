@@ -103,6 +103,29 @@
         });
     };
 
+    // -------- rb_confirm_submit: Promise confirm + form submit --------
+    window.rb_confirm_submit = function (form, msg) {
+        if (!form) return false;
+
+        if (form.getAttribute('data-rb-confirm-approved') === '1') {
+            form.removeAttribute('data-rb-confirm-approved');
+            return true;
+        }
+
+        window.rb_confirm(msg).then(function (ok) {
+            if (!ok) return;
+
+            form.setAttribute('data-rb-confirm-approved', '1');
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else {
+                HTMLFormElement.prototype.submit.call(form);
+            }
+        });
+
+        return false;
+    };
+
     // -------- del() 헬퍼 --------
     window.del = function (href) {
         if (!href) return;

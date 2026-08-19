@@ -1,44 +1,6 @@
 <?php
 include_once('./_common.php');
 
-if (!function_exists('rb_shop_has_column')) {
-    function rb_shop_has_column($table, $column)
-    {
-        static $cache = array();
-        $key = $table . ':' . $column;
-        if (isset($cache[$key])) {
-            return $cache[$key];
-        }
-
-        $row = sql_fetch("SHOW COLUMNS FROM `{$table}` LIKE '" . sql_real_escape_string($column) . "'", false);
-        $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
-        return $cache[$key];
-    }
-}
-if (!function_exists('rb_shop_order_has_shipping_items')) {
-    function rb_shop_order_has_shipping_items($order_id, $selected_only = false)
-    {
-        global $g5;
-
-        $order_id = preg_replace('/[^A-Za-z0-9_\-]/', '', (string)$order_id);
-        if ($order_id === '') {
-            return false;
-        }
-
-        $selected_sql = $selected_only ? " AND a.ct_select = '1' " : '';
-        $row = sql_fetch("
-            SELECT COUNT(*) AS shipping_cnt
-            FROM {$g5['g5_shop_cart_table']} a
-            LEFT JOIN {$g5['g5_shop_item_table']} b ON a.it_id = b.it_id
-            WHERE a.od_id = '{$order_id}'
-              {$selected_sql}
-              AND a.io_type = '0'
-              AND COALESCE(NULLIF(b.it_types, ''), '0') = '0'
-        ", false);
-
-        return !empty($row['shipping_cnt']);
-    }
-}
 include_once(G5_LIB_PATH.'/mailer.lib.php');
 
 // CSRF 방지: 무통장입금만 Origin/Referer 검증 (PG 결제는 PG사에서 검증하므로 제외)
@@ -123,6 +85,22 @@ $post_od_cp_id = isset($_POST['od_cp_id']) ? safe_replace_regex($_POST['od_cp_id
 $post_sc_cp_id = isset($_POST['sc_cp_id']) ? safe_replace_regex($_POST['sc_cp_id'], 'cp_id') : '';
 
 
+$rb_pending_order_type = function_exists('rb_shop_order_type_from_cart')
+    ? rb_shop_order_type_from_cart($tmp_cart_id, true)
+    : array('id' => 0);
+$rb_pending_order_type_id = isset($rb_pending_order_type['id']) ? (int) $rb_pending_order_type['id'] : 0;
+$rb_pending_special_order = in_array($rb_pending_order_type_id, array(1, 2, 3), true);
+if ($rb_pending_order_type_id < 0) {
+    alert('서로 다른 상품유형은 한 주문서에서 함께 결제할 수 없습니다.', $page_return_url);
+}
+if ($rb_pending_special_order && function_exists('rb_shop_special_type_available') && !rb_shop_special_type_available($rb_pending_order_type_id)) {
+    alert('해당 상품 기능이 설치되지 않았거나 현재 사용이 중지되었습니다.', $page_return_url);
+}
+if ($rb_pending_order_type_id === 1 && function_exists('rb_reservation_validate_cart')) {
+    $rb_reservation_checkout_error = rb_reservation_validate_cart($tmp_cart_id);
+    if ($rb_reservation_checkout_error !== '') alert($rb_reservation_checkout_error, $page_return_url);
+}
+
 $error = "";
 // 장바구니 상품 재고 검사
 $sql = " select it_id,
@@ -137,6 +115,9 @@ $sql = " select it_id,
 $result = sql_query($sql);
 for ($i=0; $row=sql_fetch_array($result); $i++)
 {
+    // 예약·파일·미디어는 배송 재고가 아닌 각 기능의 이용 가능 조건으로 검증한다.
+    if ($rb_pending_special_order) continue;
+
     // 상품에 대한 현재고수량
     if($row['io_id']) {
         $it_stock_qty = (int)get_option_stock_qty($row['it_id'], $row['io_id'], $row['io_type']);
@@ -165,16 +146,17 @@ $i_send_cost  = isset($_POST['od_send_cost']) ? (int) $_POST['od_send_cost'] : 0
 $i_send_cost2  = isset($_POST['od_send_cost2']) ? (int) $_POST['od_send_cost2'] : 0;
 $i_send_coupon  = isset($_POST['od_send_coupon']) ? abs((int) $_POST['od_send_coupon']) : 0;
 $i_temp_point = isset($_POST['od_temp_point']) ? (int) $_POST['od_temp_point'] : 0;
-$rb_file_order_only = function_exists('rb_file_is_cart_file_only') ? rb_file_is_cart_file_only($tmp_cart_id, true) : false;
-$rb_media_order_only = function_exists('rb_media_is_cart_media_only') ? rb_media_is_cart_media_only($tmp_cart_id, true) : false;
+$rb_file_order_only = $rb_pending_order_type_id === 2;
+$rb_media_order_only = $rb_pending_order_type_id === 3;
+$rb_reservation_order_only = $rb_pending_order_type_id === 1;
 $rb_has_shipping_items = rb_shop_order_has_shipping_items($tmp_cart_id, true);
 $rb_deliveryless_order_only = !$rb_has_shipping_items;
-$rb_file_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
-$rb_media_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
+$rb_file_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
+$rb_media_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
 $rb_order_post_it_ids = isset($_POST['rb_order_it_id']) && is_array($_POST['rb_order_it_id']) ? $_POST['rb_order_it_id'] : (isset($_POST['it_id']) && is_array($_POST['it_id']) ? $_POST['it_id'] : array());
 
 // 주문금액이 상이함
-if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) { //예약상품일 경우 합계방식을 변경함
+if($rb_reservation_order_only) { // 예약상품일 경우 합계방식을 변경함
     $sql = " SELECT
             SUM(
                 IF(io_type = 1,
@@ -862,23 +844,28 @@ $result = sql_query($sql, false);
 
 /* 리빌더 { */
 $can_memo = function_exists('memo_auto_send');
+$rb_order_type = function_exists('rb_shop_order_type_from_order') ? rb_shop_order_type_from_order($od_id) : array('id'=>0, 'label'=>'일반상품', 'short_label'=>'일반');
+$rb_special_order = isset($rb_order_type['id']) && function_exists('rb_shop_is_special_item_type') && rb_shop_is_special_item_type($rb_order_type['id']);
+$rb_order_prefix = $rb_special_order ? '['.$rb_order_type['short_label'].'] ' : '';
+$rb_partner_order_url = defined('G5_URL') ? G5_URL.'/rb/business.php?route=partner.order&amp;od_id='.urlencode($od_id) : '';
+$rb_admin_order_url = defined('G5_ADMIN_URL') ? G5_ADMIN_URL.'/shop_admin/orderform.php?od_id='.urlencode($od_id) : '';
 
 if ($cart_status === "입금" && $can_memo) {
     // 파트너에게
     if (!empty($partner_list)) {
         foreach ($partner_list as $ct_partner) {
-            memo_auto_send('상품 주문이 접수 되었습니다.', '', $ct_partner, "system-msg");
+            memo_auto_send($rb_order_prefix.'상품 주문이 접수되었습니다.', $rb_partner_order_url, $ct_partner, "system-msg");
         }
     }
     // 관리자에게
     if (!empty($config['cf_admin'])) {
-        memo_auto_send('주문 상품의 결제가 완료 되었습니다.', '', $config['cf_admin'], "system-msg");
+        memo_auto_send($rb_order_prefix.'주문 결제가 완료되었습니다.', $rb_admin_order_url, $config['cf_admin'], "system-msg");
     }
 }
 
 if ($cart_status === "주문" && $can_memo) {
     if (!empty($config['cf_admin'])) {
-        memo_auto_send('상품 주문이 접수 되었습니다.', '', $config['cf_admin'], "system-msg");
+        memo_auto_send($rb_order_prefix.'상품 주문이 접수되었습니다.', $rb_admin_order_url, $config['cf_admin'], "system-msg");
     }
 }
 
@@ -1187,9 +1174,12 @@ if(function_exists('rb_file_issue_order_downloads')) {
 if(function_exists('rb_media_issue_order_rights')) {
     rb_media_issue_order_rights($od_id);
 }
+if(function_exists('rb_reservation_issue_order')) {
+    rb_reservation_issue_order($od_id);
+}
 
 // 배송지처리
-if($is_member && !$rb_file_order_only) {
+if($is_member && $rb_has_shipping_items) {
     $sql = " select * from {$g5['g5_shop_order_address_table']}
                 where mb_id = '{$member['mb_id']}'
                   and ad_name = '$od_b_name'

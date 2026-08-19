@@ -2,7 +2,7 @@
 global $lo_location;
 global $lo_url;
 
-include_once('./_common.php');
+include_once(dirname(__FILE__).'/_common.php');
 
 
 if($error) {

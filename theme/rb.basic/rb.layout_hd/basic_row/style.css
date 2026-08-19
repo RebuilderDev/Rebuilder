@@ -63,7 +63,7 @@
 @media all and (max-width:1024px) {
     .rows_gnb_wrap {display: none;}
     .search_top_wrap {width: 30%;}
-    .gnb_wrap .snb_wrap .qm_wrap a {width: auto; padding-left: 0px; margin-left: 20px;}
+    .gnb_wrap .snb_wrap .qm_wrap a {width: auto; padding-left: 0px; margin-left: 15px;}
     .gnb_wrap .tog_wrap {margin-right: 20px;}
 
     /* 1.0.1 { */
@@ -82,37 +82,11 @@
 }
 
 /* 헤더 알림 */
-.gnb_wrap .snb_wrap .qm_wrap {
-    display:flex;
-    align-items:center;
-    height:40px;
-}
-.gnb_wrap .snb_wrap .qm_wrap > a,
-.gnb_wrap .snb_wrap .qm_wrap > button {
-    display:flex;
-    float:none;
-    align-items:center;
-    justify-content:center;
-    height:40px;
-    margin-top:0;
-}
-.gnb_wrap .snb_wrap .qm_wrap > a > svg,
-.gnb_wrap .snb_wrap .qm_wrap > button > svg {flex:none;}
-#rb_memo_top_btn > svg,
-#notification_top_btn > svg {width:24px; height:24px;}
-.gnb_wrap #ol_after_scrap {margin-top:0;}
-#rb_memo_top_btn svg path:first-child,
-#notification_top_btn svg path:first-child {fill:none;}
-#rb_memo_top_btn svg path:last-child,
-#notification_top_btn svg path:last-child {fill:#09244B;}
-#rb_memo_top_btn > span,
-#notification_top_btn > span {top:0; left:auto;}
-
 #notification_box_wrap {
     display:none;
     position:absolute;
     top:55px;
-    left:-20px;
+    right:0px;
     z-index:10;
     width:355px;
     height:470px;
@@ -344,6 +318,8 @@
     text-align:center;
 }
 
+.gnb_wrap #ol_after_scrap {margin-top: 12px;}
+
 @media all and (max-width:768px) {
     #rb_memo_top_btn > span,
     #notification_top_btn > span {left:auto;}
@@ -356,4 +332,5 @@
         border-radius:0;
     }
     #notification_box_wrap .rb_notification_body {height:calc(100vh - 234px);}
+    #rb_memo_top_btn > span, #notification_top_btn > span {left: 10px;}
 }

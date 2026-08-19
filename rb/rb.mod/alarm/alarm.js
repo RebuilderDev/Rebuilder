@@ -65,8 +65,12 @@ function rb_alarm_card_html(data) {
         ? '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"><path d="M20 4a2 2 0 0 1 1.995 1.85L22 6v12a2 2 0 0 1-1.85 1.995L20 20H4a2 2 0 0 1-1.995-1.85L2 18V6a2 2 0 0 1 1.85-1.995L4 4zm0 3.414-6.94 6.94a1.5 1.5 0 0 1-2.12 0L4 7.414V18h16zM18.586 6H5.414L12 12.586z"/></svg>'
         : '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"><path d="M5 9a7 7 0 0 1 14 0v3.764l1.822 3.644A1.1 1.1 0 0 1 19.838 18h-3.964a4.002 4.002 0 0 1-7.748 0H4.162a1.1 1.1 0 0 1-.984-1.592L5 12.764zm5.268 9a2 2 0 0 0 3.464 0zM12 4a5 5 0 0 0-5 5v3.764a2 2 0 0 1-.211.894L5.619 16h12.763l-1.17-2.342a2.001 2.001 0 0 1-.212-.894V9a5 5 0 0 0-5-5"/></svg>';
     var createdAt = rb_alarm_escape(data.created_at);
-    var body = '<div class="notification-title font-B">' + title + '</div>';
-    if (content && content !== title) body += '<div class="notification-description cut2">' + content + '</div>';
+    var body = '';
+    if (eventType === 'memo') {
+        if (content) body = '<div class="notification-description cut2">' + content + '</div>';
+    } else {
+        body = '<div class="notification-description cut2">' + (content || title) + '</div>';
+    }
 
     var html = '<div class="notification notification-primary notification-msg animated bounceInUp" id="rb_alarm_' + eventType + '_' + id + '">';
     html += eventType === 'memo'

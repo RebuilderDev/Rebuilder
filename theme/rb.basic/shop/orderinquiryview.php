@@ -1,46 +1,6 @@
 <?php
 if (!defined("_GNUBOARD_")) exit; // 개별 페이지 접근 불가
 
-if (!function_exists('rb_shop_has_column')) {
-    function rb_shop_has_column($table, $column)
-    {
-        static $cache = array();
-        $key = $table . ':' . $column;
-        if (isset($cache[$key])) {
-            return $cache[$key];
-        }
-
-        $row = sql_fetch("SHOW COLUMNS FROM `{$table}` LIKE '" . sql_real_escape_string($column) . "'", false);
-        $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
-        return $cache[$key];
-    }
-}
-
-if (!function_exists('rb_shop_order_has_shipping_items')) {
-    function rb_shop_order_has_shipping_items($order_id, $selected_only = false)
-    {
-        global $g5;
-
-        $order_id = preg_replace('/[^A-Za-z0-9_\-]/', '', (string)$order_id);
-        if ($order_id === '') {
-            return false;
-        }
-
-        $selected_sql = $selected_only ? " AND a.ct_select = '1' " : '';
-        $row = sql_fetch("
-            SELECT COUNT(*) AS shipping_cnt
-            FROM {$g5['g5_shop_cart_table']} a
-            LEFT JOIN {$g5['g5_shop_item_table']} b ON a.it_id = b.it_id
-            WHERE a.od_id = '{$order_id}'
-              {$selected_sql}
-              AND a.io_type = '0'
-              AND COALESCE(NULLIF(b.it_types, ''), '0') = '0'
-        ", false);
-
-        return !empty($row['shipping_cnt']);
-    }
-}
-
 $g5['title'] = '주문상세내역';
 include_once('./_head.php');
 
@@ -48,32 +8,23 @@ $rb_file_feature_ready = function_exists('rb_file_is_order_file_only') || functi
 $rb_file_order_only = function_exists('rb_file_is_order_file_only') ? rb_file_is_order_file_only($od_id) : false;
 $rb_media_feature_ready = function_exists('rb_media_is_order_media_only') || function_exists('rb_media_order_has_media');
 $rb_media_order_only = function_exists('rb_media_is_order_media_only') ? rb_media_is_order_media_only($od_id) : false;
-$rb_file_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects')
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
-$rb_media_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects')
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
-$rb_reservation_order_only = false;
-$rb_order_type_row = sql_fetch("
-    SELECT
-        SUM(CASE WHEN a.io_type = '0' AND COALESCE(NULLIF(b.it_types, ''), '0') = '1' THEN 1 ELSE 0 END) AS reservation_cnt,
-        SUM(CASE WHEN a.io_type = '0' AND COALESCE(NULLIF(b.it_types, ''), '0') = '2' THEN 1 ELSE 0 END) AS file_cnt,
-        SUM(CASE WHEN a.io_type = '0' AND COALESCE(NULLIF(b.it_types, ''), '0') = '3' THEN 1 ELSE 0 END) AS media_cnt,
-        SUM(CASE WHEN a.io_type = '0' AND COALESCE(NULLIF(b.it_types, ''), '0') = '0' THEN 1 ELSE 0 END) AS shipping_cnt
-    FROM {$g5['g5_shop_cart_table']} a
-    LEFT JOIN {$g5['g5_shop_item_table']} b ON a.it_id = b.it_id
-    WHERE a.od_id = '$od_id'
-", false);
-if (!empty($rb_order_type_row['reservation_cnt']) && empty($rb_order_type_row['shipping_cnt']) && empty($rb_order_type_row['file_cnt']) && empty($rb_order_type_row['media_cnt'])) {
-    $rb_reservation_order_only = true;
-}
-$rb_has_shipping_items = !empty($rb_order_type_row['shipping_cnt']);
-$rb_special_order_only = (
-    (!empty($rb_order_type_row['file_cnt']) || $rb_file_order_only)
-    || (!empty($rb_order_type_row['media_cnt']) || $rb_media_order_only)
-    || $rb_reservation_order_only
-);
+$rb_file_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects')
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
+$rb_media_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects')
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
+$rb_order_type = function_exists('rb_shop_order_type_from_order')
+    ? rb_shop_order_type_from_order($od_id)
+    : array('id'=>$rb_file_order_only ? 2 : ($rb_media_order_only ? 3 : 0), 'label'=>$rb_file_order_only ? '파일상품' : ($rb_media_order_only ? '미디어상품' : '일반상품'), 'short_label'=>$rb_file_order_only ? '파일' : ($rb_media_order_only ? '미디어' : '일반'));
+$rb_reservation_order_only = isset($rb_order_type['id']) && (int)$rb_order_type['id'] === 1;
+$rb_has_shipping_items = function_exists('rb_shop_order_has_shipping_items')
+    ? rb_shop_order_has_shipping_items($od_id, false)
+    : !$rb_reservation_order_only && !$rb_file_order_only && !$rb_media_order_only;
+$rb_special_order_fallback = $rb_reservation_order_only || $rb_file_order_only || $rb_media_order_only;
+$rb_special_order_only = function_exists('rb_shop_is_special_item_type')
+    ? rb_shop_is_special_item_type(isset($rb_order_type['id']) ? $rb_order_type['id'] : 0)
+    : $rb_special_order_fallback;
 $rb_deliveryless_order_only = !$rb_has_shipping_items;
 $rb_file_has_files = ($rb_file_feature_ready && function_exists('rb_file_order_has_files')) ? rb_file_order_has_files($od_id) : false;
 $rb_media_has_items = ($rb_media_feature_ready && function_exists('rb_media_order_has_media')) ? rb_media_order_has_media($od_id) : false;
@@ -112,7 +63,7 @@ if($od['od_pg'] == 'lg') {
 
 <!-- 주문상세내역 시작 { -->
 <div id="sod_fin">
-    <div id="sod_fin_no">주문번호 <strong><?php echo $od_id; ?></strong></div>
+    <div id="sod_fin_no">주문번호 <strong><?php echo $od_id; ?></strong><?php if ($rb_special_order_only) { ?> <span class="rb-file-order-tag"><?php echo get_text($rb_order_type['label']); ?></span><?php } ?></div>
     <section id="sod_fin_list">
         <h2>주문하신 상품</h2>
 
@@ -134,10 +85,10 @@ if($od['od_pg'] == 'lg') {
 	            <thead>
 	            <tr class="th_line">
 	            	<th scope="col" id="th_itname">상품명</th>
-	                <th scope="col" id="th_itqty">총수량</th>
+	                <th scope="col" id="th_itqty"><?php echo $rb_reservation_order_only ? '이용기간' : '총수량'; ?></th>
 	                <th scope="col" id="th_itprice">판매가</th>
 	                <th scope="col" id="th_itpt">포인트</th>
-	                <th scope="col" id="th_itsd">배송비</th>
+	                <?php if (!$rb_deliveryless_order_only) { ?><th scope="col" id="th_itsd">배송비</th><?php } ?>
 	                <th scope="col" id="th_itsum">소계</th>
 	                <th scope="col" id="th_itst">상태</th>
 	                <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
@@ -297,10 +248,21 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
                         }
                         ?>
 	                </td>
-	                <td headers="th_itqty" class="td_mngsmall"><?php echo number_format($opt['ct_qty']); ?></td>
+	                <td headers="th_itqty" class="td_mngsmall">
+                        <?php
+                        if ($rb_reservation_order_only) {
+                            $rb_period = function_exists('rb_reservation_cart_period_context')
+                                ? rb_reservation_cart_period_context($opt)
+                                : array('label'=>max(1, (int)(isset($opt['ct_date_d']) ? $opt['ct_date_d'] : $opt['ct_qty'])).'일');
+                            echo get_text($rb_period['label']);
+                        } else {
+                            echo number_format($opt['ct_qty']);
+                        }
+                        ?>
+                    </td>
 	                <td headers="th_itprice" class="td_numbig text_right"><?php echo number_format($opt_price); ?></td>
 	                <td headers="th_itpt" class="td_numbig text_right"><?php echo number_format($point); ?></td>
-	                <td headers="th_itsd" class="td_dvr"><?php echo $ct_send_cost; ?></td>
+	                <?php if (!$rb_deliveryless_order_only) { ?><td headers="th_itsd" class="td_dvr"><?php echo $ct_send_cost; ?></td><?php } ?>
 	                <td headers="th_itsum" class="text_right" nowrap>
 	                   <?php
                             //예약정보 로드
@@ -346,12 +308,16 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
                     <dd>주문이 접수되었습니다.
                     <dt>입금</dt>
                     <dd>입금(결제)이 완료 되었습니다.
+                    <?php if (!$rb_special_order_only) { ?>
                     <dt>준비</dt>
                     <dd>상품 준비 중입니다.
                     <dt>배송</dt>
                     <dd>상품 배송 중입니다.
+                    <?php } ?>
                     <dt>완료</dt>
-                    <dd>상품 배송이 완료 되었습니다.
+                    <dd><?php echo $rb_special_order_only ? '이용 처리가 완료되었습니다.' : '상품 배송이 완료 되었습니다.'; ?>
+                    <dt>취소</dt>
+                    <dd>주문이 취소되었습니다.
                 </dl>
                 <button type="button" id="sod_sts_explan_close" class="btn_frmline">상태설명닫기</button>
             </div>

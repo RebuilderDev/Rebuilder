@@ -1,21 +1,6 @@
 <?php
 include_once('./_common.php');
 
-if (!function_exists('rb_shop_has_column')) {
-    function rb_shop_has_column($table, $column)
-    {
-        static $cache = array();
-        $key = $table . ':' . $column;
-        if (isset($cache[$key])) {
-            return $cache[$key];
-        }
-
-        $row = sql_fetch("SHOW COLUMNS FROM `{$table}` LIKE '" . sql_real_escape_string($column) . "'", false);
-        $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
-        return $cache[$key];
-    }
-}
-
 $action = isset($_REQUEST['action']) ? preg_replace('/[^a-z0-9_]/i', '', $_REQUEST['action']) : '';
 
 switch ($action) {
@@ -94,12 +79,12 @@ switch ($action) {
             die(json_encode(array('error' => '장바구니에 담을 상품을 선택하여 주십시오.')));
 
         $ct_count = 0;
-        $rb_file_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
-            && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects')
-            && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
-        $rb_media_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
-            && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects')
-            && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
+        $rb_file_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
+            && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects')
+            && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
+        $rb_media_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
+            && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects')
+            && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
         for($i=0; $i<$count; $i++) {
             $it_id = isset($_POST['it_id'][$i]) ? safe_replace_regex($_POST['it_id'][$i], 'it_id') : '';
             $opt_count = (isset($_POST['io_id'][$it_id]) && is_array($_POST['io_id'][$it_id])) ? count($_POST['io_id'][$it_id]) : 0;

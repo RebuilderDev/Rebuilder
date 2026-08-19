@@ -6,14 +6,21 @@ auth_check_menu($auth, $sub_menu, "w");
 
 check_admin_token();
 
+$od_id = isset($_POST['od_id']) ? safe_replace_regex($_POST['od_id'], 'od_id') : '';
+$ct_status = isset($_POST['ct_status']) ? trim((string)$_POST['ct_status']) : '';
+$mb_id = isset($_POST['mb_id']) ? trim((string)$_POST['mb_id']) : '';
+$pg_cancel = isset($_POST['pg_cancel']) ? (int)$_POST['pg_cancel'] : 0;
+
 $ct_chk_count = isset($_POST['ct_chk']) ? count($_POST['ct_chk']) : 0;
 if(!$ct_chk_count)
     alert('처리할 자료를 하나 이상 선택해 주십시오.');
 
-$status_normal = array('주문','입금','준비','배송','완료');
-$status_cancel = array('취소','반품','품절');
+$rb_order_type = function_exists('rb_shop_order_type_from_order') ? rb_shop_order_type_from_order($od_id) : array('id'=>0);
+$rb_special_order = isset($rb_order_type['id']) && function_exists('rb_shop_is_special_item_type') && rb_shop_is_special_item_type($rb_order_type['id']);
+$status_normal = $rb_special_order ? array('주문','입금','완료') : array('주문','입금','준비','배송','완료');
+$status_cancel = $rb_special_order ? array('취소') : array('취소','반품','품절');
 
-if (in_array($_POST['ct_status'], $status_normal) || in_array($_POST['ct_status'], $status_cancel)) {
+if (in_array($ct_status, $status_normal, true) || in_array($ct_status, $status_cancel, true)) {
     ; // 통과
 } else {
     alert('변경할 상태가 올바르지 않습니다.');
@@ -59,7 +66,7 @@ for ($i=0; $i<$cnt; $i++)
         continue;
 
     // 수량이 변경됐다면
-    $ct_qty = isset($_POST['ct_qty'][$k]) ? (int) $_POST['ct_qty'][$k] : 0;
+    $ct_qty = $rb_special_order ? (int)$ct['ct_qty'] : (isset($_POST['ct_qty'][$k]) ? (int) $_POST['ct_qty'][$k] : 0);
     if($ct['ct_qty'] != $ct_qty) {
         $diff_qty = $ct['ct_qty'] - $ct_qty;
 
@@ -91,7 +98,7 @@ for ($i=0; $i<$cnt; $i++)
 
     // 재고를 이미 사용했다면 (재고에서 이미 뺐다면)
     $stock_use = $ct['ct_stock_use'];
-    if ($ct['ct_stock_use'])
+    if (!$rb_special_order && $ct['ct_stock_use'])
     {
         if ($ct_status == '주문' || $ct_status == '취소' || $ct_status == '반품' || $ct_status == '품절')
         {
@@ -112,7 +119,7 @@ for ($i=0; $i<$cnt; $i++)
             sql_query($sql);
         }
     }
-    else
+    else if (!$rb_special_order)
     {
         // 재고 오류로 인한 수정
         if ($ct_status == '배송' || $ct_status == '완료')
@@ -186,14 +193,14 @@ for ($i=0; $i<$cnt; $i++)
 
     if ($ct_status == '취소') {
         // 주문자에게 쪽지
-        if ($mb_id && !in_array($mb_id, $notified_members)) {
+        if ($mb_id && function_exists('memo_auto_send') && !in_array($mb_id, $notified_members)) {
             memo_auto_send('주문하신 상품이 취소 처리되었습니다.', '', $mb_id, 'system-msg');
             $notified_members[] = $mb_id;
         }
 
         // 파트너에게 쪽지
         $partner_id = trim($ct['ct_partner']);
-        if ($partner_id && !in_array($partner_id, $notified_partners)) {
+        if ($partner_id && function_exists('memo_auto_send') && !in_array($partner_id, $notified_partners)) {
             memo_auto_send('관리자가 취소한 주문건이 있습니다.', '', $partner_id, 'system-msg');
             $notified_partners[] = $partner_id;
         }
@@ -414,12 +421,10 @@ if ($mod_history) { // 주문변경 히스토리 기록
     $sql .= " , od_mod_history = CONCAT(od_mod_history,'$mod_history') ";
 }
 
-if($cancel_change) {
-    $sql .= " , od_status = '취소' "; // 주문상품 모두 취소, 반품, 품절이면 주문 취소
-} else {
-    if (isset($_POST['ct_status']) && in_array($_POST['ct_status'], $status_normal)) { // 정상인 주문상태만 기록
-        $sql .= " , od_status = '{$_POST['ct_status']}' ";
-    }
+// 일부 행 또는 여러 입점사의 상품을 변경해도 전체 장바구니 상태를 기준으로 주문서 상태를 계산한다.
+$resolved_order_status = function_exists('rb_shop_resolve_order_status') ? rb_shop_resolve_order_status($od_id) : '';
+if ($resolved_order_status !== '') {
+    $sql .= " , od_status = '".sql_real_escape_string($resolved_order_status)."' ";
 }
 
 $sql .= " where od_id = '$od_id' ";
@@ -430,6 +435,17 @@ if (function_exists('rb_file_issue_order_downloads')) {
 }
 if (function_exists('rb_media_issue_order_rights')) {
     rb_media_issue_order_rights($od_id);
+}
+if (function_exists('rb_reservation_issue_order')) {
+    rb_reservation_issue_order($od_id);
+    rb_reservation_sync_order_status($od_id);
+}
+
+if ($rb_special_order && $ct_status === '완료' && function_exists('memo_auto_send')) {
+    $rb_order_member = sql_fetch("SELECT mb_id FROM {$g5['g5_shop_order_table']} WHERE od_id='".sql_real_escape_string($od_id)."'", false);
+    if (!empty($rb_order_member['mb_id'])) {
+        memo_auto_send('['.$rb_order_type['short_label'].'] 주문이 완료 처리되었습니다.', G5_SHOP_URL.'/orderinquiryview.php?od_id='.urlencode($od_id), $rb_order_member['mb_id'], 'system-msg');
+    }
 }
 
 

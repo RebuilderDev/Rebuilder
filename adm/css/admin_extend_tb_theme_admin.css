@@ -773,13 +773,13 @@ body.adm-dark .tbl_frm01 td a {
 
 body.adm-dark #chart_wr h5,
 body.adm-dark #grp_color {
-    border: 1px solid rgba(242, 242, 242, 0.18) !important;
+    border: 1px solid rgba(242, 242, 242, 0.08) !important;
 }
 
 body.adm-dark #anc_sidx_settle,
 body.adm-dark .ul_01 li,
 body.adm-dark #sidx_graph_price li span {
-    border-color: rgba(242, 242, 242, 0.18) !important;
+    border-color: rgba(242, 242, 242, 0.08) !important;
 }
 
 body.adm-dark #sidx_graph_date {
@@ -806,13 +806,13 @@ body.adm-dark .sit_option {
 }
 
 body.adm-dark .sit_option_frm_wrapper {
-    border-color: rgba(242, 242, 242, 0.18) !important;
+    border-color: rgba(242, 242, 242, 0.08) !important;
 }
 
 body.adm-dark #sit_option_frm fieldset {
     background: none !important;
     background-color: transparent !important;
-    border-color: rgba(242, 242, 242, 0.18) !important;
+    border-color: rgba(242, 242, 242, 0.08) !important;
 }
 
 body.adm-dark .sit_option .frm_input {
@@ -827,6 +827,17 @@ body.adm-dark #sit_option_frm fieldset .frm_input {
     background-color: rgba(255, 255, 255, 0.05) !important;
     color: rgba(255, 255, 255, 0.9) !important;
     box-shadow: none !important;
+}
+
+body.adm-dark strong.sodr_nonpay {
+    background: transparent !important;
+}
+
+body.adm-dark #anc_sodr_list .tbl_head01 th,
+body.adm-dark #anc_sodr_list .tbl_head01 td,
+body.adm-dark #anc_sodr_pay .tbl_head01 th,
+body.adm-dark #anc_sodr_pay .tbl_head01 td {
+    border-color: var(--rb-adm-td-border-color) !important;
 }
 
 body.adm-dark #sms5_send #send_write {
@@ -1506,7 +1517,6 @@ button.rb-chip {
     color: #fff !important;
     cursor: pointer;
     text-indent: inherit !important;
-}
 }
 
 
@@ -3406,3 +3416,1163 @@ a {
     max-height: none;
     overflow: visible;
 }
+
+/* 비즈니스 콘솔 */
+form[action="./business_console_config_update.php"] .btn_fixed_top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+body.business-console #container_title {
+    margin-top: 0;
+}
+
+body.business-console #container > .local_desc01.local_desc {
+    padding: 25px;
+    border: 1px solid #000;
+    background: var(--rb-card-bg);
+    box-shadow: none;
+}
+
+body.business-console .rb-console-dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: stretch;
+}
+
+body.business-console .rb-console-dashboard-widget {
+    min-width: 0;
+    margin: 0;
+}
+
+body.business-console .rb-console-dashboard-widget.is-collapsed {
+    display: none;
+}
+
+body.business-console .rb-console-widget-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 10px;
+    cursor: move;
+}
+
+body.business-console .rb-console-widget-head h2 {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+}
+
+body.business-console .rb-console-widget-tools {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 5px;
+}
+
+body.business-console .rb-console-widget-width {
+    width: 50px;
+    height: 26px;
+    padding: 0 5px;
+    font-size: 11px;
+}
+
+body.business-console .rb-console-widget-close {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--rb-info-text);
+    font-size: 19px;
+    line-height: 26px;
+    text-align: center;
+}
+
+body.business-console .rb-console-widget-close:hover,
+body.business-console .rb-console-widget-close:focus {
+    color: var(--rb-strong);
+}
+
+body.business-console .rb-console-widget-ghost {
+    opacity: .35;
+}
+
+body.business-console .rb-console-dashboard-widget > .local_ov01.local_ov {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+}
+
+body.business-console .rb-console-dashboard-widget > .local_ov01.local_ov .btn_ov01 {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+body.business-console .rb-console-list-image {
+    display: block;
+    width: 50px;
+    height: 50px;
+    margin: 0 auto;
+    border-radius: 5px;
+    object-fit: cover;
+}
+
+body.business-console .rb-console-dashboard-widget > .btn_confirm01.btn_confirm {
+    margin-top: 20px;
+}
+
+body.business-console .sv_wrap .sv {
+    width: 100px !important;
+}
+
+body.business-console .sv_wrap .sv a {
+    display: block !important;
+    box-sizing: border-box;
+}
+
+body.business-console .rb-console-dashboard-widget[data-console-span="2"] {
+    grid-column: 1 / -1;
+}
+
+body.business-console .rb-console-collapsed-widgets {
+    display: none;
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.business-console .rb-console-collapsed-widgets.has-widgets {
+    display: block;
+}
+
+body.business-console .rb-console-collapsed-widgets ul {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+body.business-console #gnb .gnb_oparea .rb-console-widget-restore {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    height: auto;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 6px;
+    background: #121212 !important;
+    color: #aaa;
+    font-size: 12px;
+    text-indent: 0;
+    text-align: left;
+    overflow: visible;
+    box-sizing: border-box;
+}
+
+body.business-console #gnb .gnb_oparea .rb-console-widget-restore:hover,
+body.business-console #gnb .gnb_oparea .rb-console-widget-restore:focus {
+    color: #fff;
+}
+
+body.business-console .rb-console-widget-restore-arrow {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 18px;
+}
+
+.chat_open_btn {
+    position: fixed;
+    z-index: 1002;
+    padding: 15px;
+    border-radius: 40%;
+    background-color: #fff;
+    box-shadow: -10px 0 20px 2px rgba(0, 0, 0, .06);
+}
+
+.chat_open_btn:hover {
+    background-color: #f3f5fd;
+}
+
+.chat_open_btn img {
+    display: block;
+    width: 30px;
+    height: auto;
+}
+
+.chat_open_btn_inner {
+    position: relative;
+}
+
+.chat_open_btn_inner > span {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    padding: 5px 8px;
+    border-radius: 22px;
+    background-color: #2d3748;
+    color: #fff;
+    font-size: 10px;
+}
+
+body.business-console.adm-dark #container {
+    color: var(--rb-adm-td-color);
+}
+
+body.business-console.adm-dark #container h2,
+body.business-console.adm-dark #container h3,
+body.business-console.adm-dark #container h4,
+body.business-console.adm-dark #container legend {
+    color: rgba(255, 255, 255, 0.88);
+}
+
+body.business-console.adm-dark #container > .local_desc01.local_desc p,
+body.business-console.adm-dark .rb-console-dashboard-widget > p {
+    color: rgba(255, 255, 255, 0.68);
+}
+
+body.business-console.adm-dark .rb-console-dashboard-widget .btn_ov01 .ov_num {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.78);
+}
+
+body.business-console.adm-dark .rb-console-dashboard-widget .rb-mini {
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+body.business-console.adm-dark #ft {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+body.business-console #gnb .gnb_li .btn_op.rb-console-icon-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    width: 70px;
+    height: 70px;
+    background-color: transparent !important;
+    background-image: none !important;
+    color: #fff;
+    text-indent: 0;
+    opacity: 0.4;
+}
+
+body.business-console #gnb .gnb_li.on .btn_op.rb-console-icon-button,
+body.business-console #gnb .gnb_li .btn_op.rb-console-icon-button:hover,
+body.business-console #gnb .gnb_li .btn_op.rb-console-icon-button:focus {
+    color: #fff;
+    opacity: 1;
+}
+
+body.business-console .rb-console-menu-icon,
+body.business-console .rb-console-menu-icon svg {
+    display: block;
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+}
+
+body.business-console .rb-console-menu-icon svg path {
+    fill: currentColor;
+}
+
+body.business-console .rb-console-menu-icon-fallback {
+    display: block;
+    width: 24px;
+    font-size: 22px;
+    line-height: 24px;
+    text-align: center;
+}
+
+body.business-console .btn_fixed_top,
+body.business-console .btn_confirm01.btn_confirm {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+body.business-console .btn_fixed_top {
+    justify-content: flex-end;
+}
+
+body.business-console .btn_confirm01.btn_confirm {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+body.business-console #gnb .rb-console-side-panel {
+    display: block;
+}
+
+body.business-console #gnb.gnb_small .rb-console-side-panel {
+    display: none;
+}
+
+body.business-console #gnb.gnb_small:hover .rb-console-side-panel {
+    display: block;
+}
+
+body.business-console .rb-console-stat-main {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+}
+
+body.business-console .rb-console-stat-main > a:not(.rb-console-charge) {
+    color: #fff;
+}
+
+body.business-console .rb-console-stat-main > a:not(.rb-console-charge):hover {
+    color: #fff;
+}
+
+body.business-console .rb-console-stat-main .rb-console-charge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    padding: 0 7px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 10px;
+    line-height: 1;
+}
+
+body.business-console .rb-console-stat-main .rb-console-charge:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+
+body.business-console .rb-console-side-menus {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.business-console .rb-console-menu-section {
+    display: none;
+}
+
+body.business-console .rb-console-menu-section.is-active {
+    display: block;
+}
+
+body.business-console .rb-console-side-menus .rb-console-menu-subtitle {
+    margin-top: 17px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+body.business-console .rb-console-side-menus .rb-console-menu-subtitle:first-child {
+    margin-top: 12px;
+    padding-top: 0;
+    border-top: 0;
+}
+
+body.business-console .rb-console-side-menus .rb-console-menu-subtitle + .rb-console-menu-item {
+    margin-top: 6px;
+}
+
+body.business-console .rb-console-top-menu .rb-console-top-subtitle {
+    margin: 10px 10px 3px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    color: #8a949f;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+body.business-console .rb-console-top-menu .rb-console-top-subtitle:first-child {
+    margin-top: 3px;
+    padding-top: 0;
+    border-top: 0;
+}
+
+body.business-console #tnb .rb-console-store-link a,
+body.business-console #tnb .rb-console-home-link a,
+body.business-console #tnb .rb-console-support-link a {
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+body.business-console #tnb .rb-console-notification {
+    position: relative;
+}
+
+body.business-console #tnb .rb-console-notification > a {
+    display: flex;
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    height: 30px;
+    padding: 0 10px;
+    line-height: 30px;
+}
+
+body.business-console #notification_top_btn > svg {
+    flex: none;
+    position: relative;
+    top: 2px;
+    width: 20px;
+    height: 20px;
+}
+
+body.business-console #notification_top_btn svg path:last-child {
+    fill: #7b8794;
+}
+
+body.business-console #notification_unread_badge {
+    position: absolute;
+    top: -2px;
+    right: 3px;
+    z-index: 1;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 18px;
+    background: #ff4081;
+    color: #fff;
+    font-size: 10px;
+    line-height: 18px;
+    text-align: center;
+}
+
+body.business-console #notification_box_wrap {
+    display: none;
+    position: absolute;
+    top: 44px;
+    right: 0;
+    z-index: 100;
+    width: 355px;
+    height: 470px;
+    box-sizing: border-box;
+    overflow: hidden;
+    border: 1px solid #eceff3;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.1);
+    color: #25282b;
+    text-align: left;
+}
+
+body.business-console #notification_box_wrap button,
+body.business-console #notification_box_wrap a {
+    float: none;
+    position: relative;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-sizing: border-box;
+    color: #25282b;
+    line-height: normal;
+    text-align: left;
+}
+
+body.business-console #notification_box_wrap button span,
+body.business-console #notification_box_wrap a span {
+    position: static;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    color: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    text-indent: 0;
+}
+
+body.business-console #notification_box_wrap .rb_notification_tabs {
+    display: flex;
+    padding: 0;
+    border-bottom: 1px solid #eee;
+    background: #f9f9f9;
+    white-space: nowrap;
+}
+
+body.business-console #notification_box_wrap .rb_notification_tabs button {
+    flex: 1 1 0;
+    height: 60px;
+    padding: 0;
+    border-bottom: 2px solid transparent;
+    font-size: 13px;
+    text-align: center;
+}
+
+body.business-console #notification_box_wrap .rb_notification_tabs button.active {
+    border-bottom-color: #25282b;
+    font-family: 'font-B';
+}
+
+body.business-console #notification_box_wrap .rb_notification_body {
+    position: relative;
+    height: 369px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #d8dde3 transparent;
+}
+
+body.business-console #notification_box_wrap .rb_notification_body::-webkit-scrollbar {
+    width: 4px;
+}
+
+body.business-console #notification_box_wrap .rb_notification_body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+body.business-console #notification_box_wrap .rb_notification_body::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background: #d8dde3;
+}
+
+body.business-console #notification_box_wrap .rb_notification_footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 40px;
+    padding: 0 20px;
+    border-top: 1px solid #eee;
+    color: #999;
+    font-size: 11px;
+}
+
+body.business-console #notification_box_wrap .rb_notification_delete_all {
+    flex: 0 0 auto;
+    height: 26px;
+    padding: 0 9px;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    background: #fff;
+    color: #777;
+    font-size: 12px;
+    line-height: 24px;
+}
+
+body.business-console #notification_box_wrap .rb_notification_loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.business-console #notification_box_wrap .rb_notification_loading span {
+    display: block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid #e5e5e5;
+    border-top-color: #aaa;
+    border-radius: 50%;
+    animation: rb_console_notification_spin .7s linear infinite;
+}
+
+@keyframes rb_console_notification_spin {
+    to { transform: rotate(360deg); }
+}
+
+body.business-console #notification_box_wrap .rb_notification_empty {
+    padding: 60px 20px;
+    color: #999;
+    text-align: center;
+}
+
+body.business-console #notification_box_wrap .rb_notification_item {
+    position: relative;
+    border-bottom: 1px solid #eee;
+    background: #f8f9fb;
+}
+
+body.business-console #notification_box_wrap .rb_notification_item.is_read {
+    background: #fff;
+}
+
+body.business-console #notification_box_wrap .rb_notification_item_open {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 16px 45px 16px 20px;
+}
+
+body.business-console #notification_box_wrap .rb_notification_category_icon {
+    display: flex;
+    flex: 0 0 42px;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+}
+
+body.business-console #notification_box_wrap .rb_notification_category_icon svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+}
+
+body.business-console #notification_box_wrap .rb_notification_category_icon svg path {
+    fill: #fff;
+}
+
+body.business-console #notification_box_wrap .rb_notification_category_board { background: #a8b8f4; }
+body.business-console #notification_box_wrap .rb_notification_category_shop { background: #f5b89a; }
+body.business-console #notification_box_wrap .rb_notification_category_subscribe { background: #9dd8bf; }
+body.business-console #notification_box_wrap .rb_notification_category_notice { background: #f2a7b8; }
+body.business-console #notification_box_wrap .rb_notification_category_other { background: #b8b5d8; }
+
+body.business-console #notification_box_wrap .rb_notification_item_text {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+body.business-console #notification_box_wrap .rb_notification_item_meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px;
+    color: #999;
+    font-size: 11px;
+}
+
+body.business-console #notification_box_wrap .rb_notification_item_meta b {
+    color: #25282b;
+}
+
+body.business-console #notification_box_wrap .rb_notification_item_meta em {
+    font-style: normal;
+}
+
+body.business-console #notification_box_wrap .rb_notification_item_content {
+    display: block;
+    overflow: hidden;
+    color: #777;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.business-console #notification_box_wrap .rb_notification_delete {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    z-index: 1;
+    width: 30px;
+    height: 30px;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 22px;
+    text-align: center;
+}
+
+body.business-console #notification_box_wrap .rb_notification_delete:hover {
+    color: #000;
+}
+
+body.business-console #notification_box_wrap .rb_notification_view_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    height: 44px;
+    padding: 0 20px;
+    border-bottom: 1px solid #eee;
+}
+
+body.business-console #notification_box_wrap .rb_notification_back {
+    font-family: 'font-B';
+    font-size: 13px;
+}
+
+body.business-console #notification_box_wrap .rb_notification_view_inner {
+    padding: 20px;
+}
+
+body.business-console #notification_box_wrap .rb_notification_view_date {
+    color: #999;
+    font-size: 12px;
+}
+
+body.business-console #notification_box_wrap .rb_notification_view_content {
+    min-height: 80px;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+body.business-console #notification_box_wrap .rb_notification_view_links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+body.business-console #notification_box_wrap .rb_notification_view_links:empty {
+    display: none;
+}
+
+body.business-console #notification_box_wrap .rb_notification_view_links a {
+    display: block;
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    background: #fff;
+    color: #25282b;
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: center;
+}
+
+body.business-console.adm-dark #notification_box_wrap {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: #191d20;
+    color: rgba(255, 255, 255, 0.82);
+    box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+body.business-console.adm-dark #notification_box_wrap button,
+body.business-console.adm-dark #notification_box_wrap a {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+body.business-console.adm-dark #notification_box_wrap .rb_notification_tabs {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+    background: #212429;
+}
+
+body.business-console.adm-dark #notification_box_wrap .rb_notification_tabs button.active {
+    border-bottom-color: #9eacc6;
+}
+
+body.business-console.adm-dark #notification_box_wrap .rb_notification_footer,
+body.business-console.adm-dark #notification_box_wrap .rb_notification_item,
+body.business-console.adm-dark #notification_box_wrap .rb_notification_view_header {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+body.business-console.adm-dark #notification_box_wrap .rb_notification_item {
+    background: #24282d;
+}
+
+body.business-console.adm-dark #notification_box_wrap .rb_notification_item.is_read {
+    background: #191d20;
+}
+
+body.business-console.adm-dark #notification_box_wrap .rb_notification_delete_all,
+body.business-console.adm-dark #notification_box_wrap .rb_notification_view_links a {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: #212429;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+body.business-console.adm-dark #notification_box_wrap .rb_notification_item_meta b {
+    color: rgba(255, 255, 255, 0.88);
+}
+
+body.business-console.adm-dark #notification_box_wrap .rb_notification_item_content,
+body.business-console.adm-dark #notification_box_wrap .rb_notification_view_content {
+    color: rgba(255, 255, 255, 0.68);
+}
+
+body.business-console.adm-dark #notification_box_wrap .rb_notification_delete:hover {
+    color: #fff;
+}
+
+/* 관리자 상단 알림 전용: 다른 관리자 UI에는 적용하지 않습니다. */
+#tnb .rb-admin-notification {
+    position: relative;
+}
+
+#tnb .rb-admin-notification > #notification_top_btn {
+    display: flex;
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    height: 30px;
+    padding: 0 10px;
+    line-height: 30px;
+}
+
+#tnb .rb-admin-notification > #notification_top_btn > svg {
+    display: block;
+    flex: none;
+    position: relative;
+    top: 2px;
+    width: 20px;
+    height: 20px;
+}
+
+#tnb .rb-admin-notification > #notification_top_btn > svg path:last-child {
+    fill: #7b8794;
+}
+
+#tnb .rb-admin-notification #notification_unread_badge {
+    position: absolute;
+    top: -2px;
+    right: 3px;
+    z-index: 2;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 18px;
+    background: #ff4081;
+    box-sizing: border-box;
+    color: #fff;
+    font-size: 10px;
+    line-height: 18px;
+    text-align: center;
+}
+
+#tnb .rb-admin-notification #notification_box_wrap {
+    display: none;
+    position: absolute;
+    top: 44px;
+    right: 0;
+    z-index: 1000;
+    width: 355px;
+    height: 470px;
+    overflow: hidden;
+    border: 1px solid #eceff3;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 10px 10px 25px rgba(0, 0, 0, .1);
+    box-sizing: border-box;
+    color: #25282b;
+    font-family: inherit;
+    line-height: normal;
+    text-align: left;
+}
+
+#tnb .rb-admin-notification button,
+#tnb .rb-admin-notification a {
+    float: none;
+    position: relative;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    box-sizing: border-box;
+    color: #25282b;
+    font: inherit;
+    line-height: normal;
+    text-align: left;
+}
+
+#tnb .rb-admin-notification button span,
+#tnb .rb-admin-notification a span {
+    position: static;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    color: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    text-indent: 0;
+}
+
+#tnb .rb-admin-notification .rb_notification_tabs {
+    display: flex;
+    padding: 0;
+    border-bottom: 1px solid #eee;
+    background: #f9f9f9;
+    white-space: nowrap;
+}
+
+#tnb .rb-admin-notification .rb_notification_tabs button {
+    flex: 1 1 0;
+    height: 60px;
+    padding: 0;
+    border-bottom: 2px solid transparent;
+    font-size: 13px;
+    text-align: center;
+}
+
+#tnb .rb-admin-notification .rb_notification_tabs button.active {
+    border-bottom-color: #25282b;
+    font-family: 'font-B';
+}
+
+#tnb .rb-admin-notification .rb_notification_body {
+    position: relative;
+    height: 369px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: #d8dde3 transparent;
+    scrollbar-width: thin;
+}
+
+#tnb .rb-admin-notification .rb_notification_body::-webkit-scrollbar {
+    width: 4px;
+}
+
+#tnb .rb-admin-notification .rb_notification_body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#tnb .rb-admin-notification .rb_notification_body::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background: #d8dde3;
+}
+
+#tnb .rb-admin-notification .rb_notification_footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 40px;
+    padding: 0 20px;
+    border-top: 1px solid #eee;
+    box-sizing: border-box;
+    color: #999;
+    font-size: 11px;
+}
+
+#tnb .rb-admin-notification .rb_notification_delete_all {
+    flex: 0 0 auto;
+    height: 26px;
+    padding: 0 9px;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    background: #fff;
+    color: #777;
+    font-size: 12px;
+    line-height: 24px;
+}
+
+#tnb .rb-admin-notification .rb_notification_loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#tnb .rb-admin-notification .rb_notification_loading span {
+    display: block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid #e5e5e5;
+    border-top-color: #aaa;
+    border-radius: 50%;
+    animation: rb_admin_notification_spin .7s linear infinite;
+}
+
+@keyframes rb_admin_notification_spin {
+    to { transform: rotate(360deg); }
+}
+
+#tnb .rb-admin-notification .rb_notification_empty {
+    padding: 60px 20px;
+    color: #999;
+    text-align: center;
+}
+
+#tnb .rb-admin-notification .rb_notification_item {
+    position: relative;
+    border-bottom: 1px solid #eee;
+    background: #f8f9fb;
+}
+
+#tnb .rb-admin-notification .rb_notification_item.is_read {
+    background: #fff;
+}
+
+#tnb .rb-admin-notification .rb_notification_item_open {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 16px 45px 16px 20px;
+}
+
+#tnb .rb-admin-notification .rb_notification_category_icon {
+    display: flex;
+    flex: 0 0 42px;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+}
+
+#tnb .rb-admin-notification .rb_notification_category_icon svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+}
+
+#tnb .rb-admin-notification .rb_notification_category_icon svg path { fill: #fff; }
+#tnb .rb-admin-notification .rb_notification_category_board { background: #a8b8f4; }
+#tnb .rb-admin-notification .rb_notification_category_shop { background: #f5b89a; }
+#tnb .rb-admin-notification .rb_notification_category_subscribe { background: #9dd8bf; }
+#tnb .rb-admin-notification .rb_notification_category_notice { background: #f2a7b8; }
+#tnb .rb-admin-notification .rb_notification_category_other { background: #b8b5d8; }
+
+#tnb .rb-admin-notification .rb_notification_item_text {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+#tnb .rb-admin-notification .rb_notification_item_meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px;
+    color: #999;
+    font-size: 11px;
+}
+
+#tnb .rb-admin-notification .rb_notification_item_meta b { color: #25282b; }
+#tnb .rb-admin-notification .rb_notification_item_meta em { font-style: normal; }
+
+#tnb .rb-admin-notification .rb_notification_item_content {
+    display: block;
+    overflow: hidden;
+    color: #777;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#tnb .rb-admin-notification .rb_notification_delete {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    z-index: 1;
+    width: 30px;
+    height: 30px;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 22px;
+    text-align: center;
+}
+
+#tnb .rb-admin-notification .rb_notification_delete:hover { color: #000; }
+
+#tnb .rb-admin-notification .rb_notification_view_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    height: 44px;
+    padding: 0 20px;
+    border-bottom: 1px solid #eee;
+    box-sizing: border-box;
+}
+
+#tnb .rb-admin-notification .rb_notification_back {
+    font-family: 'font-B';
+    font-size: 13px;
+}
+
+#tnb .rb-admin-notification .rb_notification_view_inner { padding: 20px; }
+#tnb .rb-admin-notification .rb_notification_view_date { color: #999; font-size: 12px; }
+
+#tnb .rb-admin-notification .rb_notification_view_content {
+    min-height: 80px;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+#tnb .rb-admin-notification .rb_notification_view_links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+#tnb .rb-admin-notification .rb_notification_view_links:empty { display: none; }
+
+#tnb .rb-admin-notification .rb_notification_view_links a {
+    display: block;
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    background: #fff;
+    color: #25282b;
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: center;
+}
+
+body.adm-dark #tnb .rb-admin-notification #notification_box_wrap {
+    border-color: rgba(255, 255, 255, .08);
+    background: #191d20;
+    color: rgba(255, 255, 255, .82);
+    box-shadow: 10px 10px 25px rgba(0, 0, 0, .35);
+}
+
+body.adm-dark #tnb .rb-admin-notification button,
+body.adm-dark #tnb .rb-admin-notification a {
+    color: rgba(255, 255, 255, .82);
+}
+
+body.adm-dark #tnb .rb-admin-notification .rb_notification_tabs {
+    border-bottom-color: rgba(255, 255, 255, .08);
+    background: #212429;
+}
+
+body.adm-dark #tnb .rb-admin-notification .rb_notification_tabs button.active { border-bottom-color: #9eacc6; }
+
+body.adm-dark #tnb .rb-admin-notification .rb_notification_footer,
+body.adm-dark #tnb .rb-admin-notification .rb_notification_item,
+body.adm-dark #tnb .rb-admin-notification .rb_notification_view_header {
+    border-color: rgba(255, 255, 255, .08);
+}
+
+body.adm-dark #tnb .rb-admin-notification .rb_notification_item { background: #24282d; }
+body.adm-dark #tnb .rb-admin-notification .rb_notification_item.is_read { background: #191d20; }
+
+body.adm-dark #tnb .rb-admin-notification .rb_notification_delete_all,
+body.adm-dark #tnb .rb-admin-notification .rb_notification_view_links a {
+    border-color: rgba(255, 255, 255, .1);
+    background: #212429;
+    color: rgba(255, 255, 255, .75);
+}
+
+body.adm-dark #tnb .rb-admin-notification .rb_notification_item_meta b { color: rgba(255, 255, 255, .88); }
+
+body.adm-dark #tnb .rb-admin-notification .rb_notification_item_content,
+body.adm-dark #tnb .rb-admin-notification .rb_notification_view_content { color: rgba(255, 255, 255, .68); }
+
+body.adm-dark #tnb .rb-admin-notification .rb_notification_delete:hover { color: #fff; }

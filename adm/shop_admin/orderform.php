@@ -2,21 +2,6 @@
 $sub_menu = '400400';
 include_once('./_common.php');
 
-if (!function_exists('rb_shop_has_column')) {
-    function rb_shop_has_column($table, $column)
-    {
-        static $cache = array();
-        $key = $table . ':' . $column;
-        if (isset($cache[$key])) {
-            return $cache[$key];
-        }
-
-        $row = sql_fetch("SHOW COLUMNS FROM `{$table}` LIKE '" . sql_real_escape_string($column) . "'", false);
-        $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
-        return $cache[$key];
-    }
-}
-
 $cart_title3 = '주문번호';
 $cart_title4 = '배송완료';
 
@@ -24,14 +9,14 @@ auth_check_menu($auth, $sub_menu, "w");
 
 $g5['title'] = "주문 내역 수정";
 include_once(G5_ADMIN_PATH.'/admin.head.php');
-$rb_file_price_column_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
+$rb_file_price_column_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
 $rb_file_columns_ready = $rb_file_price_column_ready
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects');
-$rb_media_price_column_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects');
+$rb_media_price_column_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
 $rb_media_columns_ready = $rb_media_price_column_ready
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects');
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects');
 
 $fr_date = isset($_REQUEST['fr_date']) ? preg_replace('/[^0-9 :\-]/i', '', $_REQUEST['fr_date']) : '';
 $to_date = isset($_REQUEST['to_date']) ? preg_replace('/[^0-9 :\-]/i', '', $_REQUEST['to_date']) : '';
@@ -64,6 +49,9 @@ if (! (isset($od['od_id']) && $od['od_id'])) {
 }
 
 $od['mb_id'] = $od['mb_id'] ? $od['mb_id'] : "비회원";
+$rb_order_type = function_exists('rb_shop_order_type_from_order') ? rb_shop_order_type_from_order($od_id) : array('id'=>0, 'label'=>'일반상품', 'short_label'=>'일반');
+$rb_special_order = isset($rb_order_type['id']) && function_exists('rb_shop_is_special_item_type') && rb_shop_is_special_item_type($rb_order_type['id']);
+$rb_order_statuses = function_exists('rb_shop_special_order_statuses') ? rb_shop_special_order_statuses(isset($rb_order_type['id']) ? $rb_order_type['id'] : 0) : array('주문','입금','준비','배송','완료','취소','반품','품절');
 //------------------------------------------------------------------------------
 
 
@@ -73,8 +61,8 @@ $pg_anchor = '<ul class="anchor">
 <li><a href="#anc_sodr_chk">결제상세정보 확인</a></li>
 <li><a href="#anc_sodr_paymo">결제상세정보 수정</a></li>
 <li><a href="#anc_sodr_memo">상점메모</a></li>
-<li><a href="#anc_sodr_orderer">주문하신 분</a></li>
-<li><a href="#anc_sodr_taker">받으시는 분</a></li>
+<li><a href="#anc_sodr_orderer">주문하신 분</a></li>'.($rb_special_order ? '' : '
+<li><a href="#anc_sodr_taker">받으시는 분</a></li>').'
 </ul>';
 
 $html_receipt_chk = '<input type="checkbox" id="od_receipt_chk" value="'.$od['od_misu'].'" onclick="chk_receipt_price()">
@@ -145,6 +133,8 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
     <?php echo $pg_anchor; ?>
     <div class="local_desc02 local_desc">
         <p>
+            주문유형 <strong><?php echo get_text($rb_order_type['label']); ?></strong>
+            |
             현재 주문상태 <strong><?php echo $od['od_status'] ?></strong>
             |
             주문일시 <strong><?php echo substr($od['od_time'],0,16); ?> (<?php echo get_yoil($od['od_time']); ?>)</strong>
@@ -183,17 +173,17 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
             </th>
             <th scope="col">옵션정보</th>
             <th scope="col">상태</th>
-            <th scope="col">수량</th>
+            <th scope="col"><?php echo isset($rb_order_type['id']) && (int)$rb_order_type['id'] === 1 ? '이용기간' : '수량'; ?></th>
             <th scope="col">판매가</th>
             <th scope="col">소계</th>
             <th scope="col">쿠폰</th>
             <th scope="col">포인트</th>
-            <th scope="col">배송비</th>
+            <?php if (!$rb_special_order) { ?><th scope="col">배송비</th><?php } ?>
             <th scope="col">포인트반영</th>
             <th scope="col">재고반영</th>
 
             <!-- 20241018 리빌더 추가 { -->
-            <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
+            <?php if(!$rb_special_order && isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
             <th scope="col" colspan="3">배송정보</th>
             <?php } ?>
             <!-- } -->
@@ -207,6 +197,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
             // 상품이미지
             $image = get_it_image($row['it_id'], 50, 50);
 
+            $names = '';
             if(isset($row['ct_partner']) && $row['ct_partner']) {
                 $mbx = get_member($row['ct_partner']);
                 $names = isset($mbx['mb_nick']) ? get_text($mbx['mb_nick']) : '';
@@ -361,7 +352,16 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
 
                     <?php if(isset($opt['ct_types']) && $opt['ct_types'] == 1) { ?>
 
-                    <?php if($k == 0) { ?>
+                    <?php if($k == 0) {
+                        $rb_admin_res_period = function_exists('rb_reservation_cart_period_context')
+                            ? rb_reservation_cart_period_context($opt)
+                            : array(
+                                'units' => max(1, (int) (isset($opt['ct_date_d']) ? $opt['ct_date_d'] : 1)),
+                                'label' => max(1, (int) (isset($opt['ct_date_d']) ? $opt['ct_date_d'] : 1)).'일',
+                            );
+                        $rb_admin_res_units = max(1, (int) $rb_admin_res_period['units']);
+                        $rb_admin_res_label = isset($rb_admin_res_period['label']) ? $rb_admin_res_period['label'] : $rb_admin_res_units.'일';
+                    ?>
 
                         <div class="tbl_head01 tbl_wrap" style="min-width:350px; width:100%; margin-top:10px;">
 
@@ -379,9 +379,9 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                                 <th colspan="5">
                                     <strong class="" style="display:block; text-align:center; color:#ff0000;">
                                     <?php if(isset($opt['ct_date_e']) && $opt['ct_date_e'] == '0000-00-00') { ?>
-                                        <?php echo $opt['ct_date_s'] ?> (<?php echo $opt['ct_date_d'] ?>일)
+                                        <?php echo $opt['ct_date_s'] ?> (<?php echo $rb_admin_res_label; ?>)
                                     <?php } else { ?>
-                                        <?php echo $opt['ct_date_s'] ?> ~ <?php echo $opt['ct_date_e'] ?> (<?php echo $opt['ct_date_d'] ?>일)
+                                        <?php echo $opt['ct_date_s'] ?> ~ <?php echo $opt['ct_date_e'] ?> (<?php echo $rb_admin_res_label; ?>)
                                     <?php } ?>
                                     </strong>
                                 </th>
@@ -390,7 +390,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                                 <th scope="col">항목</th>
 
                                 <th scope="col">금액</th>
-                                <th scope="col">일수</th>
+                                <th scope="col">이용기간</th>
                                 <th scope="col">수량</th>
 
                                 <th scope="col">합계</th>
@@ -404,7 +404,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             <tr>
                                 <td nowrap>기본</td>
                                 <td nowrap><?php echo number_format($opt_price); ?></td>
-                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
+                                <td nowrap><?php echo $rb_admin_res_label; ?></td>
                                 <td nowrap>-</td>
                                 <td nowrap><?php echo number_format($opt_price * $opt['ct_qty']); ?></td>
                             </tr>
@@ -412,7 +412,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             <?php if(isset($opt['ct_user_txt1']) && $opt['ct_user_txt1']) { ?>
                             <?php
                                 if(isset($opt['ct_opt_opt']) && $opt['ct_opt_opt'] == 1) {
-                                    $tot1 = $opt['ct_user_qty1'] * $opt['ct_user_pri1'] * $opt['ct_date_d'];
+                                    $tot1 = $opt['ct_user_qty1'] * $opt['ct_user_pri1'] * $rb_admin_res_units;
                                 } else {
                                     $tot1 = $opt['ct_user_qty1'] * $opt['ct_user_pri1'];
                                 }
@@ -421,7 +421,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             <tr <?php if(isset($opt['ct_user_qty1']) && $opt['ct_user_qty1'] < 1) { ?>style="opacity:0.3"<?php } ?>>
                                 <td nowrap><?php echo $opt['ct_user_txt1'] ?></td>
                                 <td nowrap><?php echo number_format($opt['ct_user_pri1']); ?></td>
-                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
+                                <td nowrap><?php echo $rb_admin_res_label; ?></td>
                                 <td nowrap><?php echo $opt['ct_user_qty1'] ?></td>
                                 <td nowrap><?php echo number_format($tot1); ?></td>
 
@@ -431,7 +431,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             <?php if(isset($opt['ct_user_txt2']) && $opt['ct_user_txt2']) { ?>
                             <?php
                                 if(isset($opt['ct_opt_opt']) && $opt['ct_opt_opt'] == 1) {
-                                    $tot2 = $opt['ct_user_qty2'] * $opt['ct_user_pri2'] * $opt['ct_date_d'];
+                                    $tot2 = $opt['ct_user_qty2'] * $opt['ct_user_pri2'] * $rb_admin_res_units;
                                 } else {
                                     $tot2 = $opt['ct_user_qty2'] * $opt['ct_user_pri2'];
                                 }
@@ -439,7 +439,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             <tr <?php if(isset($opt['ct_user_qty2']) && $opt['ct_user_qty2'] < 1) { ?>style="opacity:0.3"<?php } ?>>
                                 <td nowrap><?php echo $opt['ct_user_txt2'] ?></td>
                                 <td nowrap><?php echo number_format($opt['ct_user_pri2']); ?></td>
-                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
+                                <td nowrap><?php echo $rb_admin_res_label; ?></td>
                                 <td nowrap><?php echo $opt['ct_user_qty2'] ?></td>
                                 <td nowrap><?php echo number_format($tot2); ?></td>
                             </tr>
@@ -448,7 +448,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             <?php if(isset($opt['ct_user_txt3']) && $opt['ct_user_txt3']) { ?>
                             <?php
                                 if(isset($opt['ct_opt_opt']) && $opt['ct_opt_opt'] == 1) {
-                                    $tot3 = $opt['ct_user_qty3'] * $opt['ct_user_pri3'] * $opt['ct_date_d'];
+                                    $tot3 = $opt['ct_user_qty3'] * $opt['ct_user_pri3'] * $rb_admin_res_units;
                                 } else {
                                     $tot3 = $opt['ct_user_qty3'] * $opt['ct_user_pri3'];
                                 }
@@ -456,7 +456,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             <tr <?php if(isset($opt['ct_user_qty3']) && $opt['ct_user_qty3'] < 1) { ?>style="opacity:0.3"<?php } ?>>
                                 <td nowrap><?php echo $opt['ct_user_txt3'] ?></td>
                                 <td nowrap><?php echo number_format($opt['ct_user_pri3']); ?></td>
-                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
+                                <td nowrap><?php echo $rb_admin_res_label; ?></td>
                                 <td nowrap><?php echo $opt['ct_user_qty3'] ?></td>
                                 <td nowrap><?php echo number_format($tot3); ?></td>
                             </tr>
@@ -465,8 +465,8 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             <?php if(isset($opt['ct_date_extra_price']) && $opt['ct_date_extra_price']) { ?>
                             <tr>
                                 <td nowrap>특수일</td>
-                                <td nowrap><?php echo number_format($opt['ct_date_extra_price'] / $opt['ct_date_d']); ?></td>
-                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
+                                <td nowrap><?php echo number_format($opt['ct_date_extra_price'] / $rb_admin_res_units); ?></td>
+                                <td nowrap><?php echo $rb_admin_res_label; ?></td>
                                 <td nowrap>-</td>
                                 <td nowrap><?php echo number_format($opt['ct_date_extra_price']); ?></td>
                             </tr>
@@ -475,8 +475,8 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             <?php if(isset($opt['ct_date_extra_price2']) && $opt['ct_date_extra_price2']) { ?>
                             <tr>
                                 <td nowrap>시즌</td>
-                                <td nowrap><?php echo number_format($opt['ct_date_extra_price2'] / $opt['ct_date_d']); ?></td>
-                                <td nowrap><?php echo $opt['ct_date_d']; ?></td>
+                                <td nowrap><?php echo number_format($opt['ct_date_extra_price2'] / $rb_admin_res_units); ?></td>
+                                <td nowrap><?php echo $rb_admin_res_label; ?></td>
                                 <td nowrap>-</td>
                                 <td nowrap><?php echo number_format($opt['ct_date_extra_price2']); ?></td>
                             </tr>
@@ -634,8 +634,22 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                 </td>
                 <td class="td_mngsmall"><?php echo $opt['ct_status']; ?></td>
                 <td class="td_num">
-                    <label for="ct_qty_<?php echo $chk_cnt; ?>" class="sound_only"><?php echo strip_tags($rb_admin_ct_option); ?> 수량</label>
-                    <input type="text" name="ct_qty[<?php echo $chk_cnt; ?>]" id="ct_qty_<?php echo $chk_cnt; ?>" value="<?php echo $opt['ct_qty']; ?>" required class="frm_input required" size="5">
+                    <?php if ($rb_special_order) { ?>
+                        <?php
+                        if (isset($rb_order_type['id']) && (int)$rb_order_type['id'] === 1) {
+                            $rb_qty_period = function_exists('rb_reservation_cart_period_context')
+                                ? rb_reservation_cart_period_context($opt)
+                                : array('label'=>max(1, (int)(isset($opt['ct_date_d']) ? $opt['ct_date_d'] : $opt['ct_qty'])).'일');
+                            echo get_text($rb_qty_period['label']);
+                        } else {
+                            echo number_format($opt['ct_qty']);
+                        }
+                        ?>
+                        <input type="hidden" name="ct_qty[<?php echo $chk_cnt; ?>]" id="ct_qty_<?php echo $chk_cnt; ?>" value="<?php echo (int)$opt['ct_qty']; ?>">
+                    <?php } else { ?>
+                        <label for="ct_qty_<?php echo $chk_cnt; ?>" class="sound_only"><?php echo strip_tags($rb_admin_ct_option); ?> 수량</label>
+                        <input type="text" name="ct_qty[<?php echo $chk_cnt; ?>]" id="ct_qty_<?php echo $chk_cnt; ?>" value="<?php echo $opt['ct_qty']; ?>" required class="frm_input required" size="5">
+                    <?php } ?>
                 </td>
                 <td class="td_num_right "><?php echo number_format($opt_price); ?></td>
                 <td class="td_num_right">
@@ -643,22 +657,12 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                 </td>
                 <td class="td_num_right"><?php echo number_format($opt['cp_price']); ?></td>
                 <td class=" td_num_right"><?php echo number_format($ct_point['stotal']); ?></td>
-                <td class="td_sendcost_by"><?php echo $ct_send_cost; ?></td>
+                <?php if (!$rb_special_order) { ?><td class="td_sendcost_by"><?php echo $ct_send_cost; ?></td><?php } ?>
                 <td class="td_mngsmall"><?php echo get_yn($opt['ct_point_use']); ?></td>
                 <td class="td_mngsmall"><?php echo get_yn($opt['ct_stock_use']); ?></td>
 
 
-                <?php if(
-                    (isset($opt['ct_types']) && $opt['ct_types'] == 1)
-                    || (function_exists('rb_file_is_item') && rb_file_is_item($opt['it_id']))
-                    || (function_exists('rb_media_is_item') && rb_media_is_item($opt['it_id']))
-                ) { ?>
-
-                    <td colspan="3">-</td>
-
-                <?php } else { ?>
-
-                    <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
+                <?php if (!$rb_special_order && isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
 
                     <td class=""><input type="text" name="ct_invoice[<?php echo $chk_cnt; ?>]" value="<?php echo $opt['ct_invoice']; ?>" id="ct_invoice_<?php echo $chk_cnt; ?>" class="frm_input" placeholder="운송장번호"></td>
 
@@ -693,7 +697,6 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                         </script>
                     </td>
 
-                    <?php } ?>
                 <?php } ?>
                 <!-- } -->
 
@@ -713,19 +716,21 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
         <p>
             <input type="hidden" name="chk_cnt" value="<?php echo $chk_cnt; ?>">
             <strong>주문 및 장바구니 상태 변경</strong>
-            <input type="submit" name="ct_status" value="주문" onclick="document.pressed=this.value" class="btn_02 color_01">
-            <input type="submit" name="ct_status" value="입금" onclick="document.pressed=this.value" class="btn_02 color_02">
-            <input type="submit" name="ct_status" value="준비" onclick="document.pressed=this.value" class="btn_02 color_03">
-            <input type="submit" name="ct_status" value="배송" onclick="document.pressed=this.value" class="btn_02 color_04">
-            <input type="submit" name="ct_status" value="완료" onclick="document.pressed=this.value" class="btn_02 color_05">
-            <input type="submit" name="ct_status" value="취소" onclick="document.pressed=this.value" class="btn_02 color_06">
-            <input type="submit" name="ct_status" value="반품" onclick="document.pressed=this.value" class="btn_02 color_06">
-            <input type="submit" name="ct_status" value="품절" onclick="document.pressed=this.value" class="btn_02 color_06">
+            <?php
+            $rb_status_colors = array('주문'=>'color_01','입금'=>'color_02','준비'=>'color_03','배송'=>'color_04','완료'=>'color_05','취소'=>'color_06','반품'=>'color_06','품절'=>'color_06');
+            foreach ($rb_order_statuses as $rb_status) {
+            ?>
+            <input type="submit" name="ct_status" value="<?php echo $rb_status; ?>" onclick="document.pressed=this.value" class="btn_02 <?php echo $rb_status_colors[$rb_status]; ?>">
+            <?php } ?>
         </p>
     </div>
 
     <div class="local_desc01 local_desc">
+        <?php if ($rb_special_order) { ?>
+        <p>예약·파일·미디어 상품은 주문, 입금, 완료, 취소 상태만 사용하며 배송 상태는 사용하지 않습니다.</p>
+        <?php } else { ?>
         <p>주문, 입금, 준비, 배송, 완료는 장바구니와 주문서 상태를 모두 변경하지만, 취소, 반품, 품절은 장바구니의 상태만 변경하며, 주문서 상태는 변경하지 않습니다.</p>
+        <?php } ?>
         <p>개별적인(이곳에서의) 상태 변경은 모든 작업을 수동으로 처리합니다. 예를 들어 주문에서 입금으로 상태 변경시 입금액(결제금액)을 포함한 모든 정보는 수동 입력으로 처리하셔야 합니다.</p>
     </div>
 
@@ -1020,7 +1025,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                 </tr>
 
                 <!-- 20241018 리빌더 수정 { -->
-                <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
+                <?php if($rb_special_order || (isset($pa['pa_is']) && $pa['pa_is'] == 1)) { ?>
                     <?php } else { ?>
                     <?php if ($od['od_invoice']) { ?>
                     <tr>
@@ -1040,6 +1045,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                 <?php } ?>
                 <!-- } -->
 
+                <?php if (!$rb_special_order) { ?>
                 <tr>
                     <th scope="row"><label for="od_send_cost">배송비</label></th>
                     <td>
@@ -1058,6 +1064,12 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                         <input type="text" name="od_send_cost2" value="<?php echo $od['od_send_cost2']; ?>" id="od_send_cost2" class="frm_input" size="10"> 원
                     </td>
                 </tr>
+                <?php } else { ?>
+                <tr class="sound_only"><td colspan="2">
+                    <input type="hidden" name="od_send_cost" value="0">
+                    <input type="hidden" name="od_send_cost2" value="0">
+                </td></tr>
+                <?php } ?>
                 <?php
                 if ($od['od_misu'] == 0 && $od['od_receipt_price'] && ($od['od_settle_case'] == '무통장' || $od['od_settle_case'] == '가상계좌' || $od['od_settle_case'] == '계좌이체')) {
                 ?>
@@ -1277,7 +1289,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
 
 
                 <!-- 20241018 리빌더 수정 { -->
-                <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
+                <?php if($rb_special_order || (isset($pa['pa_is']) && $pa['pa_is'] == 1)) { ?>
 
                 <?php } else { ?>
                 <tr>
@@ -1333,7 +1345,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
     </div>
 
     <div class="btn_confirm01 btn_confirm">
-        <input type="submit" value="결제/배송내역 수정" class="btn_submit btn">
+        <input type="submit" value="<?php echo $rb_special_order ? '결제내역 수정' : '결제/배송내역 수정'; ?>" class="btn_submit btn">
         <?php if($od['od_status'] == '주문' && $od['od_misu'] > 0) { ?>
         <a href="./personalpayform.php?popup=yes&amp;od_id=<?php echo $od_id; ?>" id="personalpay_add" class="btn btn_02">개인결제추가</a>
         <?php } ?>
@@ -1377,7 +1389,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
 </section>
 
 <section>
-    <h2 class="h2_frm">주문자/배송지 정보</h2>
+    <h2 class="h2_frm"><?php echo $rb_special_order ? '주문자 정보' : '주문자/배송지 정보'; ?></h2>
     <?php echo $pg_anchor; ?>
 
     <form name="frmorderform3" action="./orderformupdate.php" method="post">
@@ -1444,6 +1456,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
             </div>
         </section>
 
+        <?php if (!$rb_special_order) { ?>
         <section id="anc_sodr_taker" class="compare_right">
             <h3>받으시는 분</h3>
 
@@ -1500,11 +1513,21 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                 </table>
             </div>
         </section>
+        <?php } else { ?>
+        <input type="hidden" name="od_b_name" value="<?php echo get_text($od['od_b_name']); ?>">
+        <input type="hidden" name="od_b_tel" value="<?php echo get_text($od['od_b_tel']); ?>">
+        <input type="hidden" name="od_b_hp" value="<?php echo get_text($od['od_b_hp']); ?>">
+        <input type="hidden" name="od_b_zip" value="<?php echo get_text($od['od_b_zip1']).get_text($od['od_b_zip2']); ?>">
+        <input type="hidden" name="od_b_addr1" value="<?php echo get_text($od['od_b_addr1']); ?>">
+        <input type="hidden" name="od_b_addr2" value="<?php echo get_text($od['od_b_addr2']); ?>">
+        <input type="hidden" name="od_b_addr3" value="<?php echo get_text($od['od_b_addr3']); ?>">
+        <input type="hidden" name="od_b_addr_jibeon" value="<?php echo get_text($od['od_b_addr_jibeon']); ?>">
+        <?php } ?>
 
     </div>
 
     <div class="btn_confirm01 btn_confirm">
-        <input type="submit" value="주문자/배송지 정보 수정" class="btn_submit btn ">
+        <input type="submit" value="<?php echo $rb_special_order ? '주문자 정보 수정' : '주문자/배송지 정보 수정'; ?>" class="btn_submit btn ">
         <a href="./orderlist.php?<?php echo $qstr; ?>" class="btn">목록</a>
     </div>
 

@@ -1,6 +1,6 @@
 <?php
-$sub_menu = '400300';
-include_once('./_common.php');
+$sub_menu = isset($rb_itemform_sub_menu) ? (string) $rb_itemform_sub_menu : '400300';
+if (!defined('_GNUBOARD_')) include_once('./_common.php');
 include_once(G5_EDITOR_LIB);
 include_once(G5_LIB_PATH.'/iteminfo.lib.php');
 
@@ -69,17 +69,9 @@ $it = array(
 'it_mobile_tail_html'=>'',
 );
 
-$columns_to_add = [
-    'it_types' => 'INT(4) NOT NULL DEFAULT 0'
-];
-
-foreach ($columns_to_add as $column => $attributes) {
-    // 컬럼이 있는지 확인
-    $column_check = sql_query("SHOW COLUMNS FROM {$g5['g5_shop_item_table']} LIKE '{$column}'", false);
-    if (!sql_num_rows($column_check)) {
-        // 컬럼 추가
-        sql_query("ALTER TABLE {$g5['g5_shop_item_table']} ADD {$column} {$attributes}", true);
-    }
+$rb_item_type_column = sql_fetch("SHOW COLUMNS FROM {$g5['g5_shop_item_table']} LIKE 'it_types'", false);
+if (empty($rb_item_type_column['Field'])) {
+    alert('DB 업데이트가 필요합니다. 빌더설정의 DB 설치 및 업데이트를 실행해 주세요.', G5_ADMIN_URL.'/rb/rb_form.php');
 }
 
 for($i=0;$i<=10;$i++){
@@ -101,13 +93,27 @@ if ($w == "")
         $sql = " select ca_id from {$g5['g5_shop_category_table']} order by ca_order, ca_id limit 1 ";
         $row = sql_fetch($sql);
         if (! (isset($row['ca_id']) && $row['ca_id']))
-            alert("등록된 분류가 없습니다. 우선 분류를 등록하여 주십시오.", './categorylist.php');
+            alert("등록된 분류가 없습니다. 우선 분류를 등록하여 주십시오.", G5_ADMIN_URL.'/shop_admin/categorylist.php');
         $it['ca_id'] = $row['ca_id'];
     }
     //$it[it_maker]  = stripslashes($_COOKIE[ck_maker]);
     //$it[it_origin] = stripslashes($_COOKIE[ck_origin]);
     $it['it_maker']  = stripslashes(get_cookie("ck_maker"));
     $it['it_origin'] = stripslashes(get_cookie("ck_origin"));
+
+    $rb_requested_item_type = isset($rb_itemform_forced_type) ? (int) $rb_itemform_forced_type : 0;
+    $rb_item_type_available = $rb_requested_item_type === 0;
+    if ($rb_requested_item_type === 1) {
+        $rb_item_type_available = function_exists('rb_reservation_is_enabled') && rb_reservation_is_enabled();
+    } elseif ($rb_requested_item_type === 2) {
+        $rb_item_type_available = function_exists('rb_file_is_enabled') && rb_file_is_enabled();
+    } elseif ($rb_requested_item_type === 3) {
+        $rb_item_type_available = function_exists('rb_media_is_enabled') && rb_media_is_enabled();
+    }
+    if (!$rb_item_type_available) {
+        alert('해당 상품 기능이 설치되지 않았거나 사용 설정이 꺼져 있습니다.');
+    }
+    $it['it_types'] = $rb_requested_item_type;
 }
 else if ($w == "u")
 {
@@ -125,6 +131,23 @@ else if ($w == "u")
     }
 
     $it = get_shop_item($it_id);
+
+    if (!isset($rb_itemform_forced_type) && isset($it['it_types']) && (int)$it['it_types'] !== 0) {
+        $rb_item_admin_forms = array(
+            1 => G5_ADMIN_URL.'/rb/reservation_item_form.php',
+            2 => G5_ADMIN_URL.'/rb/file_item_form.php',
+            3 => G5_ADMIN_URL.'/rb/media_item_form.php',
+        );
+        $rb_existing_item_type = (int)$it['it_types'];
+        if (isset($rb_item_admin_forms[$rb_existing_item_type])) {
+            goto_url($rb_item_admin_forms[$rb_existing_item_type].'?w=u&amp;it_id='.urlencode($it_id));
+        }
+        alert('일반 상품관리에서 수정할 수 없는 상품구분입니다.', G5_ADMIN_URL.'/shop_admin/itemlist.php');
+    }
+
+    if (isset($rb_itemform_forced_type) && (int)$it['it_types'] !== (int)$rb_itemform_forced_type) {
+        alert('해당 상품관리 메뉴에서 수정할 수 없는 상품구분입니다.', isset($rb_itemform_list_url) ? $rb_itemform_list_url : G5_ADMIN_URL.'/shop_admin/itemlist.php');
+    }
 
     if(!$it)
         alert('상품정보가 존재하지 않습니다.');
@@ -144,6 +167,10 @@ else
 
 $qstr  = $qstr.'&amp;sca='.$sca.'&amp;page='.$page;
 
+$rb_item_type_titles = array(0=>'상품', 1=>'예약상품', 2=>'콘텐츠상품', 3=>'미디어상품');
+$rb_current_item_type = isset($it['it_types']) ? (int)$it['it_types'] : 0;
+$rb_special_item_form = $rb_current_item_type !== 0;
+$html_title = (isset($rb_item_type_titles[$rb_current_item_type]) ? $rb_item_type_titles[$rb_current_item_type] : '상품').' '.($w === '' ? '입력' : '수정');
 $g5['title'] = $html_title;
 include_once (G5_ADMIN_PATH.'/admin.head.php');
 
@@ -202,9 +229,10 @@ $pg_anchor ='<ul class="anchor">
 <li><a href="#anc_sitfrm_cate">상품분류</a></li>
 <li><a href="#anc_sitfrm_skin">스킨설정</a></li>
 <li><a href="#anc_sitfrm_ini">기본정보</a></li>
-<li><a href="#anc_sitfrm_compact">요약정보</a></li>
 <li><a href="#anc_sitfrm_cost">가격 및 재고</a></li>
-<li><a href="#anc_sitfrm_sendcost">배송비</a></li>
+';
+if (!$rb_special_item_form) $pg_anchor .= '<li><a href="#anc_sitfrm_sendcost">배송비</a></li>';
+$pg_anchor .= '<li><a href="#anc_sitfrm_compact">요약정보</a></li>
 <li><a href="#anc_sitfrm_img">상품이미지</a></li>
 <li><a href="#anc_sitfrm_relation">관련상품</a></li>
 <li><a href="#anc_sitfrm_event">관련이벤트</a></li>
@@ -228,9 +256,21 @@ if(!sql_query(" select it_skin from {$g5['g5_shop_item_table']} limit 1", false)
 }
 ?>
 
-<form name="fitemform" action="./itemformupdate.php" method="post" enctype="MULTIPART/FORM-DATA" autocomplete="off" onsubmit="return fitemformcheck(this)">
+<form name="fitemform" action="<?php echo G5_ADMIN_URL; ?>/shop_admin/itemformupdate.php" method="post" enctype="MULTIPART/FORM-DATA" autocomplete="off" onsubmit="return fitemformcheck(this)">
 
 <input type="hidden" name="w" value="<?php echo $w; ?>">
+<input type="hidden" name="it_types" value="<?php echo $rb_current_item_type; ?>">
+<?php if ($rb_special_item_form) { ?>
+<input type="hidden" name="it_maker" value="">
+<input type="hidden" name="it_origin" value="">
+<input type="hidden" name="it_brand" value="">
+<input type="hidden" name="it_model" value="">
+<input type="hidden" name="it_sc_type" value="1">
+<input type="hidden" name="it_sc_method" value="0">
+<input type="hidden" name="it_sc_price" value="0">
+<input type="hidden" name="it_sc_minimum" value="0">
+<input type="hidden" name="it_sc_qty" value="0">
+<?php } ?>
 <input type="hidden" name="sca" value="<?php echo $sca; ?>">
 <input type="hidden" name="sst" value="<?php echo $sst; ?>">
 <input type="hidden" name="sod"  value="<?php echo $sod; ?>">
@@ -387,23 +427,6 @@ if(!sql_query(" select it_skin from {$g5['g5_shop_item_table']} limit 1", false)
             </td>
         </tr>
 
-        <tr id="it_types_sel">
-            <th scope="row"><label for="it_skin">상품타입</label></th>
-            <td colspan="3">
-                <input type="radio" name="it_types" value="0" id="it_types0" <?php echo ($it['it_types'] == 0) ? "checked" : ""; ?>> <label for="it_types0">일반</label>
-                <?php if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) { ?>
-                <input type="radio" name="it_types" value="1" id="it_types1" <?php echo ($it['it_types'] == 1) ? "checked" : ""; ?>> <label for="it_types1">예약</label>
-                <?php } ?>
-                <?php if (function_exists('rb_file_is_enabled') && rb_file_is_enabled()) { ?>
-                <input type="radio" name="it_types" value="2" id="it_types2" <?php echo ($it['it_types'] == 2) ? "checked" : ""; ?>> <label for="it_types2">콘텐츠</label>
-                <?php } ?>
-                <?php if (function_exists('rb_media_is_enabled') && rb_media_is_enabled()) { ?>
-                <input type="radio" name="it_types" value="3" id="it_types3" <?php echo ($it['it_types'] == 3) ? "checked" : ""; ?>> <label for="it_types3">미디어</label>
-                <?php } ?>
-
-            </td>
-        </tr>
-
         <tr>
             <th scope="row"><label for="it_name">상품명</label></th>
             <td colspan="2">
@@ -459,6 +482,7 @@ if(!sql_query(" select it_skin from {$g5['g5_shop_item_table']} limit 1", false)
                 <label for="chk_all_it_type">전체적용</label>
             </td>
         </tr>
+        <?php if (!$rb_special_item_form) { ?>
         <tr>
             <th scope="row"><label for="it_maker">제조사</label></th>
             <td>
@@ -511,6 +535,7 @@ if(!sql_query(" select it_skin from {$g5['g5_shop_item_table']} limit 1", false)
                 <label for="chk_all_it_model">전체적용</label>
             </td>
         </tr>
+        <?php } ?>
         <tr>
             <th scope="row"><label for="it_tel_inq">전화문의</label></th>
             <td>
@@ -593,45 +618,16 @@ if(!sql_query(" select it_skin from {$g5['g5_shop_item_table']} limit 1", false)
     </div>
 </section>
 
-
-<section id="anc_sitfrm_compact">
-    <h2 class="h2_frm">상품요약정보</h2>
-    <?php echo $pg_anchor; ?>
-    <div class="local_desc02 local_desc">
-        <p><strong>전자상거래 등에서의 상품 등의 정보제공에 관한 고시</strong>에 따라 총 35개 상품군에 대해 상품 특성 등을 양식에 따라 입력할 수 있습니다.</p>
-    </div>
-
-    <div id="sit_compact">
-        <?php echo help("상품군을 선택하면 자동으로 항목이 변환됩니다."); ?>
-        <select id="it_info_gubun" name="it_info_gubun">
-            <option value="">상품군을 선택하세요.</option>
-            <?php
-            if(!$it['it_info_gubun']) $it['it_info_gubun'] = 'wear';
-            foreach($item_info as $key=>$value) {
-                $opt_value = $key;
-                $opt_text  = $value['title'];
-                echo '<option value="'.$opt_value.'" '.get_selected($opt_value, $it['it_info_gubun']).'>'.$opt_text.'</option>'.PHP_EOL;
-            }
-            ?>
-        </select>
-    </div>
-    <div id="sit_compact_fields"><?php include_once(G5_ADMIN_PATH.'/shop_admin/iteminfo.php'); ?></div>
-</section>
-
-
+<?php
+run_event('rb_shop_itemform_type_fields', $it, $w, array('context' => 'admin'));
+?>
 <script>
-$(function(){
-    $(document).on("change", "#it_info_gubun", function() {
-        var gubun = $(this).val();
-        $.post(
-            "<?php echo G5_ADMIN_URL; ?>/shop_admin/iteminfo.php",
-            { it_id: "<?php echo $it['it_id']; ?>", gubun: gubun },
-            function(data) {
-                $("#sit_compact_fields").empty().html(data);
-            }
-        );
+(function($) {
+    var itemType = $('input[name="it_types"]').val();
+    $('.rb-item-type-fields').each(function() {
+        this.hidden = String($(this).data('item-type')) !== String(itemType);
     });
-});
+})(jQuery);
 </script>
 
 <section id="anc_sitfrm_cost">
@@ -712,7 +708,7 @@ $(function(){
                 <label for="chk_all_it_point">전체적용</label>
             </td>
         </tr>
-        <tr>
+        <tr<?php echo $rb_special_item_form ? ' hidden' : ''; ?>>
             <th scope="row"><label for="it_supply_point">추가옵션상품 포인트</label></th>
             <td>
                 <?php echo help("상품의 추가옵션상품 구매에 일괄적으로 지급하는 포인트입니다. 0으로 설정하시면 구매포인트를 지급하지 않습니다.\n주문완료후 환경설정에서 설정한 주문완료 설정일 후 회원에게 부여하는 포인트입니다.\n또, 포인트부여를 '아니오'로 설정한 경우 신용카드, 계좌이체로 주문하는 회원께는 부여하지 않습니다."); ?>
@@ -738,14 +734,14 @@ $(function(){
                 <label for="chk_all_it_soldout">전체적용</label>
             </td>
         </tr>
-        <tr>
+        <tr<?php echo $rb_special_item_form ? ' hidden' : ''; ?>>
             <th scope="row"><label for="it_stock_sms">재입고SMS 알림</label></th>
             <td colspan="2">
                 <?php echo help("상품이 품절인 경우에 체크해 놓으면 상품상세보기에서 고객이 재입고SMS 알림을 신청할 수 있게 됩니다."); ?>
                 <input type="checkbox" name="it_stock_sms" value="1" id="it_stock_sms" <?php echo ($it['it_stock_sms']) ? "checked" : ""; ?>> 예
             </td>
         </tr>
-        <tr>
+        <tr<?php echo $rb_special_item_form ? ' hidden' : ''; ?>>
             <th scope="row"><label for="it_stock_qty">재고수량</label></th>
             <td>
                 <?php echo help("<b>주문관리에서 상품별 상태 변경에 따라 자동으로 재고를 가감합니다.</b> 재고는 규격/색상별이 아닌, 상품별로만 관리됩니다.<br>재고수량을 0으로 설정하시면 품절상품으로 표시됩니다."); ?>
@@ -758,7 +754,7 @@ $(function(){
                 <label for="chk_all_it_stock_qty">전체적용</label>
             </td>
         </tr>
-        <tr>
+        <tr<?php echo $rb_special_item_form ? ' hidden' : ''; ?>>
             <th scope="row"><label for="it_noti_qty">재고 통보수량</label></th>
             <td>
                 <?php echo help("상품의 재고가 통보수량보다 작을 때 쇼핑몰관리 메인화면의 재고현황에 재고부족 상품으로 표시됩니다.<br>옵션이 있는 상품은 개별 옵션의 통보수량이 적용됩니다."); ?>
@@ -771,7 +767,7 @@ $(function(){
                 <label for="chk_all_it_noti_qty">전체적용</label>
             </td>
         </tr>
-        <tr>
+        <tr<?php echo $rb_special_item_form ? ' hidden' : ''; ?>>
             <th scope="row"><label for="it_buy_min_qty">최소구매수량</label></th>
             <td>
                 <?php echo help("상품 구매시 최소 구매 수량을 설정합니다."); ?>
@@ -784,7 +780,7 @@ $(function(){
                 <label for="chk_all_it_buy_min_qty">전체적용</label>
             </td>
         </tr>
-        <tr>
+        <tr<?php echo $rb_special_item_form ? ' hidden' : ''; ?>>
             <th scope="row"><label for="it_buy_max_qty">최대구매수량</label></th>
             <td>
                 <?php echo help("상품 구매시 최대 구매 수량을 설정합니다."); ?>
@@ -816,7 +812,7 @@ $(function(){
         <?php
         $opt_subject = explode(',', $it['it_option_subject']);
         ?>
-        <tr id="item_option_row">
+        <tr id="item_option_row"<?php echo $rb_special_item_form ? ' hidden' : ''; ?>>
             <th scope="row">상품선택옵션</th>
             <td colspan="2">
                 <div class="sit_option tbl_frm01">
@@ -995,7 +991,7 @@ $(function(){
         $spl_subject = explode(',', $it['it_supply_subject']);
         $spl_count = count($spl_subject);
         ?>
-        <tr>
+        <tr id="item_supply_row"<?php echo $rb_special_item_form ? ' hidden' : ''; ?>>
             <th scope="row">상품추가옵션</th>
             <td colspan="2">
                 <div id="sit_supply_frm" class="sit_option tbl_frm01">
@@ -1218,6 +1214,7 @@ $(function(){
     </div>
 </section>
 
+<?php if (!$rb_special_item_form) { ?>
 <section id="anc_sitfrm_sendcost">
     <h2 class="h2_frm">배송비</h2>
     <?php echo $pg_anchor; ?>
@@ -1372,7 +1369,47 @@ $(function(){
     });
     </script>
 </section>
+<?php } ?>
 
+
+<section id="anc_sitfrm_compact">
+    <h2 class="h2_frm">상품요약정보</h2>
+    <?php echo $pg_anchor; ?>
+    <div class="local_desc02 local_desc">
+        <p><strong>전자상거래 등에서의 상품 등의 정보제공에 관한 고시</strong>에 따라 총 35개 상품군에 대해 상품 특성 등을 양식에 따라 입력할 수 있습니다.</p>
+    </div>
+
+    <div id="sit_compact">
+        <?php echo help("상품군을 선택하면 자동으로 항목이 변환됩니다."); ?>
+        <select id="it_info_gubun" name="it_info_gubun">
+            <option value="">상품군을 선택하세요.</option>
+            <?php
+            if(!$it['it_info_gubun']) $it['it_info_gubun'] = 'wear';
+            foreach($item_info as $key=>$value) {
+                $opt_value = $key;
+                $opt_text  = $value['title'];
+                echo '<option value="'.$opt_value.'" '.get_selected($opt_value, $it['it_info_gubun']).'>'.$opt_text.'</option>'.PHP_EOL;
+            }
+            ?>
+        </select>
+    </div>
+    <div id="sit_compact_fields"><?php include_once(G5_ADMIN_PATH.'/shop_admin/iteminfo.php'); ?></div>
+</section>
+
+<script>
+$(function(){
+    $(document).on("change", "#it_info_gubun", function() {
+        var gubun = $(this).val();
+        $.post(
+            "<?php echo G5_ADMIN_URL; ?>/shop_admin/iteminfo.php",
+            { it_id: "<?php echo $it['it_id']; ?>", gubun: gubun },
+            function(data) {
+                $("#sit_compact_fields").empty().html(data);
+            }
+        );
+    });
+});
+</script>
 
 <section id="anc_sitfrm_img">
     <h2 class="h2_frm">이미지</h2>
@@ -1478,7 +1515,7 @@ $(function(){
                     }
 
                     $("#relation").load(
-                        "./itemformrelation.php",
+                        "<?php echo G5_ADMIN_URL; ?>/shop_admin/itemformrelation.php",
                         { it_id: "<?php echo $it_id; ?>", ca_id: ca_id, it_name: it_name }
                     );
                 });
@@ -1795,7 +1832,7 @@ $(function(){
 </section>
 
 <div class="btn_fixed_top">
-    <a href="./itemlist.php?<?php echo $qstr; ?>" class="btn btn_02">목록</a>
+    <a href="<?php echo isset($rb_itemform_list_url) ? $rb_itemform_list_url : G5_ADMIN_URL.'/shop_admin/itemlist.php?'.$qstr; ?>" class="btn btn_02">목록</a>
     <a href="<?php echo shop_item_url($it_id); ?>" class="btn_02  btn">상품보기</a>
     <input type="submit" value="확인" class="btn_submit btn" accesskey="s">
 </div>
@@ -1851,7 +1888,7 @@ function fitemformcheck(f)
     if (f.w.value == "") {
         var error = "";
         $.ajax({
-            url: "./ajax.it_id.php",
+            url: "<?php echo G5_ADMIN_URL; ?>/shop_admin/ajax.it_id.php",
             type: "POST",
             data: {
                 "it_id": f.it_id.value
@@ -1880,11 +1917,7 @@ function fitemformcheck(f)
         }
     }
 
-    if(parseInt(f.it_types.value, 10) === 2) {
-        return true;
-    }
-
-    if(parseInt(f.it_sc_type.value) > 1) {
+    if(parseInt(f.it_types.value, 10) === 0 && parseInt(f.it_sc_type.value) > 1) {
         if(!f.it_sc_price.value || f.it_sc_price.value == "0") {
             alert("기본배송비를 입력해 주십시오.");
             return false;
@@ -1954,7 +1987,7 @@ function fitemformcheck(f)
             return;
         }
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', '../rb/rb.lib/ajax.category_info.php', true);
+        xhr.open('POST', '<?php echo G5_ADMIN_URL; ?>/rb/rb.lib/ajax.category_info.php', true);
         xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
         xhr.onreadystatechange = function(){
             if(xhr.readyState === 4 && xhr.status === 200){
@@ -2020,7 +2053,7 @@ function updateCategoryInfoSub(selectElem) {
     }
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', '../rb/rb.lib/ajax.category_info.php', true); // 경로 맞게
+    xhr.open('POST', '<?php echo G5_ADMIN_URL; ?>/rb/rb.lib/ajax.category_info.php', true);
     xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     xhr.onreadystatechange = function(){
         if(xhr.readyState === 4 && xhr.status === 200){
@@ -2057,23 +2090,19 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 function rbToggleItemTypeSections() {
-    var itemType = $('input[name="it_types"]:checked').val();
-    var isReservation = itemType === '1';
-    $('#item_option_row').toggle(!isReservation);
+    var itemType = $('input[name="it_types"]').val();
+    var isSpecial = ['1', '2', '3'].indexOf(String(itemType)) !== -1;
+    $('#item_option_row, #item_supply_row').toggle(!isSpecial);
 }
-
-$('input[name="it_types"]').on('change', function() {
-    rbToggleItemTypeSections();
-});
 
 $(document).ready(function() {
     rbToggleItemTypeSections();
 });
 
-// form submit 시 예약 타입이면 선택옵션 서버전송값 초기화
+// 특수상품은 유형별 전용 설정을 사용하므로 일반 선택·추가옵션 값을 전송하지 않는다.
 $('form[name="fitemform"]').on('submit', function() {
-    var itemType = $('input[name="it_types"]:checked').val();
-    if (itemType == '1') {
+    var itemType = $('input[name="it_types"]').val();
+    if (['1', '2', '3'].indexOf(String(itemType)) !== -1) {
         $('#opt1_subject').val('');
         $('#opt2_subject').val('');
         $('#opt3_subject').val('');

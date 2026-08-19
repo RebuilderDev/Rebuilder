@@ -1,32 +1,17 @@
 <?php
 if (!defined("_GNUBOARD_")) exit; // 개별 페이지 접근 불가
 
-if (!function_exists('rb_shop_has_column')) {
-    function rb_shop_has_column($table, $column)
-    {
-        static $cache = array();
-        $key = $table . ':' . $column;
-        if (isset($cache[$key])) {
-            return $cache[$key];
-        }
-
-        $row = sql_fetch("SHOW COLUMNS FROM `{$table}` LIKE '" . sql_real_escape_string($column) . "'", false);
-        $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
-        return $cache[$key];
-    }
-}
-
 $g5['title'] = '장바구니';
 include_once('./_head.php');
 
 $rb_file_cart_only = function_exists('rb_file_is_cart_file_only') ? rb_file_is_cart_file_only($s_cart_id, false) : false;
 $rb_media_cart_only = function_exists('rb_media_is_cart_media_only') ? rb_media_is_cart_media_only($s_cart_id, false) : false;
-$rb_file_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects')
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
-$rb_media_columns_ready = rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects')
-    && rb_shop_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
+$rb_file_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_ids')
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_subjects')
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
+$rb_media_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_ids')
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_subjects')
+    && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
 ?>
 
 <!-- 장바구니 시작 { -->

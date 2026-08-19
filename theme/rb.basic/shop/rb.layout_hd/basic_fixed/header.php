@@ -4,6 +4,15 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 // 레이아웃 폴더내 style.css 파일
 add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_SHOP_URL.'/rb.layout_hd/'.$rb_core['layout_hd_shop'].'/style.css?ver='.G5_TIME_YMDHIS.'">', 0);
 
+$rb_notification_unread_count = 0;
+$rb_notification_action_token = '';
+$rb_notification_category_tabs = array();
+if ($is_member && function_exists('rb_notification_table_ready') && rb_notification_table_ready()) {
+    $rb_notification_unread_count = rb_notification_unread_count($member['mb_id']);
+    $rb_notification_action_token = rb_notification_action_token();
+    $rb_notification_category_tabs = array('all' => '전체') + rb_notification_visible_categories();
+}
+
 ?>
     <!--
     <header id="header">내용</header>
@@ -127,16 +136,396 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_SHOP_URL.'/rb.layout_hd/
                     <li class="qm_wrap">
 
                         <?php if($is_member) { ?>
-                        <a href="<?php echo G5_BBS_URL ?>/memo.php" alt="쪽지" onclick="win_memo(this.href); return false;">
-
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M11.9999 2C10.1434 2 8.36294 2.7375 7.05018 4.05025C5.73743 5.36301 4.99993 7.14348 4.99993 9V12.528C5.00008 12.6831 4.96413 12.8362 4.89493 12.975L3.17793 16.408C3.09406 16.5757 3.05445 16.7621 3.06288 16.9494C3.07131 17.1368 3.12748 17.3188 3.22608 17.4783C3.32467 17.6379 3.4624 17.7695 3.6262 17.8608C3.78999 17.9521 3.97441 18 4.16193 18H19.8379C20.0255 18 20.2099 17.9521 20.3737 17.8608C20.5375 17.7695 20.6752 17.6379 20.7738 17.4783C20.8724 17.3188 20.9286 17.1368 20.937 16.9494C20.9454 16.7621 20.9058 16.5757 20.8219 16.408L19.1059 12.975C19.0364 12.8362 19.0001 12.6832 18.9999 12.528V9C18.9999 7.14348 18.2624 5.36301 16.9497 4.05025C15.6369 2.7375 13.8564 2 11.9999 2ZM11.9999 21C11.3793 21.0002 10.7739 20.8079 10.2671 20.4498C9.76025 20.0916 9.37694 19.5851 9.16993 19H14.8299C14.6229 19.5851 14.2396 20.0916 13.7328 20.4498C13.226 20.8079 12.6205 21.0002 11.9999 21Z" fill="#09244B"/>
-                            </svg>
-
+                        <a href="<?php echo G5_BBS_URL ?>/memo.php" id="rb_memo_top_btn" alt="쪽지" onclick="win_memo(this.href); return false;">
+                            <svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><g id="mail_fill" fill='none'><path d='M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093c.012.004.023 0 .029-.008l.004-.014-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014-.034.614c0 .012.007.02.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z'/><path fill='#09244BFF' d='m2.068 5.482 8.875 8.876a1.5 1.5 0 0 0 2.008.103l.114-.103 8.869-8.87c.029.11.048.222.058.337L22 6v12a2 2 0 0 1-1.85 1.995L20 20H4a2 2 0 0 1-1.995-1.85L2 18V6c0-.12.01-.236.03-.35zM20 4c.121 0 .24.01.355.031l.17.039-8.52 8.52-8.523-8.522c.11-.03.224-.05.34-.06L4 4z'/></g></svg>
                             <?php if($memo_not_read > 0) { ?>
                             <span class="font-H"><?php echo $memo_not_read ?></span>
                             <?php } ?>
                         </a>
+
+                        <?php if ($rb_notification_category_tabs) { ?>
+                        <a href="#" id="notification_top_btn" alt="알림" aria-label="알림" aria-haspopup="true" aria-expanded="false">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11.9999 2C10.1434 2 8.36294 2.7375 7.05018 4.05025C5.73743 5.36301 4.99993 7.14348 4.99993 9V12.528C5.00008 12.6831 4.96413 12.8362 4.89493 12.975L3.17793 16.408C3.09406 16.5757 3.05445 16.7621 3.06288 16.9494C3.07131 17.1368 3.12748 17.3188 3.22608 17.4783C3.32467 17.6379 3.4624 17.7695 3.6262 17.8608C3.78999 17.9521 3.97441 18 4.16193 18H19.8379C20.0255 18 20.2099 17.9521 20.3737 17.8608C20.5375 17.7695 20.6752 17.6379 20.7738 17.4783C20.8724 17.3188 20.9286 17.1368 20.937 16.9494C20.9454 16.7621 20.9058 16.5757 20.8219 16.408L19.1059 12.975C19.0364 12.8362 19.0001 12.6832 18.9999 12.528V9C18.9999 7.14348 18.2624 5.36301 16.9497 4.05025C15.6369 2.7375 13.8564 2 11.9999 2ZM11.9999 21C11.3793 21.0002 10.7739 20.8079 10.2671 20.4498C9.76025 20.0916 9.37694 19.5851 9.16993 19H14.8299C14.6229 19.5851 14.2396 20.0916 13.7328 20.4498C13.226 20.8079 12.6205 21.0002 11.9999 21Z" fill="#09244B"/>
+                            </svg>
+                            <span class="font-H" id="notification_unread_badge"<?php echo $rb_notification_unread_count > 0 ? '' : ' style="display:none"'; ?>><?php echo $rb_notification_unread_count; ?></span>
+                        </a>
+
+                        <div id="notification_box_wrap" data-endpoint="<?php echo G5_URL; ?>/rb/rb.mod/alarm/get-events.php" data-action-token="<?php echo get_text($rb_notification_action_token); ?>">
+                            <div class="rb_notification_tabs" role="tablist" aria-label="알림 구분">
+                                <?php foreach ($rb_notification_category_tabs as $rb_notification_category => $rb_notification_category_label) { ?>
+                                <button type="button" class="<?php echo $rb_notification_category === 'all' ? 'active' : ''; ?>" data-category="<?php echo get_text($rb_notification_category); ?>" role="tab" aria-selected="<?php echo $rb_notification_category === 'all' ? 'true' : 'false'; ?>"><?php echo get_text($rb_notification_category_label); ?></button>
+                                <?php } ?>
+                            </div>
+                            <div class="rb_notification_body">
+                                <div class="rb_notification_list"><div class="rb_notification_loading" role="status" aria-label="알림을 불러오는 중"><span aria-hidden="true"></span></div></div>
+                                <div class="rb_notification_view" style="display:none">
+                                    <div class="rb_notification_view_header">
+                                        <button type="button" class="rb_notification_back">← 목록</button>
+                                        <span class="rb_notification_view_date"></span>
+                                    </div>
+                                    <div class="rb_notification_view_inner">
+                                        <div class="rb_notification_view_content"></div>
+                                        <div class="rb_notification_view_links"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rb_notification_footer">
+                                <span>알림 보관일수는 최장 180일입니다.</span>
+                                <button type="button" class="rb_notification_delete_all">전체삭제</button>
+                            </div>
+                        </div>
+                        <script>
+(function ($) {
+    $(function () {
+        var $notificationBox = $('#notification_box_wrap');
+        if (!$notificationBox.length) return;
+
+        var isNotificationBoxVisible = false;
+        var notificationCategory = 'all';
+        var notificationEndpoint = $notificationBox.attr('data-endpoint');
+        var notificationActionToken = $notificationBox.attr('data-action-token');
+        var notificationIconPaths = {
+            board: 'm10.756 6.17 7.07 7.071-7.173 7.174a2 2 0 0 1-1.238.578L9.239 21H4.006a1.01 1.01 0 0 1-1.004-.9l-.006-.11v-5.233a2 2 0 0 1 .467-1.284l.12-.13 7.173-7.174Zm3.14-3.14a2 2 0 0 1 2.701-.117l.127.117 4.243 4.243a2 2 0 0 1 .117 2.7l-.117.128-1.726 1.726-7.07-7.071z',
+            shop: 'M10.464 3.282a2 2 0 0 1 2.964-.12l.108.12L17.468 8h2.985a1.49 1.49 0 0 1 1.484 1.655l-.092.766-.1.74-.082.554-.095.595-.108.625-.122.648-.136.661c-.072.333-.149.667-.232.999a21.018 21.018 0 0 1-.832 2.583l-.221.54-.214.488-.202.434-.094.194-.249.49c-.32.61-.924.97-1.563 1.022l-.16.006H6.555a1.929 1.929 0 0 1-1.71-1.008l-.232-.45-.18-.37a20.09 20.09 0 0 1-.095-.205l-.2-.449a21.536 21.536 0 0 1-1.108-3.276 32.366 32.366 0 0 1-.156-.654l-.142-.648-.127-.634-.112-.613-.1-.587-.087-.554-.074-.513-.09-.683-.066-.556a39.802 39.802 0 0 1-.017-.153 1.488 1.488 0 0 1 1.348-1.64L3.543 8h2.989zm-.503 9.44a1 1 0 0 0-1.96.326l.013.116.5 3 .025.114a1 1 0 0 0 1.96-.326l-.013-.116-.5-3zm5.203-.708a1 1 0 0 0-1.125.708l-.025.114-.5 3a1 1 0 0 0 1.947.442l.025-.114.5-3a1 1 0 0 0-.822-1.15M12 4.562 9.135 8h5.73z',
+            subscribe: 'M16 14a5 5 0 0 1 4.995 4.783L21 19v1a2 2 0 0 1-1.85 1.995L19 22H5a2 2 0 0 1-1.995-1.85L3 20v-1a5 5 0 0 1 4.783-4.995L8 14zM12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10',
+            notice: 'M5 9a7 7 0 0 1 14 0v3.764l1.822 3.644A1.1 1.1 0 0 1 19.838 18h-3.964a4.002 4.002 0 0 1-7.748 0H4.162a1.1 1.1 0 0 1-.984-1.592L5 12.764zm5.268 9a2 2 0 0 0 3.464 0zM12 4a5 5 0 0 0-5 5v3.764a2 2 0 0 1-.211.894L5.619 16h12.763l-1.17-2.342a2.001 2.001 0 0 1-.212-.894V9a5 5 0 0 0-5-5',
+            other: 'M7 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8m0 10a4 4 0 1 0 0 8 4 4 0 0 0 0-8m6-6a4 4 0 1 1 8 0 4 4 0 0 1-8 0m4 6a4 4 0 1 0 0 8 4 4 0 0 0 0-8'
+        };
+
+        function closeNotificationBox() {
+            $notificationBox.hide();
+            $('#notification_top_btn').removeClass('notification_open').attr('aria-expanded', 'false');
+            isNotificationBoxVisible = false;
+        }
+
+        window.rb_notification_update_badge = function (count) {
+            count = parseInt(count, 10) || 0;
+            var $badge = $('#notification_unread_badge');
+            $badge.text(count);
+            count > 0 ? $badge.show() : $badge.hide();
+            $('#rb_my_notification_btn').text(count + '개');
+        };
+
+        function showNotificationMessage(message) {
+            $('.rb_notification_list').empty().append(
+                $('<div>', {'class': 'rb_notification_empty'}).text(message)
+            );
+        }
+
+        function showNotificationLoading() {
+            $('.rb_notification_list').empty().append(
+                $('<div>', {
+                    'class': 'rb_notification_loading',
+                    'role': 'status',
+                    'aria-label': '알림을 불러오는 중'
+                }).append($('<span>', {'aria-hidden': 'true'}))
+            );
+        }
+
+        function renderNotificationList(items) {
+            var $list = $('.rb_notification_list').empty();
+            $('.rb_notification_view').hide();
+            $list.show();
+
+            if (!items || !items.length) {
+                showNotificationMessage('도착한 알림이 없습니다.');
+                return;
+            }
+
+            $.each(items, function (index, item) {
+                var content = String(item.content || item.title || '')
+                    .replace(/<br\s*\/?>/gi, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                var $row = $('<div>', {
+                    'class': 'rb_notification_item' + (parseInt(item.is_read, 10) ? ' is_read' : ''),
+                    'data-notification-id': item.id
+                });
+                var $open = $('<button>', {
+                    type: 'button',
+                    'class': 'rb_notification_item_open',
+                    'data-notification-id': item.id
+                });
+                var iconCategory = notificationIconPaths[item.category] ? item.category : 'other';
+                var $categoryIcon = $('<span>', {
+                    'class': 'rb_notification_category_icon rb_notification_category_' + iconCategory,
+                    'aria-hidden': 'true'
+                });
+                var categorySvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                var categoryPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                categorySvg.setAttribute('width', '24');
+                categorySvg.setAttribute('height', '24');
+                categorySvg.setAttribute('viewBox', '0 0 24 24');
+                categoryPath.setAttribute('d', notificationIconPaths[iconCategory]);
+                categorySvg.appendChild(categoryPath);
+                $categoryIcon.append(categorySvg);
+                var $meta = $('<span>', {'class': 'rb_notification_item_meta'})
+                    .append($('<b>').text(item.category_label || '기타'))
+                    .append($('<em>').text(item.created_at || ''));
+                var $text = $('<span>', {'class': 'rb_notification_item_text'})
+                    .append($meta)
+                    .append($('<span>', {'class': 'rb_notification_item_content'}).text(content));
+
+                $open.append($categoryIcon).append($text);
+                $row.append($open).append(
+                    $('<button>', {
+                        type: 'button',
+                        'class': 'rb_notification_delete',
+                        'data-notification-id': item.id,
+                        'aria-label': '알림 삭제',
+                        title: '삭제'
+                    }).text('×')
+                );
+                $list.append($row);
+            });
+        }
+
+        function loadNotificationList(category) {
+            notificationCategory = category || 'all';
+            showNotificationLoading();
+            $('.rb_notification_view').hide();
+            $('.rb_notification_list').show();
+
+            $.ajax({
+                type: 'POST',
+                url: notificationEndpoint,
+                dataType: 'json',
+                cache: false,
+                data: {act: 'notification_list', category: notificationCategory},
+                success: function (result) {
+                    if (result.msg !== 'SUCCESS') {
+                        showNotificationMessage('알림을 불러오지 못했습니다.');
+                        return;
+                    }
+                    rb_notification_update_badge(result.unread_count);
+                    renderNotificationList(result.items);
+                },
+                error: function () {
+                    showNotificationMessage('알림을 불러오지 못했습니다.');
+                }
+            });
+        }
+
+        function renderNotificationView(item) {
+            var rawContent = String(item.content || item.title || '');
+            var notificationLinks = [];
+
+            function addNotificationLink(value) {
+                value = String(value || '').trim();
+                if (!value) return;
+                if (/^www\./i.test(value)) value = 'https://' + value;
+
+                var safeUrl = typeof rb_alarm_url === 'function' ? rb_alarm_url(value) : '';
+                if (safeUrl && $.inArray(safeUrl, notificationLinks) === -1) {
+                    notificationLinks.push(safeUrl);
+                }
+            }
+
+            var parser = new DOMParser();
+            var parsedContent = parser.parseFromString(
+                rawContent.replace(/<br\s*\/?>/gi, '\n'),
+                'text/html'
+            );
+            var unsafeNodes = parsedContent.querySelectorAll('script, style');
+            for (var unsafeIndex = unsafeNodes.length - 1; unsafeIndex >= 0; unsafeIndex--) {
+                unsafeNodes[unsafeIndex].parentNode.removeChild(unsafeNodes[unsafeIndex]);
+            }
+            var contentAnchors = parsedContent.querySelectorAll('a[href]');
+            for (var anchorIndex = contentAnchors.length - 1; anchorIndex >= 0; anchorIndex--) {
+                addNotificationLink(contentAnchors[anchorIndex].getAttribute('href'));
+                contentAnchors[anchorIndex].parentNode.removeChild(contentAnchors[anchorIndex]);
+            }
+
+            var contentText = parsedContent.body ? parsedContent.body.textContent || '' : rawContent;
+            contentText = contentText.replace(/(?:https?:\/\/|www\.)[^\s<>"']+/gi, function (match) {
+                var linkValue = match.replace(/[),.!?]+$/, '');
+                var suffix = match.substring(linkValue.length);
+                addNotificationLink(linkValue);
+                return suffix;
+            });
+            contentText = contentText
+                .replace(/\r/g, '')
+                .replace(/[ \t]+\n/g, '\n')
+                .replace(/\n[ \t]+/g, '\n')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+
+            addNotificationLink(item.url);
+
+            $('.rb_notification_view_date').text(item.created_at || '');
+            $('.rb_notification_view_content').text(contentText || item.title || '');
+
+            var $links = $('.rb_notification_view_links').empty();
+            $.each(notificationLinks, function (index, linkUrl) {
+                $links.append($('<a>', {href: linkUrl}).text('링크열기'));
+            });
+
+            $('.rb_notification_list').hide();
+            $('.rb_notification_view').show();
+            $('.rb_notification_body').scrollTop(0);
+        }
+
+        function openNotificationView(notificationId) {
+            notificationId = parseInt(notificationId, 10) || 0;
+            if (!notificationId) return;
+
+            $.ajax({
+                type: 'POST',
+                url: notificationEndpoint,
+                dataType: 'json',
+                cache: false,
+                data: {
+                    act: 'notification_view',
+                    notification_id: notificationId,
+                    action_token: notificationActionToken
+                },
+                success: function (result) {
+                    if (result.msg === 'INVALID_TOKEN') {
+                        alert('페이지를 새로고침한 후 다시 이용해 주세요.');
+                        return;
+                    }
+                    if (result.msg !== 'SUCCESS' || !result.item) {
+                        $('.rb_notification_view').hide();
+                        $('.rb_notification_list').show();
+                        showNotificationMessage('알림을 찾을 수 없습니다.');
+                        return;
+                    }
+                    $('.rb_notification_item[data-notification-id="' + notificationId + '"]').addClass('is_read');
+                    rb_notification_update_badge(result.unread_count);
+                    renderNotificationView(result.item);
+                },
+                error: function () {
+                    $('.rb_notification_view').hide();
+                    $('.rb_notification_list').show();
+                    showNotificationMessage('알림을 불러오지 못했습니다.');
+                }
+            });
+        }
+
+        window.rb_notification_open_view = function (notificationId) {
+            notificationId = parseInt(notificationId, 10) || 0;
+            if (!notificationId) return false;
+
+            isNotificationBoxVisible = true;
+            $notificationBox.show();
+            $('#notification_top_btn').addClass('notification_open').attr('aria-expanded', 'true');
+            $('.rb_notification_view').hide();
+            $('.rb_notification_list').show();
+            showNotificationLoading();
+            openNotificationView(notificationId);
+            return false;
+        };
+
+        $('#notification_top_btn, #rb_my_notification_btn').on('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (this.id === 'rb_my_notification_btn') {
+                $('#rb_my_ovray').removeClass('is_open');
+                $('#rb_my_panel').removeClass('is_open').attr('aria-hidden', 'true');
+            }
+
+            isNotificationBoxVisible = !isNotificationBoxVisible;
+            if (isNotificationBoxVisible) {
+                $notificationBox.show();
+                $('#notification_top_btn').addClass('notification_open').attr('aria-expanded', 'true');
+                loadNotificationList(notificationCategory);
+            } else {
+                closeNotificationBox();
+            }
+        });
+
+        $(document).on('click.rbRowNotification', function () {
+            if (isNotificationBoxVisible) closeNotificationBox();
+        });
+
+        $notificationBox.on('click', function (event) {
+            event.stopPropagation();
+        });
+
+        $('.rb_notification_tabs').on('click', 'button', function () {
+            $('.rb_notification_tabs button').removeClass('active').attr('aria-selected', 'false');
+            $(this).addClass('active').attr('aria-selected', 'true');
+            loadNotificationList($(this).attr('data-category'));
+        });
+
+        $('.rb_notification_list').on('click', '.rb_notification_item_open', function () {
+            var notificationId = parseInt($(this).attr('data-notification-id'), 10) || 0;
+            if (notificationId) openNotificationView(notificationId);
+        });
+
+        $('.rb_notification_list').on('click', '.rb_notification_delete', function (event) {
+            event.stopPropagation();
+            var notificationId = parseInt($(this).attr('data-notification-id'), 10) || 0;
+            if (!notificationId) return;
+
+            $.ajax({
+                type: 'POST',
+                url: notificationEndpoint,
+                dataType: 'json',
+                cache: false,
+                data: {
+                    act: 'notification_delete',
+                    notification_id: notificationId,
+                    action_token: notificationActionToken
+                },
+                success: function (result) {
+                    if (result.msg === 'INVALID_TOKEN') {
+                        alert('페이지를 새로고침한 후 다시 이용해 주세요.');
+                        return;
+                    }
+                    if (result.msg === 'SUCCESS') {
+                        rb_notification_update_badge(result.unread_count);
+                        loadNotificationList(notificationCategory);
+                    }
+                }
+            });
+        });
+
+        $('.rb_notification_delete_all').on('click', function () {
+            rb_confirm('알림을 모두 삭제하시겠습니까?\n삭제된 데이터는 복구가 되지 않습니다.').then(function (confirmed) {
+                if (!confirmed) return;
+
+                $.ajax({
+                    type: 'POST',
+                    url: notificationEndpoint,
+                    dataType: 'json',
+                    cache: false,
+                    data: {
+                        act: 'notification_delete_all',
+                        action_token: notificationActionToken
+                    },
+                    success: function (result) {
+                        if (result.msg === 'INVALID_TOKEN') {
+                            alert('페이지를 새로고침한 후 다시 이용해 주세요.');
+                            return;
+                        }
+                        if (result.msg === 'SUCCESS') {
+                            rb_notification_update_badge(result.unread_count);
+                            $('.rb_notification_view').hide();
+                            $('.rb_notification_list').show();
+                            loadNotificationList(notificationCategory);
+                            return;
+                        }
+                        alert('알림을 삭제하지 못했습니다.');
+                    },
+                    error: function () {
+                        alert('알림을 삭제하지 못했습니다.');
+                    }
+                });
+            });
+        });
+
+        $('.rb_notification_back').on('click', function () {
+            $('.rb_notification_view').hide();
+            $('.rb_notification_list').show();
+            $('.rb_notification_body').scrollTop(0);
+        });
+    });
+})(jQuery);
+                        </script>
+                        <?php } ?>
                         <?php } ?>
 
                         <a href="<?php echo G5_SHOP_URL ?>/cart.php" alt="장바구니">
@@ -189,12 +578,23 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_SHOP_URL.'/rb.layout_hd/
 
                                 <div class="rb_my_panel_row mt-20">
                                     <ul class="rb_my_p_ul1 flex_l color-888 font-12">
-                                        새 메세지
+                                        새 쪽지
                                     </ul>
                                     <ul class="rb_my_p_ul2 flex_r">
-                                        <a href="<?php echo G5_BBS_URL ?>/memo.php" alt="새메세지" onclick="win_memo(this.href); return false;" class="font-B font-12"><?php echo $memo_not_read ?>개</a>
+                                        <a href="<?php echo G5_BBS_URL ?>/memo.php" alt="새 쪽지" onclick="win_memo(this.href); return false;" class="font-B font-12"><?php echo $memo_not_read ?>개</a>
                                     </ul>
                                 </div>
+
+                                <?php if ($rb_notification_category_tabs) { ?>
+                                <div class="rb_my_panel_row mt-10">
+                                    <ul class="rb_my_p_ul1 flex_l color-888 font-12">
+                                        새 알림
+                                    </ul>
+                                    <ul class="rb_my_p_ul2 flex_r">
+                                        <a href="#" id="rb_my_notification_btn" alt="새 알림" class="font-B font-12"><?php echo $rb_notification_unread_count ?>개</a>
+                                    </ul>
+                                </div>
+                                <?php } ?>
 
 
                                 <?php if(isset($config['cf_use_point']) && $config['cf_use_point'] == 1) { ?>

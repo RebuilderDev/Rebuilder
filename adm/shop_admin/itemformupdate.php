@@ -243,7 +243,8 @@ $forbidden_patterns = array(
     '/javascript:/i'      // javascript: 프로토콜
 );
 
-$option_count = (isset($_POST['opt_id']) && is_array($_POST['opt_id'])) ? count($_POST['opt_id']) : array();
+$rb_post_special_item = isset($_POST['it_types']) && in_array((int)$_POST['it_types'], array(1, 2, 3), true);
+$option_count = (!$rb_post_special_item && isset($_POST['opt_id']) && is_array($_POST['opt_id'])) ? count($_POST['opt_id']) : 0;
 $it_option_subject = '';
 $it_supply_subject = '';
 
@@ -282,7 +283,7 @@ if($option_count) {
 }
 
 // 예약 타입이면 선택옵션 subject 강제 초기화
-if(isset($_POST['it_types']) && $_POST['it_types'] == '1') {
+if($rb_post_special_item) {
     $it_option_subject = '';
 }
 
@@ -290,7 +291,7 @@ if(isset($_POST['it_types']) && $_POST['it_types'] == '1') {
 // 추가옵션
 sql_query(" delete from {$g5['g5_shop_item_option_table']} where io_type = '1' and it_id = '$it_id' "); // 기존추가옵션삭제
 
-$supply_count = (isset($_POST['spl_id']) && is_array($_POST['spl_id'])) ? count($_POST['spl_id']) : array();
+$supply_count = (!$rb_post_special_item && isset($_POST['spl_id']) && is_array($_POST['spl_id'])) ? count($_POST['spl_id']) : 0;
 if($supply_count) {
     // 추가옵션명
     $arr_spl = array();
@@ -557,7 +558,7 @@ if ($w == "" || $w == "u")
 
 // 선택옵션등록
 if($option_count) {
-    if(!(isset($_POST['it_types']) && $_POST['it_types'] == '1')) {
+    if(!$rb_post_special_item) {
         $comma = '';
         $sql = " INSERT INTO {$g5['g5_shop_item_option_table']}
                         ( `io_id`, `io_type`, `it_id`, `io_price`, `io_stock_qty`, `io_noti_qty`, `io_use` )
@@ -693,6 +694,9 @@ $is_seo_title_edit = $w ? true : false;
 if( function_exists('shop_seo_title_update') ) shop_seo_title_update($it_id, $is_seo_title_edit);
 
 run_event('shop_admin_itemformupdate', $it_id, $w);
+
+$rb_itemform_after_save_url = run_replace('rb_shop_itemform_after_save_url', '', $it_id, $w, (int)$it_types, 'admin');
+if ($rb_itemform_after_save_url !== '') goto_url($rb_itemform_after_save_url);
 
 $qstr = "$qstr&amp;sca=$sca&amp;page=$page";
 
