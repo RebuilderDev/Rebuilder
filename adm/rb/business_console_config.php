@@ -9,26 +9,7 @@ if (!$installed) {
     alert('비즈니스 콘솔 기능을 사용하려면 빌더설정 > DB업데이트를 먼저 실행해 주세요.', './rb_form.php');
 }
 $bc = rb_console_config(true);
-$partner_installed = is_file(G5_PATH.'/rb/rb.mod/partner/partner.lib.php');
-$ad_installed = is_file(G5_PATH.'/rb/rb.mod/advertising/advertising.lib.php');
-$reservation_installed = is_file(G5_EXTEND_PATH.'/rb_reservation.extend.php');
-$file_installed = is_file(G5_EXTEND_PATH.'/rb_file.extend.php');
-$media_installed = is_file(G5_EXTEND_PATH.'/rb_media.extend.php');
-$deposit_installed = is_file(G5_EXTEND_PATH.'/rb_point_c_ac.extend.php');
-$point_charge_installed = is_file(G5_EXTEND_PATH.'/rb_point_ac.extend.php');
-
-$business_features = array(
-    array('name' => '입점', 'description' => '상품·주문·문의·후기·정산을 입점사가 직접 관리합니다.', 'installed' => $partner_installed, 'manage_url' => './partner_form.php', 'manage_label' => '입점 설정'),
-    array('name' => '광고 관리', 'description' => '광고 신청·결제·심사·캘린더·유입 분석을 연동합니다.', 'installed' => $ad_installed, 'manage_url' => './ad_config.php', 'manage_label' => '광고 설정'),
-    array('name' => '예약상품 관리', 'description' => '입점사의 예약상품 등록과 예약 현황·시즌 관리를 연동합니다.', 'installed' => $reservation_installed, 'manage_url' => './reservation_set.php', 'manage_label' => '예약 설정'),
-    array('name' => '콘텐츠상품 관리', 'description' => '파일상품 등록과 다운로드 권한·이력 관리를 연동합니다.', 'installed' => $file_installed, 'manage_url' => './file_set.php', 'manage_label' => '콘텐츠 설정'),
-    array('name' => '미디어상품 관리', 'description' => '미디어상품 등록과 시청·다운로드·진도 관리를 연동합니다.', 'installed' => $media_installed, 'manage_url' => './media_set.php', 'manage_label' => '미디어 설정'),
-    array('name' => '예치금', 'description' => '콘솔 잔액·충전과 광고비 결제 및 입점 정산에 예치금을 연동합니다.', 'installed' => $deposit_installed, 'manage_url' => './point_c_set.php', 'manage_label' => '예치금 설정'),
-    array('name' => '포인트 충전', 'description' => '콘솔의 포인트 충전과 광고비 포인트 결제를 연동합니다.', 'installed' => $point_charge_installed, 'manage_url' => './point_set.php', 'manage_label' => '포인트 설정'),
-);
-if (function_exists('run_replace')) {
-    $business_features = run_replace('rb_business_console_features', $business_features, $bc);
-}
+$business_features = rb_console_business_features($bc);
 $g5['title'] = '비즈니스 콘솔 설정';
 include_once(G5_ADMIN_PATH.'/admin.head.php');
 ?>

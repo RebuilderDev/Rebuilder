@@ -51,6 +51,21 @@ function rb_console_config($refresh = false)
     return $cached;
 }
 
+function rb_console_business_features($config = array())
+{
+    if (!$config) $config = rb_console_config();
+    $features = array(
+        array('name'=>'입점', 'description'=>'상품·주문·문의·후기·정산을 입점사가 직접 관리합니다.', 'installed'=>is_file(G5_PATH.'/rb/rb.mod/partner/partner.lib.php'), 'condition'=>'입점 기능 설치 및 이용 권한 부여', 'manage_url'=>'./partner_form.php', 'manage_label'=>'입점 설정'),
+        array('name'=>'광고 관리', 'description'=>'광고 신청·결제·심사·캘린더·유입 분석을 연동합니다.', 'installed'=>is_file(G5_PATH.'/rb/rb.mod/advertising/advertising.lib.php'), 'condition'=>'광고 관리 설치 및 이용 권한 부여', 'manage_url'=>'./ad_config.php', 'manage_label'=>'광고 설정'),
+        array('name'=>'예약상품 관리', 'description'=>'입점사의 예약상품 등록과 예약 현황·시즌 관리를 연동합니다.', 'installed'=>is_file(G5_EXTEND_PATH.'/rb_reservation.extend.php'), 'condition'=>'입점·예약상품 관리 설치 및 입점사 권한 부여', 'manage_url'=>'./reservation_set.php', 'manage_label'=>'예약 설정'),
+        array('name'=>'콘텐츠상품 관리', 'description'=>'파일상품 등록과 다운로드 권한·이력 관리를 연동합니다.', 'installed'=>is_file(G5_EXTEND_PATH.'/rb_file.extend.php'), 'condition'=>'입점·콘텐츠상품 관리 설치 및 입점사 권한 부여', 'manage_url'=>'./file_set.php', 'manage_label'=>'콘텐츠 설정'),
+        array('name'=>'미디어상품 관리', 'description'=>'미디어상품 등록과 시청·다운로드·진도 관리를 연동합니다.', 'installed'=>is_file(G5_EXTEND_PATH.'/rb_media.extend.php'), 'condition'=>'입점·미디어상품 관리 설치 및 입점사 권한 부여', 'manage_url'=>'./media_set.php', 'manage_label'=>'미디어 설정'),
+        array('name'=>'예치금', 'description'=>'콘솔 잔액·충전과 광고비 결제 및 입점 정산에 예치금을 연동합니다.', 'installed'=>is_file(G5_EXTEND_PATH.'/rb_point_c_ac.extend.php'), 'condition'=>'예치금 설치 및 사용 설정', 'manage_url'=>'./point_c_set.php', 'manage_label'=>'예치금 설정'),
+        array('name'=>'포인트 충전', 'description'=>'콘솔의 포인트 충전과 광고비 포인트 결제를 연동합니다.', 'installed'=>is_file(G5_EXTEND_PATH.'/rb_point_ac.extend.php'), 'condition'=>'포인트 충전 설치 및 사용 설정', 'manage_url'=>'./point_set.php', 'manage_label'=>'포인트 설정'),
+    );
+    return function_exists('run_replace') ? run_replace('rb_business_console_features', $features, $config) : $features;
+}
+
 function rb_console_url($route = 'dashboard', $params = array())
 {
     $params = array_merge(array('route' => $route), (array) $params);
@@ -462,11 +477,13 @@ function rb_console_render_dashboard($context = array())
     <div class="local_desc01 local_desc">
         <p><strong>현재 사용할 수 있는 비즈니스 메뉴가 없습니다.</strong><br>기능이 설치되고 이용 권한이 부여되면 별도 설정 없이 왼쪽 메뉴와 대시보드에 자동으로 표시됩니다.</p>
     </div>
-    <h2>확장 가능한 비즈니스 기능</h2>
+    <?php $business_features = rb_console_business_features(); ?>
+    <h2 style="margin-top:20px">확장 가능한 비즈니스 기능</h2>
     <div class="tbl_head01 tbl_wrap rb-console-ready-table">
-        <table><caption>확장 가능한 비즈니스 기능 안내</caption><thead><tr><th>서비스</th><th>제공 기능</th><th>표시 조건</th></tr></thead><tbody>
-        <tr><td><strong>입점 운영</strong></td><td>입점 신청부터 상품, 주문, 구매, 정산 업무까지 통합 관리</td><td>입점 기능 설치 및 이용 권한 부여</td></tr>
-        <tr><td><strong>광고 운영</strong></td><td>광고 신청, 포인트 결제, 캠페인 일정, 유입·성과 분석</td><td>광고 기능 설치 및 이용 권한 부여</td></tr>
+        <table><caption>확장 가능한 비즈니스 기능 안내</caption><thead><tr><th>기능</th><th>콘솔 연동 내용</th><th>표시 조건</th></tr></thead><tbody>
+        <?php foreach ($business_features as $feature) { ?>
+        <tr><td><strong><?php echo rb_console_h(isset($feature['name']) ? $feature['name'] : ''); ?></strong></td><td><?php echo rb_console_h(isset($feature['description']) ? $feature['description'] : ''); ?></td><td><?php echo rb_console_h(isset($feature['condition']) ? $feature['condition'] : '기능 설치 및 이용 권한 부여'); ?></td></tr>
+        <?php } ?>
         </tbody></table>
     </div>
     <?php return; } ?>
