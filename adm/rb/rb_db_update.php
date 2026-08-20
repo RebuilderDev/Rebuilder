@@ -29,14 +29,14 @@ if ($result_view === '1') {
     $client = rb_license_client_get();
 
     if (empty($client['registered_at'])) {
-        $message = '설치 토큰을 먼저 등록해 주세요.';
+        $message = '인증 토큰을 먼저 등록해 주세요.';
     } else {
         // 도메인 변경과 복제 여부를 먼저 확인한 뒤 인증된 설치에만 DB 구조를 요청합니다.
         $check = rb_license_check_remote();
         if (empty($check['success'])) {
             $message = isset($check['message']) ? $check['message'] : '설치 인증상태를 확인하지 못했습니다.';
         } elseif (isset($check['data']['state']) && $check['data']['state'] === 'clone_pending') {
-            $message = isset($check['data']['notice']) ? $check['data']['notice'] : '복제된 설치환경입니다. 빌더설정에서 새 설치 토큰을 등록해주세요.';
+            $message = isset($check['data']['notice']) ? $check['data']['notice'] : '복제된 설치환경입니다. 빌더설정에서 새 인증 토큰을 등록해 주세요.';
         } else {
             $response = rb_license_fetch_schema();
             if (empty($response['success'])) {

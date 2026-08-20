@@ -195,11 +195,10 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
     }
 
 } else {
-    alert('빌더 2.2.7은 설치 토큰 등록 후 DB 설치 및 업데이트에서 자동 설치됩니다.', './rb_form.php');
+    alert('빌더 2.2.7은 인증 토큰 등록 후 DB 설치 및 업데이트에서 자동 설치됩니다.', './rb_form.php');
 }
 update_rewrite_rules();
 goto_url('./rb_form.php', false);
 
 ?>
-
 

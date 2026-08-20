@@ -46,13 +46,13 @@ $install_token = isset($_POST['install_token']) ? trim((string) $_POST['install_
 $result = rb_license_register_token($install_token);
 if (empty($result['success'])) {
     if ($is_ajax) {
-        rb_license_register_response(false, isset($result['message']) ? $result['message'] : '설치 토큰을 등록하지 못했습니다.');
+        rb_license_register_response(false, isset($result['message']) ? $result['message'] : '인증 토큰을 등록하지 못했습니다.');
     }
-    alert(isset($result['message']) ? $result['message'] : '설치 토큰을 등록하지 못했습니다.', './rb_form.php');
+    alert(isset($result['message']) ? $result['message'] : '인증 토큰을 등록하지 못했습니다.', './rb_form.php');
 }
 
 if ($is_ajax) {
-    rb_license_register_response(true, '설치 토큰 등록이 완료되었습니다.', isset($result['data']) ? $result['data'] : array());
+    rb_license_register_response(true, '인증 토큰 등록이 완료되었습니다.', isset($result['data']) ? $result['data'] : array());
 }
 
 alert("토큰 등록이 완료되었습니다.\n빌더 설치 및 업데이트를 진행합니다.", './rb_db_update.php');

@@ -318,7 +318,7 @@ function rb_license_register_token($install_token)
 {
     $install_token = strtoupper(preg_replace('/[^A-Z0-9]/', '', (string) $install_token));
     if (!preg_match('/^RBI[A-F0-9]{32}$/', $install_token)) {
-        return array('success' => false, 'message' => '설치 토큰 형식을 확인해 주세요.');
+        return array('success' => false, 'message' => '인증 토큰 형식을 확인해 주세요.');
     }
     $client = rb_license_client_get();
     $is_clone_registration = !empty($client['registered_at'])
@@ -331,7 +331,7 @@ function rb_license_register_token($install_token)
         return array('success' => false, 'message' => $client['error']);
     }
     if (!empty($client['registered_at']) && $client['registration_status'] !== 'pending' && !$is_clone_registration) {
-        return array('success' => false, 'message' => '이미 설치 토큰이 등록된 빌더입니다.');
+        return array('success' => false, 'message' => '이미 인증 토큰이 등록된 빌더입니다.');
     }
     $request_client = $client;
     if ($is_clone_registration) {
@@ -405,7 +405,7 @@ function rb_license_check_remote()
 {
     $client = rb_license_client_get();
     if (empty($client['installation_uuid']) || empty($client['installation_secret']) || empty($client['registered_at'])) {
-        return array('success' => false, 'code' => 'token_required', 'message' => '설치 토큰을 먼저 등록해 주세요.');
+        return array('success' => false, 'code' => 'token_required', 'message' => '인증 토큰을 먼저 등록해 주세요.');
     }
     $response = rb_license_http_post('check.php', rb_license_api_payload($client));
     if (!empty($response['success'])) {
@@ -416,7 +416,7 @@ function rb_license_check_remote()
             return array(
                 'success' => false,
                 'code' => 'token_required',
-                'message' => '설치 토큰을 다시 등록해 주세요.',
+                'message' => '인증 토큰을 다시 등록해 주세요.',
             );
         }
     }
@@ -427,7 +427,7 @@ function rb_license_fetch_schema()
 {
     $client = rb_license_client_get();
     if (empty($client['installation_uuid']) || empty($client['installation_secret']) || empty($client['registered_at'])) {
-        return array('success' => false, 'code' => 'token_required', 'message' => '설치 토큰을 먼저 등록해 주세요.');
+        return array('success' => false, 'code' => 'token_required', 'message' => '인증 토큰을 먼저 등록해 주세요.');
     }
     $payload = rb_license_api_payload($client);
     $payload['g5_table_prefix'] = defined('G5_TABLE_PREFIX') ? G5_TABLE_PREFIX : 'g5_';
@@ -438,7 +438,7 @@ function rb_license_fetch_schema()
         return array(
             'success' => false,
             'code' => 'token_required',
-            'message' => '설치 토큰을 다시 등록해 주세요.',
+            'message' => '인증 토큰을 다시 등록해 주세요.',
         );
     }
     return $response;

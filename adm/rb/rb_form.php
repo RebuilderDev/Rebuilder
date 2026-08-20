@@ -77,15 +77,15 @@ $pg_anchor = '<ul class="anchor">
                         <td colspan="3">
                             <?php if (empty($rb_license_client['registered_at']) || $rb_license_is_clone) { ?>
                                 <?php if ($rb_license_is_clone) { ?>
-                                    <?php echo help('복제된 설치환경입니다.<br>복제본에서 사용할 용도의 새 설치 토큰을 등록해 주세요.') ?>
+                                    <?php echo help('복제된 설치환경입니다.<br>복제본에서 사용할 용도의 새 인증 토큰을 등록해 주세요.') ?>
                                 <?php } else { ?>
-                                    <?php echo help('빌더 2.2.7 최초 설치 또는 업데이트에 설치 토큰이 필요합니다.<br>발급받은 토큰을 입력한 뒤 등록해 주세요.') ?>
+                                    <?php echo help('빌더 2.2.7 최초 설치 또는 업데이트에 인증 토큰이 필요합니다.<br>발급받은 토큰을 입력한 뒤 등록해 주세요.') ?>
                                 <?php } ?>
                                 <form action="./rb_license_register.php" method="post" class="rb-license-token-form rb-license-register-form" data-install-mode="update">
                                     <input type="hidden" name="token" value="<?php echo get_admin_token(); ?>">
-                                    <input type="text" name="install_token" value="" class="frm_input" maxlength="80" autocomplete="off" placeholder="설치 토큰 입력" required>
+                                    <input type="text" name="install_token" value="" class="frm_input" maxlength="80" autocomplete="off" placeholder="인증 토큰 입력" required>
                                     <button type="submit" class="btn_submit btn rb-license-register-submit">
-                                        <span class="rb-license-action-label">설치 토큰 등록 및 빌더 설치</span>
+                                        <span class="rb-license-action-label">인증 토큰 등록</span>
                                         <i class="fa fa-spinner fa-spin rb-license-action-spinner" aria-hidden="true" style="display:none;margin-left:4px;font-size:12px;"></i>
                                     </button>
                                 </form>
@@ -567,7 +567,7 @@ $pg_anchor = '<ul class="anchor">
         빌더 구동에 필요한 테이블이 설치 됩니다.<br><br>
         rb_ 로 시작하는 동일한 테이블명이 있는경우 테이블 생성이 되지 않을 수 있으며<br>
         성능 보장을 위해 가급적 PHP7.X ~ PHP8.X 버전을 사용해주세요.<br>
-        <strong>설치 토큰 등록 후 [DB 설치 및 업데이트]가 자동 실행됩니다.</strong><br><br>
+        <strong>인증 토큰 등록 후 [DB 설치 및 업데이트]가 자동 실행됩니다.</strong><br><br>
 
         테이블 설치 후 <b>환경설정 > 테마설정</b> 메뉴에서<br>
         <b>rb.Basic 테마를 적용</b> 해주시고<br>
@@ -604,17 +604,17 @@ $pg_anchor = '<ul class="anchor">
 리빌더는 그누보드 기반에서 동작하는 별도의 확장 소프트웨어입니다. 그누보드의 라이선스는 별도로 적용됩니다.
 
 2. 적용 버전과 기존 설치
-빌더 2.2.7 이상을 새로 설치하거나 이전 버전에서 2.2.7 이상으로 업데이트하는 경우 설치 토큰 및 신규 라이선스 정책이 적용됩니다.
-2.2.6.3 이하 버전을 그대로 사용하는 기존 설치는 종전의 무료 사용 상태를 유지합니다. 다만 2.2.7 이상으로 업데이트하면 기존 라이선스 키는 설치 인증수단으로 사용할 수 없고 새 설치 토큰 등록이 필요합니다.
+빌더 2.2.7 이상을 새로 설치하거나 이전 버전에서 2.2.7 이상으로 업데이트하는 경우 인증 토큰 및 신규 라이선스 정책이 적용됩니다.
+2.2.6.3 이하 버전을 그대로 사용하는 기존 설치는 종전의 무료 사용 상태를 유지합니다. 다만 2.2.7 이상으로 업데이트하면 기존 라이선스 키는 설치 인증수단으로 사용할 수 없고 새 인증 토큰 등록이 필요합니다.
 
-3. 설치 토큰
-빌더 2.2.7 이상의 최초 설치와 2.2.7로의 최초 업데이트에는 회원 계정에서 발급한 일회용 설치 토큰이 반드시 필요합니다.
-설치 토큰은 회원 계정과 하나의 빌더 설치본을 연결하는 확인값이며 운영 도메인 라이선스 자체는 아닙니다.
+3. 인증 토큰
+빌더 2.2.7 이상의 최초 설치와 2.2.7로의 최초 업데이트에는 회원 계정에서 발급한 일회용 인증 토큰이 반드시 필요합니다.
+인증 토큰은 회원 계정과 하나의 빌더 설치본을 연결하는 확인값이며 운영 도메인 라이선스 자체는 아닙니다.
 토큰 등록이 완료된 설치본에 한하여 설치·업데이트에 필요한 DB 구조가 제공됩니다.
 
 4. 테스트 환경과 운영 도메인
 로컬 환경과 허용된 호스팅 임시도메인에서는 라이선스를 사용하지 않고 설치·테스트할 수 있습니다.
-운영 도메인이 연결되면 설치 토큰에서 선택한 용도와 같은 종류의 보유 라이선스가 적용됩니다.
+운영 도메인이 연결되면 인증 토큰에서 선택한 용도와 같은 종류의 보유 라이선스가 적용됩니다.
 자사용에는 자사용 라이선스, 고객에게 제작·납품·이전하는 설치에는 납품용 라이선스가 필요합니다.
 
 5. 라이선스 사용 단위
@@ -624,7 +624,7 @@ $pg_anchor = '<ul class="anchor">
 
 6. 복제 및 이전 설치
 설치된 빌더를 다른 서버나 별도 환경으로 복제하면 새로운 설치환경으로 확인될 수 있습니다.
-복제본에서 사용할 용도의 새 설치 토큰을 등록해야 하며 운영 도메인으로 사용하는 경우 해당 용도의 사용 가능한 라이선스가 필요할 수 있습니다.
+복제본에서 사용할 용도의 새 인증 토큰을 등록해야 하며 운영 도메인으로 사용하는 경우 해당 용도의 사용 가능한 라이선스가 필요할 수 있습니다.
 
 7. 부가기능 및 부가서비스
 부가기능, 테마 및 부가서비스는 빌더 라이선스와 별도의 판매·이용조건이 적용될 수 있습니다.
@@ -632,10 +632,10 @@ $pg_anchor = '<ul class="anchor">
 
 8. 설치 확인정보의 처리
 설치 인증, 복제 확인, 라이선스 적용 및 업데이트 제공을 위해 설치 식별값, 회원 식별정보, 도메인, 접속 IP, 빌더·그누보드·PHP 버전, 서버환경 구분용 해시값과 확인일시가 처리될 수 있습니다.
-설치 토큰 원문과 설치 인증 비밀값 원문은 인증 서버 DB에 저장하지 않습니다.
+인증 토큰 원문과 설치 인증 비밀값 원문은 인증 서버 DB에 저장하지 않습니다.
 
 9. 금지행위
-- 설치 토큰, 설치 확인 또는 라이선스 검증을 삭제·변조·우회하는 행위
+- 인증 토큰, 설치 확인 또는 라이선스 검증을 삭제·변조·우회하는 행위
 - 허용 수량을 초과하여 설치·복제·활성화하거나 인증정보를 공유하는 행위
 - 리빌더 또는 구성요소를 무단 재배포·재판매·대여·리스하거나 공개 배포하는 행위
 - 소스코드를 역공학·디컴파일·역어셈블하는 행위
@@ -681,15 +681,15 @@ $pg_anchor = '<ul class="anchor">
             <label for="agrees">상기 내용을 모두 확인하였으며, 라이선스 정책에 동의 합니다.</label>
         </div>
 
-        <h2 class="h2_frm">설치 토큰</h2>
+        <h2 class="h2_frm">인증 토큰</h2>
 
         <div class="rb-license-token-form">
-            <input type="text" name="install_token" id="install_token" value="" class="frm_input" maxlength="80" autocomplete="off" placeholder="설치 토큰 입력" required style="width:100%;max-width:640px;">
+            <input type="text" name="install_token" id="install_token" value="" class="frm_input" maxlength="80" autocomplete="off" placeholder="인증 토큰 입력" required style="width:100%;max-width:640px;">
         </div>
 
         <div class="btn_confirm01 btn_confirm rb-license-token-actions">
             <button type="submit" class="btn_submit btn rb-license-register-submit">
-                <span class="rb-license-action-label">설치 토큰 등록 및 빌더 설치</span>
+                <span class="rb-license-action-label">인증 토큰 등록 및 빌더 설치</span>
                 <i class="fa fa-spinner fa-spin rb-license-action-spinner" aria-hidden="true" style="display:none;margin-left:4px;font-size:12px;"></i>
             </button>
         </div>
@@ -697,7 +697,7 @@ $pg_anchor = '<ul class="anchor">
     <?php } else { ?>
     <h2 class="h2_frm">설치 인증 완료</h2>
     <div class="local_desc01 local_desc">
-        설치 토큰 등록이 완료되었습니다. 아래 버튼을 눌러 빌더 DB를 설치해 주세요.
+        인증 토큰 등록이 완료되었습니다. 아래 버튼을 눌러 빌더 DB를 설치해 주세요.
     </div>
     <div class="btn_confirm01 btn_confirm">
         <a href="./rb_db_update.php" class="btn_submit btn rb-db-update-link">
@@ -780,7 +780,7 @@ $(function() {
         };
 
         if (installMode === 'new') {
-            rb_confirm('상기 주의사항 및 라이선스 정책을 확인해 주세요.\n설치 토큰을 등록하시겠습니까?').then(function(confirmed) {
+            rb_confirm('상기 주의사항 및 라이선스 정책을 확인해 주세요.\n인증 토큰을 등록하시겠습니까?').then(function(confirmed) {
                 if (confirmed) {
                     beginRegistration();
                 }
