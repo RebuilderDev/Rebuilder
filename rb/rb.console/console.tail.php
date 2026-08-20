@@ -3,6 +3,69 @@
 <script src="<?php echo G5_ADMIN_URL; ?>/admin.js?ver=<?php echo G5_JS_VER; ?>"></script><script src="<?php echo G5_ADMIN_URL; ?>/js/rb.common.js?ver=<?php echo G5_JS_VER; ?>"></script>
 <script>
 (function($){
+    if (!$ || !$.datepicker) return;
+
+    $.datepicker.setDefaults({
+        closeText:'닫기',prevText:'이전달',nextText:'다음달',currentText:'오늘',
+        monthNames:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
+        monthNamesShort:['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
+        dayNames:['일요일','월요일','화요일','수요일','목요일','금요일','토요일'],
+        dayNamesShort:['일','월','화','수','목','금','토'],dayNamesMin:['일','월','화','수','목','금','토'],
+        weekHeader:'주',dateFormat:'yy-mm-dd',firstDay:0,isRTL:false,showMonthAfterYear:true,yearSuffix:'년'
+    });
+
+    function dateLimit($input, name) {
+        var value = $.trim(String($input.attr(name) || ''));
+        return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+    }
+
+    window.rbConsoleDatepickerRefresh = function(input) {
+        var $input = $(input);
+        if (!$input.length || !$input.hasClass('hasDatepicker')) return;
+        $input.datepicker('option', {
+            minDate:dateLimit($input, 'min'),
+            maxDate:dateLimit($input, 'max')
+        });
+    };
+
+    function initDatepickers(root) {
+        var $root = $(root || document);
+        $root.find('input[type="date"]:not([data-rb-datepicker="off"]), input.datepicker_inp:not([data-rb-datepicker="off"])').addBack('input[type="date"]:not([data-rb-datepicker="off"]), input.datepicker_inp:not([data-rb-datepicker="off"])').each(function(){
+            var $input = $(this);
+            $input.attr('autocomplete','off');
+            if ($input.hasClass('hasDatepicker')) return;
+            if (String($input.attr('type')).toLowerCase() === 'date') $input.attr('type','text');
+            $input.addClass('datepicker_inp').datepicker({
+                dateFormat:'yy-mm-dd',
+                minDate:dateLimit($input, 'min'),
+                maxDate:dateLimit($input, 'max'),
+                beforeShow:function(input){
+                    var $current = $(input);
+                    return {minDate:dateLimit($current, 'min'),maxDate:dateLimit($current, 'max')};
+                },
+                onSelect:function(){ $(this).trigger('input').trigger('change'); }
+            });
+        });
+    }
+
+    $(function(){
+        initDatepickers(document);
+        if (!window.MutationObserver) return;
+        var observer = new MutationObserver(function(mutations){
+            $.each(mutations,function(_,mutation){
+                if (mutation.type === 'childList') {
+                    $.each(mutation.addedNodes || [],function(_,node){ if (node.nodeType === 1) initDatepickers(node); });
+                } else if (mutation.type === 'attributes' && (mutation.attributeName === 'min' || mutation.attributeName === 'max')) {
+                    window.rbConsoleDatepickerRefresh(mutation.target);
+                }
+            });
+        });
+        observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['min','max']});
+    });
+})(jQuery);
+</script>
+<script>
+(function($){
     // 관리자 공통 스크립트의 제출 보조 기능은 유지하되 관리자 전용
     // ajax.token.php를 호출하지 않고 콘솔 전용 토큰을 사용한다.
     window.get_ajax_token = function(){
