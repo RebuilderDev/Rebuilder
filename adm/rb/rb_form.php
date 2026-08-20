@@ -81,10 +81,13 @@ $pg_anchor = '<ul class="anchor">
                                 <?php } else { ?>
                                     <?php echo help('빌더 2.2.7 최초 설치 또는 업데이트에 설치 토큰이 필요합니다.<br>발급받은 토큰을 입력한 뒤 등록해 주세요.') ?>
                                 <?php } ?>
-                                <form action="./rb_license_register.php" method="post" class="rb-license-token-form">
+                                <form action="./rb_license_register.php" method="post" class="rb-license-token-form rb-license-register-form" data-install-mode="update">
                                     <input type="hidden" name="token" value="<?php echo get_admin_token(); ?>">
                                     <input type="text" name="install_token" value="" class="frm_input" maxlength="80" autocomplete="off" placeholder="설치 토큰 입력" required>
-                                    <button type="submit" class="btn_submit btn">설치 토큰 등록</button>
+                                    <button type="submit" class="btn_submit btn rb-license-register-submit">
+                                        <span class="rb-license-action-label">설치 토큰 등록 및 빌더 설치</span>
+                                        <i class="fa fa-spinner fa-spin rb-license-action-spinner" aria-hidden="true" style="display:none;margin-left:4px;font-size:12px;"></i>
+                                    </button>
                                 </form>
                             <?php } else { ?>
                                 <strong>설치 인증 완료</strong>
@@ -104,7 +107,10 @@ $pg_anchor = '<ul class="anchor">
                         <th scope="row">DB업데이트</th>
                         <td colspan="3">
                             <?php echo help('설치 인증을 확인한 뒤 필요한 DB 구조를 받아 자동으로 설치·업데이트합니다.') ?>
-                            <a href="./rb_db_update.php" class="btn_frmline">DB 설치 및 업데이트</a>
+                            <a href="./rb_db_update.php" class="btn_frmline rb-db-update-link">
+                                <span class="rb-license-action-label">DB 설치 및 업데이트</span>
+                                <i class="fa fa-spinner fa-spin rb-license-action-spinner" aria-hidden="true" style="display:none;margin-left:4px;font-size:12px;"></i>
+                            </a>
                         </td>
 
                     </tr>
@@ -561,7 +567,7 @@ $pg_anchor = '<ul class="anchor">
         빌더 구동에 필요한 테이블이 설치 됩니다.<br><br>
         rb_ 로 시작하는 동일한 테이블명이 있는경우 테이블 생성이 되지 않을 수 있으며<br>
         성능 보장을 위해 가급적 PHP7.X ~ PHP8.X 버전을 사용해주세요.<br>
-        <strong>설치 토큰 등록 후 [DB 설치 및 업데이트]를 실행해 주세요.</strong><br><br>
+        <strong>설치 토큰 등록 후 [DB 설치 및 업데이트]가 자동 실행됩니다.</strong><br><br>
 
         테이블 설치 후 <b>환경설정 > 테마설정</b> 메뉴에서<br>
         <b>rb.Basic 테마를 적용</b> 해주시고<br>
@@ -584,7 +590,7 @@ $pg_anchor = '<ul class="anchor">
 
 <section>
     <?php if (empty($rb_license_client['registered_at'])) { ?>
-    <form name="rb_form" id="rb_form" action="./rb_license_register.php" method="post">
+    <form name="rb_form" id="rb_form" action="./rb_license_register.php" method="post" class="rb-license-register-form" data-install-mode="new">
         <input type="hidden" name="token" value="<?php echo get_admin_token(); ?>">
         <h2 class="h2_frm">라이선스 정책</h2>
 
@@ -682,7 +688,10 @@ $pg_anchor = '<ul class="anchor">
         </div>
 
         <div class="btn_confirm01 btn_confirm rb-license-token-actions">
-            <input type="submit" value="설치 토큰 등록" class="btn_submit btn">
+            <button type="submit" class="btn_submit btn rb-license-register-submit">
+                <span class="rb-license-action-label">설치 토큰 등록 및 빌더 설치</span>
+                <i class="fa fa-spinner fa-spin rb-license-action-spinner" aria-hidden="true" style="display:none;margin-left:4px;font-size:12px;"></i>
+            </button>
         </div>
     </form>
     <?php } else { ?>
@@ -691,28 +700,119 @@ $pg_anchor = '<ul class="anchor">
         설치 토큰 등록이 완료되었습니다. 아래 버튼을 눌러 빌더 DB를 설치해 주세요.
     </div>
     <div class="btn_confirm01 btn_confirm">
-        <a href="./rb_db_update.php" class="btn_submit btn">DB 설치 및 업데이트</a>
+        <a href="./rb_db_update.php" class="btn_submit btn rb-db-update-link">
+            <span class="rb-license-action-label">DB 설치 및 업데이트</span>
+            <i class="fa fa-spinner fa-spin rb-license-action-spinner" aria-hidden="true" style="display:none;margin-left:4px;font-size:12px;"></i>
+        </a>
     </div>
     <?php } ?>
 </section>
 
-<?php if (empty($rb_license_client['registered_at'])) { ?>
+<?php } ?>
+
 <script>
-        $(document).ready(function() {
-            $("#rb_form").on("submit", function(event) {
-                if (confirm("상기 주의사항 및 라이선스 정책을 확인해주세요.\n설치 토큰을 등록하시겠습니까?")) {
-                    if (!$("#agrees").is(":checked")) {
-                        alert("라이선스 정책에 동의 하셔야 빌더를 사용할 수 있습니다.");
-                        event.preventDefault();
+$(function() {
+    function setActionLoading($button, loadingText) {
+        $button.data('rb-busy', true).attr('aria-disabled', 'true');
+        if ($button.is('button')) {
+            $button.prop('disabled', true);
+        }
+        $button.find('.rb-license-action-label').text(loadingText);
+        $button.find('.rb-license-action-spinner').show();
+    }
+
+    $('.rb-license-register-form').on('submit', function(event) {
+        event.preventDefault();
+
+        var $form = $(this);
+        var $button = $form.find('.rb-license-register-submit');
+        var installMode = String($form.data('install-mode') || 'update');
+        if ($button.data('rb-busy')) {
+            return;
+        }
+        if ($form.find('#agrees').length && !$form.find('#agrees').is(':checked')) {
+            alert('라이선스 정책에 동의하셔야 빌더를 사용할 수 있습니다.');
+            return;
+        }
+
+        var beginRegistration = function() {
+            setActionLoading($button, '등록 및 설치 중입니다.');
+
+            $.ajax({
+                url: $form.attr('action'),
+                type: 'POST',
+                dataType: 'json',
+                data: $form.serialize() + '&ajax=1',
+                timeout: 120000
+            }).done(function(registerResult) {
+                if (!registerResult || !registerResult.success) {
+                    window.location.href = './rb_db_update.php?result=1';
+                    return;
+                }
+
+                $.ajax({
+                    url: './rb_db_update.php',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        ajax: '1',
+                        show_result: installMode === 'new' ? 'error' : '1',
+                        result_context: installMode === 'new' ? 'new_install' : 'token_update'
+                    },
+                    timeout: 300000
+                }).done(function(updateResult) {
+                    if (installMode === 'new' && updateResult && updateResult.success) {
+                        rb_confirm('빌더 설치 및 업데이트가 완료되었습니다.\n테마 변경을 위해 테마 설정으로 이동할까요?').then(function(confirmed) {
+                            window.location.href = confirmed
+                                ? '<?php echo G5_ADMIN_URL; ?>/theme.php'
+                                : './rb_form.php';
+                        });
+                        return;
                     }
-                } else {
-                    event.preventDefault();
+
+                    window.location.href = './rb_db_update.php?result=1';
+                }).fail(function() {
+                    window.location.href = './rb_db_update.php?result=ajax_error';
+                });
+            }).fail(function() {
+                window.location.href = './rb_db_update.php?result=ajax_error';
+            });
+        };
+
+        if (installMode === 'new') {
+            rb_confirm('상기 주의사항 및 라이선스 정책을 확인해 주세요.\n설치 토큰을 등록하시겠습니까?').then(function(confirmed) {
+                if (confirmed) {
+                    beginRegistration();
                 }
             });
+        } else {
+            beginRegistration();
+        }
+    });
+
+    $('.rb-db-update-link').on('click', function(event) {
+        event.preventDefault();
+
+        var $button = $(this);
+        if ($button.data('rb-busy')) {
+            return;
+        }
+
+        setActionLoading($button, '업데이트 중입니다.');
+        $.ajax({
+            url: $button.attr('href'),
+            type: 'POST',
+            dataType: 'json',
+            data: {ajax: '1', show_result: '1'},
+            timeout: 300000
+        }).done(function() {
+            window.location.href = './rb_db_update.php?result=1';
+        }).fail(function() {
+            window.location.href = './rb_db_update.php?result=ajax_error';
         });
+    });
+});
 </script>
-<?php } ?>
-<?php } ?>
 
 
 <?php
