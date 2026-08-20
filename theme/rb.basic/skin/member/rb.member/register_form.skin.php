@@ -31,12 +31,12 @@ $rb_sms_cert_show = ($rb_sms_cert_render && ($w == '' || ($w == 'u' && !$rb_sms_
 $rb_sms_cert_initial_hidden = ($rb_sms_cert_render && !$rb_sms_cert_show) ? 1 : 0;
 $rb_notification_preference = function_exists('rb_notification_get_preference')
     ? rb_notification_get_preference(isset($member['mb_id']) ? $member['mb_id'] : '')
-    : array('notify_push' => 1, 'notify_site' => 1);
+    : array('notify_push' => 0, 'notify_site' => 0);
 $rb_notification_push_checked = !empty($rb_notification_preference['notify_push']);
 $rb_notification_site_checked = !empty($rb_notification_preference['notify_site']);
 $rb_notification_category_checked = array();
 foreach (array('notify_comment', 'notify_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $rb_notification_key) {
-    $rb_notification_category_checked[$rb_notification_key] = !isset($rb_notification_preference[$rb_notification_key]) || !empty($rb_notification_preference[$rb_notification_key]);
+    $rb_notification_category_checked[$rb_notification_key] = !empty($rb_notification_preference[$rb_notification_key]);
 }
 $rb_notification_visible_categories = function_exists('rb_notification_visible_categories') ? rb_notification_visible_categories() : array();
 $rb_notification_shop_available = isset($rb_notification_visible_categories['shop']);
@@ -567,7 +567,7 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
                             <label for="reg_rb_notify_push">앱 Push 알림 동의</label>
                         </ul>
                         <?php } else { ?>
-                        <input type="hidden" name="rb_notify_push" value="<?php echo $rb_notification_push_checked ? '1' : '0'; ?>">
+                        <input type="hidden" name="rb_notify_push" value="0">
                         <?php } ?>
                         <ul class="desc_sub">
                             <input type="checkbox" name="rb_notify_site" value="1" id="reg_rb_notify_site" <?php echo $rb_notification_site_checked ? 'checked' : ''; ?> class="selec_chk child-notification">
@@ -588,7 +588,7 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
                                 <label for="reg_rb_notify_shop">쇼핑 알림</label>
                             </ul>
                             <?php } else { ?>
-                            <input type="hidden" name="rb_notify_shop" value="<?php echo $rb_notification_category_checked['notify_shop'] ? '1' : '0'; ?>">
+                            <input type="hidden" name="rb_notify_shop" value="0">
                             <?php } ?>
                             <?php if ($rb_notification_subscribe_available) { ?>
                             <ul class="desc_sub">
@@ -596,7 +596,7 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
                                 <label for="reg_rb_notify_subscribe">구독 알림</label>
                             </ul>
                             <?php } else { ?>
-                            <input type="hidden" name="rb_notify_subscribe" value="<?php echo $rb_notification_category_checked['notify_subscribe'] ? '1' : '0'; ?>">
+                            <input type="hidden" name="rb_notify_subscribe" value="0">
                             <?php } ?>
                             <ul class="desc_sub">
                                 <input type="checkbox" name="rb_notify_other" value="1" id="reg_rb_notify_other" <?php echo $rb_notification_category_checked['notify_other'] ? 'checked' : ''; ?> class="selec_chk site-notification-option">

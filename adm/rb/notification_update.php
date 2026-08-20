@@ -102,4 +102,26 @@ if (!$dispatch_saved) {
 }
 sql_query('COMMIT', false);
 
+// 운영자가 발송한 공지는 회원의 선택 알림 동의와 관계없이 앱 Push로도 전달합니다.
+// DB 저장이 확정된 뒤 한 번에 전송하여 저장 실패 시 Push만 먼저 발송되는 일을 막습니다.
+if (function_exists('get_user_tokens')
+    && function_exists('sendPushNotificationAsync')
+    && isset($app['ap_title'], $app['ap_key'], $app['ap_pid'])
+    && $app['ap_title'] && $app['ap_key'] && $app['ap_pid']) {
+    $notice_tokens = array();
+    foreach ($recipient_ids as $recv_id) {
+        $notice_tokens = array_merge($notice_tokens, get_user_tokens($recv_id));
+    }
+    $notice_tokens = array_values(array_unique(array_filter($notice_tokens)));
+    if ($notice_tokens) {
+        sendPushNotificationAsync(
+            $notice_tokens,
+            '공지',
+            $title,
+            G5_DATA_PATH.'/push/'.basename((string) $app['ap_key']),
+            true
+        );
+    }
+}
+
 alert(number_format($sent_count).'명에게 공지 알림을 발송했습니다.', './notification_form.php');

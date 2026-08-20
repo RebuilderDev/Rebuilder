@@ -113,20 +113,20 @@ function rb_notification_preference_columns()
 }
 
 /**
- * 설정 행이 아직 없는 회원과 신규 DB는 두 채널 모두 동의 상태로 처리합니다.
+ * 명시적으로 저장된 동의가 없는 회원은 모든 선택 알림을 수신하지 않습니다.
  * 기존 mb_sms 값은 알림 수신설정에 사용하지 않습니다.
  */
 function rb_notification_get_preference($mb_id)
 {
     $mb_id = trim((string) $mb_id);
     $defaults = array(
-        'notify_push' => 1,
-        'notify_site' => 1,
-        'notify_comment' => 1,
-        'notify_reply' => 1,
-        'notify_shop' => 1,
-        'notify_subscribe' => 1,
-        'notify_other' => 1,
+        'notify_push' => 0,
+        'notify_site' => 0,
+        'notify_comment' => 0,
+        'notify_reply' => 0,
+        'notify_shop' => 0,
+        'notify_subscribe' => 0,
+        'notify_other' => 0,
         'notify_updated_at' => '',
         'is_saved' => 0,
     );
@@ -182,9 +182,13 @@ function rb_notification_save_preference($mb_id, $notify_push, $notify_site, $ca
         'notify_site' => $notify_site ? 1 : 0,
     );
     foreach (array('notify_comment', 'notify_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $column) {
-        $values[$column] = array_key_exists($column, $category_preferences)
-            ? ($category_preferences[$column] ? 1 : 0)
-            : (!empty($current[$column]) ? 1 : 0);
+        if (!$values['notify_site']) {
+            $values[$column] = 0;
+        } elseif (array_key_exists($column, $category_preferences)) {
+            $values[$column] = $category_preferences[$column] ? 1 : 0;
+        } else {
+            $values[$column] = !empty($current[$column]) ? 1 : 0;
+        }
     }
     $now = defined('G5_TIME_YMDHIS') ? G5_TIME_YMDHIS : date('Y-m-d H:i:s');
     $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
@@ -692,9 +696,9 @@ function rb_notification_filter_push_tokens($tokens, $force = false)
 
     $allowed = array();
     foreach ($tokens as $token) {
-        if (!isset($token_members[$token])
-            || $token_members[$token] === ''
-            || rb_notification_push_allowed($token_members[$token])) {
+        if (isset($token_members[$token])
+            && $token_members[$token] !== ''
+            && rb_notification_push_allowed($token_members[$token])) {
             $allowed[] = $token;
         }
     }
