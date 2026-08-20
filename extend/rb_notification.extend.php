@@ -92,6 +92,26 @@ function rb_notification_preference_table_ready()
     return $ready;
 }
 
+function rb_notification_preference_columns()
+{
+    static $columns = null;
+    if ($columns !== null) {
+        return $columns;
+    }
+
+    $columns = array();
+    if (!rb_notification_preference_table_ready()) {
+        return $columns;
+    }
+    $result = sql_query('SHOW COLUMNS FROM rb_notification_preference', false);
+    while ($result && $row = sql_fetch_array($result)) {
+        if (!empty($row['Field'])) {
+            $columns[(string) $row['Field']] = true;
+        }
+    }
+    return $columns;
+}
+
 /**
  * 설정 행이 아직 없는 회원과 신규 DB는 두 채널 모두 동의 상태로 처리합니다.
  * 기존 mb_sms 값은 알림 수신설정에 사용하지 않습니다.
@@ -102,6 +122,11 @@ function rb_notification_get_preference($mb_id)
     $defaults = array(
         'notify_push' => 1,
         'notify_site' => 1,
+        'notify_comment' => 1,
+        'notify_reply' => 1,
+        'notify_shop' => 1,
+        'notify_subscribe' => 1,
+        'notify_other' => 1,
         'notify_updated_at' => '',
         'is_saved' => 0,
     );
@@ -116,7 +141,14 @@ function rb_notification_get_preference($mb_id)
         return $GLOBALS['rb_notification_preference_cache'][$mb_id];
     }
 
-    $row = sql_fetch("SELECT notify_push, notify_site, notify_updated_at
+    $columns = rb_notification_preference_columns();
+    $select = array('notify_push', 'notify_site', 'notify_updated_at');
+    foreach (array('notify_comment', 'notify_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $column) {
+        if (isset($columns[$column])) {
+            $select[] = $column;
+        }
+    }
+    $row = sql_fetch("SELECT ".implode(', ', $select)."
                         FROM rb_notification_preference
                        WHERE mb_id='".sql_real_escape_string($mb_id)."'
                        LIMIT 1", false);
@@ -125,38 +157,51 @@ function rb_notification_get_preference($mb_id)
         return $defaults;
     }
 
-    $preference = array(
-        'notify_push' => !empty($row['notify_push']) ? 1 : 0,
-        'notify_site' => !empty($row['notify_site']) ? 1 : 0,
-        'notify_updated_at' => isset($row['notify_updated_at']) ? (string) $row['notify_updated_at'] : '',
-        'is_saved' => 1,
-    );
+    $preference = $defaults;
+    foreach (array('notify_push', 'notify_site', 'notify_comment', 'notify_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $column) {
+        if (array_key_exists($column, $row)) {
+            $preference[$column] = !empty($row[$column]) ? 1 : 0;
+        }
+    }
+    $preference['notify_updated_at'] = isset($row['notify_updated_at']) ? (string) $row['notify_updated_at'] : '';
+    $preference['is_saved'] = 1;
     $GLOBALS['rb_notification_preference_cache'][$mb_id] = $preference;
     return $preference;
 }
 
-function rb_notification_save_preference($mb_id, $notify_push, $notify_site)
+function rb_notification_save_preference($mb_id, $notify_push, $notify_site, $category_preferences = array())
 {
     $mb_id = trim((string) $mb_id);
     if ($mb_id === '' || !rb_notification_preference_table_ready()) {
         return false;
     }
 
-    $notify_push = $notify_push ? 1 : 0;
-    $notify_site = $notify_site ? 1 : 0;
+    $current = rb_notification_get_preference($mb_id);
+    $values = array(
+        'notify_push' => $notify_push ? 1 : 0,
+        'notify_site' => $notify_site ? 1 : 0,
+    );
+    foreach (array('notify_comment', 'notify_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $column) {
+        $values[$column] = array_key_exists($column, $category_preferences)
+            ? ($category_preferences[$column] ? 1 : 0)
+            : (!empty($current[$column]) ? 1 : 0);
+    }
     $now = defined('G5_TIME_YMDHIS') ? G5_TIME_YMDHIS : date('Y-m-d H:i:s');
     $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
-    $saved = sql_query("INSERT INTO rb_notification_preference SET
-                mb_id='".sql_real_escape_string($mb_id)."',
-                notify_push='{$notify_push}',
-                notify_site='{$notify_site}',
-                notify_updated_at='".sql_real_escape_string($now)."',
-                notify_ip='".sql_real_escape_string($ip)."'
-            ON DUPLICATE KEY UPDATE
-                notify_push=VALUES(notify_push),
-                notify_site=VALUES(notify_site),
-                notify_updated_at=VALUES(notify_updated_at),
-                notify_ip=VALUES(notify_ip)", false);
+    $columns = rb_notification_preference_columns();
+    $insert = array("mb_id='".sql_real_escape_string($mb_id)."'");
+    $update = array();
+    foreach ($values as $column => $value) {
+        if (!isset($columns[$column])) continue;
+        $insert[] = "{$column}='".(int) $value."'";
+        $update[] = "{$column}=VALUES({$column})";
+    }
+    $insert[] = "notify_updated_at='".sql_real_escape_string($now)."'";
+    $insert[] = "notify_ip='".sql_real_escape_string($ip)."'";
+    $update[] = 'notify_updated_at=VALUES(notify_updated_at)';
+    $update[] = 'notify_ip=VALUES(notify_ip)';
+    $saved = sql_query("INSERT INTO rb_notification_preference SET ".implode(', ', $insert)
+        ." ON DUPLICATE KEY UPDATE ".implode(', ', $update), false);
     if (!$saved) {
         return false;
     }
@@ -164,12 +209,10 @@ function rb_notification_save_preference($mb_id, $notify_push, $notify_site)
     if (!isset($GLOBALS['rb_notification_preference_cache']) || !is_array($GLOBALS['rb_notification_preference_cache'])) {
         $GLOBALS['rb_notification_preference_cache'] = array();
     }
-    $GLOBALS['rb_notification_preference_cache'][$mb_id] = array(
-        'notify_push' => $notify_push,
-        'notify_site' => $notify_site,
+    $GLOBALS['rb_notification_preference_cache'][$mb_id] = array_merge($values, array(
         'notify_updated_at' => $now,
         'is_saved' => 1,
-    );
+    ));
     return true;
 }
 
@@ -184,6 +227,94 @@ function rb_notification_site_allowed($mb_id)
     $preference = rb_notification_get_preference($mb_id);
     return !empty($preference['notify_site']);
 }
+
+function rb_notification_preference_key($category, $title = '', $source_type = '')
+{
+    $category = strtolower(trim((string) $category));
+    $source_type = strtolower(trim((string) $source_type));
+    if ($category === 'shop') return 'notify_shop';
+    if ($category === 'subscribe') return 'notify_subscribe';
+    if ($category === 'other') return 'notify_other';
+    if ($category !== 'board') return '';
+
+    if (in_array($source_type, array('reply', 'comment_reply', 'board_reply'), true)
+        || strpos((string) $title, '댓글에 댓글') !== false) {
+        return 'notify_reply';
+    }
+    if (in_array($source_type, array('comment', 'board_comment'), true)
+        || strpos((string) $title, '댓글') !== false) {
+        return 'notify_comment';
+    }
+    return 'notify_other';
+}
+
+function rb_notification_site_type_allowed($mb_id, $category, $title = '', $source_type = '')
+{
+    if ($category === 'notice') {
+        return true;
+    }
+    $preference = rb_notification_get_preference($mb_id);
+    if (empty($preference['notify_site'])) {
+        return false;
+    }
+    $key = rb_notification_preference_key($category, $title, $source_type);
+    return $key === '' || !empty($preference[$key]);
+}
+
+function rb_notification_board_config_table_ready()
+{
+    return rb_notification_database_table_exists('rb_notification_board_config');
+}
+
+function rb_notification_board_push_site_enabled($bo_table)
+{
+    $bo_table = trim((string) $bo_table);
+    if ($bo_table === '' || !rb_notification_board_config_table_ready()) {
+        return true;
+    }
+    $row = sql_fetch("SELECT notify_push_site FROM rb_notification_board_config
+                       WHERE bo_table='".sql_real_escape_string($bo_table)."' LIMIT 1", false);
+    return !isset($row['notify_push_site']) || !empty($row['notify_push_site']);
+}
+
+function rb_notification_board_table_from_link($link_url)
+{
+    $query = parse_url(html_entity_decode((string) $link_url, ENT_QUOTES, 'UTF-8'), PHP_URL_QUERY);
+    if (!$query) return '';
+    parse_str($query, $params);
+    $bo_table = isset($params['bo_table']) ? trim((string) $params['bo_table']) : '';
+    return preg_match('/^[A-Za-z0-9_]{1,20}$/', $bo_table) ? $bo_table : '';
+}
+
+function rb_notification_admin_board_form_update($bo_table, $w)
+{
+    global $g5;
+    if (!rb_notification_board_config_table_ready()) return;
+
+    $enabled = isset($_POST['rb_notify_push_site']) && (string) $_POST['rb_notify_push_site'] === '1' ? 1 : 0;
+    $targets = array($bo_table);
+    if (!empty($_POST['chk_all_rb_notify_push_site'])) {
+        $targets = array();
+        $result = sql_query("SELECT bo_table FROM {$g5['board_table']}", false);
+        while ($result && $row = sql_fetch_array($result)) $targets[] = $row['bo_table'];
+    } elseif (!empty($_POST['chk_grp_rb_notify_push_site'])) {
+        $board = sql_fetch("SELECT gr_id FROM {$g5['board_table']} WHERE bo_table='".sql_real_escape_string($bo_table)."'", false);
+        $targets = array();
+        $result = sql_query("SELECT bo_table FROM {$g5['board_table']} WHERE gr_id='".sql_real_escape_string(isset($board['gr_id']) ? $board['gr_id'] : '')."'", false);
+        while ($result && $row = sql_fetch_array($result)) $targets[] = $row['bo_table'];
+    }
+
+    foreach (array_unique(array_filter($targets)) as $target) {
+        sql_query("INSERT INTO rb_notification_board_config SET
+                    bo_table='".sql_real_escape_string($target)."',
+                    notify_push_site='{$enabled}',
+                    notify_updated_at='".sql_real_escape_string(G5_TIME_YMDHIS)."'
+                   ON DUPLICATE KEY UPDATE
+                    notify_push_site=VALUES(notify_push_site),
+                    notify_updated_at=VALUES(notify_updated_at)", false);
+    }
+}
+add_event('admin_board_form_update', 'rb_notification_admin_board_form_update', G5_HOOK_DEFAULT_PRIORITY, 2);
 
 function rb_notification_categories()
 {
@@ -446,9 +577,18 @@ function rb_notification_send($category, $title, $content, $link_url, $recv_id, 
     $batch_key = isset($options['batch_key']) ? trim((string) $options['batch_key']) : '';
     $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
     $now = defined('G5_TIME_YMDHIS') ? G5_TIME_YMDHIS : date('Y-m-d H:i:s');
+    $admin_system_force = ($recv_id === (string) $config['cf_admin'] && $send_id === 'system-msg');
+
+    $board_table = isset($options['board_table']) ? trim((string) $options['board_table']) : '';
+    if ($board_table === '') {
+        $board_table = rb_notification_board_table_from_link($link_url);
+    }
+    if ($category !== 'notice' && $board_table !== '' && !rb_notification_board_push_site_enabled($board_table)) {
+        return false;
+    }
 
     $noti_id = 0;
-    if (rb_notification_site_allowed($recv_id)) {
+    if ($admin_system_force || rb_notification_site_type_allowed($recv_id, $category, $title, $source_type)) {
         $sql = "INSERT INTO rb_notification SET
                     noti_category='".sql_real_escape_string($category)."',
                     noti_title='".sql_real_escape_string($title)."',
@@ -469,7 +609,8 @@ function rb_notification_send($category, $title, $content, $link_url, $recv_id, 
 
     // PWA는 자체 구독·수신동의 절차를 사용하며, 회원의 앱 Push 설정과 분리합니다.
     $pwa_push = (!isset($options['pwa_push']) || (bool) $options['pwa_push']);
-    $app_push = rb_notification_push_allowed($recv_id)
+    $preference_force = ($category === 'notice' || $admin_system_force);
+    $app_push = ($preference_force || rb_notification_push_allowed($recv_id))
         && (!isset($options['push']) || (bool) $options['push'])
         && (!isset($options['app_push']) || (bool) $options['app_push']);
     $labels = rb_notification_categories();
@@ -481,7 +622,7 @@ function rb_notification_send($category, $title, $content, $link_url, $recv_id, 
     if ($app_push
         && isset($app['ap_title'], $app['ap_key'], $app['ap_pid'])
         && $app['ap_title'] && $app['ap_key'] && $app['ap_pid']) {
-        rb_notification_send_app_push($recv_id, $push_title, $title, $app['ap_key']);
+        rb_notification_send_app_push($recv_id, $push_title, $title, $app['ap_key'], $preference_force);
     }
     return $noti_id;
 }
@@ -508,9 +649,9 @@ if (!function_exists('get_user_tokens')) {
 }
 
 if (!function_exists('sendPushNotificationAsync')) {
-    function sendPushNotificationAsync($tokens, $title, $body, $json_key_file_path)
+    function sendPushNotificationAsync($tokens, $title, $body, $json_key_file_path, $force = false)
     {
-        $tokens = rb_notification_filter_push_tokens($tokens);
+        $tokens = rb_notification_filter_push_tokens($tokens, $force);
         if (!$tokens || !function_exists('curl_init')) return;
         $post_data = json_encode(array(
             'tokens' => array_values($tokens),
@@ -529,10 +670,10 @@ if (!function_exists('sendPushNotificationAsync')) {
     }
 }
 
-function rb_notification_filter_push_tokens($tokens)
+function rb_notification_filter_push_tokens($tokens, $force = false)
 {
     $tokens = array_values(array_unique(array_filter(array_map('trim', (array) $tokens))));
-    if (!$tokens || !rb_notification_database_table_exists('rb_app_token')) {
+    if ($force || !$tokens || !rb_notification_database_table_exists('rb_app_token')) {
         return $tokens;
     }
 
@@ -571,19 +712,19 @@ if (!function_exists('send_push_if_needed')) {
     }
 }
 
-function rb_notification_send_app_push($recv_id, $push_title, $body, $api_key)
+function rb_notification_send_app_push($recv_id, $push_title, $body, $api_key, $force = false)
 {
     global $app, $config;
     if ($recv_id === '') {
         return;
     }
-    if (!rb_notification_push_allowed($recv_id)) return;
+    if (!$force && !rb_notification_push_allowed($recv_id)) return;
     if ($recv_id === (string) $config['cf_admin'] && empty($app['ap_systems_msg'])) return;
     $tokens = get_user_tokens($recv_id);
     if (!$tokens) {
         return;
     }
-    sendPushNotificationAsync($tokens, $push_title, $body, G5_DATA_PATH.'/push/'.basename((string) $api_key));
+    sendPushNotificationAsync($tokens, $push_title, $body, G5_DATA_PATH.'/push/'.basename((string) $api_key), $force);
 }
 
 /*
@@ -597,6 +738,7 @@ function rb_notification_subscribe_compatibility($board, $wr_id, $w, $qstr, $red
     global $g5;
     if ($w !== '' || empty($board['bo_table']) || !$wr_id
         || !rb_notification_table_ready()
+        || !rb_notification_board_push_site_enabled(isset($board['bo_table']) ? $board['bo_table'] : '')
         || !rb_notification_database_table_exists('rb_subscribe')) {
         return;
     }
@@ -637,6 +779,7 @@ function rb_notification_subscribe_compatibility($board, $wr_id, $w, $qstr, $red
             'subscribe', $title, $title, $link_url, $recv_id, 'system-msg', array(
                 'source_type' => 'subscribe_post',
                 'source_id' => $source_id,
+                'board_table' => $board['bo_table'],
                 // 기존 부가기능의 앱 푸시는 유지하고 PWA 푸시만 새 알림에서 처리합니다.
                 'app_push' => false,
             )

@@ -2572,11 +2572,12 @@ function rbEsc(s){
         <td>
             <select name="bn_position" id="bn_position">
                 <?php echo rb_banner_group_list($bn['bn_position']) ?>
+                <option value="__add__">그룹추가</option>
                 <option value="개별출력" <?php echo get_selected(isset($bn['bn_position']) ? $bn['bn_position'] : '', '개별출력'); ?>>개별출력</option>
 				<option value="" <?php echo get_selected(isset($bn['bn_position']) ? $bn['bn_position'] : '', ''); ?>>미출력</option>
-			</select> <input type="text" name="bn_position_use" id="bn_position_use" class="frm_input" placeholder="그룹생성">
+			</select> <input type="text" name="bn_position_use" id="bn_position_use" class="frm_input" placeholder="그룹명 입력" hidden disabled style="display:none;">
 			<br><br>
-			<?php echo help("개별출력의 경우 그룹화 되지 않습니다. 그룹이 없는 경우 그룹생성 항목에 직접 입력하시면 생성 됩니다.<br>생성되는 배너는 모두 모듈설정 패널에서 사용하실 수 있습니다."); ?>
+			<?php echo help("개별출력의 경우 그룹화 되지 않습니다. 새 그룹은 출력그룹에서 그룹추가를 선택한 뒤 그룹명을 입력하면 생성됩니다.<br>생성되는 배너는 모두 모듈설정 패널에서 사용하실 수 있습니다."); ?>
 
 			<?php echo htmlspecialchars("그룹별 출력 : <?php echo rb_banners('그룹명'); ?>"); ?><br>
 			<?php echo htmlspecialchars("개별출력 : <?php echo rb_banners('개별출력', '배너ID'); ?>"); ?><br>
@@ -2675,6 +2676,28 @@ function rbEsc(s){
 </div>
 
 </form>
+
+<script>
+(function() {
+    var positionSelect = document.getElementById('bn_position');
+    var groupInput = document.getElementById('bn_position_use');
+    if (!positionSelect || !groupInput) return;
+
+    function syncGroupInput(focusInput) {
+        var isAddGroup = positionSelect.value === '__add__';
+        groupInput.hidden = !isAddGroup;
+        groupInput.disabled = !isAddGroup;
+        groupInput.required = isAddGroup;
+        groupInput.style.display = isAddGroup ? 'inline-block' : 'none';
+        if (isAddGroup && focusInput) groupInput.focus();
+    }
+
+    positionSelect.addEventListener('change', function() {
+        syncGroupInput(true);
+    });
+    syncGroupInput(false);
+})();
+</script>
 
 <?php
 include_once(G5_ADMIN_PATH . '/admin.tail.php');

@@ -14,7 +14,14 @@ if (($w === '' || $w === 'u')
     $rb_notify_site = $rb_notification_agree
         && isset($_POST['rb_notify_site'])
         && (string) $_POST['rb_notify_site'] === '1';
-    rb_notification_save_preference($mb_id, $rb_notify_push, $rb_notify_site);
+    $rb_category_preferences = array();
+    foreach (array('comment', 'reply', 'shop', 'subscribe', 'other') as $rb_notification_type) {
+        $rb_post_key = 'rb_notify_'.$rb_notification_type;
+        $rb_category_preferences['notify_'.$rb_notification_type] = $rb_notify_site
+            && isset($_POST[$rb_post_key])
+            && (string) $_POST[$rb_post_key] === '1';
+    }
+    rb_notification_save_preference($mb_id, $rb_notify_push, $rb_notify_site, $rb_category_preferences);
 }
 
 //추가정보 저장

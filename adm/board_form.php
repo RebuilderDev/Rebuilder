@@ -89,7 +89,7 @@ if (!isset($board['bo_select_editor'])) {
     sql_query(" ALTER TABLE `{$g5['board_table']}` ADD `bo_select_editor` VARCHAR(50) NOT NULL DEFAULT '' AFTER `bo_use_dhtml_editor` ", false);
 }
 
-// SMS/알림톡 사용 여부 추가
+// SMS 사용 여부 추가
 if (!isset($board['bo_use_kakaotalk'])) {
     sql_query(" ALTER TABLE `{$g5['board_table']}` ADD `bo_use_kakaotalk` VARCHAR(50) NOT NULL DEFAULT '' AFTER `bo_use_email` ", false);
 }
@@ -145,6 +145,9 @@ for ($i = 0; $i <= 10; $i++) {
 }
 
 $board = array_merge($board_default, $board);
+$rb_notify_push_site = function_exists('rb_notification_board_push_site_enabled')
+    ? rb_notification_board_push_site_enabled(isset($board['bo_table']) ? $board['bo_table'] : '')
+    : true;
 
 run_event('adm_board_form_before', $board, $w);
 
@@ -709,7 +712,7 @@ $pg_anchor = '<ul class="anchor">
             </td>
         </tr>
         <tr>
-            <th scope="row"><label for="bo_use_kakaotalk">SMS/알림톡 사용</label></th>
+            <th scope="row"><label for="bo_use_kakaotalk">SMS 사용</label></th>
             <td>
                 <input type="checkbox" name="bo_use_kakaotalk" value="1" id="bo_use_kakaotalk" <?php echo $board['bo_use_kakaotalk']?'checked':''; ?>>
                 사용
@@ -719,6 +722,19 @@ $pg_anchor = '<ul class="anchor">
                 <label for="chk_grp_use_kakaotalk">그룹적용</label>
                 <input type="checkbox" name="chk_all_use_kakaotalk" value="1" id="chk_all_use_kakaotalk">
                 <label for="chk_all_use_kakaotalk">전체적용</label>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row"><label for="rb_notify_push_site">Push / 사이트 내 알림 사용</label></th>
+            <td>
+                <input type="checkbox" name="rb_notify_push_site" value="1" id="rb_notify_push_site" <?php echo $rb_notify_push_site ? 'checked' : ''; ?>>
+                사용
+            </td>
+            <td class="td_grpset">
+                <input type="checkbox" name="chk_grp_rb_notify_push_site" value="1" id="chk_grp_rb_notify_push_site">
+                <label for="chk_grp_rb_notify_push_site">그룹적용</label>
+                <input type="checkbox" name="chk_all_rb_notify_push_site" value="1" id="chk_all_rb_notify_push_site">
+                <label for="chk_all_rb_notify_push_site">전체적용</label>
             </td>
         </tr>
         <tr>

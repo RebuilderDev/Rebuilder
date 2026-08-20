@@ -20,6 +20,13 @@ $rb_notification_preference = function_exists('rb_notification_get_preference')
     : array('notify_push' => 1, 'notify_site' => 1);
 $rb_notification_push_checked = !empty($rb_notification_preference['notify_push']);
 $rb_notification_site_checked = !empty($rb_notification_preference['notify_site']);
+$rb_notification_category_checked = array();
+foreach (array('notify_comment', 'notify_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $rb_notification_key) {
+    $rb_notification_category_checked[$rb_notification_key] = !isset($rb_notification_preference[$rb_notification_key]) || !empty($rb_notification_preference[$rb_notification_key]);
+}
+$rb_notification_visible_categories = function_exists('rb_notification_visible_categories') ? rb_notification_visible_categories() : array();
+$rb_notification_shop_available = isset($rb_notification_visible_categories['shop']);
+$rb_notification_subscribe_available = isset($rb_notification_visible_categories['subscribe']);
 $rb_notification_push_available = isset($app) && is_array($app)
     && !empty($app['ap_title']) && !empty($app['ap_pid']) && !empty($app['ap_key']);
 $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notification_push_checked) || $rb_notification_site_checked);
@@ -108,11 +115,42 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
                         <input type="checkbox" name="rb_notify_site" value="1" id="reg_rb_notify_site" <?php echo $rb_notification_site_checked ? 'checked' : ''; ?> class="selec_chk child-notification">
                         <label for="reg_rb_notify_site">사이트 내 알림 동의</label>
                     </ul>
+                    <div class="desc_sub">
+                        <ul class="desc_sub">
+                            <input type="checkbox" name="rb_notify_comment" value="1" id="reg_rb_notify_comment" <?php echo $rb_notification_category_checked['notify_comment'] ? 'checked' : ''; ?> class="selec_chk site-notification-option">
+                            <label for="reg_rb_notify_comment">댓글 알림</label>
+                        </ul>
+                        <ul class="desc_sub">
+                            <input type="checkbox" name="rb_notify_reply" value="1" id="reg_rb_notify_reply" <?php echo $rb_notification_category_checked['notify_reply'] ? 'checked' : ''; ?> class="selec_chk site-notification-option">
+                            <label for="reg_rb_notify_reply">대댓글 알림</label>
+                        </ul>
+                        <?php if ($rb_notification_shop_available) { ?>
+                        <ul class="desc_sub">
+                            <input type="checkbox" name="rb_notify_shop" value="1" id="reg_rb_notify_shop" <?php echo $rb_notification_category_checked['notify_shop'] ? 'checked' : ''; ?> class="selec_chk site-notification-option">
+                            <label for="reg_rb_notify_shop">쇼핑 알림</label>
+                        </ul>
+                        <?php } else { ?>
+                        <input type="hidden" name="rb_notify_shop" value="<?php echo $rb_notification_category_checked['notify_shop'] ? '1' : '0'; ?>">
+                        <?php } ?>
+                        <?php if ($rb_notification_subscribe_available) { ?>
+                        <ul class="desc_sub">
+                            <input type="checkbox" name="rb_notify_subscribe" value="1" id="reg_rb_notify_subscribe" <?php echo $rb_notification_category_checked['notify_subscribe'] ? 'checked' : ''; ?> class="selec_chk site-notification-option">
+                            <label for="reg_rb_notify_subscribe">구독 알림</label>
+                        </ul>
+                        <?php } else { ?>
+                        <input type="hidden" name="rb_notify_subscribe" value="<?php echo $rb_notification_category_checked['notify_subscribe'] ? '1' : '0'; ?>">
+                        <?php } ?>
+                        <ul class="desc_sub">
+                            <input type="checkbox" name="rb_notify_other" value="1" id="reg_rb_notify_other" <?php echo $rb_notification_category_checked['notify_other'] ? 'checked' : ''; ?> class="selec_chk site-notification-option">
+                            <label for="reg_rb_notify_other">기타 알림</label>
+                        </ul>
+                    </div>
                     <template id="tpl_notification">
                         <?php if ($rb_notification_push_available) { ?>
-                        앱 Push 알림을 받으면 새로운 활동 소식을 앱 알림으로 확인할 수 있습니다.<br>
+                        앱 Push 알림을 받으면 새로운 활동 소식을 앱 알림으로 확인할 수 있습니다.
                         <?php } ?>
-                        사이트 내 알림은 주요공지, 게시물 및 댓글 등의 활동과 관련된 소식을 실시간 알림으로 받아 보실 수 있습니다.
+                        사이트 내 알림은 게시물, 댓글, 쇼핑 및 구독 등의 활동과 관련된 소식을 실시간 알림으로 받아 보실 수 있습니다.<br>
+                        운영자가 발송하는 공지 알림은 알림수신을 거부할 수 없습니다.
                     </template>
                 </div>
             </li>
@@ -518,6 +556,8 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
     document.addEventListener('DOMContentLoaded', function () {
         const parentNotification = document.getElementById('reg_rb_notification_agree');
         const childNotification = Array.from(document.querySelectorAll('.child-notification'));
+        const siteNotification = document.getElementById('reg_rb_notify_site');
+        const siteOptions = Array.from(document.querySelectorAll('.site-notification-option'));
         if (!parentNotification || childNotification.length === 0) return;
 
         const syncParentFromChildren = () => {
@@ -527,11 +567,28 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
             childNotification.forEach(cb => {
                 cb.checked = parentNotification.checked;
             });
+            siteOptions.forEach(cb => {
+                cb.checked = parentNotification.checked;
+            });
+        };
+        const syncSiteOptionsFromParent = () => {
+            siteOptions.forEach(cb => {
+                cb.checked = siteNotification.checked;
+            });
+            syncParentFromChildren();
+        };
+        const syncSiteParentFromOptions = () => {
+            if (siteOptions.length) {
+                siteNotification.checked = siteOptions.some(cb => cb.checked);
+            }
+            syncParentFromChildren();
         };
 
         syncParentFromChildren();
         parentNotification.addEventListener('change', syncChildrenFromParent);
         childNotification.forEach(cb => cb.addEventListener('change', syncParentFromChildren));
+        if (siteNotification) siteNotification.addEventListener('change', syncSiteOptionsFromParent);
+        siteOptions.forEach(cb => cb.addEventListener('change', syncSiteParentFromOptions));
     });
 </script>
 
