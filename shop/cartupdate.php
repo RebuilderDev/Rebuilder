@@ -447,17 +447,13 @@ else // 장바구니에 담기
                         }
                     }
 
-                    // 시즌별 추가요금
-                    $sql_season = " SELECT sd.*, ss.ss_price
-                                   FROM `rb_reservation_season_date` sd
-                                   INNER JOIN `rb_reservation_season` ss ON sd.ss_id = ss.ss_id
-                                   WHERE sd.sd_use = 1 AND ss.ss_use = 1
-                                   ORDER BY sd.sd_date_from ";
-                    $result_season = sql_query($sql_season, false);
-
+                    // 상품 소유자에게 설정된 시즌별 추가요금
                     $season_prices = array();
-                    if($result_season) {
-                        while($row_season = sql_fetch_array($result_season)) {
+                    $season_rows = function_exists('rb_reservation_season_ranges')
+                        ? rb_reservation_season_ranges(rb_reservation_item_owner_id($it))
+                        : array();
+                    if($season_rows) {
+                        foreach($season_rows as $row_season) {
                             $date_from = $row_season['sd_date_from'];
                             $date_to = $row_season['sd_date_to'];
                             $season_price = (int)$row_season['ss_price'];
