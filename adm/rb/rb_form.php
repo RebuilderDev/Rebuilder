@@ -712,7 +712,32 @@ $pg_anchor = '<ul class="anchor">
 
 <script>
 $(function() {
+    function rememberActionLabel($button) {
+        if (!$button.attr('data-rb-default-label')) {
+            $button.attr('data-rb-default-label', $.trim($button.find('.rb-license-action-label').text()));
+        }
+    }
+
+    function resetActionLoading() {
+        $('.rb-db-update-link, .rb-license-register-submit').each(function() {
+            var $button = $(this);
+            var defaultLabel = $button.attr('data-rb-default-label');
+            if (!defaultLabel && $button.hasClass('rb-db-update-link')) {
+                defaultLabel = 'DB 설치 및 업데이트';
+            }
+            $button.removeData('rb-busy').removeAttr('aria-disabled');
+            if ($button.is('button')) {
+                $button.prop('disabled', false);
+            }
+            if (defaultLabel) {
+                $button.find('.rb-license-action-label').text(defaultLabel);
+            }
+            $button.find('.rb-license-action-spinner').hide();
+        });
+    }
+
     function setActionLoading($button, loadingText) {
+        rememberActionLabel($button);
         $button.data('rb-busy', true).attr('aria-disabled', 'true');
         if ($button.is('button')) {
             $button.prop('disabled', true);
@@ -720,6 +745,14 @@ $(function() {
         $button.find('.rb-license-action-label').text(loadingText);
         $button.find('.rb-license-action-spinner').show();
     }
+
+    $('.rb-db-update-link, .rb-license-register-submit').each(function() {
+        rememberActionLabel($(this));
+    });
+    resetActionLoading();
+    $(window).on('pagehide.rbActionState pageshow.rbActionState', function() {
+        resetActionLoading();
+    });
 
     $('.rb-license-register-form').on('submit', function(event) {
         event.preventDefault();
