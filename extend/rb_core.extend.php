@@ -80,8 +80,8 @@ if (isset($bo_table) && $bo_table) {
     $rb_page_urls = 'content-' . $co_id;
 } else if (isset($gr_id) && $gr_id) {
     $rb_page_urls = 'group-' . $gr_id;
-} else if (isset($it_id) && $it_id && isset($w) && $w != "u") {
-    $rb_page_urls = 'item-' . $it_id;
+} else if (isset($it_id) && is_scalar($it_id) && (string) $it_id !== '' && isset($w) && $w != "u") {
+    $rb_page_urls = 'item-' . (string) $it_id;
 } else if(isset($ev_id) && $ev_id) {
     $rb_page_urls = 'event-' . $ev_id;
 } else if(isset($fr_id) && $fr_id) {
