@@ -23,7 +23,7 @@ if ($rb_is_media_item && function_exists('rb_media_get_items')) {
 <script src="<?php echo G5_JS_URL; ?>/kakaolink.js" charset="utf-8"></script>
 
 <div id="sit_ov_from">
-	<form name="fitem" method="post" action="<?php echo $action_url; ?>" onsubmit="return fitem_submit(this);">
+	<form id="fitem" name="fitem" method="post" action="<?php echo $action_url; ?>" onsubmit="return fitem_submit(this);">
 	<input type="hidden" name="it_id[]" value="<?php echo $it_id; ?>">
 	<input type="hidden" name="sw_direct">
 	<input type="hidden" name="url">

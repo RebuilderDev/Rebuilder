@@ -372,6 +372,8 @@ a.btn02 {background: #25282B !important; font-weight: normal !important; border-
 .sod_frm_mobile #m_sod_bsk_tot dd {padding: 5px; line-height: 15px; padding-right: 0px;}
 .sod_frm_mobile #m_sod_bsk_tot .sod_bsk_cnt {background-color: transparent; color:#000; font-weight: normal; padding-left: 0px; line-height: 15px;}
 .sod_frm_mobile #m_sod_bsk_tot .sod_bsk_cnt strong {color:#ff006c;}
+#sod_frm .sod_right #sod_bsk_tot.rb-no-delivery .sod_bsk_sell,
+#sod_frm .sod_right #sod_bsk_tot.rb-no-delivery .sod_bsk_coupon {width:50%;}
 .sod_frm_mobile .sod_list .total_price strong {color:#000;}
 #sod_frm #sod_bsk_tot .sod_bsk_cnt strong {color:#000;}
 .sod_frm_mobile .sod_list .sod_li {border-bottom:0px;}

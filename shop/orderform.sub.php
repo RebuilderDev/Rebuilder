@@ -129,8 +129,13 @@ $rb_deliveryless_order_only = !$rb_has_shipping_items;
         {
 
             // 예약 관련
+            $resv = array();
             if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
                 $resv = sql_fetch("SELECT * FROM {$g5['g5_shop_cart_table']} WHERE ct_id = '{$row['ct_id']}' ");
+            }
+            $rb_display_unit_price = isset($row['ct_price']) ? (int)$row['ct_price'] : 0;
+            if (isset($resv['ct_types']) && (int)$resv['ct_types'] === 1 && function_exists('rb_reservation_cart_unit_price')) {
+                $rb_display_unit_price = rb_reservation_cart_unit_price($resv);
             }
 
             // 합계금액 계산 (예약상품일 경우 합계방식 변경)
@@ -183,7 +188,9 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
 
             $it_name = '<b>' . stripslashes($row['it_name']) . '</b>';
             $it_options = print_item_options($row['it_id'], $s_cart_id);
-            if(function_exists('rb_file_is_item') && rb_file_is_item($row['it_id']) && function_exists('rb_file_format_option_html')) {
+            if(isset($resv['ct_types']) && (int)$resv['ct_types'] === 1 && function_exists('rb_reservation_order_option_html')) {
+                $it_options = rb_reservation_order_option_html($row['it_id'], $s_cart_id);
+            } else if(function_exists('rb_file_is_item') && rb_file_is_item($row['it_id']) && function_exists('rb_file_format_option_html')) {
                 $it_options = rb_file_format_option_html($it_options, isset($row['ct_file_subjects']) ? $row['ct_file_subjects'] : '', $row['it_id'], isset($row['ct_file_ids']) ? $row['ct_file_ids'] : '', isset($sum['qty']) ? $sum['qty'] : $row['ct_qty']);
             } else if(function_exists('rb_media_is_item') && rb_media_is_item($row['it_id']) && function_exists('rb_media_format_option_html')) {
                 $it_options = rb_media_format_option_html($it_options, isset($row['ct_media_subjects']) ? $row['ct_media_subjects'] : '', $row['it_id'], isset($row['ct_media_ids']) ? $row['ct_media_ids'] : '', isset($sum['qty']) ? $sum['qty'] : $row['ct_qty']);
@@ -309,7 +316,7 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
             </td>
             <td class="td_num"><?php echo number_format($sum['qty']); ?></td>
             <td class="td_numbig text_right">
-                <?php echo number_format($row['ct_price']); ?>
+                <?php echo number_format($rb_display_unit_price); ?>
             </td>
             <td class="text_right" nowrap>
 
@@ -564,7 +571,7 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
 
     <div class="sod_right">
         <!-- 주문상품 합계 시작 { -->
-        <div id="sod_bsk_tot">
+        <div id="sod_bsk_tot"<?php echo $rb_special_order_only ? ' class="rb-no-delivery"' : ''; ?>>
             <ul>
                 <li class="sod_bsk_sell">
                     <span>주문</span>

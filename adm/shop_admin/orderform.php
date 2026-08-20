@@ -51,19 +51,21 @@ if (! (isset($od['od_id']) && $od['od_id'])) {
 $od['mb_id'] = $od['mb_id'] ? $od['mb_id'] : "비회원";
 $rb_order_type = function_exists('rb_shop_order_type_from_order') ? rb_shop_order_type_from_order($od_id) : array('id'=>0, 'label'=>'일반상품', 'short_label'=>'일반');
 $rb_special_order = isset($rb_order_type['id']) && function_exists('rb_shop_is_special_item_type') && rb_shop_is_special_item_type($rb_order_type['id']);
+$rb_order_labels = function_exists('rb_shop_order_view_labels') ? rb_shop_order_view_labels(isset($rb_order_type['id']) ? $rb_order_type['id'] : 0) : array('item_list'=>'주문상품 목록','items'=>'주문상품','customer_section'=>'주문자/배송지 정보','customer'=>'주문하신 분');
 $rb_order_statuses = function_exists('rb_shop_special_order_statuses') ? rb_shop_special_order_statuses(isset($rb_order_type['id']) ? $rb_order_type['id'] : 0) : array('주문','입금','준비','배송','완료','취소','반품','품절');
 //------------------------------------------------------------------------------
 
 
 $pg_anchor = '<ul class="anchor">
-<li><a href="#anc_sodr_list">주문상품 목록</a></li>
+<li><a href="#anc_sodr_list">'.get_text($rb_order_labels['item_list']).'</a></li>
 <li><a href="#anc_sodr_pay">주문결제 내역</a></li>
 <li><a href="#anc_sodr_chk">결제상세정보 확인</a></li>
 <li><a href="#anc_sodr_paymo">결제상세정보 수정</a></li>
 <li><a href="#anc_sodr_memo">상점메모</a></li>
-<li><a href="#anc_sodr_orderer">주문하신 분</a></li>'.($rb_special_order ? '' : '
+<li><a href="#anc_sodr_orderer">'.get_text($rb_order_labels['customer']).'</a></li>'.($rb_special_order ? '' : '
 <li><a href="#anc_sodr_taker">받으시는 분</a></li>').'
 </ul>';
+if ($rb_special_order) $pg_anchor = '';
 
 $html_receipt_chk = '<input type="checkbox" id="od_receipt_chk" value="'.$od['od_misu'].'" onclick="chk_receipt_price()">
 <label for="od_receipt_chk">결제금액 입력</label><br>';
@@ -129,7 +131,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
     strong.sodr_nonpay {border-radius: 0px;}
 </style>
 <section id="anc_sodr_list">
-    <h2 class="h2_frm">주문상품 목록</h2>
+    <h2 class="h2_frm"><?php echo get_text($rb_order_labels['item_list']); ?></h2>
     <?php echo $pg_anchor; ?>
     <div class="local_desc02 local_desc">
         <p>
@@ -141,7 +143,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
             |
             주문총액 <strong><?php echo number_format($od['od_cart_price'] + $od['od_send_cost'] + $od['od_send_cost2']); ?></strong>원
         </p>
-        <?php if ($default['de_hope_date_use']) { ?><p>희망배송일은 <?php echo $od['od_hope_date']; ?> (<?php echo get_yoil($od['od_hope_date']); ?>) 입니다.</p><?php } ?>
+        <?php if (!$rb_special_order && $default['de_hope_date_use']) { ?><p>희망배송일은 <?php echo $od['od_hope_date']; ?> (<?php echo get_yoil($od['od_hope_date']); ?>) 입니다.</p><?php } ?>
         <?php if($od['od_mobile']) { ?>
         <p>모바일 쇼핑몰의 주문입니다.</p>
         <?php } ?>
@@ -160,7 +162,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
 
     <div class="tbl_head01 tbl_wrap">
         <table>
-        <caption>주문 상품 목록</caption>
+        <caption><?php echo get_text($rb_order_labels['item_list']); ?></caption>
         <thead>
         <tr>
             <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1) { ?>
@@ -168,7 +170,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
             <?php } ?>
             <th scope="col">상품명</th>
             <th scope="col">
-                <label for="sit_select_all" class="sound_only">주문 상품 전체</label>
+                <label for="sit_select_all" class="sound_only"><?php echo get_text($rb_order_labels['items']); ?> 전체</label>
                 <input type="checkbox" id="sit_select_all">
             </th>
             <th scope="col">옵션정보</th>
@@ -727,7 +729,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
 
     <div class="local_desc01 local_desc">
         <?php if ($rb_special_order) { ?>
-        <p>예약·파일·미디어 상품은 주문, 입금, 완료, 취소 상태만 사용하며 배송 상태는 사용하지 않습니다.</p>
+        <p>예약·파일·미디어 상품은 주문, 입금, 완료, 취소 상태만 사용합니다.</p>
         <?php } else { ?>
         <p>주문, 입금, 준비, 배송, 완료는 장바구니와 주문서 상태를 모두 변경하지만, 취소, 반품, 품절은 장바구니의 상태만 변경하며, 주문서 상태는 변경하지 않습니다.</p>
         <?php } ?>
@@ -748,7 +750,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
 </section>
 
 <?php if($od['od_test']) { ?>
-<div class="od_test_caution">주의) 이 주문은 테스트용으로 실제 결제가 이루어지지 않았으므로 절대 배송하시면 안됩니다.</div>
+<div class="od_test_caution">주의) 이 주문은 테스트용으로 실제 결제가 이루어지지 않았으므로 <?php echo $rb_special_order ? '예약 확정·콘텐츠 제공·이용 권한 부여 등 주문 처리를 진행하시면 안됩니다.' : '절대 배송하시면 안됩니다.'; ?></div>
 <?php } ?>
 <?php if($od['od_pg'] === 'inicis' && !$od['od_test']) {
     $sql = "select P_TID from {$g5['g5_shop_inicis_log_table']} where oid = '$od_id' and P_STATUS = 'cancel' ";
@@ -799,7 +801,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
             <th scope="col">주문번호</th>
             <th scope="col">결제방법</th>
             <th scope="col">주문총액</th>
-            <th scope="col">배송비</th>
+            <?php if (!$rb_special_order) { ?><th scope="col">배송비</th><?php } ?>
             <th scope="col">포인트결제</th>
             <th scope="col">총결제액</th>
             <th scope="col">쿠폰</th>
@@ -811,7 +813,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
             <td><?php echo $od['od_id']; ?></td>
             <td class="td_paybybig"><?php echo $s_receipt_way; ?></td>
             <td class="td_numbig td_numsum"><?php echo display_price($amount['order']); ?></td>
-            <td class="td_numbig"><?php echo display_price($od['od_send_cost'] + $od['od_send_cost2']); ?></td>
+            <?php if (!$rb_special_order) { ?><td class="td_numbig"><?php echo display_price($od['od_send_cost'] + $od['od_send_cost2']); ?></td><?php } ?>
             <td class="td_numbig"><?php echo display_point($od['od_receipt_point']); ?></td>
             <td class="td_numbig td_numincome"><?php echo number_format($amount['receipt']); ?>원</td>
             <td class="td_numbig td_numcoupon"><?php echo display_price($amount['coupon']); ?></td>
@@ -1363,7 +1365,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
     <div class="local_desc02 local_desc">
         <p>
             현재 열람 중인 주문에 대한 내용을 메모하는곳입니다.<br>
-            입금, 배송 내역을 메일로 발송할 경우 함께 기록됩니다.
+            <?php if (!$rb_special_order) { ?>입금, 배송 내역을 메일로 발송할 경우 함께 기록됩니다.<?php } ?>
         </p>
     </div>
 
@@ -1389,7 +1391,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
 </section>
 
 <section>
-    <h2 class="h2_frm"><?php echo $rb_special_order ? '주문자 정보' : '주문자/배송지 정보'; ?></h2>
+    <h2 class="h2_frm"><?php echo get_text($rb_order_labels['customer_section']); ?></h2>
     <?php echo $pg_anchor; ?>
 
     <form name="frmorderform3" action="./orderformupdate.php" method="post">
@@ -1404,30 +1406,30 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
     <div class="compare_wrap">
 
         <section id="anc_sodr_orderer" class="compare_left">
-            <h3>주문하신 분</h3>
+            <h3><?php echo get_text($rb_order_labels['customer']); ?></h3>
 
             <div class="tbl_frm01">
                 <table>
-                <caption>주문자/배송지 정보</caption>
+                <caption><?php echo get_text($rb_order_labels['customer_section']); ?></caption>
                 <colgroup>
                     <col class="grid_4">
                     <col>
                 </colgroup>
                 <tbody>
                 <tr>
-                    <th scope="row"><label for="od_name"><span class="sound_only">주문하신 분 </span>이름</label></th>
+                    <th scope="row"><label for="od_name"><span class="sound_only"><?php echo get_text($rb_order_labels['customer']); ?> </span>이름</label></th>
                     <td><input type="text" name="od_name" value="<?php echo get_text($od['od_name']); ?>" id="od_name" required class="frm_input required"></td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="od_tel"><span class="sound_only">주문하신 분 </span>전화번호</label></th>
+                    <th scope="row"><label for="od_tel"><span class="sound_only"><?php echo get_text($rb_order_labels['customer']); ?> </span>전화번호</label></th>
                     <td><input type="text" name="od_tel" value="<?php echo get_text($od['od_tel']); ?>" id="od_tel" required class="frm_input required"></td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="od_hp"><span class="sound_only">주문하신 분 </span>핸드폰</label></th>
+                    <th scope="row"><label for="od_hp"><span class="sound_only"><?php echo get_text($rb_order_labels['customer']); ?> </span>핸드폰</label></th>
                     <td><input type="text" name="od_hp" value="<?php echo get_text($od['od_hp']); ?>" id="od_hp" class="frm_input"></td>
                 </tr>
                 <tr>
-                    <th scope="row"><span class="sound_only">주문하시는 분 </span>주소</th>
+                    <th scope="row"><span class="sound_only"><?php echo get_text($rb_order_labels['customer']); ?> </span>주소</th>
                     <td>
                         <label for="od_zip" class="sound_only">우편번호</label>
                         <input type="text" name="od_zip" value="<?php echo get_text($od['od_zip1']).get_text($od['od_zip2']); ?>" id="od_zip" required class="frm_input required" size="5">
@@ -1444,11 +1446,11 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><label for="od_email"><span class="sound_only">주문하신 분 </span>E-mail</label></th>
+                    <th scope="row"><label for="od_email"><span class="sound_only"><?php echo get_text($rb_order_labels['customer']); ?> </span>E-mail</label></th>
                     <td><input type="text" name="od_email" value="<?php echo $od['od_email']; ?>" id="od_email" required class="frm_input required" size="30"></td>
                 </tr>
                 <tr>
-                    <th scope="row"><span class="sound_only">주문하신 분 </span>IP Address</th>
+                    <th scope="row"><span class="sound_only"><?php echo get_text($rb_order_labels['customer']); ?> </span>IP Address</th>
                     <td><?php echo $od['od_ip']; ?></td>
                 </tr>
                 </tbody>
@@ -1527,7 +1529,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
     </div>
 
     <div class="btn_confirm01 btn_confirm">
-        <input type="submit" value="<?php echo $rb_special_order ? '주문자 정보 수정' : '주문자/배송지 정보 수정'; ?>" class="btn_submit btn ">
+        <input type="submit" value="<?php echo get_text($rb_order_labels['customer_section']); ?> 수정" class="btn_submit btn ">
         <a href="./orderlist.php?<?php echo $qstr; ?>" class="btn">목록</a>
     </div>
 

@@ -1,15 +1,69 @@
 <?php
 include_once('../common.php');
 @set_time_limit(0);
-header('Content-Type: application/json; charset=utf-8');
+
+$rb_sitemap_is_post = isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST';
+$rb_sitemap_cache_ttl = 86400;
 
 if (!defined('G5_PATH') || !defined('G5_URL')) {
-    echo json_encode(['success' => false, 'msg' => 'G5_PATH/G5_URL undefined']); exit;
+    http_response_code(500);
+    header('Content-Type: ' . ($rb_sitemap_is_post ? 'application/json' : 'text/plain') . '; charset=utf-8');
+    echo $rb_sitemap_is_post
+        ? json_encode(['success' => false, 'msg' => 'G5_PATH/G5_URL undefined'])
+        : 'G5_PATH/G5_URL undefined';
+    exit;
 }
 
 $sitemap_file = G5_PATH . '/sitemap.xml';
 $base_url     = G5_URL;
 $bbs_url      = defined('G5_BBS_URL') ? G5_BBS_URL : (G5_URL . '/bbs');
+$sitemap_url  = G5_URL . '/rb/sitemap.php';
+$download_url = $sitemap_url . '?download=1';
+$rb_sitemap_download = isset($_GET['download']) && $_GET['download'] === '1';
+
+if ($rb_sitemap_is_post && empty($is_admin)) {
+    http_response_code(403);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['success' => false, 'msg' => '관리자만 사이트맵을 생성할 수 있습니다.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+function rb_sitemap_output_xml($path, $xml, $cache_ttl, $download = false) {
+    $mtime = @filemtime($path);
+    if ($mtime === false) $mtime = time();
+    $etag = '"' . sha1($xml) . '"';
+
+    if (!$download) {
+        $if_none_match = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? trim($_SERVER['HTTP_IF_NONE_MATCH']) : '';
+        $if_modified_since = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) : false;
+        if ($if_none_match === $etag || ($if_modified_since !== false && $if_modified_since >= $mtime)) {
+            http_response_code(304);
+            header('ETag: ' . $etag);
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
+            exit;
+        }
+    }
+
+    header('Content-Type: application/xml; charset=utf-8');
+    header('Cache-Control: public, max-age=' . (int)$cache_ttl);
+    header('ETag: ' . $etag);
+    header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
+    if ($download) {
+        header('Content-Disposition: attachment; filename="sitemap.xml"');
+    }
+    echo $xml;
+    exit;
+}
+
+if (!$rb_sitemap_is_post && is_file($sitemap_file) && @filesize($sitemap_file) > 0) {
+    $mtime = @filemtime($sitemap_file);
+    if ($mtime !== false && $mtime >= time() - $rb_sitemap_cache_ttl) {
+        $cached_xml = @file_get_contents($sitemap_file);
+        if ($cached_xml !== false && $cached_xml !== '') {
+            rb_sitemap_output_xml($sitemap_file, $cached_xml, $rb_sitemap_cache_ttl, $rb_sitemap_download);
+        }
+    }
+}
 
 function rb_write_atomic($path, $content) {
     // 1. 원자적 쓰기 시도
@@ -45,6 +99,38 @@ function rb_write_atomic($path, $content) {
 
 function esc_loc($url) {
     return htmlspecialchars($url, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+}
+
+$rb_sitemap_data_path = defined('G5_DATA_PATH') ? G5_DATA_PATH : (G5_PATH . '/data');
+$rb_sitemap_lock_dir = $rb_sitemap_data_path . '/cache';
+if (!is_dir($rb_sitemap_lock_dir)) {
+    @mkdir($rb_sitemap_lock_dir, 0755, true);
+}
+$rb_sitemap_lock = @fopen($rb_sitemap_lock_dir . '/rb_sitemap.lock', 'c');
+if (!$rb_sitemap_lock || !@flock($rb_sitemap_lock, LOCK_EX)) {
+    if ($rb_sitemap_lock) @fclose($rb_sitemap_lock);
+    $cached_xml = @file_get_contents($sitemap_file);
+    if (!$rb_sitemap_is_post && $cached_xml !== false && $cached_xml !== '') {
+        rb_sitemap_output_xml($sitemap_file, $cached_xml, 60, $rb_sitemap_download);
+    }
+    http_response_code(500);
+    header('Content-Type: ' . ($rb_sitemap_is_post ? 'application/json' : 'text/plain') . '; charset=utf-8');
+    $msg = '사이트맵 캐시 잠금 파일을 생성할 수 없습니다. data/cache 디렉터리의 쓰기 권한을 확인해 주세요.';
+    echo $rb_sitemap_is_post ? json_encode(['success' => false, 'msg' => $msg], JSON_UNESCAPED_UNICODE) : $msg;
+    exit;
+}
+
+clearstatcache(true, $sitemap_file);
+if (!$rb_sitemap_is_post && is_file($sitemap_file) && @filesize($sitemap_file) > 0) {
+    $mtime = @filemtime($sitemap_file);
+    if ($mtime !== false && $mtime >= time() - $rb_sitemap_cache_ttl) {
+        $cached_xml = @file_get_contents($sitemap_file);
+        if ($cached_xml !== false && $cached_xml !== '') {
+            @flock($rb_sitemap_lock, LOCK_UN);
+            @fclose($rb_sitemap_lock);
+            rb_sitemap_output_xml($sitemap_file, $cached_xml, $rb_sitemap_cache_ttl, $rb_sitemap_download);
+        }
+    }
 }
 
 $xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
@@ -165,8 +251,18 @@ $xml .= '</urlset>';
 
 $result = rb_write_atomic($sitemap_file, $xml);
 if (!$result['ok']) {
-    echo json_encode(['success' => false, 'msg' => $result['msg']]); exit;
+    @flock($rb_sitemap_lock, LOCK_UN);
+    @fclose($rb_sitemap_lock);
+    http_response_code(500);
+    header('Content-Type: ' . ($rb_sitemap_is_post ? 'application/json' : 'text/plain') . '; charset=utf-8');
+    echo $rb_sitemap_is_post
+        ? json_encode(['success' => false, 'msg' => $result['msg']], JSON_UNESCAPED_UNICODE)
+        : $result['msg'];
+    exit;
 }
+
+@flock($rb_sitemap_lock, LOCK_UN);
+@fclose($rb_sitemap_lock);
 
 // robots.txt 처리
 $robots = '';
@@ -184,7 +280,6 @@ $robots = trim($robots);
 $robots = preg_replace('#^Sitemap:.*$#mi', '', $robots);
 $robots = trim($robots);
 
-$sitemap_url = G5_URL . '/sitemap.xml';
 if ($robots !== '' && substr($robots, -1) !== "\n") $robots .= "\n";
 $robots .= "Sitemap: {$sitemap_url}\n";
 
@@ -195,9 +290,18 @@ if ($rb_seo_ok) {
 
 $robots_result = rb_write_atomic(G5_PATH . '/robots.txt', $robots);
 if (!$robots_result['ok']) {
-    // sitemap은 성공했으므로 경고만 반환
-    echo json_encode(['success' => true, 'url' => $sitemap_url, 'warning' => $robots_result['msg']]); exit;
+    if (!$rb_sitemap_is_post) {
+        rb_sitemap_output_xml($sitemap_file, $xml, $rb_sitemap_cache_ttl, $rb_sitemap_download);
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['success' => true, 'url' => $download_url, 'sitemap_url' => $sitemap_url, 'warning' => $robots_result['msg']], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
-echo json_encode(['success' => true, 'url' => $sitemap_url]);
+if (!$rb_sitemap_is_post) {
+    rb_sitemap_output_xml($sitemap_file, $xml, $rb_sitemap_cache_ttl, $rb_sitemap_download);
+}
+
+header('Content-Type: application/json; charset=utf-8');
+echo json_encode(['success' => true, 'url' => $download_url, 'sitemap_url' => $sitemap_url], JSON_UNESCAPED_UNICODE);
 exit;

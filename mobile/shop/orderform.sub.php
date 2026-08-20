@@ -96,8 +96,13 @@ ob_start();
         {
 
             // 예약 관련
+            $resv = array();
             if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
                 $resv = sql_fetch("SELECT * FROM {$g5['g5_shop_cart_table']} WHERE ct_id = '{$row['ct_id']}' ");
+            }
+            $rb_display_unit_price = isset($row['ct_price']) ? (int)$row['ct_price'] : 0;
+            if (isset($resv['ct_types']) && (int)$resv['ct_types'] === 1 && function_exists('rb_reservation_cart_unit_price')) {
+                $rb_display_unit_price = rb_reservation_cart_unit_price($resv);
             }
 
             // 합계금액 계산 (예약상품일 경우 합계방식 변경)
@@ -157,7 +162,9 @@ ob_start();
 
             $it_name = $a1 . stripslashes($row['it_name']) . $a2;
             $it_options = print_item_options($row['it_id'], $s_cart_id);
-            if(function_exists('rb_file_is_item') && rb_file_is_item($row['it_id']) && function_exists('rb_file_format_option_html')) {
+            if(isset($resv['ct_types']) && (int)$resv['ct_types'] === 1 && function_exists('rb_reservation_order_option_html')) {
+                $it_options = rb_reservation_order_option_html($row['it_id'], $s_cart_id);
+            } else if(function_exists('rb_file_is_item') && rb_file_is_item($row['it_id']) && function_exists('rb_file_format_option_html')) {
                 $it_options = rb_file_format_option_html($it_options, isset($row['ct_file_subjects']) ? $row['ct_file_subjects'] : '', $row['it_id'], isset($row['ct_file_ids']) ? $row['ct_file_ids'] : '', isset($sum['qty']) ? $sum['qty'] : $row['ct_qty']);
             } else if(function_exists('rb_media_is_item') && rb_media_is_item($row['it_id']) && function_exists('rb_media_format_option_html')) {
                 $it_options = rb_media_format_option_html($it_options, isset($row['ct_media_subjects']) ? $row['ct_media_subjects'] : '', $row['it_id'], isset($row['ct_media_ids']) ? $row['ct_media_ids'] : '', isset($sum['qty']) ? $sum['qty'] : $row['ct_qty']);
@@ -278,11 +285,11 @@ ob_start();
                         if(isset($resv['ct_types']) && $resv['ct_types'] == 1) {
                             include (G5_PATH.'/rb/rb.mod/reservation/info_pri.inc.php');
                         } else {
-                            echo '<span class="prqty_price li_prqty_sp"><span>판매가 </span>'.number_format($row['ct_price']).'</span>';
+                            echo '<span class="prqty_price li_prqty_sp"><span>판매가 </span>'.number_format($rb_display_unit_price).'</span>';
                             echo '<span class="prqty_qty li_prqty_sp"><span>수량 </span>'.number_format($sum['qty']).'</span>';
                         }
                     } else {
-                        echo '<span class="prqty_price li_prqty_sp"><span>판매가 </span>'.number_format($row['ct_price']).'</span>';
+                        echo '<span class="prqty_price li_prqty_sp"><span>판매가 </span>'.number_format($rb_display_unit_price).'</span>';
                         echo '<span class="prqty_qty li_prqty_sp"><span>수량 </span>'.number_format($sum['qty']).'</span>';
                     }
                 ?>

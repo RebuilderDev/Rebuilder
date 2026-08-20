@@ -11,6 +11,14 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 define('RB_VER',  '2.2.7'); // 버전
 define('RB_TABLE_PREFIX', 'rb_'); // 리빌더 접두사
 
+// 검색 조건이 없는 알림·바로가기 진입에서도 관리 목록의 검색어 보존 변수를 보장한다.
+if (!isset($save_stx) || !is_scalar($save_stx)) {
+    $save_stx = (isset($_REQUEST['save_stx']) && is_scalar($_REQUEST['save_stx']))
+        ? (string) $_REQUEST['save_stx']
+        : '';
+}
+$save_stx = (string) $save_stx;
+
 /*********************************************/
 
 $rb_config_col = sql_fetch (" select * from rb_config  "); // 환경설정 테이블 1차조회

@@ -1168,6 +1168,9 @@ set_session('ss_order_id', '');
 if (get_session('ss_direct'))
     set_session('ss_cart_direct', '');
 
+if(function_exists('rb_shop_sync_order_info')) {
+    rb_shop_sync_order_info($od_id);
+}
 if(function_exists('rb_file_issue_order_downloads')) {
     rb_file_issue_order_downloads($od_id);
 }
@@ -1177,7 +1180,6 @@ if(function_exists('rb_media_issue_order_rights')) {
 if(function_exists('rb_reservation_issue_order')) {
     rb_reservation_issue_order($od_id);
 }
-
 // 배송지처리
 if($is_member && $rb_has_shipping_items) {
     $sql = " select * from {$g5['g5_shop_order_address_table']}

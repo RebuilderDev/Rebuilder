@@ -401,7 +401,7 @@ if (in_array($_POST['ct_status'], $status_cancel)) {
 }
 
 // 미수금 등의 정보
-$info = get_order_info($od_id);
+$info = function_exists('rb_shop_get_order_info') ? rb_shop_get_order_info($od_id) : get_order_info($od_id);
 
 if(!$info)
     alert('주문자료가 존재하지 않습니다.');

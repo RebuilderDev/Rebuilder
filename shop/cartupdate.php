@@ -206,10 +206,27 @@ else // 장바구니에 담기
 
         // 예약상품의 기간과 수량은 브라우저 값을 신뢰하지 않고 서버에서 다시 계산한다.
         if (isset($it['it_types']) && (int)$it['it_types'] === 1 && function_exists('rb_reservation_calculate_period')) {
-            $ct_date_s = isset($_POST['ct_date_s']) ? trim((string)$_POST['ct_date_s']) : '';
-            $ct_date_e = isset($_POST['ct_date_e']) ? trim((string)$_POST['ct_date_e']) : '';
+            $ct_date_s = function_exists('rb_reservation_request_value') ? rb_reservation_request_value('ct_date_s', $it_id) : (isset($_POST['ct_date_s']) && is_scalar($_POST['ct_date_s']) ? trim((string) $_POST['ct_date_s']) : '');
+            $ct_date_e = function_exists('rb_reservation_request_value') ? rb_reservation_request_value('ct_date_e', $it_id) : (isset($_POST['ct_date_e']) && is_scalar($_POST['ct_date_e']) ? trim((string) $_POST['ct_date_e']) : '');
             if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $ct_date_s) || !strtotime($ct_date_s)) {
                 alert('예약 날짜를 선택해 주세요.');
+            }
+
+            // 이후 가격·장바구니 저장 로직은 정규화된 단일 값을 함께 사용한다.
+            $_POST['ct_date_s'] = $ct_date_s;
+            $_POST['ct_date_e'] = $ct_date_e;
+            foreach (array('ct_types', 'ct_opt_opt', 'ct_date_d', 'ct_date_t', 'ct_user_txt1', 'ct_user_txt2', 'ct_user_txt3', 'ct_user_qty1', 'ct_user_qty2', 'ct_user_qty3', 'ct_user_pri1', 'ct_user_pri2', 'ct_user_pri3') as $rb_reservation_post_key) {
+                if (function_exists('rb_reservation_request_value')) {
+                    $_POST[$rb_reservation_post_key] = rb_reservation_request_value($rb_reservation_post_key, $it_id);
+                } elseif (isset($_POST[$rb_reservation_post_key]) && !is_scalar($_POST[$rb_reservation_post_key])) {
+                    $_POST[$rb_reservation_post_key] = '';
+                }
+            }
+            foreach (array(1 => 'adult', 2 => 'child', 3 => 'infant') as $rb_people_no => $rb_people_post_key) {
+                $rb_qty_field = 'ct_user_qty'.$rb_people_no;
+                if ((!isset($_POST[$rb_qty_field]) || $_POST[$rb_qty_field] === '') && function_exists('rb_reservation_request_value')) {
+                    $_POST[$rb_qty_field] = rb_reservation_request_value($rb_people_post_key, $it_id);
+                }
             }
 
             $rb_reservation_mode = function_exists('rb_reservation_effective_mode') ? rb_reservation_effective_mode($it) : (!empty($it['it_date_g']) ? 'period' : 'date');
@@ -268,20 +285,24 @@ else // 장바구니에 담기
                 $rb_min_field = 'it_user_min'.$rb_people_no;
                 $rb_max_field = 'it_user_max'.$rb_people_no;
                 $rb_qty_field = 'ct_user_qty'.$rb_people_no;
-                $rb_text_field = 'ct_user_txt'.$rb_people_no;
-                $rb_price_field = 'ct_user_pri'.$rb_people_no;
+                $rb_item_text_field = 'it_user_txt'.$rb_people_no;
+                $rb_item_price_field = 'it_user_pri'.$rb_people_no;
+                $rb_cart_text_field = 'ct_user_txt'.$rb_people_no;
+                $rb_cart_price_field = 'ct_user_pri'.$rb_people_no;
                 $rb_qty = !empty($it[$rb_use_field]) && isset($_POST[$rb_qty_field]) ? max(0, (int)$_POST[$rb_qty_field]) : 0;
                 $rb_min = isset($it[$rb_min_field]) ? (int)$it[$rb_min_field] : 0;
                 $rb_max = isset($it[$rb_max_field]) ? (int)$it[$rb_max_field] : 0;
+                $rb_people_label = isset($it[$rb_item_text_field]) ? (string)$it[$rb_item_text_field] : '';
+                $rb_people_price = isset($it[$rb_item_price_field]) ? (int)$it[$rb_item_price_field] : 0;
                 if (!empty($it[$rb_use_field]) && $rb_min > 0 && $rb_qty < $rb_min) {
-                    alert(get_text($it[$rb_text_field]).' 최소 인원은 '.$rb_min.'명입니다.');
+                    alert(get_text($rb_people_label).' 최소 인원은 '.$rb_min.'명입니다.');
                 }
                 if (!empty($it[$rb_use_field]) && $rb_max > 0 && $rb_qty > $rb_max) {
-                    alert(get_text($it[$rb_text_field]).' 최대 인원은 '.$rb_max.'명입니다.');
+                    alert(get_text($rb_people_label).' 최대 인원은 '.$rb_max.'명입니다.');
                 }
                 $_POST[$rb_qty_field] = $rb_qty;
-                $_POST[$rb_text_field] = !empty($it[$rb_use_field]) ? (string)$it[$rb_text_field] : '';
-                $_POST[$rb_price_field] = !empty($it[$rb_use_field]) ? (int)$it[$rb_price_field] : 0;
+                $_POST[$rb_cart_text_field] = !empty($it[$rb_use_field]) ? $rb_people_label : '';
+                $_POST[$rb_cart_price_field] = !empty($it[$rb_use_field]) ? $rb_people_price : 0;
                 $rb_total_people += $rb_qty;
             }
             $rb_people_min = isset($it['it_user_min']) ? (int)$it['it_user_min'] : 0;
