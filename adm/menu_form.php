@@ -184,17 +184,24 @@ function add_menu_list(name, link, parentCode, newFlag) {
     var tdClass = "td_category";
     if (newCode.length === 4) tdClass += " sub_menu_class";
     if (newCode.length === 6) tdClass += " sub_menu_class sub_menu_class_3";
+    var newDepth = newCode.length === 6 ? 2 : (newCode.length === 4 ? 1 : 0);
 
     // // 그룹 클래스는 항상 1차(앞2자리)
     var group2 = newCode.substr(0, 2);
 
     var selectsLev = '<?php echo $selects_lev; ?>';
 
-    var list = "<tr class=\"menu_list menu_group_" + group2 + "\">";
+    var list = "<tr class=\"menu_list menu_group_" + group2 + "\" data-depth=\"" + newDepth + "\">";
+
+    list += "<td class=\"td_mng\">";
+    list += "<input type=\"hidden\" name=\"me_order[]\" value=\"0\" id=\"me_order_" + ms + "\">";
+    list += "<button type=\"button\" class=\"menu_move\" title=\"드래그하여 메뉴 이동\" aria-label=\"드래그하여 메뉴 이동\"><i class=\"fa fa-arrows\" aria-hidden=\"true\"></i></button>";
+    list += "</td>";
 
     list += "<td class=\"" + tdClass + "\">";
     list += "<label for=\"me_name_" + ms + "\" class=\"sound_only\">메뉴<strong class=\"sound_only\"> 필수</strong></label>";
     list += "<input type=\"hidden\" name=\"code[]\" value=\"" + newCode + "\">";
+    list += "<input type=\"hidden\" name=\"menu_depth[]\" value=\"" + newDepth + "\">";
     list += "<input type=\"text\" name=\"me_name[]\" value=\"" + name + "\" id=\"me_name_" + ms + "\" required class=\"required frm_input full_input\">";
     list += "</td>";
 
@@ -209,11 +216,6 @@ function add_menu_list(name, link, parentCode, newFlag) {
     list += "<option value=\"self\">사용안함</option>";
     list += "<option value=\"blank\">사용함</option>";
     list += "</select>";
-    list += "</td>";
-
-    list += "<td class=\"td_numsmall\">";
-    list += "<label for=\"me_order_" + ms + "\" class=\"sound_only\">순서<strong class=\"sound_only\"> 필수</strong></label>";
-    list += "<input type=\"text\" name=\"me_order[]\" value=\"0\" id=\"me_order_" + ms + "\" required class=\"required frm_input\" size=\"5\">";
     list += "</td>";
 
     list += "<td class=\"td_mngsmall\">";
@@ -280,9 +282,7 @@ function add_menu_list(name, link, parentCode, newFlag) {
         $menulist.find("table tbody").append(list);
     }
 
-    $menulist.find("tr.menu_list").each(function(index) {
-        $(this).removeClass("bg0 bg1").addClass("bg" + (index % 2));
-    });
+    if (typeof opener.rbMenuRefreshStructure === "function") opener.rbMenuRefreshStructure();
 
     window.close();
 }

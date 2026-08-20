@@ -1,5 +1,8 @@
 <?php
-include_once('./_common.php');
+if (!defined('G5_PATH')) {
+    include_once(dirname(__FILE__).'/../common.php');
+}
+
 include_once(G5_PATH.'/head.sub.php');
 add_javascript('<script src="'.G5_URL.'/js/rb.common.js"></script>', 0);
 
@@ -114,3 +117,4 @@ rb_confirm(conf).then(function(confirmed) {
 
 <?php
 include_once(G5_PATH.'/tail.sub.php');
+

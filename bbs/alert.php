@@ -2,7 +2,14 @@
 global $lo_location;
 global $lo_url;
 
-include_once(dirname(__FILE__).'/_common.php');
+// alert()에서 포함되는 경우에는 common.php가 이미 로드되어 있습니다.
+// 관리자 하위 경로에서 _common.php를 다시 불러오면 상대경로가 잘못 해석될 수 있으므로
+// 단독 접근일 때만 이 파일 위치를 기준으로 공통 파일을 불러옵니다.
+if (!defined('G5_PATH')) {
+    include_once(dirname(__FILE__).'/../common.php');
+}
+
+$error = isset($error) ? (bool) $error : true;
 
 
 if($error) {

@@ -1,5 +1,9 @@
 <?php
-include_once('./_common.php');
+if (!defined('G5_PATH')) {
+    include_once(dirname(__FILE__).'/../common.php');
+}
+
+$error = isset($error) ? (bool) $error : true;
 include_once(G5_PATH.'/head.sub.php');
 add_javascript('<script src="'.G5_URL.'/js/rb.common.js"></script>', 0);
 
@@ -130,3 +134,4 @@ alert(<?php echo $js_alert_msg; ?>, function(){
 
 <?php
 include_once(G5_PATH.'/tail.sub.php');
+
