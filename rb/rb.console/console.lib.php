@@ -38,6 +38,7 @@ function rb_console_config($refresh = false)
         'bc_default_route' => 'dashboard',
         'bc_min_level' => 2,
         'bc_show_point' => 1,
+        'bc_footer_link' => 1,
         'bc_partner_policy' => 'all',
         'bc_sidebar_open' => 1,
         'bc_support_url' => '',
@@ -49,6 +50,18 @@ function rb_console_config($refresh = false)
         if (is_array($row) && !empty($row)) $cached = array_merge($cached, $row);
     }
     return $cached;
+}
+
+function rb_console_footer_link_enabled($config = array())
+{
+    if (!$config) $config = rb_console_config();
+    if (empty($config['bc_enabled']) || empty($config['bc_footer_link'])) return false;
+
+    $partner_enabled = isset($GLOBALS['pa']) && is_array($GLOBALS['pa']) && !empty($GLOBALS['pa']['pa_is']);
+    if (function_exists('rb_ad_load_library')) rb_ad_load_library();
+    $advertising_enabled = function_exists('rb_ad_enabled') && rb_ad_enabled();
+
+    return $partner_enabled || $advertising_enabled;
 }
 
 function rb_console_business_features($config = array())

@@ -4,6 +4,10 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 // 레이아웃 폴더내 style.css 파일
 add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout_ft/'.$rb_core['layout_ft'].'/style.css">', 0);
 
+include_once(G5_PATH.'/rb/rb.console/console.lib.php');
+$rb_footer_console_config = rb_console_config();
+$rb_footer_console_link = rb_console_footer_link_enabled($rb_footer_console_config);
+
 ?>
 
 
@@ -16,8 +20,9 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout_ft/'.$rb
         <div class="footer_gnb">
             <div class="inner" style="width:<?php echo $tb_width_inner ?>; <?php echo $tb_width_padding ?>">
                 <ul class="footer_gnb_ul1 pc">
-                    <a href="<?php echo get_pretty_url('content', 'provision'); ?>">서비스 이용약관</a>
-                    <a href="<?php echo get_pretty_url('content', 'privacy'); ?>">개인정보 처리방침</a>
+                    <?php if ($rb_footer_console_link) { ?><a class="font-B" href="<?php echo G5_URL; ?>/rb/business.php"><?php echo rb_console_h($rb_footer_console_config['bc_name']); ?></a><?php } ?>
+                    <a href="<?php echo get_pretty_url('content', 'provision'); ?>">이용약관</a>
+                    <a href="<?php echo get_pretty_url('content', 'privacy'); ?>">개인정보처리방침</a>
                 </ul>
                 <ul class="footer_gnb_ul2">
                     <?php if(defined('G5_COMMUNITY_USE') == false || G5_COMMUNITY_USE) { ?>
@@ -46,8 +51,9 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.layout_ft/'.$rb
                         <?php } ?>
 
                         <div class="mobile">
-                            <a href="<?php echo get_pretty_url('content', 'provision'); ?>">서비스 이용약관</a>
-                            <a href="<?php echo get_pretty_url('content', 'privacy'); ?>">개인정보 처리방침</a>
+                            <?php if ($rb_footer_console_link) { ?><a class="font-B" href="<?php echo G5_URL; ?>/rb/business.php"><?php echo rb_console_h($rb_footer_console_config['bc_name']); ?></a><?php } ?>
+                            <a href="<?php echo get_pretty_url('content', 'provision'); ?>">이용약관</a>
+                            <a href="<?php echo get_pretty_url('content', 'privacy'); ?>">개인정보처리방침</a>
                         </div>
 
                     </li>
