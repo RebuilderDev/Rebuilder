@@ -360,9 +360,18 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             : array(
                                 'units' => max(1, (int) (isset($opt['ct_date_d']) ? $opt['ct_date_d'] : 1)),
                                 'label' => max(1, (int) (isset($opt['ct_date_d']) ? $opt['ct_date_d'] : 1)).'일',
+                                'unit' => '일',
                             );
                         $rb_admin_res_units = max(1, (int) $rb_admin_res_period['units']);
                         $rb_admin_res_label = isset($rb_admin_res_period['label']) ? $rb_admin_res_period['label'] : $rb_admin_res_units.'일';
+                        $rb_admin_selected_options = function_exists('rb_reservation_decode_rows')
+                            ? rb_reservation_decode_rows(isset($opt['ct_res_options']) ? $opt['ct_res_options'] : '')
+                            : array();
+                        $rb_admin_selected_extras = function_exists('rb_reservation_decode_rows')
+                            ? rb_reservation_decode_rows(isset($opt['ct_res_extra_options']) ? $opt['ct_res_extra_options'] : '')
+                            : array();
+                        $rb_admin_custom_price = isset($opt['ct_res_custom_price']) ? (int)$opt['ct_res_custom_price'] : 0;
+                        $rb_admin_date_only_price = (isset($opt['ct_date_extra_price']) ? (int)$opt['ct_date_extra_price'] : 0) - $rb_admin_custom_price;
                     ?>
 
                         <div class="tbl_head01 tbl_wrap" style="min-width:350px; width:100%; margin-top:10px;">
@@ -411,7 +420,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                                 <td nowrap><?php echo number_format($opt_price * $opt['ct_qty']); ?></td>
                             </tr>
 
-                            <?php if(isset($opt['ct_user_txt1']) && $opt['ct_user_txt1']) { ?>
+                            <?php if(!$rb_admin_selected_extras && isset($opt['ct_user_txt1']) && $opt['ct_user_txt1']) { ?>
                             <?php
                                 if(isset($opt['ct_opt_opt']) && $opt['ct_opt_opt'] == 1) {
                                     $tot1 = $opt['ct_user_qty1'] * $opt['ct_user_pri1'] * $rb_admin_res_units;
@@ -430,7 +439,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             </tr>
                             <?php } ?>
 
-                            <?php if(isset($opt['ct_user_txt2']) && $opt['ct_user_txt2']) { ?>
+                            <?php if(!$rb_admin_selected_extras && isset($opt['ct_user_txt2']) && $opt['ct_user_txt2']) { ?>
                             <?php
                                 if(isset($opt['ct_opt_opt']) && $opt['ct_opt_opt'] == 1) {
                                     $tot2 = $opt['ct_user_qty2'] * $opt['ct_user_pri2'] * $rb_admin_res_units;
@@ -447,7 +456,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             </tr>
                             <?php } ?>
 
-                            <?php if(isset($opt['ct_user_txt3']) && $opt['ct_user_txt3']) { ?>
+                            <?php if(!$rb_admin_selected_extras && isset($opt['ct_user_txt3']) && $opt['ct_user_txt3']) { ?>
                             <?php
                                 if(isset($opt['ct_opt_opt']) && $opt['ct_opt_opt'] == 1) {
                                     $tot3 = $opt['ct_user_qty3'] * $opt['ct_user_pri3'] * $rb_admin_res_units;
@@ -464,13 +473,13 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             </tr>
                             <?php } ?>
 
-                            <?php if(isset($opt['ct_date_extra_price']) && $opt['ct_date_extra_price']) { ?>
+                            <?php if($rb_admin_date_only_price !== 0) { ?>
                             <tr>
-                                <td nowrap>특수일</td>
-                                <td nowrap><?php echo number_format($opt['ct_date_extra_price'] / $rb_admin_res_units); ?></td>
+                                <td nowrap>날짜 추가요금</td>
+                                <td nowrap><?php echo number_format($rb_admin_date_only_price / $rb_admin_res_units); ?></td>
                                 <td nowrap><?php echo $rb_admin_res_label; ?></td>
                                 <td nowrap>-</td>
-                                <td nowrap><?php echo number_format($opt['ct_date_extra_price']); ?></td>
+                                <td nowrap><?php echo number_format($rb_admin_date_only_price); ?></td>
                             </tr>
                             <?php } ?>
 
@@ -484,10 +493,45 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                             </tr>
                             <?php } ?>
 
-                            <?php if(isset($opt['ct_date_t']) && $opt['ct_date_t']) { ?>
+                            <?php foreach ($rb_admin_selected_options as $rb_admin_selected_option) { ?>
+                            <?php
+                                $rb_admin_option_name = isset($rb_admin_selected_option['name']) ? trim((string)$rb_admin_selected_option['name']) : '';
+                                $rb_admin_option_price = isset($rb_admin_selected_option['price']) ? (int)$rb_admin_selected_option['price'] : 0;
+                                if ($rb_admin_option_name === '') continue;
+                            ?>
+                            <tr>
+                                <td nowrap><?php echo get_text($rb_admin_option_name); ?></td>
+                                <td nowrap><?php echo number_format($rb_admin_option_price); ?></td>
+                                <td nowrap>-</td>
+                                <td nowrap>-</td>
+                                <td nowrap><?php echo number_format($rb_admin_option_price); ?></td>
+                            </tr>
+                            <?php } ?>
+
+                            <?php foreach ($rb_admin_selected_extras as $rb_admin_selected_extra) { ?>
+                            <?php
+                                $rb_admin_extra_name = isset($rb_admin_selected_extra['name']) ? trim((string)$rb_admin_selected_extra['name']) : '';
+                                $rb_admin_extra_price = isset($rb_admin_selected_extra['price']) ? (int)$rb_admin_selected_extra['price'] : 0;
+                                $rb_admin_extra_qty = isset($rb_admin_selected_extra['qty']) ? max(0, (int)$rb_admin_selected_extra['qty']) : 0;
+                                $rb_admin_extra_multiplier = isset($rb_admin_selected_extra['multiplier']) ? max(1, (int)$rb_admin_selected_extra['multiplier']) : 1;
+                                $rb_admin_extra_total = isset($rb_admin_selected_extra['total'])
+                                    ? (int)$rb_admin_selected_extra['total']
+                                    : $rb_admin_extra_price * $rb_admin_extra_qty * $rb_admin_extra_multiplier;
+                                if ($rb_admin_extra_name === '' || $rb_admin_extra_qty < 1) continue;
+                            ?>
+                            <tr>
+                                <td nowrap><?php echo get_text($rb_admin_extra_name); ?></td>
+                                <td nowrap><?php echo number_format($rb_admin_extra_price); ?></td>
+                                <td nowrap><?php echo $rb_admin_extra_multiplier > 1 ? number_format($rb_admin_extra_multiplier).' '.$rb_admin_res_period['unit'] : '-'; ?></td>
+                                <td nowrap><?php echo number_format($rb_admin_extra_qty); ?></td>
+                                <td nowrap><?php echo number_format($rb_admin_extra_total); ?></td>
+                            </tr>
+                            <?php } ?>
+
+                            <?php if(!$rb_admin_selected_options && isset($opt['ct_date_t']) && $opt['ct_date_t']) { ?>
                             <tr>
                                 <td nowrap>선택항목</td>
-                                <td nowrap colspan="4"><?php echo $opt['ct_date_t'] ?></td>
+                                <td nowrap colspan="4"><?php echo get_text($opt['ct_date_t']); ?></td>
                             </tr>
                             <?php } ?>
 

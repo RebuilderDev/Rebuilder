@@ -4,6 +4,9 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 // add_stylesheet('css 구문', 출력순서); 숫자가 작을 수록 먼저 출력됨
 add_stylesheet('<link rel="stylesheet" href="'.G5_SHOP_CSS_URL.'/style.css">', 0);
 add_javascript('<script src="'.G5_JS_URL.'/jquery.bxslider.js"></script>', 10);
+$rb_is_file_item = function_exists('rb_file_is_item') && rb_file_is_item($it);
+$rb_is_media_item = function_exists('rb_media_is_item') && rb_media_is_item($it);
+$rb_is_reservation_item = isset($rb_item_res['res_is']) && (int)$rb_item_res['res_is'] === 1 && isset($it['it_types']) && (int)$it['it_types'] === 1;
 ?>
 
 <?php if($config['cf_kakao_js_apikey']) { ?>
@@ -243,6 +246,20 @@ var kakao_javascript_apikey = "<?php echo $config['cf_kakao_js_apikey']; ?>";
 
 <div id="btn_option">
     <div class="sl_option">
+        <?php
+        if ($rb_is_reservation_item) {
+            $rb_mobile_reservation_skin = G5_THEME_PATH.'/skin/shop/basic/reservation.skin.php';
+            if (is_file($rb_mobile_reservation_skin)) include $rb_mobile_reservation_skin;
+        }
+        if ($rb_is_file_item) {
+            $rb_mobile_file_picker = G5_PATH.'/rb/rb.mod/file/item_files.inc.php';
+            if (is_file($rb_mobile_file_picker)) include $rb_mobile_file_picker;
+        }
+        if ($rb_is_media_item) {
+            $rb_mobile_media_picker = G5_PATH.'/rb/rb.mod/media/item_media.inc.php';
+            if (is_file($rb_mobile_media_picker)) include $rb_mobile_media_picker;
+        }
+        ?>
         <?php
         if($option_item) {
         ?>
@@ -683,6 +700,20 @@ function fitem_submit(f)
         alert("선택옵션 개수 총합 "+number_format(String(max_qty))+"개 이하로 주문해 주십시오.");
         return false;
     }
+
+    <?php if ($rb_is_file_item) { ?>
+    if ($(".rb_file_pick_chk").length > 0 && $(".rb_file_pick_chk:checked").length < 1) {
+        alert("구매할 파일을 하나 이상 선택해 주십시오.");
+        return false;
+    }
+    <?php } ?>
+
+    <?php if ($rb_is_media_item) { ?>
+    if ($(".rb_media_pick_chk").length > 0 && $(".rb_media_pick_chk:checked").length < 1) {
+        alert("구매할 미디어를 하나 이상 선택해 주십시오.");
+        return false;
+    }
+    <?php } ?>
 
     return true;
 }

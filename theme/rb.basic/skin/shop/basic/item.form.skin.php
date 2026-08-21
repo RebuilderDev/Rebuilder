@@ -974,6 +974,9 @@ function rb_file_sync_hidden_inputs()
 
     $box.empty();
     $(".rb_file_pick_chk:checked").each(function() {
+        if (this.form === document.getElementById("fitem")) {
+            return;
+        }
         var name = $(this).attr("name");
         var value = $(this).val();
         $("<input>", {
@@ -1085,6 +1088,9 @@ function rb_media_sync_hidden_inputs()
 
     $box.empty();
     $(".rb_media_pick_chk:checked").each(function() {
+        if (this.form === document.getElementById("fitem")) {
+            return;
+        }
         $("<input>", {
             type: "hidden",
             name: $(this).attr("name"),

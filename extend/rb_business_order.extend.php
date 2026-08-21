@@ -60,6 +60,34 @@ function rb_shop_table_has_column($table, $column)
     return $cache[$key] = isset($row['Field']) && $row['Field'] === $column;
 }
 
+/** 파일·미디어 주문의 선택 스냅샷이 결제 직전까지 보존됐는지 확인한다. */
+function rb_shop_validate_special_cart_selection($cart_id, $type)
+{
+    global $g5;
+
+    $cart_id = preg_replace('/[^A-Za-z0-9_-]/', '', (string)$cart_id);
+    $type = (int)$type;
+    if ($cart_id === '' || !in_array($type, array(2, 3), true)) return '';
+
+    $column = $type === 2 ? 'ct_file_ids' : 'ct_media_ids';
+    $label = $type === 2 ? '파일' : '미디어';
+    if (!rb_shop_table_has_column($g5['g5_shop_cart_table'], $column)) {
+        return $label.'상품 주문정보를 저장할 DB 업데이트가 필요합니다.';
+    }
+
+    $row = sql_fetch("SELECT COUNT(*) AS total_count,
+                             SUM(CASE WHEN TRIM(COALESCE(c.{$column},''))='' THEN 1 ELSE 0 END) AS empty_count
+                        FROM {$g5['g5_shop_cart_table']} c
+                        JOIN {$g5['g5_shop_item_table']} i ON i.it_id=c.it_id
+                       WHERE c.od_id='".sql_real_escape_string($cart_id)."'
+                         AND c.ct_select='1' AND c.io_type='0'
+                         AND COALESCE(NULLIF(i.it_types,''),'0')='{$type}'", false);
+
+    if (empty($row['total_count'])) return $label.'상품 주문정보가 존재하지 않습니다.';
+    if (!empty($row['empty_count'])) return '선택한 '.$label.' 정보를 확인할 수 없습니다. 상품에서 다시 선택해 주세요.';
+    return '';
+}
+
 if (!function_exists('rb_shop_order_has_shipping_items')) {
     function rb_shop_order_has_shipping_items($order_id, $selected_only = false)
     {

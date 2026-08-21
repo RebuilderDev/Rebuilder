@@ -71,6 +71,10 @@ if ($rb_pending_order_type_id < 0) {
 if ($rb_pending_special_order && function_exists('rb_shop_special_type_available') && !rb_shop_special_type_available($rb_pending_order_type_id)) {
     alert('해당 상품 기능이 설치되지 않았거나 현재 사용이 중지되었습니다.');
 }
+if (in_array($rb_pending_order_type_id, array(2, 3), true) && function_exists('rb_shop_validate_special_cart_selection')) {
+    $rb_special_selection_error = rb_shop_validate_special_cart_selection($tmp_cart_id, $rb_pending_order_type_id);
+    if ($rb_special_selection_error !== '') alert($rb_special_selection_error);
+}
 if ($rb_pending_order_type_id === 1 && function_exists('rb_reservation_validate_cart')) {
     $rb_reservation_checkout_error = rb_reservation_validate_cart($tmp_cart_id);
     if ($rb_reservation_checkout_error !== '') alert($rb_reservation_checkout_error);

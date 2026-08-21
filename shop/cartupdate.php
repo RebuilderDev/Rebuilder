@@ -201,10 +201,16 @@ else // 장바구니에 담기
             $it = rb_media_normalize_cart_row($it);
         }
 
-        $rb_file_selection = ($rb_file_columns_ready && function_exists('rb_file_prepare_cart_selection')) ? rb_file_prepare_cart_selection($it) : array('picked_text' => '', 'picked_subjects' => '', 'picked_price' => 0);
-        $rb_media_selection = ($rb_media_columns_ready && function_exists('rb_media_prepare_cart_selection')) ? rb_media_prepare_cart_selection($it) : array('picked_text' => '', 'picked_subjects' => '', 'picked_price' => 0);
+        $rb_file_selection = ($rb_file_columns_ready && function_exists('rb_file_prepare_cart_selection')) ? rb_file_prepare_cart_selection($it) : array('picked_ids' => array(), 'picked_text' => '', 'picked_subjects' => '', 'picked_price' => 0);
+        $rb_media_selection = ($rb_media_columns_ready && function_exists('rb_media_prepare_cart_selection')) ? rb_media_prepare_cart_selection($it) : array('picked_ids' => array(), 'picked_text' => '', 'picked_subjects' => '', 'picked_price' => 0);
         $rb_is_file_item = $rb_file_columns_ready && function_exists('rb_file_is_item') && rb_file_is_item($it);
         $rb_is_media_item = $rb_media_columns_ready && function_exists('rb_media_is_item') && rb_media_is_item($it);
+        if ($rb_is_file_item && empty($rb_file_selection['picked_ids'])) {
+            alert('구매할 파일을 하나 이상 선택해 주세요.');
+        }
+        if ($rb_is_media_item && empty($rb_media_selection['picked_ids'])) {
+            alert('구매할 미디어를 하나 이상 선택해 주세요.');
+        }
         $rb_replace_cart_item = isset($it['it_types']) && in_array((int)$it['it_types'], array(1, 2, 3), true);
         $rb_reservation_period = array();
         $rb_reservation_option_context = array('ct_date_t'=>'', 'ct_res_options'=>'', 'ct_res_extra_options'=>'', 'ct_res_custom_price'=>0);
@@ -296,7 +302,15 @@ else // 장바구니에 담기
             }
 
             if (function_exists('rb_reservation_validate_selection')) {
-                $rb_reservation_error = rb_reservation_validate_selection($it, $ct_date_s, $ct_date_e);
+                // 최초 담기 단계에는 아직 장바구니 행이 없으므로, 방금 검증·계산한
+                // 예약 스냅샷을 같은 검증 함수에 전달해야 선택 수량을 0으로 오판하지 않는다.
+                $rb_reservation_validation_item = array_merge($it, array(
+                    'ct_date_t' => isset($rb_reservation_option_context['ct_date_t']) ? (string)$rb_reservation_option_context['ct_date_t'] : '',
+                    'ct_res_options' => isset($rb_reservation_option_context['ct_res_options']) ? (string)$rb_reservation_option_context['ct_res_options'] : '',
+                    'ct_res_extra_options' => isset($rb_reservation_option_context['ct_res_extra_options']) ? (string)$rb_reservation_option_context['ct_res_extra_options'] : '',
+                    'ct_res_custom_price' => isset($rb_reservation_option_context['ct_res_custom_price']) ? (int)$rb_reservation_option_context['ct_res_custom_price'] : 0,
+                ));
+                $rb_reservation_error = rb_reservation_validate_selection($rb_reservation_validation_item, $ct_date_s, $ct_date_e);
                 if ($rb_reservation_error !== '') alert($rb_reservation_error);
             }
 
