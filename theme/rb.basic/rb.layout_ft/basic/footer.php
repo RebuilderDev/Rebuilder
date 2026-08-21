@@ -20,7 +20,7 @@ $rb_footer_console_link = rb_console_footer_link_enabled($rb_footer_console_conf
         <div class="footer_gnb">
             <div class="inner" style="width:<?php echo $tb_width_inner ?>; <?php echo $tb_width_padding ?>">
                 <ul class="footer_gnb_ul1 pc">
-                    <?php if ($rb_footer_console_link) { ?><a class="font-B" href="<?php echo G5_URL; ?>/rb/business.php"><?php echo rb_console_h($rb_footer_console_config['bc_name']); ?></a><?php } ?>
+                    <?php if ($rb_footer_console_link) { ?><a class="font-B" href="<?php echo G5_URL; ?>/rb/business.php" target="_blank" rel="noopener noreferrer"><?php echo rb_console_h($rb_footer_console_config['bc_name']); ?></a><?php } ?>
                     <a href="<?php echo get_pretty_url('content', 'provision'); ?>">이용약관</a>
                     <a href="<?php echo get_pretty_url('content', 'privacy'); ?>">개인정보처리방침</a>
                 </ul>
@@ -51,7 +51,7 @@ $rb_footer_console_link = rb_console_footer_link_enabled($rb_footer_console_conf
                         <?php } ?>
 
                         <div class="mobile">
-                            <?php if ($rb_footer_console_link) { ?><a class="font-B" href="<?php echo G5_URL; ?>/rb/business.php"><?php echo rb_console_h($rb_footer_console_config['bc_name']); ?></a><?php } ?>
+                            <?php if ($rb_footer_console_link) { ?><a class="font-B" href="<?php echo G5_URL; ?>/rb/business.php" target="_blank" rel="noopener noreferrer"><?php echo rb_console_h($rb_footer_console_config['bc_name']); ?></a><?php } ?>
                             <a href="<?php echo get_pretty_url('content', 'provision'); ?>">이용약관</a>
                             <a href="<?php echo get_pretty_url('content', 'privacy'); ?>">개인정보처리방침</a>
                         </div>
@@ -175,4 +175,3 @@ $rb_footer_console_link = rb_console_footer_link_enabled($rb_footer_console_conf
             </div>
         </div>
     </footer>
-

@@ -4,7 +4,6 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 // add_stylesheet('css 구문', 출력순서); 숫자가 작을 수록 먼저 출력됨
 add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 0);
 
-$partner_add = isset($_GET['partner']) ? $_GET['partner'] : '';
 ?>
 
 
@@ -34,24 +33,6 @@ $partner_add = isset($_GET['partner']) ? $_GET['partner'] : '';
 
             </li>
 
-            <?php if($partner_add == "1" || $partner_add == "2") { ?>
-
-                <?php if($partner_add == "1") { ?>
-                <li class="rb_reg_ok_text font-B">입점사 전환 신청이 완료 되었어요 :D</li>
-                <li class="rb_reg_sub_title">
-                    관리자 승인 이후 입점사 전용 서비스를 이용하실 수 있어요!<br>
-                    신청 결과는 알림을 확인해주세요.
-                </li>
-                <?php } else { ?>
-                <li class="rb_reg_ok_text font-B">입점사 전환이 완료 되었어요 :D</li>
-                <li class="rb_reg_sub_title">
-                    입점사 전용 서비스를 바로 이용하실 수 있어요!<br>
-                    신청 결과는 알림을 확인해주세요.
-                </li>
-                <?php } ?>
-
-            <?php } else { ?>
-
                 <?php if (is_use_email_certify()) {  ?>
                      <li class="rb_reg_ok_text font-B">인증메일이 발송 되었어요 :D</li>
                      <li class="rb_reg_sub_title"><?php echo $mb['mb_email'] ?> 으로 발송된 인증메일을 확인해주세요!<br>이메일 주소가 잘못되었다면 관리자에게 문의해주세요.</li>
@@ -67,8 +48,6 @@ $partner_add = isset($_GET['partner']) ? $_GET['partner'] : '';
 
                     </li>
                 <?php } ?>
-
-            <?php } ?>
 
 
             <li class="join_links">

@@ -1,21 +1,6 @@
 <?php
 if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 
-if ($w == 'u') {
-    if(isset($pa['pa_is']) && $pa['pa_is'] == 1) {
-        $re = isset($_GET['partner']) ? $_GET['partner'] : '';
-
-        if($re == "re") {
-            if(isset($pa['pa_add_use']) && $pa['pa_add_use'] == 1) {
-                $is_mb_partner = 2;
-            } else {
-                $is_mb_partner = 1;
-            }
-        }
-
-    }
-}
-
 // add_stylesheet('css 구문', 출력순서); 숫자가 작을 수록 먼저 출력됨
 add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 0);
 add_javascript('<script src="'.G5_JS_URL.'/jquery.register_form.js"></script>', 0);
@@ -126,25 +111,11 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
             <input type="hidden" name="cert_type" value="<?php echo $member['mb_certify']; ?>">
             <input type="hidden" name="cert_no" value="">
             <input type="hidden" name="rb_sms_cert_verified" value="">
-            <input type="hidden" name="re" value="<?php echo isset($re) ? $re : ''; ?>">
-
             <?php if (isset($member['mb_sex'])) {  ?><input type="hidden" name="mb_sex" value="<?php echo $member['mb_sex'] ?>"><?php }  ?>
             <?php if (isset($member['mb_nick_date']) && $member['mb_nick_date'] > date("Y-m-d", G5_SERVER_TIME - ($config['cf_nick_modify'] * 86400))) { // 닉네임수정일이 지나지 않았다면  ?>
             <input type="hidden" name="mb_nick_default" value="<?php echo get_text($member['mb_nick']) ?>">
             <input type="hidden" name="mb_nick" value="<?php echo get_text($member['mb_nick']) ?>">
             <?php }  ?>
-
-            <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1 && isset($pa['pa_use']) && $pa['pa_use'] == 1) { ?>
-            <?php if($w == "") { ?>
-            <input type="hidden" name="mb_partner" value="<?php echo $_POST['mb_partner'] ?>">
-            <?php } else { ?>
-            <?php if (isset($re) && $re == "re") { ?>
-            <input type="hidden" name="mb_partner" value="<?php echo $is_mb_partner ?>">
-            <?php } else { ?>
-            <input type="hidden" name="mb_partner" value="<?php echo isset($member['mb_partner']) ? get_text($member['mb_partner']) : ''; ?>">
-            <?php } ?>
-            <?php } ?>
-            <?php } ?>
 
             <ul class="rb_login_box">
 
@@ -158,20 +129,6 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
 
 
                 </li>
-
-                <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1 && isset($pa['pa_use']) && $pa['pa_use'] == 1) { ?>
-                <?php if($w == "" || isset($re) && $re == "re") { ?>
-                <?php if(isset($_POST['mb_partner']) && $_POST['mb_partner'] == 1 || isset($re) && $re == "re") { ?>
-                <?php if(isset($pa['pa_add_use']) && $pa['pa_add_use'] == 1) { ?>
-                <li class="rb_reg_sub_title">입점사 회원으로 <?php if(isset($re) && $re == "re") { ?>전환<?php } ?>가입 합니다.</li>
-                <?php } else { ?>
-                <li class="rb_reg_sub_title">입점사 회원으로 <?php if(isset($re) && $re == "re") { ?>전환<?php } ?>가입 신청 합니다.<br>관리자 승인 이후 입점사 전용 서비스를 이용하실 수 있습니다.</li>
-                <?php } ?>
-                <?php } else { ?>
-                <li class="rb_reg_sub_title">일반 회원으로 가입 합니다.</li>
-                <?php } ?>
-                <?php } ?>
-                <?php } ?>
 
                 <li>
                     <span>아이디</span>
@@ -358,18 +315,6 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
                     </div>
                 </li>
                 <?php }  ?>
-
-                <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1 && isset($pa['pa_use']) && $pa['pa_use'] == 1) { ?>
-                <?php if(isset($_POST['mb_partner']) && $_POST['mb_partner'] == 1 || isset($member['mb_partner']) && $member['mb_partner'] == 2 || isset($re) && $re == "re") { ?>
-                <li>
-                    <span>출금계좌</span>
-                    <input type="text" name="mb_bank" value="<?php echo isset($member['mb_bank']) ? get_text($member['mb_bank']) : ''; ?>" id="reg_mb_bank" class="input full_input" placeholder="계좌번호/은행명/예금주명">
-                    <span class="help_text">판매대금을 정산할 수 있는 계좌를 등록해주세요.</span>
-                </li>
-                <?php } ?>
-                <?php } ?>
-
-
 
                 <?php if ($config['cf_use_signature']) {  ?>
                 <li>
@@ -758,7 +703,7 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
 
                 <li>
                     <div class="btn_confirm">
-                        <button type="submit" class="btn_submit font-B" accesskey="s"><?php if (isset($re) && $re == "re") { ?>전환가입<?php } else { ?><?php echo $w==''?'회원가입':'정보수정'; ?><?php } ?></button>
+                        <button type="submit" class="btn_submit font-B" accesskey="s"><?php echo $w==''?'회원가입':'정보수정'; ?></button>
 
                         <?php if($w == 'u') { ?>
                         <button type="button" class="btn_submit font-B mt-10" onclick="javascript:member_leaves();" style="background-color:#f1f1f1 !important; color:#000;">회원탈퇴</button>

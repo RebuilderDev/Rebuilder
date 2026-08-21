@@ -41,65 +41,6 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
             </li>
             <?php } ?>
 
-            <?php
-            if(isset($pa['pa_is']) && $pa['pa_is'] == 1 && isset($pa['pa_use']) && $pa['pa_use'] == 1) {
-                if(isset($pa['pa_add_use']) && $pa['pa_add_use'] == 1) {
-                    $is_mb_partner = 2;
-                } else {
-                    $is_mb_partner = 1;
-                }
-            ?>
-            <li>
-                <span>회원유형</span>
-
-                <div>
-                    <label class="switch_rb">
-                        <input type="radio" name="mb_partner" value="0" id="mem_st1" onchange="setDisplay()">
-                        <span class="toggle_btn">
-                            <span class="tog_txt">일반회원</span>
-                        </span>
-
-                    </label>
-                    <label class="switch_rb fr">
-                        <input type="radio" name="mb_partner" value="<?php echo $is_mb_partner ?>" id="mem_st2" onchange="setDisplay()">
-                        <span class="toggle_btn">
-                            <span class="tog_txt">입점사</span>
-                        </span>
-                    </label>
-                    <div class="cb"></div>
-                </div>
-                <div class="help_st1" id="help_st1">
-                    일반회원으로 가입 합니다.<br>
-                    가입즉시 다양한 서비스를 이용하실 수 있습니다.
-                </div>
-                <div class="help_st2" id="help_st1">
-                    <?php if(isset($pa['pa_add_use']) && $pa['pa_add_use'] == 1) { ?>
-                    입점사 회원으로 가입 합니다.<br>
-                    가입즉시 입점사 전용 시스템을 사용할 수 있습니다.
-                    <?php } else { ?>
-                    입점사 회원 으로 가입신청 합니다.<br>
-                    관리자 승인 후 입점사 전용 시스템을 사용할 수 있습니다.
-                    <?php } ?>
-                </div>
-
-
-                <script>
-                    $('.help_st1').hide();
-                    $('.help_st2').hide();
-
-                    function setDisplay() {
-                        if ($('input:radio[id=mem_st1]').is(':checked')) {
-                            $('.help_st1').show();
-                            $('.help_st2').hide();
-                        } else if ($('input:radio[id=mem_st2]').is(':checked')) {
-                            $('.help_st1').hide();
-                            $('.help_st2').show();
-                        }
-                    }
-                </script>
-            </li>
-            <?php } ?>
-
             <li>
                 <span>회원가입약관</span>
                 <textarea readonly class="textarea"><?php echo get_text($config['cf_stipulation']) ?></textarea>
@@ -147,13 +88,6 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
 <script>
     function fregister_submit(f)
     {
-
-        <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1 && isset($pa['pa_use']) && $pa['pa_use'] == 1) { ?>
-        if ($(f).find('[name=mb_partner]:checked').length < 1 ) {
-             alert("회원 유형을 선택해주세요.");
-             return false;
-        }
-        <?php } ?>
 
         if (!f.agree.checked) {
             alert("회원가입약관의 내용에 동의하셔야 회원가입 하실 수 있습니다.");

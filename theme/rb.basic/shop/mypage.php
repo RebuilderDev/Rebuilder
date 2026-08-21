@@ -189,23 +189,6 @@ if (!function_exists('rb_mypage_get_type_order_title')) {
 	        <a href="<?php echo G5_BBS_URL ?>/logout.php">로그아웃</a>
         </div>
 
-        <?php if(isset($pa['pa_is']) && $pa['pa_is'] == 1 && isset($member['mb_partner']) && $member['mb_partner'] == 2 || isset($pa['pa_is']) && $pa['pa_is'] == 1 && $is_admin) { ?>
-        <ul class="partner_wrap">
-            <a href="<?php echo G5_URL ?>/rb/partner.php" class="main_rb_bg">입점사 전용 시스템</a>
-            <?php if(isset($member['mb_partner']) && $member['mb_partner'] == 2) { ?>
-            <a href="<?php echo G5_URL ?>/store/?p=<?php echo $member['mb_id'] ?>" class="main_rb_bg mt-5">내 스토어</a>
-            <?php } ?>
-        </ul>
-        <?php } else if(isset($pa['pa_is']) && $pa['pa_is'] == 1 && isset($member['mb_partner']) && $member['mb_partner'] == 0) { ?>
-        <ul class="partner_wrap">
-            <a href="<?php echo G5_BBS_URL ?>/member_confirm.php?url=register_form.php?partner=re" class="main_rb_bg">입점 신청</a>
-        </ul>
-        <?php } else if(isset($pa['pa_is']) && $pa['pa_is'] == 1 && isset($member['mb_partner']) && $member['mb_partner'] == 1) { ?>
-        <ul class="partner_wrap">
-            <a href="javascript:alert('입점사 승인 심사중 입니다.');" class="main_rb_bg">입점사 승인대기</a>
-        </ul>
-        <?php } ?>
-
         <ul id="smb_private">
 
 	    	<li>
