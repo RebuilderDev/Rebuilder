@@ -79,6 +79,15 @@
     var $button = $('#btn_gnb');
     var $darkToggle = $('#admDarkToggle');
 
+    <?php if (function_exists('rb_partner_console_manage_allowed') && !rb_partner_console_manage_allowed()) { ?>
+    $(document).on('click', 'a[href*="route=partner."]', function(e){
+        var href = String($(this).attr('href') || '');
+        if (href.indexOf('route=partner.apply') !== -1) return;
+        e.preventDefault();
+        alert('승인된 입점사만 이용할 수 있습니다.');
+    });
+    <?php } ?>
+
     function setActiveGroup(groupId) {
         $('.gnb_li').each(function(){
             var active = String($(this).data('group-id')) === String(groupId);
