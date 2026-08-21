@@ -34,7 +34,7 @@ font-weight: bold;
 .ui-datepicker {
 display: none;
 background-color: #fff;
-border-radius: 4px;
+border-radius: 10px;
 margin-top: 10px;
 margin-left: 0px;
 margin-right: 0px;
@@ -178,4 +178,3 @@ color: #0099ff !important;
 .ui-datepicker select.ui-datepicker-month, .ui-datepicker select.ui-datepicker-year:focus {outline: none;}
 .ui-datepicker select.ui-datepicker-month {margin-left: 5px;}
 .ui-datepicker select.ui-datepicker-year {}
-
