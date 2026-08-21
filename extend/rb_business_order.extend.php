@@ -399,6 +399,254 @@ if (!function_exists('rb_shop_resolve_order_status')) {
     }
 }
 
+/** 구매자가 확정할 수 있는 일반 배송상품을 상품 단위로 반환한다. */
+function rb_shop_purchase_confirmable_items($od_id)
+{
+    global $g5;
+
+    $od_id = preg_replace('/[^0-9A-Za-z_-]/', '', (string) $od_id);
+    if ($od_id === '') return array();
+
+    $cart_table = $g5['g5_shop_cart_table'];
+    $item_table = $g5['g5_shop_item_table'];
+    $partner_select = rb_shop_table_has_column($cart_table, 'ct_partner')
+        ? "COALESCE(c.ct_partner,'')"
+        : "''";
+    $partner_group = rb_shop_table_has_column($cart_table, 'ct_partner')
+        ? ", COALESCE(c.ct_partner,'')"
+        : '';
+    $type_where = rb_shop_table_has_column($item_table, 'it_types')
+        ? " AND CAST(COALESCE(NULLIF(i.it_types,''),'0') AS UNSIGNED)=0"
+        : '';
+
+    $items = array();
+    $result = sql_query("SELECT c.it_id,
+                                MAX(c.it_name) AS it_name,
+                                {$partner_select} AS ct_partner
+                           FROM {$cart_table} c
+                           LEFT JOIN {$item_table} i ON i.it_id=c.it_id
+                          WHERE c.od_id='".sql_real_escape_string($od_id)."'
+                            AND c.io_type='0'
+                            AND c.ct_status='배송'{$type_where}
+                          GROUP BY c.it_id{$partner_group}
+                          ORDER BY MIN(c.ct_id)", false);
+    if (!$result) return $items;
+
+    while ($row = sql_fetch_array($result)) {
+        $items[] = array(
+            'it_id' => (string) $row['it_id'],
+            'it_name' => (string) $row['it_name'],
+            'ct_partner' => (string) $row['ct_partner'],
+        );
+    }
+    return $items;
+}
+
+function rb_shop_purchase_confirm_message($names)
+{
+    $names = array_values(array_unique(array_filter(array_map('trim', (array) $names))));
+    if (!$names) return '상품의 구매가 확정되었습니다.';
+    if (count($names) === 1) return '['.$names[0].']의 구매가 확정되었습니다.';
+    return '['.$names[0].'] 외 '.(count($names) - 1).'개 상품의 구매가 확정되었습니다.';
+}
+
+/**
+ * 구매자 구매 확정 처리.
+ * 일반상품의 배송 중인 행만 완료로 바꾸고, 다른 상태의 장바구니 행은 유지한다.
+ */
+function rb_shop_confirm_purchase($od_id, $buyer_id)
+{
+    global $g5, $config;
+
+    $od_id = preg_replace('/[^0-9A-Za-z_-]/', '', (string) $od_id);
+    $buyer_id = trim((string) $buyer_id);
+    if ($od_id === '' || $buyer_id === '') {
+        return array('ok'=>false, 'message'=>'구매자 정보를 확인할 수 없습니다.');
+    }
+
+    $cart_table = $g5['g5_shop_cart_table'];
+    $order_table = $g5['g5_shop_order_table'];
+    $item_table = $g5['g5_shop_item_table'];
+    $option_table = $g5['g5_shop_item_option_table'];
+
+    sql_query('START TRANSACTION', false);
+
+    $order = sql_fetch("SELECT od_id, mb_id, od_status
+                          FROM {$order_table}
+                         WHERE od_id='".sql_real_escape_string($od_id)."'
+                         FOR UPDATE", false);
+    if (empty($order['od_id']) || (string) $order['mb_id'] !== $buyer_id) {
+        sql_query('ROLLBACK', false);
+        return array('ok'=>false, 'message'=>'구매 확정 권한이 없는 주문입니다.');
+    }
+
+    $items = rb_shop_purchase_confirmable_items($od_id);
+    if (!$items) {
+        sql_query('ROLLBACK', false);
+        return array('ok'=>false, 'message'=>'구매 확정할 수 있는 배송 상품이 없습니다.');
+    }
+
+    $item_ids = array();
+    foreach ($items as $item) {
+        $it_id = preg_replace('/[^0-9A-Za-z_-]/', '', (string) $item['it_id']);
+        if ($it_id !== '') $item_ids[$it_id] = true;
+    }
+    if (!$item_ids) {
+        sql_query('ROLLBACK', false);
+        return array('ok'=>false, 'message'=>'구매 확정할 상품정보가 없습니다.');
+    }
+
+    $quoted_ids = array();
+    foreach (array_keys($item_ids) as $it_id) {
+        $quoted_ids[] = "'".sql_real_escape_string($it_id)."'";
+    }
+
+    $cart_rows = array();
+    $result = sql_query("SELECT *
+                           FROM {$cart_table}
+                          WHERE od_id='".sql_real_escape_string($od_id)."'
+                            AND it_id IN (".implode(',', $quoted_ids).")
+                            AND ct_status='배송'
+                          ORDER BY ct_id
+                          FOR UPDATE", false);
+    if ($result) {
+        while ($row = sql_fetch_array($result)) $cart_rows[] = $row;
+    }
+    if (!$cart_rows) {
+        sql_query('ROLLBACK', false);
+        return array('ok'=>false, 'message'=>'이미 구매 확정되었거나 상태가 변경된 주문입니다.');
+    }
+
+    $now = defined('G5_TIME_YMDHIS') ? G5_TIME_YMDHIS : date('Y-m-d H:i:s');
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+    $history = "\n완료|{$buyer_id}|{$now}|{$ip}|구매자 구매확정";
+    $changed_item_ids = array();
+
+    foreach ($cart_rows as $cart) {
+        $ct_id = (int) $cart['ct_id'];
+        if ($ct_id < 1) continue;
+
+        $stock_use = (int) $cart['ct_stock_use'];
+        if (!$stock_use) {
+            if (!empty($cart['io_id'])) {
+                $stock_sql = "UPDATE {$option_table}
+                                 SET io_stock_qty=io_stock_qty-".(int) $cart['ct_qty']."
+                               WHERE it_id='".sql_real_escape_string($cart['it_id'])."'
+                                 AND io_id='".sql_real_escape_string($cart['io_id'])."'
+                                 AND io_type='".(int) $cart['io_type']."'";
+            } else {
+                $stock_sql = "UPDATE {$item_table}
+                                 SET it_stock_qty=it_stock_qty-".(int) $cart['ct_qty']."
+                               WHERE it_id='".sql_real_escape_string($cart['it_id'])."'";
+            }
+            if (!sql_query($stock_sql, false)) {
+                sql_query('ROLLBACK', false);
+                return array('ok'=>false, 'message'=>'상품 재고 반영 중 오류가 발생했습니다.');
+            }
+            $stock_use = 1;
+        }
+
+        $point_use = (int) $cart['ct_point_use'];
+        if (!empty($cart['ct_point']) && $point_use) {
+            delete_point($buyer_id, '@delivery', $buyer_id, $od_id.','.$ct_id);
+            $point_use = 0;
+        }
+
+        $updated = sql_query("UPDATE {$cart_table}
+                                 SET ct_status='완료',
+                                     ct_stock_use='{$stock_use}',
+                                     ct_point_use='{$point_use}',
+                                     ct_history=CONCAT(COALESCE(ct_history,''), '".sql_real_escape_string($history)."')
+                               WHERE ct_id='{$ct_id}'
+                                 AND od_id='".sql_real_escape_string($od_id)."'
+                                 AND ct_status='배송'", false);
+        if (!$updated) {
+            sql_query('ROLLBACK', false);
+            return array('ok'=>false, 'message'=>'구매 확정 처리 중 오류가 발생했습니다.');
+        }
+        $changed_item_ids[(string) $cart['it_id']] = true;
+    }
+
+    foreach (array_keys($changed_item_ids) as $it_id) {
+        $qty = sql_fetch("SELECT COALESCE(SUM(ct_qty),0) AS sum_qty
+                            FROM {$cart_table}
+                           WHERE it_id='".sql_real_escape_string($it_id)."'
+                             AND ct_status='완료'", false);
+        sql_query("UPDATE {$item_table}
+                      SET it_sum_qty='".(int) $qty['sum_qty']."'
+                    WHERE it_id='".sql_real_escape_string($it_id)."'", false);
+    }
+
+    $status = sql_fetch("SELECT COUNT(*) AS total_count,
+                                SUM(CASE WHEN ct_status='완료' THEN 1 ELSE 0 END) AS complete_count
+                           FROM {$cart_table}
+                          WHERE od_id='".sql_real_escape_string($od_id)."'", false);
+    $order_complete = (int) $status['total_count'] > 0
+        && (int) $status['total_count'] === (int) $status['complete_count'];
+    $order_history = "\n{$now} {$buyer_id} 구매자 구매확정 처리\n";
+    $resolved_status = $order_complete ? '완료' : (function_exists('rb_shop_resolve_order_status') ? rb_shop_resolve_order_status($od_id) : '');
+    // 취소·반품 등 다른 종결 상태가 함께 있으면 구매 확정만으로 주문서 전체를 완료 처리하지 않는다.
+    if (!$order_complete && $resolved_status === '완료') $resolved_status = '';
+    $order_status_sql = $resolved_status !== ''
+        ? ", od_status='".sql_real_escape_string($resolved_status)."'"
+        : '';
+    if (!sql_query("UPDATE {$order_table}
+                       SET od_mod_history=CONCAT(COALESCE(od_mod_history,''), '".sql_real_escape_string($order_history)."')
+                           {$order_status_sql}
+                     WHERE od_id='".sql_real_escape_string($od_id)."'", false)) {
+        sql_query('ROLLBACK', false);
+        return array('ok'=>false, 'message'=>'주문서 상태 반영 중 오류가 발생했습니다.');
+    }
+
+    if (function_exists('rb_file_issue_order_downloads')) rb_file_issue_order_downloads($od_id);
+    if (function_exists('rb_media_issue_order_rights')) rb_media_issue_order_rights($od_id);
+    if (function_exists('rb_reservation_issue_order')) {
+        rb_reservation_issue_order($od_id);
+        if (function_exists('rb_reservation_sync_order_status')) rb_reservation_sync_order_status($od_id);
+    }
+
+    sql_query('COMMIT', false);
+
+    $admin_id = isset($config['cf_admin']) ? trim((string) $config['cf_admin']) : '';
+    $admin_names = array();
+    $partner_names = array();
+    foreach ($items as $item) {
+        $name = trim((string) $item['it_name']);
+        if ($name !== '') $admin_names[] = $name;
+        $partner = trim((string) $item['ct_partner']);
+        if ($partner !== '' && $partner !== $admin_id) {
+            if (!isset($partner_names[$partner])) $partner_names[$partner] = array();
+            if ($name !== '') $partner_names[$partner][] = $name;
+        }
+    }
+
+    if (function_exists('memo_auto_send')) {
+        foreach ($partner_names as $partner=>$names) {
+            $partner_url = function_exists('rb_partner_console_render')
+                ? G5_URL.'/rb/business.php?route=partner.order&od_id='.urlencode($od_id)
+                : '';
+            memo_auto_send(rb_shop_purchase_confirm_message($names), $partner_url, $partner, 'system-msg', 'shop');
+        }
+        if ($admin_id !== '') {
+            $admin_url = G5_ADMIN_URL.'/shop_admin/orderform.php?od_id='.urlencode($od_id);
+            memo_auto_send(rb_shop_purchase_confirm_message($admin_names), $admin_url, $admin_id, 'system-msg', 'shop');
+        }
+    }
+
+    $first_item = reset($items);
+    $review_url = !empty($first_item['it_id'])
+        ? G5_SHOP_URL.'/itemuseform.php?it_id='.urlencode($first_item['it_id'])
+        : '';
+
+    return array(
+        'ok'=>true,
+        'message'=>'구매가 확정되었습니다.',
+        'review_url'=>$review_url,
+        'confirmed_count'=>count($items),
+        'order_complete'=>$order_complete,
+    );
+}
+
 function rb_shop_special_order_statuses($type)
 {
     return rb_shop_is_special_item_type($type)

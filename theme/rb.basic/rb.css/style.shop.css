@@ -338,6 +338,8 @@ a.btn02 {background: #25282B !important; font-weight: normal !important; border-
 #sod_bsk_tot2 li.sod_fin_tot strong {color:#000; font-size: 16px;}
 #sod_bsk_tot2 li.sod_bsk_dvr {border-bottom:1px solid #eee;}
 #sod_bsk_tot2 li.sod_bsk_cnt {border-bottom:1px solid #eee;}
+.rb-purchase-confirm-btn {display:block; width:100%; height:50px; margin-top:10px; padding:0 20px; border:0; border-radius:10px; background:#25282B; color:#FFF; cursor:pointer;}
+.rb-purchase-confirm-btn:disabled {cursor:default; opacity:.65;}
 #sod_fin_pay {border-radius: 10px; overflow: hidden;}
 #sod_fin_cancel .sod_fin_c_btn {border-radius: 10px;}
 #sod_fin_cancelfrm {border:0px;}

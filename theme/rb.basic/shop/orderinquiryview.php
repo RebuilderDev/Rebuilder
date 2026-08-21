@@ -28,6 +28,20 @@ $rb_special_order_only = function_exists('rb_shop_is_special_item_type')
 $rb_deliveryless_order_only = !$rb_has_shipping_items;
 $rb_file_has_files = ($rb_file_feature_ready && function_exists('rb_file_order_has_files')) ? rb_file_order_has_files($od_id) : false;
 $rb_media_has_items = ($rb_media_feature_ready && function_exists('rb_media_order_has_media')) ? rb_media_order_has_media($od_id) : false;
+$rb_purchase_confirm_ready = false;
+$rb_purchase_confirm_token = '';
+if ($is_member && !$is_admin
+    && !empty($member['mb_id'])
+    && isset($od['mb_id'])
+    && (string) $od['mb_id'] === (string) $member['mb_id']
+    && (int) $od['od_misu'] <= 0
+    && function_exists('rb_shop_purchase_confirmable_items')) {
+    $rb_purchase_confirm_ready = count(rb_shop_purchase_confirmable_items($od_id)) > 0;
+    if ($rb_purchase_confirm_ready) {
+        $rb_purchase_confirm_token = get_random_token_string(32);
+        set_session('rb_purchase_confirm_'.$od_id, $rb_purchase_confirm_token);
+    }
+}
 if ($rb_file_has_files && !$is_member && empty($od['mb_id'])) {
     set_session('rb_file_guest_' . $od_id, 1);
 }
@@ -634,6 +648,15 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
             </li>
         </ul>
 
+        <?php if ($rb_purchase_confirm_ready) { ?>
+        <button type="button"
+                id="rb_purchase_confirm_btn"
+                class="rb-purchase-confirm-btn font-B"
+                data-endpoint="<?php echo G5_URL; ?>/rb/order_purchase_confirm.php"
+                data-order-id="<?php echo get_text($od_id); ?>"
+                data-token="<?php echo get_text($rb_purchase_confirm_token); ?>">구매 확정하기</button>
+        <?php } ?>
+
         <section id="sod_fin_pay">
             <h3>결제정보</h3>
             <ul>
@@ -943,6 +966,45 @@ $(function() {
 
         $explan.slideUp(200);
         $("#sod_sts_explan_open").text("상태설명보기");
+    });
+
+    $("#rb_purchase_confirm_btn").on("click", function() {
+        var button = this;
+        if (button.disabled) return;
+
+        button.disabled = true;
+        button.textContent = "처리 중입니다.";
+
+        var body = new URLSearchParams();
+        body.append("od_id", button.getAttribute("data-order-id") || "");
+        body.append("token", button.getAttribute("data-token") || "");
+
+        fetch(button.getAttribute("data-endpoint"), {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "X-Requested-With": "XMLHttpRequest"
+            },
+            body: body.toString()
+        }).then(function(response) {
+            return response.json().then(function(data) {
+                if (!response.ok || !data.ok) throw new Error(data.message || "구매 확정에 실패했습니다.");
+                return data;
+            });
+        }).then(function(data) {
+            button.remove();
+            return rbConfirmCompat("구매가 확정 되었습니다.\n구매 후기를 작성 하시겠어요?").then(function(writeReview) {
+                if (writeReview && data.review_url) {
+                    window.open(data.review_url, "itemuseform", "width=810,height=680,scrollbars=yes,resizable=yes");
+                }
+                window.location.reload();
+            });
+        }).catch(function(error) {
+            button.disabled = false;
+            button.textContent = "구매 확정하기";
+            alert(error.message || "구매 확정에 실패했습니다.");
+        });
     });
 });
 
