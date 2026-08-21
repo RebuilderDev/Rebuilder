@@ -3660,11 +3660,15 @@ body.business-console #gnb .gnb_li .btn_op.rb-console-icon-button {
     overflow: hidden;
     width: 70px;
     height: 70px;
-    background-color: transparent !important;
-    background-image: none !important;
+    background: transparent !important;
     color: #fff;
     text-indent: 0;
     opacity: 0.4;
+}
+
+body.business-console #gnb .gnb_ul > .gnb_li,
+body.business-console #gnb .gnb_ul > .gnb_li.on {
+    background: transparent !important;
 }
 
 body.business-console #gnb .gnb_li.on .btn_op.rb-console-icon-button,
