@@ -3764,6 +3764,15 @@ body.business-console .rb-console-side-menus {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+body.business-console #gnb .gnb_oparea li a {
+    color: rgba(255, 255, 255, 0.58);
+}
+
+body.business-console #gnb .gnb_oparea li a:hover,
+body.business-console #gnb .gnb_oparea li a.on {
+    color: rgba(255, 255, 255, 0.9);
+}
+
 body.business-console .rb-console-menu-section {
     display: none;
 }
