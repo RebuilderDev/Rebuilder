@@ -94,6 +94,10 @@ switch ($action) {
             if(!$it['it_id'])
                 die(json_encode(array('error' => '상품정보가 존재하지 않습니다.')));
 
+            if(function_exists('rb_shop_normalize_special_cart_item')) {
+                $it = rb_shop_normalize_special_cart_item($it);
+            }
+
             if(function_exists('rb_file_normalize_cart_row')) {
                 $it = rb_file_normalize_cart_row($it);
             }

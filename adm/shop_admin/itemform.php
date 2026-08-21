@@ -265,7 +265,7 @@ if(!sql_query(" select it_skin from {$g5['g5_shop_item_table']} limit 1", false)
 <input type="hidden" name="it_origin" value="">
 <input type="hidden" name="it_brand" value="">
 <input type="hidden" name="it_model" value="">
-<input type="hidden" name="it_sc_type" value="1">
+<input type="hidden" name="it_sc_type" value="0">
 <input type="hidden" name="it_sc_method" value="0">
 <input type="hidden" name="it_sc_price" value="0">
 <input type="hidden" name="it_sc_minimum" value="0">

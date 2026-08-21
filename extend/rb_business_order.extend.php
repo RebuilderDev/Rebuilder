@@ -24,6 +24,24 @@ function rb_shop_is_special_item_type($type)
     return in_array((int) $type, array(1, 2, 3), true);
 }
 
+/**
+ * 특수상품은 상품 DB에 무료배송 타입을 저장하지 않지만 장바구니 계산에서는
+ * 쇼핑몰 기본 배송비를 상속하지 않도록 무배송 스냅샷으로 정규화한다.
+ */
+function rb_shop_normalize_special_cart_item($item)
+{
+    if (!is_array($item) || !isset($item['it_types']) || !rb_shop_is_special_item_type($item['it_types'])) {
+        return $item;
+    }
+
+    $item['it_sc_type'] = 1;
+    $item['it_sc_method'] = 0;
+    $item['it_sc_price'] = 0;
+    $item['it_sc_minimum'] = 0;
+    $item['it_sc_qty'] = 0;
+    return $item;
+}
+
 function rb_shop_special_type_available($type)
 {
     $meta = rb_shop_order_type_meta($type);

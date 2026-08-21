@@ -369,6 +369,17 @@ foreach( $check_sanitize_keys as $key ){
     $$key = isset($_POST[$key]) ? addslashes(strip_tags(clean_xss_attributes(stripslashes($_POST[$key])))) : '';
 }
 
+// 예약·콘텐츠·미디어 상품은 배송상품이 아니다.
+// DB에는 무료배송(1)이 아닌 중립값(0)을 저장해 상품 화면의 무료배송 배지가 노출되지 않게 한다.
+// 실제 주문 단계의 무배송 처리는 it_types 기준으로 별도 적용된다.
+if (in_array((int) $it_types, array(1, 2, 3), true)) {
+    $it_sc_type = '0';
+    $it_sc_method = '0';
+    $it_sc_price = '0';
+    $it_sc_minimum = '0';
+    $it_sc_qty = '0';
+}
+
 $it_basic = preg_replace('#<script(.*?)>(.*?)<\/script>#is', '', $it_basic);
 $it_explan = isset($_POST['it_explan']) ? $_POST['it_explan'] : '';
 
