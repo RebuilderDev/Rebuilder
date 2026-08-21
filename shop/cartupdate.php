@@ -207,6 +207,10 @@ else // 장바구니에 담기
         $rb_is_media_item = $rb_media_columns_ready && function_exists('rb_media_is_item') && rb_media_is_item($it);
         $rb_replace_cart_item = isset($it['it_types']) && in_array((int)$it['it_types'], array(1, 2, 3), true);
         $rb_reservation_period = array();
+        $rb_reservation_option_context = array('ct_date_t'=>'', 'ct_res_options'=>'', 'ct_res_extra_options'=>'', 'ct_res_custom_price'=>0);
+        $rb_reservation_option_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_res_options')
+            && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_res_extra_options')
+            && rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_res_custom_price');
 
         // 예약상품의 기간과 수량은 브라우저 값을 신뢰하지 않고 서버에서 다시 계산한다.
         if (isset($it['it_types']) && (int)$it['it_types'] === 1 && function_exists('rb_reservation_calculate_period')) {
@@ -261,6 +265,20 @@ else // 장바구니에 담기
                 alert('최대 예약 가능 기간은 '.$max_units.($rb_reservation_mode === 'stay' ? '박' : '일').'입니다.');
             }
 
+            if (function_exists('rb_reservation_prepare_cart_options')) {
+                $rb_reservation_option_context = rb_reservation_prepare_cart_options($it, (int)$rb_reservation_period['units']);
+                if (!empty($rb_reservation_option_context['error'])) alert($rb_reservation_option_context['error']);
+                $_POST['ct_date_t'] = $rb_reservation_option_context['ct_date_t'];
+                $_POST['ct_res_options'] = $rb_reservation_option_context['ct_res_options'];
+                $_POST['ct_res_extra_options'] = $rb_reservation_option_context['ct_res_extra_options'];
+                $_POST['ct_res_custom_price'] = (int)$rb_reservation_option_context['ct_res_custom_price'];
+                for ($rb_people_no=1; $rb_people_no<=3; $rb_people_no++) {
+                    $_POST['ct_user_txt'.$rb_people_no] = '';
+                    $_POST['ct_user_qty'.$rb_people_no] = 0;
+                    $_POST['ct_user_pri'.$rb_people_no] = 0;
+                }
+            }
+
             if (!empty($it['it_date_s']) && $it['it_date_s'] !== '0000-00-00' && $ct_date_s < $it['it_date_s']) {
                 alert('예약 가능 시작일 이전 날짜입니다.');
             }
@@ -271,8 +289,7 @@ else // 장바구니에 담기
 
             if ($rb_reservation_mode === 'time') {
                 $selected_time = isset($_POST['ct_date_t']) ? trim((string)$_POST['ct_date_t']) : '';
-                $available_times = preg_split('/\r\n|\r|\n/', (string)$it['it_date_t']);
-                $available_times = array_values(array_filter(array_map('trim', $available_times), 'strlen'));
+                $available_times = function_exists('rb_reservation_item_time_slots') ? rb_reservation_item_time_slots($it) : array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', (string)$it['it_date_t'])), 'strlen'));
                 if ($selected_time === '' || !in_array($selected_time, $available_times, true)) {
                     alert('예약 시간을 선택해 주세요.');
                 }
@@ -284,6 +301,7 @@ else // 장바구니에 담기
             }
 
             $rb_total_people = 0;
+            if (!function_exists('rb_reservation_prepare_cart_options')) {
             for ($rb_people_no=1; $rb_people_no<=3; $rb_people_no++) {
                 $rb_use_field = 'it_user_use'.$rb_people_no;
                 $rb_min_field = 'it_user_min'.$rb_people_no;
@@ -313,6 +331,7 @@ else // 장바구니에 담기
             $rb_people_max = isset($it['it_user_max']) ? (int)$it['it_user_max'] : 0;
             if ($rb_people_min > 0 && $rb_total_people < $rb_people_min) alert('전체 최소 인원은 '.$rb_people_min.'명입니다.');
             if ($rb_people_max > 0 && $rb_total_people > $rb_people_max) alert('전체 최대 인원은 '.$rb_people_max.'명입니다.');
+            }
 
             $_POST['ct_types'] = 1;
             $_POST['ct_date_d'] = (int)$rb_reservation_period['units'];
@@ -518,6 +537,9 @@ else // 장바구니에 담기
                 }
             }
         }
+        if (isset($it['it_types']) && (int)$it['it_types'] === 1) {
+            $date_extra_price += (int)$rb_reservation_option_context['ct_res_custom_price'];
+        }
         // ========================================
 
         // 장바구니에 Insert
@@ -550,6 +572,11 @@ else // 장바구니에 담기
                 $columns[] = "ct_date_e";
                 $columns[] = "ct_date_d";
                 $columns[] = "ct_date_t";
+                if ($rb_reservation_option_columns_ready) {
+                    $columns[] = "ct_res_options";
+                    $columns[] = "ct_res_extra_options";
+                    $columns[] = "ct_res_custom_price";
+                }
                 $columns[] = "ct_user_txt1";
                 $columns[] = "ct_user_txt2";
                 $columns[] = "ct_user_txt3";
@@ -699,6 +726,9 @@ else // 장바구니에 담기
                     $ct_date_e = isset($_POST['ct_date_e']) ? trim(strip_tags($_POST['ct_date_e'])) : '';
                     $ct_date_d = isset($_POST['ct_date_d']) ? trim(strip_tags($_POST['ct_date_d'])) : '';
                     $ct_date_t = isset($_POST['ct_date_t']) ? trim(strip_tags($_POST['ct_date_t'])) : '';
+                    $ct_res_options = $rb_reservation_option_columns_ready ? sql_real_escape_string((string)$rb_reservation_option_context['ct_res_options']) : '';
+                    $ct_res_extra_options = $rb_reservation_option_columns_ready ? sql_real_escape_string((string)$rb_reservation_option_context['ct_res_extra_options']) : '';
+                    $ct_res_custom_price = $rb_reservation_option_columns_ready ? (int)$rb_reservation_option_context['ct_res_custom_price'] : 0;
                     $ct_user_txt1 = isset($_POST['ct_user_txt1']) ? trim(strip_tags($_POST['ct_user_txt1'])) : '';
                     $ct_user_txt2 = isset($_POST['ct_user_txt2']) ? trim(strip_tags($_POST['ct_user_txt2'])) : '';
                     $ct_user_txt3 = isset($_POST['ct_user_txt3']) ? trim(strip_tags($_POST['ct_user_txt3'])) : '';
@@ -715,6 +745,11 @@ else // 장바구니에 담기
                     $values[] = "'$ct_date_e'";
                     $values[] = "'$ct_date_d'";
                     $values[] = "'$ct_date_t'";
+                    if ($rb_reservation_option_columns_ready) {
+                        $values[] = "'$ct_res_options'";
+                        $values[] = "'$ct_res_extra_options'";
+                        $values[] = "'$ct_res_custom_price'";
+                    }
                     $values[] = "'$ct_user_txt1'";
                     $values[] = "'$ct_user_txt2'";
                     $values[] = "'$ct_user_txt3'";
