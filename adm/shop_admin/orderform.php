@@ -276,6 +276,16 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                 else
                     $opt_price = $opt['ct_price'] + $opt['io_price'];
 
+                $rb_content_extra_price = 0;
+                if ((int)$opt['io_type'] === 0) {
+                    if ($rb_file_columns_ready) {
+                        $rb_content_extra_price += isset($opt['ct_file_price']) ? (int)$opt['ct_file_price'] : 0;
+                    }
+                    if ($rb_media_columns_ready) {
+                        $rb_content_extra_price += isset($opt['ct_media_price']) ? (int)$opt['ct_media_price'] : 0;
+                    }
+                }
+
                 // 소계
                 if (isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($opt['ct_types']) && $opt['ct_types'] == 1) {
 
@@ -312,7 +322,7 @@ add_javascript(G5_POSTCODE_JS, 0);    //다음 주소 js
                     }
 
                 } else {
-                    $ct_price['stotal'] = $opt_price * $opt['ct_qty'];
+                    $ct_price['stotal'] = ($opt_price + $rb_content_extra_price) * $opt['ct_qty'];
                 }
 
                 $ct_point['stotal'] = $opt['ct_point'] * $opt['ct_qty'];

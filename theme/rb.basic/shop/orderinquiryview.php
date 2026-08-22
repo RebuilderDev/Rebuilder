@@ -203,6 +203,16 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
                         else
                             $opt_price = $opt['ct_price'] + $opt['io_price'];
 
+                        $rb_content_extra_price = 0;
+                        if ((int)$opt['io_type'] === 0) {
+                            if ($rb_file_columns_ready) {
+                                $rb_content_extra_price += isset($opt['ct_file_price']) ? (int)$opt['ct_file_price'] : 0;
+                            }
+                            if ($rb_media_columns_ready) {
+                                $rb_content_extra_price += isset($opt['ct_media_price']) ? (int)$opt['ct_media_price'] : 0;
+                            }
+                        }
+
                         if(isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1) {
                             if(isset($opt['ct_types']) && $opt['ct_types'] == 1) {
 
@@ -229,10 +239,10 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
                                 }
 
                             } else {
-                                $sell_price = $opt_price * $opt['ct_qty'];
+                                $sell_price = ($opt_price + $rb_content_extra_price) * $opt['ct_qty'];
                             }
                         } else {
-                            $sell_price = $opt_price * $opt['ct_qty'];
+                            $sell_price = ($opt_price + $rb_content_extra_price) * $opt['ct_qty'];
                         }
 
                         $point = $opt['ct_point'] * $opt['ct_qty'];
