@@ -2575,6 +2575,10 @@ body.adm-dark .rbw-card-footer {
     color: var(--rb-text) !important;
 }
 
+#anc_rb_file_item .rb-file-server-guide {
+    border-top: 0 !important;
+}
+
 #anc_rb_file_item .rb-file-server-guide strong,
 #anc_rb_file_item .rb-file-upload-summary strong,
 #anc_rb_file_item .rb-file-upload-summary b,
@@ -2658,6 +2662,10 @@ body.adm-dark #anc_rb_file_item .rb-file-sort-handle {
 }
 
 .rb-media-guide .rb-media-guide-block {
+    border-top: 0 !important;
+}
+
+.rb-media-guide .rb-media-guide-block + .rb-media-guide-block {
     border-top: 1px dashed var(--rb-adm-th-border-color) !important;
 }
 
