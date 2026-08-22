@@ -2662,11 +2662,11 @@ body.adm-dark #anc_rb_file_item .rb-file-sort-handle {
 }
 
 .rb-media-guide .rb-media-guide-block {
-    border-top: 0 !important;
+    border-top: 1px dashed var(--rb-adm-th-border-color) !important;
 }
 
-.rb-media-guide .rb-media-guide-block + .rb-media-guide-block {
-    border-top: 1px dashed var(--rb-adm-th-border-color) !important;
+.rb-media-guide .rb-media-guide-block:first-child {
+    border-top: 0 !important;
 }
 
 .rb-media-upload-summary li,
