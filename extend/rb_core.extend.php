@@ -452,6 +452,135 @@ function rb_board_plain_textarea_autoheight_tail()
 RBHTML;
 }
 
+// 게시판 글쓰기 검증 실패 시 화면만 이동하거나 작성 버튼이 잠기는 현상을 방지한다.
+add_event('tail_sub', 'rb_board_write_submit_guard_tail', G5_HOOK_DEFAULT_PRIORITY);
+function rb_board_write_submit_guard_tail()
+{
+    global $bo_table;
+
+    $script_name = isset($_SERVER['SCRIPT_NAME']) ? basename((string) $_SERVER['SCRIPT_NAME']) : '';
+    if ($script_name !== 'write.php' || empty($bo_table)) return;
+
+    echo <<<'RBHTML'
+<script>
+(function () {
+    'use strict';
+
+    var form = document.getElementById('fwrite');
+    if (!form || form.getAttribute('data-rb-submit-guard') === '1') return;
+
+    form.setAttribute('data-rb-submit-guard', '1');
+
+    var submitButton = form.querySelector('#btn_submit, button[type="submit"], input[type="submit"]');
+    var submitLocked = false;
+    var invalidNoticePending = false;
+    var lastScrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+    var lastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+
+    function rememberScroll() {
+        lastScrollX = window.pageXOffset || document.documentElement.scrollLeft || 0;
+        lastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    }
+
+    function restoreScroll() {
+        window.scrollTo(lastScrollX, lastScrollY);
+    }
+
+    function restoreSubmitButton() {
+        submitLocked = false;
+        if (submitButton) submitButton.disabled = false;
+    }
+
+    function focusWithoutScroll(field) {
+        if (!field || typeof field.focus !== 'function') return;
+
+        try {
+            field.focus({preventScroll: true});
+        } catch (ignore) {
+            field.focus();
+        }
+        restoreScroll();
+    }
+
+    function showValidationMessage(field) {
+        var message = field && field.validationMessage
+            ? field.validationMessage
+            : '필수 입력항목을 확인해 주세요.';
+        var afterClose = function () {
+            focusWithoutScroll(field);
+        };
+
+        if (typeof window.alert === 'function' && window.alert.length > 1) {
+            window.alert(message, afterClose);
+        } else {
+            window.alert(message);
+            afterClose();
+        }
+    }
+
+    form.addEventListener('invalid', function (event) {
+        rememberScroll();
+        event.preventDefault();
+        restoreSubmitButton();
+
+        if (invalidNoticePending) return;
+        invalidNoticePending = true;
+
+        window.setTimeout(function () {
+            invalidNoticePending = false;
+            restoreScroll();
+            showValidationMessage(event.target);
+        }, 0);
+    }, true);
+
+    if (submitButton) {
+        submitButton.addEventListener('pointerdown', rememberScroll, true);
+        submitButton.addEventListener('mousedown', rememberScroll, true);
+        submitButton.addEventListener('touchstart', rememberScroll, true);
+        submitButton.addEventListener('click', rememberScroll, true);
+    }
+
+    if (typeof window.fwrite_submit === 'function' && !window.fwrite_submit.rbSubmitGuard) {
+        var originalSubmit = window.fwrite_submit;
+
+        window.fwrite_submit = function () {
+            if (submitLocked) return false;
+
+            rememberScroll();
+
+            var result = false;
+            try {
+                result = originalSubmit.apply(this, arguments);
+            } catch (error) {
+                restoreSubmitButton();
+                restoreScroll();
+                if (window.console && typeof window.console.error === 'function') {
+                    window.console.error('게시글 작성 검증 중 오류가 발생했습니다.', error);
+                }
+                window.alert('작성 내용을 처리하지 못했습니다. 입력 내용을 확인한 뒤 다시 시도해 주세요.');
+                return false;
+            }
+
+            if (result !== true) {
+                restoreSubmitButton();
+                window.setTimeout(restoreScroll, 0);
+                if (window.requestAnimationFrame) window.requestAnimationFrame(restoreScroll);
+                return false;
+            }
+
+            submitLocked = true;
+            if (submitButton) submitButton.disabled = true;
+            return true;
+        };
+        window.fwrite_submit.rbSubmitGuard = true;
+    }
+
+    window.addEventListener('pageshow', restoreSubmitButton);
+}());
+</script>
+RBHTML;
+}
+
 function prism_script(){
     add_stylesheet('<link rel="stylesheet" href="'.G5_URL.'/rb/rb.mod/prism/prism.css">', -2);
     $sh = '<script src="'.G5_URL.'/rb/rb.mod/prism/prism.js"></script>'.PHP_EOL;
