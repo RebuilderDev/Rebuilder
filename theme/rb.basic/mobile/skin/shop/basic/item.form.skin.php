@@ -7,6 +7,7 @@ add_javascript('<script src="'.G5_JS_URL.'/jquery.bxslider.js"></script>', 10);
 $rb_is_file_item = function_exists('rb_file_is_item') && rb_file_is_item($it);
 $rb_is_media_item = function_exists('rb_media_is_item') && rb_media_is_item($it);
 $rb_is_reservation_item = isset($rb_item_res['res_is']) && (int)$rb_item_res['res_is'] === 1 && isset($it['it_types']) && (int)$it['it_types'] === 1;
+$rb_fixed_qty_item = $rb_is_file_item || $rb_is_media_item || $rb_is_reservation_item;
 ?>
 
 <?php if($config['cf_kakao_js_apikey']) { ?>
@@ -309,11 +310,16 @@ var kakao_javascript_apikey = "<?php echo $config['cf_kakao_js_apikey']; ?>";
                         <span class="sit_opt_subj"><?php echo $it['it_name']; ?></span>
                     </div>
                     <div class="opt_count">
+                        <?php if ($rb_fixed_qty_item) { ?>
+                        <input type="hidden" name="ct_qty[<?php echo $it_id; ?>][]" value="1" id="ct_qty_<?php echo $i; ?>">
+                        <span class="sit_opt_prc">+0원</span>
+                        <?php } else { ?>
                         <label for="ct_qty_<?php echo $i; ?>" class="sound_only">수량</label>
                        <button type="button" class="sit_qty_minus"><i class="fa fa-minus" aria-hidden="true"></i><span class="sound_only">감소</span></button>
                         <input type="text" name="ct_qty[<?php echo $it_id; ?>][]" value="<?php echo $it['it_buy_min_qty']; ?>" id="ct_qty_<?php echo $i; ?>" class="num_input" size="5">
                         <button type="button" class="sit_qty_plus"><i class="fa fa-plus" aria-hidden="true"></i><span class="sound_only">증가</span></button>
                         <span class="sit_opt_prc">+0원</span>
+                        <?php } ?>
                     </div>
                 </li>
             </ul>
@@ -720,3 +726,33 @@ function fitem_submit(f)
 </script>
 <?php /* 2017 리뉴얼한 테마 적용 스크립트입니다. 기존 스크립트를 오버라이드 합니다. */ ?>
 <script src="<?php echo G5_JS_URL; ?>/shop.override.js"></script>
+<?php if ($rb_fixed_qty_item) { ?>
+<script>
+(function($) {
+    function rb_lock_special_item_quantity(context) {
+        var selector = "input[name^='ct_qty'], input[name^='ct_copy_qty']";
+        $(context || document).find(selector).addBack(selector).each(function() {
+            var $qty = $(this);
+            $qty.val('1').attr('type', 'hidden');
+            var $count = $qty.closest('.opt_count');
+            $count.find('.sit_qty_minus, .sit_qty_plus').prop('hidden', true);
+            $count.find('label[for="' + $qty.attr('id') + '"]').prop('hidden', true);
+        });
+    }
+
+    $(function() {
+        rb_lock_special_item_quantity(document);
+        if (window.MutationObserver) {
+            var observer = new MutationObserver(function(mutations) {
+                $.each(mutations, function(_, mutation) {
+                    $.each(mutation.addedNodes || [], function(_, node) {
+                        if (node.nodeType === 1) rb_lock_special_item_quantity(node);
+                    });
+                });
+            });
+            observer.observe(document.body, {childList: true, subtree: true});
+        }
+    });
+})(jQuery);
+</script>
+<?php } ?>

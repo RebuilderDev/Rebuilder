@@ -6,6 +6,7 @@ add_stylesheet('<link rel="stylesheet" href="'.G5_SHOP_CSS_URL.'/style.css">', 0
 $rb_is_file_item = function_exists('rb_file_is_item') && rb_file_is_item($it);
 $rb_is_media_item = function_exists('rb_media_is_item') && rb_media_is_item($it);
 $rb_is_reservation_item = isset($rb_item_res['res_is']) && $rb_item_res['res_is'] == 1 && isset($it['it_types']) && (string)$it['it_types'] === '1';
+$rb_fixed_qty_item = $rb_is_file_item || $rb_is_media_item || $rb_is_reservation_item;
 $rb_preview_media_rows = array();
 if ($rb_is_media_item && function_exists('rb_media_get_items')) {
     $rb_preview_media_items = rb_media_get_items($it['it_id']);
@@ -330,8 +331,8 @@ if ($rb_is_media_item && function_exists('rb_media_get_items')) {
 	                        <span class="sit_opt_subj"><?php echo $it['it_name']; ?></span>
 	                    </div>
 	                    <div class="opt_count">
-	                        <?php if ($rb_is_reservation_item) { ?>
-                            <input type="hidden" name="ct_qty[<?php echo $it_id; ?>][]" value="<?php echo $it['it_buy_min_qty']; ?>" id="ct_qty_<?php echo $i; ?>">
+	                        <?php if ($rb_fixed_qty_item) { ?>
+                            <input type="hidden" name="ct_qty[<?php echo $it_id; ?>][]" value="1" id="ct_qty_<?php echo $i; ?>">
                             <span class="sit_opt_prc">+0원</span>
 	                        <?php } else { ?>
 	                        <label for="ct_qty_<?php echo $i; ?>" class="sound_only">수량</label>
@@ -1073,6 +1074,34 @@ function rb_file_bind_price_hook()
 $(function() {
     rb_file_bind_price_hook();
 });
+<?php } ?>
+<?php if ($rb_fixed_qty_item) { ?>
+(function($) {
+    function rb_lock_special_item_quantity(context) {
+        var selector = "input[name^='ct_qty'], input[name^='ct_copy_qty']";
+        $(context || document).find(selector).addBack(selector).each(function() {
+            var $qty = $(this);
+            $qty.val('1').attr('type', 'hidden');
+            var $count = $qty.closest('.opt_count');
+            $count.find('.sit_qty_minus, .sit_qty_plus').prop('hidden', true);
+            $count.find('label[for="' + $qty.attr('id') + '"]').prop('hidden', true);
+        });
+    }
+
+    $(function() {
+        rb_lock_special_item_quantity(document);
+        if (window.MutationObserver) {
+            var observer = new MutationObserver(function(mutations) {
+                $.each(mutations, function(_, mutation) {
+                    $.each(mutation.addedNodes || [], function(_, node) {
+                        if (node.nodeType === 1) rb_lock_special_item_quantity(node);
+                    });
+                });
+            });
+            observer.observe(document.body, {childList: true, subtree: true});
+        }
+    });
+})(jQuery);
 <?php } ?>
 
 <?php if (function_exists('rb_media_is_item') && rb_media_is_item($it)) { ?>
