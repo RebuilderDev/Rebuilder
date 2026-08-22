@@ -3,6 +3,24 @@
     'use strict';
     if (!$) return; // jQuery 없으면 그냥 리턴
 
+    // 브라우저 Back으로 페이지가 복원될 때 팝업 쿠키 상태를 다시 반영합니다.
+    function rbSyncPopupCookies() {
+        $('.hd_pops[id^="hd_pops_"]').each(function () {
+            var cookieName = this.id;
+            var cookieValue = typeof window.get_cookie === 'function'
+                ? window.get_cookie(cookieName)
+                : document.cookie.split(';').some(function (cookie) {
+                    return cookie.trim().indexOf(cookieName + '=') === 0;
+                });
+
+            if (cookieValue) {
+                this.style.display = 'none';
+            }
+        });
+    }
+
+    window.addEventListener('pageshow', rbSyncPopupCookies);
+
     // -------- alert 오버라이드 --------
     window.alert = function (msg, callback) {
         // 기존 팝업 정리
