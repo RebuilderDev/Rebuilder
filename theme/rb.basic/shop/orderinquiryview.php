@@ -30,7 +30,7 @@ $rb_file_has_files = ($rb_file_feature_ready && function_exists('rb_file_order_h
 $rb_media_has_items = ($rb_media_feature_ready && function_exists('rb_media_order_has_media')) ? rb_media_order_has_media($od_id) : false;
 $rb_purchase_confirm_ready = false;
 $rb_purchase_confirm_token = '';
-if ($is_member && !$is_admin
+if ($is_member
     && !empty($member['mb_id'])
     && isset($od['mb_id'])
     && (string) $od['mb_id'] === (string) $member['mb_id']

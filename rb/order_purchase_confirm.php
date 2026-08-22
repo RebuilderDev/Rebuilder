@@ -18,7 +18,7 @@ if (strtoupper(isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 
     rb_purchase_confirm_json(false, '잘못된 요청입니다.', array(), 405);
 }
 
-if (!$is_member || empty($member['mb_id']) || $is_admin) {
+if (!$is_member || empty($member['mb_id'])) {
     rb_purchase_confirm_json(false, '구매자 본인만 구매를 확정할 수 있습니다.', array(), 403);
 }
 
