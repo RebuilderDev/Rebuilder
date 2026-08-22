@@ -53,26 +53,38 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
 
     <script>
         function adjustContentPadding() {
-            // header의 높이 구하기
-            var height_header = $('#header').outerHeight();
-            var sticky_header = $('#header').outerHeight() + 30;
-            // contents_wrap 에 구해진 높이값 적용
-            $('#contents_wrap').css('padding-top', height_header + 'px');
-            $('#rb_sidemenu').css('top', sticky_header + 'px');
+            var header = document.getElementById('header');
+            var contents = document.getElementById('contents_wrap');
+
+            if (!header || !contents) {
+                return;
+            }
+
+            var headerHeight = Math.ceil(header.getBoundingClientRect().height);
+            contents.style.paddingTop = headerHeight + 'px';
+
+            var sideMenu = document.getElementById('rb_sidemenu');
+            if (sideMenu) {
+                sideMenu.style.top = (headerHeight + 30) + 'px';
+            }
         }
 
-        $(document).ready(function() {
-            // 처음 페이지 로드 시 호출
+        window.addEventListener('resize', adjustContentPadding);
+        window.addEventListener('load', adjustContentPadding);
+
+        document.addEventListener('DOMContentLoaded', function() {
             adjustContentPadding();
 
-            // 브라우저 리사이즈 시 호출
-            $(window).resize(function() {
-                adjustContentPadding();
-            });
+            var header = document.getElementById('header');
+            if (header && window.ResizeObserver) {
+                window.rbHeaderResizeObserver = new ResizeObserver(adjustContentPadding);
+                window.rbHeaderResizeObserver.observe(header);
+            }
         });
     </script>
 
     <div class="contents_wrap" id="contents_wrap">
+        <script>adjustContentPadding();</script>
 
         <?php if (!defined("_INDEX_")) { ?>
             <?php include_once(G5_PATH.'/rb/rb.config/topvisual.php'); ?>
