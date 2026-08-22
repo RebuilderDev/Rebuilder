@@ -1,6 +1,34 @@
 <?php
 if (!defined('_GNUBOARD_')) exit;
 
+/*
+ * 영카트 주문상세는 주문 조회 실패 여부를 확인하기 전에 UID 생성에 필요한
+ * 주문 배열을 읽는다. 존재하지 않거나 본인 소유가 아닌 주문은 여기서 먼저
+ * 차단해 PHP 경고가 alert 화면 위에 출력되지 않게 한다.
+ */
+$rb_order_view_script = isset($_SERVER['SCRIPT_NAME']) ? basename((string) $_SERVER['SCRIPT_NAME']) : '';
+$rb_order_view_noti = isset($_GET['ini_noti']) && !isset($_GET['uid']);
+if ($rb_order_view_script === 'orderinquiryview.php' && !$rb_order_view_noti) {
+    if (!isset($_GET['uid'])) {
+        $_GET['uid'] = '';
+    }
+
+    $rb_order_view_id = isset($_REQUEST['od_id']) ? preg_replace('/[^0-9A-Za-z_-]/', '', (string) $_REQUEST['od_id']) : '';
+    $rb_order_view_row = array();
+    if ($rb_order_view_id !== '') {
+        $rb_order_view_sql = "SELECT od_id FROM {$g5['g5_shop_order_table']} WHERE od_id='" . sql_real_escape_string($rb_order_view_id) . "'";
+        if (!empty($is_member) && empty($is_admin)) {
+            $rb_order_view_sql .= " AND mb_id='" . sql_real_escape_string(isset($member['mb_id']) ? $member['mb_id'] : '') . "'";
+        }
+        $rb_order_view_row = sql_fetch($rb_order_view_sql, false);
+    }
+
+    if (empty($rb_order_view_row['od_id'])) {
+        alert('조회하실 주문서가 없습니다.', G5_SHOP_URL);
+    }
+}
+unset($rb_order_view_script, $rb_order_view_noti, $rb_order_view_id, $rb_order_view_row, $rb_order_view_sql);
+
 /**
  * 일반상품은 기존 장바구니를 사용하고 예약·파일·미디어 상품은
  * 영카트의 바로구매 장바구니를 유형별로 격리해서 사용한다.
