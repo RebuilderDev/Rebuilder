@@ -399,7 +399,13 @@ if (!function_exists('rb_shop_resolve_order_status')) {
     }
 }
 
-/** 구매자가 확정할 수 있는 일반 배송상품을 상품 단위로 반환한다. */
+function rb_shop_purchase_confirm_enabled()
+{
+    global $rb_builder;
+    return isset($rb_builder['bu_purchase_confirm_use']) && (int) $rb_builder['bu_purchase_confirm_use'] === 1;
+}
+
+/** 구매자가 확정할 수 있는 상품을 상품 단위로 반환한다. */
 function rb_shop_purchase_confirmable_items($od_id)
 {
     global $g5;
@@ -415,20 +421,25 @@ function rb_shop_purchase_confirmable_items($od_id)
     $partner_group = rb_shop_table_has_column($cart_table, 'ct_partner')
         ? ", COALESCE(c.ct_partner,'')"
         : '';
-    $type_where = rb_shop_table_has_column($item_table, 'it_types')
-        ? " AND CAST(COALESCE(NULLIF(i.it_types,''),'0') AS UNSIGNED)=0"
-        : '';
+    $has_item_type = rb_shop_table_has_column($item_table, 'it_types');
+    $type_expr = $has_item_type
+        ? "CAST(COALESCE(NULLIF(i.it_types,''),'0') AS UNSIGNED)"
+        : '0';
+    $eligible_where = $has_item_type
+        ? " AND (({$type_expr}=0 AND c.ct_status='배송') OR ({$type_expr} IN (1,2,3) AND c.ct_status='입금'))"
+        : " AND c.ct_status='배송'";
+    $type_group = $has_item_type ? ", {$type_expr}" : '';
 
     $items = array();
     $result = sql_query("SELECT c.it_id,
                                 MAX(c.it_name) AS it_name,
-                                {$partner_select} AS ct_partner
+                                {$partner_select} AS ct_partner,
+                                {$type_expr} AS item_type
                            FROM {$cart_table} c
                            LEFT JOIN {$item_table} i ON i.it_id=c.it_id
                           WHERE c.od_id='".sql_real_escape_string($od_id)."'
-                            AND c.io_type='0'
-                            AND c.ct_status='배송'{$type_where}
-                          GROUP BY c.it_id{$partner_group}
+                            AND c.io_type='0'{$eligible_where}
+                          GROUP BY c.it_id{$partner_group}{$type_group}
                           ORDER BY MIN(c.ct_id)", false);
     if (!$result) return $items;
 
@@ -437,6 +448,8 @@ function rb_shop_purchase_confirmable_items($od_id)
             'it_id' => (string) $row['it_id'],
             'it_name' => (string) $row['it_name'],
             'ct_partner' => (string) $row['ct_partner'],
+            'item_type' => (int) $row['item_type'],
+            'confirm_status' => (int) $row['item_type'] === 0 ? '배송' : '입금',
         );
     }
     return $items;
@@ -452,7 +465,8 @@ function rb_shop_purchase_confirm_message($names)
 
 /**
  * 구매자 구매 확정 처리.
- * 일반상품의 배송 중인 행만 완료로 바꾸고, 다른 상태의 장바구니 행은 유지한다.
+ * 일반상품은 배송, 예약·파일·미디어 상품은 입금 상태인 행만 완료로 바꾼다.
+ * 다른 상태의 장바구니 행은 그대로 유지한다.
  */
 function rb_shop_confirm_purchase($od_id, $buyer_id)
 {
@@ -463,6 +477,9 @@ function rb_shop_confirm_purchase($od_id, $buyer_id)
     if ($od_id === '' || $buyer_id === '') {
         return array('ok'=>false, 'message'=>'구매자 정보를 확인할 수 없습니다.');
     }
+    if (!rb_shop_purchase_confirm_enabled()) {
+        return array('ok'=>false, 'message'=>'구매 확정 기능을 사용하지 않습니다.');
+    }
 
     $cart_table = $g5['g5_shop_cart_table'];
     $order_table = $g5['g5_shop_order_table'];
@@ -471,7 +488,7 @@ function rb_shop_confirm_purchase($od_id, $buyer_id)
 
     sql_query('START TRANSACTION', false);
 
-    $order = sql_fetch("SELECT od_id, mb_id, od_status
+    $order = sql_fetch("SELECT od_id, mb_id, od_status, od_misu
                           FROM {$order_table}
                          WHERE od_id='".sql_real_escape_string($od_id)."'
                          FOR UPDATE", false);
@@ -479,34 +496,47 @@ function rb_shop_confirm_purchase($od_id, $buyer_id)
         sql_query('ROLLBACK', false);
         return array('ok'=>false, 'message'=>'구매 확정 권한이 없는 주문입니다.');
     }
+    if ((int) $order['od_misu'] > 0) {
+        sql_query('ROLLBACK', false);
+        return array('ok'=>false, 'message'=>'결제가 완료된 주문만 구매를 확정할 수 있습니다.');
+    }
 
     $items = rb_shop_purchase_confirmable_items($od_id);
     if (!$items) {
         sql_query('ROLLBACK', false);
-        return array('ok'=>false, 'message'=>'구매 확정할 수 있는 배송 상품이 없습니다.');
+        return array('ok'=>false, 'message'=>'구매 확정할 수 있는 상품이 없습니다.');
     }
 
-    $item_ids = array();
+    $item_types = array();
+    $status_item_ids = array('배송'=>array(), '입금'=>array());
     foreach ($items as $item) {
         $it_id = preg_replace('/[^0-9A-Za-z_-]/', '', (string) $item['it_id']);
-        if ($it_id !== '') $item_ids[$it_id] = true;
+        if ($it_id === '') continue;
+        $item_type = isset($item['item_type']) ? (int) $item['item_type'] : 0;
+        $expected_status = $item_type === 0 ? '배송' : '입금';
+        $item_types[$it_id] = $item_type;
+        $status_item_ids[$expected_status][$it_id] = true;
     }
-    if (!$item_ids) {
+    if (!$item_types) {
         sql_query('ROLLBACK', false);
         return array('ok'=>false, 'message'=>'구매 확정할 상품정보가 없습니다.');
     }
 
-    $quoted_ids = array();
-    foreach (array_keys($item_ids) as $it_id) {
-        $quoted_ids[] = "'".sql_real_escape_string($it_id)."'";
+    $status_conditions = array();
+    foreach ($status_item_ids as $expected_status=>$ids) {
+        if (!$ids) continue;
+        $quoted_ids = array();
+        foreach (array_keys($ids) as $it_id) {
+            $quoted_ids[] = "'".sql_real_escape_string($it_id)."'";
+        }
+        $status_conditions[] = "(it_id IN (".implode(',', $quoted_ids).") AND ct_status='".sql_real_escape_string($expected_status)."')";
     }
 
     $cart_rows = array();
     $result = sql_query("SELECT *
                            FROM {$cart_table}
                           WHERE od_id='".sql_real_escape_string($od_id)."'
-                            AND it_id IN (".implode(',', $quoted_ids).")
-                            AND ct_status='배송'
+                            AND (".implode(' OR ', $status_conditions).")
                           ORDER BY ct_id
                           FOR UPDATE", false);
     if ($result) {
@@ -526,8 +556,10 @@ function rb_shop_confirm_purchase($od_id, $buyer_id)
         $ct_id = (int) $cart['ct_id'];
         if ($ct_id < 1) continue;
 
+        $item_type = isset($item_types[(string) $cart['it_id']]) ? (int) $item_types[(string) $cart['it_id']] : 0;
+        $expected_status = $item_type === 0 ? '배송' : '입금';
         $stock_use = (int) $cart['ct_stock_use'];
-        if (!$stock_use) {
+        if ($item_type === 0 && !$stock_use) {
             if (!empty($cart['io_id'])) {
                 $stock_sql = "UPDATE {$option_table}
                                  SET io_stock_qty=io_stock_qty-".(int) $cart['ct_qty']."
@@ -559,7 +591,7 @@ function rb_shop_confirm_purchase($od_id, $buyer_id)
                                      ct_history=CONCAT(COALESCE(ct_history,''), '".sql_real_escape_string($history)."')
                                WHERE ct_id='{$ct_id}'
                                  AND od_id='".sql_real_escape_string($od_id)."'
-                                 AND ct_status='배송'", false);
+                                 AND ct_status='".sql_real_escape_string($expected_status)."'", false);
         if (!$updated) {
             sql_query('ROLLBACK', false);
             return array('ok'=>false, 'message'=>'구매 확정 처리 중 오류가 발생했습니다.');

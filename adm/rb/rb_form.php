@@ -46,6 +46,7 @@ $pg_anchor = '<ul class="anchor">
     <li><a href="#anc_rb3">로딩인디케이터</a></li>
     <li><a href="#anc_rb6">시스템 알림</a></li>
     <li><a href="#anc_rb5">모바일설정</a></li>
+    <li><a href="#anc_rb8">마켓설정</a></li>
     <li><a href="#anc_rb7">미니홈설정</a></li>
     <li><a href="#anc_rb4">운영채널</a></li>
 </ul>';
@@ -428,6 +429,32 @@ $pg_anchor = '<ul class="anchor">
                         </td>
                     </tr>
 
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="anc_rb8">
+        <h2 class="h2_frm">마켓설정</h2>
+        <?php echo $pg_anchor ?>
+
+        <div class="tbl_frm01 tbl_wrap">
+            <table>
+                <colgroup>
+                    <col class="grid_4">
+                    <col>
+                    <col class="grid_4">
+                    <col>
+                </colgroup>
+                <tbody>
+                    <tr>
+                        <th scope="row">구매확정 사용</th>
+                        <td colspan="3">
+                            <?php echo help('주문서에 구매확정 버튼이 추가되며, 주문자가 클릭하는 경우 주문상태가 완료 로 변경됩니다.') ?>
+                            <input type="checkbox" name="bu_purchase_confirm_use" value="1" id="bu_purchase_confirm_use" <?php echo !isset($bu['bu_purchase_confirm_use']) || $bu['bu_purchase_confirm_use'] ? 'checked' : ''; ?>>
+                            <label for="bu_purchase_confirm_use">사용함</label>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>

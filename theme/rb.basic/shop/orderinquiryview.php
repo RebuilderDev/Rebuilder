@@ -35,6 +35,8 @@ if ($is_member && !$is_admin
     && isset($od['mb_id'])
     && (string) $od['mb_id'] === (string) $member['mb_id']
     && (int) $od['od_misu'] <= 0
+    && function_exists('rb_shop_purchase_confirm_enabled')
+    && rb_shop_purchase_confirm_enabled()
     && function_exists('rb_shop_purchase_confirmable_items')) {
     $rb_purchase_confirm_ready = count(rb_shop_purchase_confirmable_items($od_id)) > 0;
     if ($rb_purchase_confirm_ready) {

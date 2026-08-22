@@ -22,6 +22,10 @@ if (!$is_member || empty($member['mb_id']) || $is_admin) {
     rb_purchase_confirm_json(false, '구매자 본인만 구매를 확정할 수 있습니다.', array(), 403);
 }
 
+if (!function_exists('rb_shop_purchase_confirm_enabled') || !rb_shop_purchase_confirm_enabled()) {
+    rb_purchase_confirm_json(false, '구매 확정 기능을 사용하지 않습니다.', array(), 403);
+}
+
 $od_id = isset($_POST['od_id']) ? preg_replace('/[^0-9A-Za-z_-]/', '', (string) $_POST['od_id']) : '';
 $token = isset($_POST['token']) ? trim((string) $_POST['token']) : '';
 if ($od_id === '' || $token === '') {
@@ -49,4 +53,3 @@ rb_purchase_confirm_json(true, '구매가 확정되었습니다.', array(
     'confirmed_count' => isset($result['confirmed_count']) ? (int) $result['confirmed_count'] : 0,
     'order_complete' => !empty($result['order_complete']),
 ));
-

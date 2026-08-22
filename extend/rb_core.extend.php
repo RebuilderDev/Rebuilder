@@ -378,6 +378,80 @@ function rb_member_level_select($name, $start_id = 0, $end_id = 10, $selected = 
 // SIR @트리플님 코드적용 // 출처 : https://sir.kr/g5_tip/21657
 add_event('tail_sub', 'prism_tail_sub', G5_HOOK_DEFAULT_PRIORITY);
 add_replace('html_purifier_result', 'prism_html_purifier_result', 10, 3);
+
+// 비에디터 게시판 글쓰기 textarea의 최초 높이도 내용에 맞춰 계산한다.
+add_event('tail_sub', 'rb_board_plain_textarea_autoheight_tail', G5_HOOK_DEFAULT_PRIORITY);
+function rb_board_plain_textarea_autoheight_tail()
+{
+    global $bo_table, $is_dhtml_editor;
+
+    $script_name = isset($_SERVER['SCRIPT_NAME']) ? basename((string) $_SERVER['SCRIPT_NAME']) : '';
+    if ($script_name !== 'write.php' || empty($bo_table) || !empty($is_dhtml_editor)) return;
+
+    echo <<<'RBHTML'
+<script>
+(function () {
+    'use strict';
+
+    var textarea;
+    var resizeTimer;
+
+    function resizeContentTextarea() {
+        if (!textarea || !document.documentElement.contains(textarea)) {
+            var form = document.getElementById('fwrite');
+            textarea = form ? form.querySelector('textarea#wr_content') : null;
+        }
+        if (!textarea || textarea.offsetParent === null) return;
+
+        var computed = window.getComputedStyle ? window.getComputedStyle(textarea) : null;
+        var minHeight = computed ? parseFloat(computed.minHeight) : 0;
+        if (!isFinite(minHeight) || minHeight < 300) minHeight = 300;
+
+        textarea.style.overflowY = 'hidden';
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.max(textarea.scrollHeight, minHeight) + 'px';
+    }
+
+    function scheduleResize() {
+        if (window.requestAnimationFrame) {
+            window.requestAnimationFrame(function () {
+                resizeContentTextarea();
+                window.requestAnimationFrame(resizeContentTextarea);
+            });
+        } else {
+            setTimeout(resizeContentTextarea, 0);
+        }
+    }
+
+    function init() {
+        var form = document.getElementById('fwrite');
+        textarea = form ? form.querySelector('textarea#wr_content') : null;
+        if (!textarea || textarea.getAttribute('data-rb-autoheight') === '1') return;
+
+        textarea.setAttribute('data-rb-autoheight', '1');
+        textarea.addEventListener('input', resizeContentTextarea);
+        textarea.addEventListener('change', resizeContentTextarea);
+        scheduleResize();
+        setTimeout(resizeContentTextarea, 100);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    window.addEventListener('load', scheduleResize);
+    window.addEventListener('pageshow', scheduleResize);
+    window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resizeContentTextarea, 80);
+    });
+})();
+</script>
+RBHTML;
+}
+
 function prism_script(){
     add_stylesheet('<link rel="stylesheet" href="'.G5_URL.'/rb/rb.mod/prism/prism.css">', -2);
     $sh = '<script src="'.G5_URL.'/rb/rb.mod/prism/prism.js"></script>'.PHP_EOL;

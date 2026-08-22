@@ -69,6 +69,7 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
     $bu_load = isset($_POST['bu_load']) && is_numeric($_POST['bu_load']) ? (int)$_POST['bu_load'] : 0;
     $bu_module_spinner_use = !empty($_POST['bu_module_spinner_use']) ? 1 : 0;
     $bu_systemmsg_use = isset($_POST['bu_systemmsg_use']) && is_numeric($_POST['bu_systemmsg_use']) ? (int)$_POST['bu_systemmsg_use'] : 0;
+    $bu_purchase_confirm_use = !empty($_POST['bu_purchase_confirm_use']) ? 1 : 0;
 
     $bu_mini_use1 = isset($_POST['bu_mini_use1']) && is_numeric($_POST['bu_mini_use1']) ? (int)$_POST['bu_mini_use1'] : 0;
     $bu_mini_use2 = isset($_POST['bu_mini_use2']) && is_numeric($_POST['bu_mini_use2']) ? (int)$_POST['bu_mini_use2'] : 0;
@@ -115,6 +116,7 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
                     bu_mini_use3 = '{$bu_mini_use3}',
                     bu_mini_use4 = '{$bu_mini_use4}',
                     bu_mini_use5 = '{$bu_mini_use5}',
+                    bu_purchase_confirm_use = '{$bu_purchase_confirm_use}',
                     bu_viewport = '{$_POST['bu_viewport']}',
                     bu_systemmsg_use = '{$bu_systemmsg_use}',
                     bu_datetime = '".G5_TIME_YMDHIS."' ";
@@ -159,6 +161,7 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
                     bu_mini_use3 = '{$bu_mini_use3}',
                     bu_mini_use4 = '{$bu_mini_use4}',
                     bu_mini_use5 = '{$bu_mini_use5}',
+                    bu_purchase_confirm_use = '{$bu_purchase_confirm_use}',
                     bu_viewport = '{$_POST['bu_viewport']}',
                     bu_systemmsg_use = '{$bu_systemmsg_use}',
                     bu_datetime = '".G5_TIME_YMDHIS."' ";
@@ -201,4 +204,3 @@ update_rewrite_rules();
 goto_url('./rb_form.php', false);
 
 ?>
-
