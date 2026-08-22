@@ -792,3 +792,86 @@ function rb_shop_special_buy_only_front()
     <?php
 }
 add_event('tail_sub', 'rb_shop_special_buy_only_front', 5);
+
+/** 모바일 주문상세에도 PC와 동일한 구매확정 동작을 제공한다. */
+function rb_shop_mobile_purchase_confirm_tail()
+{
+    global $member, $is_member, $od, $od_id;
+
+    if (!defined('G5_IS_MOBILE') || !G5_IS_MOBILE) return;
+    $script = isset($_SERVER['SCRIPT_NAME']) ? basename((string) $_SERVER['SCRIPT_NAME']) : '';
+    if ($script !== 'orderinquiryview.php') return;
+    if (!$is_member || empty($member['mb_id']) || !is_array($od) || empty($od['od_id'])) return;
+    if ((string) $od['mb_id'] !== (string) $member['mb_id'] || (int) $od['od_misu'] > 0) return;
+    if (!rb_shop_purchase_confirm_enabled()) return;
+
+    $order_id = (string) $od['od_id'];
+    if (!rb_shop_purchase_confirmable_items($order_id)) return;
+
+    $token = get_random_token_string(32);
+    set_session('rb_purchase_confirm_'.$order_id, $token);
+    ?>
+    <script>
+    (function () {
+        function confirmCompat(message) {
+            if (typeof window.rb_confirm === "function") return window.rb_confirm(message);
+            return Promise.resolve(window.confirm(message));
+        }
+
+        function initPurchaseConfirm() {
+            if (document.getElementById("rb_purchase_confirm_btn")) return;
+            var total = document.getElementById("sod_fin_tot");
+            if (!total) return;
+
+            var button = document.createElement("button");
+            button.type = "button";
+            button.id = "rb_purchase_confirm_btn";
+            button.className = "rb-purchase-confirm-btn font-B";
+            button.textContent = "구매 확정하기";
+            total.insertAdjacentElement("afterend", button);
+
+            button.addEventListener("click", function () {
+                if (button.disabled) return;
+                button.disabled = true;
+                button.textContent = "처리 중입니다.";
+
+                var body = new URLSearchParams();
+                body.append("od_id", <?php echo json_encode($order_id); ?>);
+                body.append("token", <?php echo json_encode($token); ?>);
+
+                fetch(<?php echo json_encode(G5_URL.'/rb/order_purchase_confirm.php'); ?>, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: body.toString()
+                }).then(function (response) {
+                    return response.json().then(function (data) {
+                        if (!response.ok || !data.ok) throw new Error(data.message || "구매 확정에 실패했습니다.");
+                        return data;
+                    });
+                }).then(function (data) {
+                    button.remove();
+                    return confirmCompat("구매가 확정 되었습니다.\n구매 후기를 작성 하시겠어요?").then(function (writeReview) {
+                        if (writeReview && data.review_url) {
+                            window.open(data.review_url, "itemuseform", "width=810,height=680,scrollbars=yes,resizable=yes");
+                        }
+                        window.location.reload();
+                    });
+                }).catch(function (error) {
+                    button.disabled = false;
+                    button.textContent = "구매 확정하기";
+                    alert(error.message || "구매 확정에 실패했습니다.");
+                });
+            });
+        }
+
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initPurchaseConfirm);
+        else initPurchaseConfirm();
+    }());
+    </script>
+    <?php
+}
+add_event('tail_sub', 'rb_shop_mobile_purchase_confirm_tail', 20);

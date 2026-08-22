@@ -42,7 +42,7 @@
                 $od_status = '<span class="status_04">상품배송</span>';
                 break;
             case '완료':
-                $od_status = '<span class="status_05">배송완료</span>';
+                $od_status = '<span class="status_05">완료</span>';
                 break;
             default:
                 $od_status = '<span class="status_06">주문취소</span>';
