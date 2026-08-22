@@ -180,9 +180,9 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
         </div>
         <script>
             $('.rb_carousel').rb_carousel({
-                type: '<?php echo $rb_theme_row['carousel_type']; ?>',
-                speed: <?php echo (int)$rb_theme_row['carousel_speed']; ?>,
-                autoRollingTime: <?php echo (int)$rb_theme_row['carousel_time']; ?>
+                type: '<?php echo $carousel_type; ?>',
+                speed: <?php echo $carousel_speed; ?>,
+                autoRollingTime: <?php echo $carousel_time; ?>
             });
         </script>
         <?php } ?>
@@ -222,9 +222,9 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
         </div>
         <script>
             $('.rb_carousel').rb_carousel({
-                type: '<?php echo $rb_theme_row['carousel_type_shop']; ?>',
-                speed: <?php echo (int)$rb_theme_row['carousel_speed_shop']; ?>,
-                autoRollingTime: <?php echo (int)$rb_theme_row['carousel_time_shop']; ?>
+                type: '<?php echo $carousel_type; ?>',
+                speed: <?php echo $carousel_speed; ?>,
+                autoRollingTime: <?php echo $carousel_time; ?>
             });
         </script>
         <?php } ?>
@@ -256,8 +256,6 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
             <?php } ?>
 
         <?php } ?>
-
-
         <?php if (!defined("_INDEX_")) { ?>
             <?php if(isset($bo_table) && $bo_table) { ?>
                 <div class="rb_bo_top flex_box rb_sub_module" data-layout="rb_bo_top_shop_<?php echo $bo_table ?>"></div>
@@ -289,3 +287,4 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
         <?php if (!defined("_INDEX_")) { ?>
         <h2 id="container_title"><?php echo get_head_title($g5['title']); ?></h2>
         <?php } ?>
+

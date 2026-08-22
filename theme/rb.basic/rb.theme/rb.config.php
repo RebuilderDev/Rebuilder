@@ -509,7 +509,7 @@
 
             var img = document.createElement('img');
             img.src = '<?php echo G5_THEME_URL ?>/rb.theme/img/icon_theme.svg';
-            img.alt = '환경설정';
+            img.alt = '테마설정';
 
             inner.appendChild(img);
             a.appendChild(inner);
