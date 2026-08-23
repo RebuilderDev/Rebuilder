@@ -205,7 +205,9 @@ function rb_license_http_post($path, $payload)
             dirname(PHP_BINARY).'/extras/ssl/cacert.pem',
         );
         foreach ($ca_candidates as $ca_file) {
-            if ($ca_file && is_readable($ca_file)) {
+            // open_basedir 제한형 호스팅에서는 PHP 실행파일 기준의 시스템 경로를
+            // 조회하는 것만으로도 경고가 출력될 수 있으므로 접근 불가 경로는 조용히 건너뜁니다.
+            if ($ca_file && @is_readable($ca_file)) {
                 $curl_options[CURLOPT_CAINFO] = $ca_file;
                 break;
             }

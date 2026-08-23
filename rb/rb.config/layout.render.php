@@ -36,7 +36,11 @@ if (!function_exists('rb_capture_layout_render_map')) {
             unset($GLOBALS['rb_layout_capture_only']);
         }
 
-        return is_array($result) ? $result : array();
+        if (!is_array($result)) {
+            return array();
+        }
+
+        return $result;
     }
 }
 

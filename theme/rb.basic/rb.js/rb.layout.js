@@ -391,15 +391,29 @@ function setupResponsiveSlider($rb_slider) {
         });
     }
 
+    function getRealSlides() {
+        return Array.from(wrapperEl.children).filter(function (el) {
+            return el.classList && el.classList.contains('rb_swiper_list');
+        });
+    }
+
+    function getEffectiveRows(rows, cols, slideCount) {
+        const safeRows = Math.max(1, parseInt(rows, 10) || 1);
+        const safeCols = Math.max(1, parseInt(cols, 10) || 1);
+        const safeCount = Math.max(0, parseInt(slideCount, 10) || 0);
+
+        if (!safeCount) return 1;
+        return Math.max(1, Math.min(safeRows, Math.ceil(safeCount / safeCols)));
+    }
+
     function syncGridBlanks(rows, cols) {
         wrapperEl.querySelectorAll('.rb-swiper-grid-blank').forEach(function (el) {
             el.remove();
         });
 
-        const realSlides = Array.from(wrapperEl.children).filter(function (el) {
-            return el.classList && el.classList.contains('rb_swiper_list');
-        });
-        const pageSize = Math.max(1, rows * cols);
+        const realSlides = getRealSlides();
+        const effectiveRows = getEffectiveRows(rows, cols, realSlides.length);
+        const pageSize = Math.max(1, effectiveRows * cols);
         const remainder = realSlides.length % pageSize;
         const blankCount = remainder === 0 ? 0 : pageSize - remainder;
 
@@ -465,16 +479,17 @@ function setupResponsiveSlider($rb_slider) {
         return;
     }
 
-    const moRows = Math.max(1, getNumber('mo-h', 1));
+    prepareDirectSlides();
+
     const moCols = Math.max(1, getNumber('mo-w', 1));
+    const moRows = getEffectiveRows(getNumber('mo-h', 1), moCols, getRealSlides().length);
     const moGap = Math.max(0, getNumber('mo-gap', 0));
     const moSpeed = Math.max(0, getNumber('mo-speed', getNumber('speed', 400)));
-    const pcRows = Math.max(1, getNumber('pc-h', 1));
     const pcCols = Math.max(1, getNumber('pc-w', 1));
+    const pcRows = getEffectiveRows(getNumber('pc-h', 1), pcCols, getRealSlides().length);
     const pcGap = Math.max(0, getNumber('pc-gap', 0));
     const pcSpeed = Math.max(0, getNumber('pc-speed', getNumber('speed', 400)));
 
-    prepareDirectSlides();
     const initialRows = window.innerWidth <= 1024 ? moRows : pcRows;
     const initialCols = window.innerWidth <= 1024 ? moCols : pcCols;
     syncGridBlanks(initialRows, initialCols);

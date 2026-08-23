@@ -39,7 +39,11 @@ if (is_array($files)) {
             continue;
         }
 
+        $css_version = @filemtime($css_file);
         $css_file = str_replace(G5_ADMIN_PATH, G5_ADMIN_URL, $css_file);
+        if ($css_version) {
+            $css_file .= '?ver=' . $css_version;
+        }
         add_stylesheet('<link rel="stylesheet" href="' . $css_file . '">', $k);
     }
 }

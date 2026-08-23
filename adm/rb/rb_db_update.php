@@ -11,6 +11,10 @@ if ($is_admin !== 'super') {
 $message = '';
 $success = false;
 $is_ajax = isset($_REQUEST['ajax']) && (string) $_REQUEST['ajax'] === '1';
+$rb_db_update_ajax_ob_level = ob_get_level();
+if ($is_ajax) {
+    ob_start();
+}
 $result_view = isset($_GET['result']) ? (string) $_GET['result'] : '';
 $result_session_key = 'ss_rb_db_update_result';
 
@@ -72,6 +76,9 @@ if ($is_ajax) {
             'success' => $success,
             'message' => $result_message,
         ));
+    }
+    while (ob_get_level() > $rb_db_update_ajax_ob_level) {
+        ob_end_clean();
     }
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(array(

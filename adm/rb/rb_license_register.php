@@ -4,14 +4,23 @@ include_once('./_common.php');
 include_once('./rb_license.lib.php');
 
 $is_ajax = isset($_POST['ajax']) && (string) $_POST['ajax'] === '1';
+$rb_license_ajax_ob_level = ob_get_level();
+if ($is_ajax) {
+    ob_start();
+}
 
 function rb_license_register_response($success, $message, $data = array())
 {
+    global $rb_license_ajax_ob_level;
+
     if (!$success) {
         set_session('ss_rb_db_update_result', array(
             'success' => false,
             'message' => (string) $message,
         ));
+    }
+    while (ob_get_level() > $rb_license_ajax_ob_level) {
+        ob_end_clean();
     }
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(array(
