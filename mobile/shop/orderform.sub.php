@@ -4,7 +4,7 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 require_once(G5_MSHOP_PATH.'/settle_'.$default['de_pg_service'].'.inc.php');
 require_once(G5_SHOP_PATH.'/settle_kakaopay.inc.php');
 
-if( is_inicis_simple_pay() ){   //이니시스 삼성페이 또는 Lpay 사용시
+if( empty($inicis_pro_use) && is_inicis_simple_pay() ){   //이니시스 삼성페이 또는 Lpay 사용시
     require_once(G5_MSHOP_PATH.'/samsungpay/incSamsungpayCommon.php');
 }
 
@@ -357,7 +357,7 @@ ob_end_clean();
 // 결제대행사별 코드 include (결제등록 필드)
 require_once(G5_MSHOP_PATH.'/'.$default['de_pg_service'].'/orderform.1.php');
 
-if( is_inicis_simple_pay() ){   //이니시스 삼성페이 또는 lpay 사용시
+if( empty($inicis_pro_use) && is_inicis_simple_pay() ){   //이니시스 삼성페이 또는 lpay 사용시
     require_once(G5_MSHOP_PATH.'/samsungpay/orderform.1.php');
 }
 
@@ -779,18 +779,21 @@ if($is_kakaopay_use) {
 
         //이니시스 삼성페이
         if($default['de_samsung_pay_use']) {
+            $multi_settle++;
             echo '<li><input type="radio" id="od_settle_samsungpay" data-case="samsungpay" name="od_settle_case" value="삼성페이" '.$checked.'> <label for="od_settle_samsungpay" class="samsung_pay lb_icon">삼성페이</label></li>'.PHP_EOL;
             $checked = '';
         }
 
         //이니시스 Lpay
         if($default['de_inicis_lpay_use']) {
+            $multi_settle++;
             echo '<li><input type="radio" id="od_settle_inicislpay" data-case="lpay" name="od_settle_case" value="lpay" '.$checked.'> <label for="od_settle_inicislpay" class="inicis_lpay">L.pay</label></li>'.PHP_EOL;
             $checked = '';
         }
 
         //이니시스 카카오페이
         if($default['de_inicis_kakaopay_use']) {
+            $multi_settle++;
             echo '<li><input type="radio" id="od_settle_inicis_kakaopay" data-case="inicis_kakaopay" name="od_settle_case" value="inicis_kakaopay" '.$checked.'> <label for="od_settle_inicis_kakaopay" title="KG 이니시스 카카오페이" class="inicis_kakaopay">KG 이니시스 카카오페이</label></li>'.PHP_EOL;
             $checked = '';
         }
@@ -852,7 +855,7 @@ if($is_kakaopay_use) {
             echo '</div>';
         }
 
-        if ($default['de_bank_use'] || $default['de_vbank_use'] || $default['de_iche_use'] || $default['de_card_use'] || $default['de_hp_use'] || $default['de_easy_pay_use'] || is_inicis_simple_pay() ) {
+        if ($default['de_bank_use'] || $default['de_vbank_use'] || $default['de_iche_use'] || $default['de_card_use'] || $default['de_hp_use'] || $default['de_easy_pay_use'] || is_inicis_simple_pay()) {
             echo '</div>';
         }
 
@@ -865,7 +868,7 @@ if($is_kakaopay_use) {
     // 결제대행사별 코드 include (결제대행사 정보 필드 및 주분버튼)
     require_once(G5_MSHOP_PATH.'/'.$default['de_pg_service'].'/orderform.2.php');
 
-    if( is_inicis_simple_pay() ){   //삼성페이 또는 L.pay 사용시
+    if( empty($inicis_pro_use) && is_inicis_simple_pay() ){   //삼성페이 또는 L.pay 사용시
         require_once(G5_MSHOP_PATH.'/samsungpay/orderform.2.php');
     }
 
@@ -895,7 +898,7 @@ if($is_kakaopay_use) {
         // 결제대행사별 코드 include (에스크로 안내)
         require_once(G5_MSHOP_PATH.'/'.$default['de_pg_service'].'/orderform.3.php');
 
-        if( is_inicis_simple_pay() ){   //삼성페이 사용시
+        if( empty($inicis_pro_use) && is_inicis_simple_pay() ){   //삼성페이 사용시
             require_once(G5_MSHOP_PATH.'/samsungpay/orderform.3.php');
         }
     }
@@ -904,7 +907,7 @@ if($is_kakaopay_use) {
 </div>
 
 <?php
-if( is_inicis_simple_pay() ){   //삼성페이 사용시
+if( empty($inicis_pro_use) && is_inicis_simple_pay() ){   //삼성페이 사용시
     require_once(G5_MSHOP_PATH.'/samsungpay/order.script.php');
 }
 
@@ -1418,7 +1421,7 @@ function pay_approval()
 
     var form_order_method = '';
 
-    if( settle_method == "삼성페이" || settle_method == "lpay" || settle_method == "inicis_kakaopay" ){
+    if( (settle_method == "삼성페이" || settle_method == "lpay" || settle_method == "inicis_kakaopay") && <?php echo !empty($inicis_pro_use) ? 'false' : 'true'; ?> ){
         form_order_method = 'samsungpay';
     } else if(settle_method == "간편결제") {
         if(jQuery("input[name='od_settle_case']:checked" ).attr("data-pay") === "naverpay"){
@@ -1562,6 +1565,7 @@ function pay_approval()
         f.windowTarget.value = 'self';
 
         <?php } else if($default['de_pg_service'] == 'inicis') { ?>
+        <?php if (empty($inicis_pro_use)) { ?>
         var paymethod = "";
         var width = 330;
         var height = 480;
@@ -1618,6 +1622,7 @@ function pay_approval()
         <?php } ?>
         f.P_RETURN_URL.value = "<?php echo $return_url.$od_id; ?>";
         f.action = "https://mobile.inicis.com/smart/" + paymethod + "/";
+        <?php } ?>
         <?php } else if($default['de_pg_service'] == 'nicepay') { ?>
 
         f.Amt.value       = f.good_mny.value;
@@ -1718,6 +1723,10 @@ function pay_approval()
             alert(save_result);
             return false;
         }
+
+        <?php if ($default['de_pg_service'] == 'inicis' && !empty($inicis_pro_use)) { ?>
+        return inicis_pro_pay("<?php echo $od_id; ?>", "MOBILE");
+        <?php } ?>
 
         <?php if ($default['de_pg_service'] == 'nicepay') { ?>
         nicepayStart(f);
