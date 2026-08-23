@@ -2,6 +2,11 @@
 include_once('../../common.php');
 if (!defined('_GNUBOARD_')) exit;
 
+include_once(__DIR__ . '/layout.cache.php');
+if ($is_admin) {
+    register_shutdown_function('rb_layout_cache_delete_all');
+}
+
 
 // 입력
 $sec_title        = $_POST['sec_title']        ?? '';
@@ -333,3 +338,4 @@ if (is_new_sec($sec_id)) {
     ]);
     exit;
 }
+

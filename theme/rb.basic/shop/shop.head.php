@@ -8,6 +8,7 @@ if(G5_IS_MOBILE) {
     return;
 }
 
+include_once(G5_PATH.'/rb/rb.config/layout.render.php');
 include_once(G5_THEME_PATH.'/head.sub.php');
 include_once(G5_LIB_PATH.'/outlogin.lib.php');
 include_once(G5_LIB_PATH.'/poll.lib.php');
@@ -27,6 +28,41 @@ if(defined('_INDEX_')) { // index에서만 실행
 /* } */
 
 include_once(G5_PATH.'/rb/rb.mod/alarm/alarm.php'); // 실시간 알림
+
+if (!defined('_INDEX_') && function_exists('rb_prime_server_layouts')) {
+    $rb_sub_layouts = array();
+    if (isset($bo_table) && $bo_table) {
+        $rb_sub_layouts[] = 'rb_bo_top_shop_' . $bo_table;
+        $rb_sub_layouts[] = 'rb_bo_btm_shop_' . $bo_table;
+    }
+    if (isset($co_id) && $co_id) {
+        $rb_sub_layouts[] = 'rb_co_top_shop_' . $co_id;
+        $rb_sub_layouts[] = 'rb_co_btm_shop_' . $co_id;
+    }
+    if (isset($_GET['ca_id']) && $_GET['ca_id']) {
+        $rb_sub_layouts[] = 'rb_ca_top_shop_' . $_GET['ca_id'];
+        $rb_sub_layouts[] = 'rb_ca_btm_shop_' . $_GET['ca_id'];
+    }
+    if (isset($_GET['ev_id']) && $_GET['ev_id']) {
+        $rb_sub_layouts[] = 'rb_ev_top_shop_' . $_GET['ev_id'];
+        $rb_sub_layouts[] = 'rb_ev_btm_shop_' . $_GET['ev_id'];
+    }
+    if (isset($it_id) && $it_id) {
+        $rb_sub_layouts[] = 'rb_it_top_shop_' . $it_id;
+        $rb_sub_layouts[] = 'rb_it_btm_shop_' . $it_id;
+    }
+    if (isset($fr_id) && $fr_id) {
+        $rb_sub_layouts[] = 'rb_fr_top_shop_' . $fr_id;
+        $rb_sub_layouts[] = 'rb_fr_btm_shop_' . $fr_id;
+    }
+    if (isset($_GET['gr_id']) && $_GET['gr_id']) {
+        $rb_sub_layouts[] = 'rb_gr_' . $_GET['gr_id'];
+    }
+    if (isset($rb_core['sidemenu_shop']) && ($rb_core['sidemenu_shop'] === 'left' || $rb_core['sidemenu_shop'] === 'right')) {
+        $rb_sub_layouts[] = 'rb_sidemenu_shop';
+    }
+    rb_prime_server_layouts($rb_sub_layouts, false);
+}
 
 if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id) && $co_id) {
     if ($rb_aos_exists) {

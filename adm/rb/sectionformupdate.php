@@ -1,6 +1,7 @@
 <?php
 $sub_menu = '000210';
 include_once('./_common.php');
+include_once(G5_PATH . '/rb/rb.config/layout.cache.php');
 
 auth_check_menu($auth, $sub_menu, "d");
 check_admin_token();
@@ -41,6 +42,8 @@ if ($w == "d") {
 
     // 3) 섹션 삭제
     sql_query("DELETE FROM {$table_name} WHERE sec_id = '{$sec_id_esc}'");
+    rb_layout_cache_delete_all();
 }
 
 goto_url("./section_list.php?tables={$table_name}&amp;{$qstr}");
+

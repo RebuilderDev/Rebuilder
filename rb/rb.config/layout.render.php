@@ -3,91 +3,7 @@ if (!defined('_GNUBOARD_')) {
     exit;
 }
 
-if (!function_exists('rb_has_css_class')) {
-    function rb_has_css_class($class_attr, $class_name)
-    {
-        $classes = preg_split('/\s+/', trim((string) $class_attr));
-        if (!$classes) {
-            return false;
-        }
-
-        return in_array($class_name, $classes, true);
-    }
-}
-
-if (!function_exists('rb_is_descendant_of_class')) {
-    function rb_is_descendant_of_class(DOMNode $node, $class_name)
-    {
-        $parent = $node->parentNode;
-        while ($parent instanceof DOMElement) {
-            if (rb_has_css_class($parent->getAttribute('class'), $class_name)) {
-                return true;
-            }
-            $parent = $parent->parentNode;
-        }
-
-        return false;
-    }
-}
-
-if (!function_exists('rb_find_first_child_by_class')) {
-    function rb_find_first_child_by_class(DOMNode $node, $class_name)
-    {
-        foreach ($node->childNodes as $child) {
-            if (!($child instanceof DOMElement)) {
-                continue;
-            }
-            if (rb_has_css_class($child->getAttribute('class'), $class_name)) {
-                return $child;
-            }
-        }
-
-        return null;
-    }
-}
-
-if (!function_exists('rb_replace_element_inner_html')) {
-    function rb_replace_element_inner_html(DOMDocument $dom, DOMElement $element, $html)
-    {
-        while ($element->firstChild) {
-            $element->removeChild($element->firstChild);
-        }
-
-        if ($html === '') {
-            return;
-        }
-
-        $tmp = new DOMDocument('1.0', 'UTF-8');
-        $prev = libxml_use_internal_errors(true);
-        $tmp->loadHTML(
-            '<?xml encoding="utf-8" ?><div id="rb-fragment-root">' . $html . '</div>',
-            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
-        );
-        libxml_clear_errors();
-        libxml_use_internal_errors($prev);
-
-        $root = null;
-        foreach ($tmp->getElementsByTagName('div') as $div) {
-            if ($div->getAttribute('id') === 'rb-fragment-root') {
-                $root = $div;
-                break;
-            }
-        }
-
-        if (!$root) {
-            return;
-        }
-
-        $children = array();
-        foreach ($root->childNodes as $child) {
-            $children[] = $child;
-        }
-
-        foreach ($children as $child) {
-            $element->appendChild($dom->importNode($child, true));
-        }
-    }
-}
+include_once(__DIR__ . '/layout.cache.php');
 
 if (!function_exists('rb_capture_layout_render_map')) {
     function rb_capture_layout_render_map(array $layouts, $is_index)
@@ -124,123 +40,6 @@ if (!function_exists('rb_capture_layout_render_map')) {
     }
 }
 
-if (!function_exists('rb_pack_modules_into_sections_html')) {
-    function rb_pack_modules_into_sections_html(DOMXPath $xpath)
-    {
-        $sections = array();
-        foreach ($xpath->query('//div[contains(concat(" ", normalize-space(@class), " "), " rb_section_box ")]') as $section) {
-            $sections[] = $section;
-        }
-
-        $modules = array();
-        foreach ($xpath->query('//div[contains(concat(" ", normalize-space(@class), " "), " rb_layout_box ")]') as $module) {
-            $modules[] = $module;
-        }
-
-        foreach ($sections as $section) {
-            if (!($section instanceof DOMElement)) {
-                continue;
-            }
-
-            $sec_uid = trim($section->getAttribute('data-sec-uid'));
-            if ($sec_uid === '') {
-                continue;
-            }
-
-            $inner_box = rb_find_first_child_by_class($section, 'flex_box');
-            if (!$inner_box instanceof DOMElement) {
-                continue;
-            }
-
-            $section_layout = trim($section->getAttribute('data-layout'));
-
-            foreach ($modules as $module) {
-                if (!($module instanceof DOMElement) || !$module->parentNode) {
-                    continue;
-                }
-                if (rb_is_descendant_of_class($module, 'rb_section_box')) {
-                    continue;
-                }
-                if (trim($module->getAttribute('data-sec-uid')) !== $sec_uid) {
-                    continue;
-                }
-
-                if ($section_layout !== '') {
-                    $module->setAttribute('data-layout', $section_layout);
-                }
-
-                $inner_box->appendChild($module);
-            }
-        }
-    }
-}
-
-if (!function_exists('rb_render_nested_layout_placeholders')) {
-    function rb_render_nested_layout_placeholders(DOMDocument $dom, DOMXPath $xpath, $is_index)
-    {
-        $placeholders = array();
-        foreach ($xpath->query('//div[contains(concat(" ", normalize-space(@class), " "), " flex_box_inner ") and contains(concat(" ", normalize-space(@class), " "), " flex_box ") and @data-layout]') as $node) {
-            $placeholders[] = $node;
-        }
-
-        foreach ($placeholders as $placeholder) {
-            if (!($placeholder instanceof DOMElement)) {
-                continue;
-            }
-
-            $layout_no = trim($placeholder->getAttribute('data-layout'));
-            if ($layout_no === '') {
-                continue;
-            }
-
-            $rendered = rb_render_layout_server_html($layout_no, $is_index);
-            rb_replace_element_inner_html($dom, $placeholder, $rendered);
-            $placeholder->setAttribute('data-layout-loaded', '1');
-        }
-    }
-}
-
-if (!function_exists('rb_prepare_layout_server_html')) {
-    function rb_prepare_layout_server_html($html, $is_index)
-    {
-        if ($html === '' || !class_exists('DOMDocument')) {
-            return $html;
-        }
-
-        $dom = new DOMDocument('1.0', 'UTF-8');
-        $prev = libxml_use_internal_errors(true);
-        $dom->loadHTML(
-            '<?xml encoding="utf-8" ?><div id="rb-server-root">' . $html . '</div>',
-            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
-        );
-        libxml_clear_errors();
-        libxml_use_internal_errors($prev);
-
-        $xpath = new DOMXPath($dom);
-        rb_pack_modules_into_sections_html($xpath);
-        rb_render_nested_layout_placeholders($dom, $xpath, $is_index);
-
-        $root = null;
-        foreach ($dom->getElementsByTagName('div') as $div) {
-            if ($div->getAttribute('id') === 'rb-server-root') {
-                $root = $div;
-                break;
-            }
-        }
-
-        if (!$root) {
-            return $html;
-        }
-
-        $output = '';
-        foreach ($root->childNodes as $child) {
-            $output .= $dom->saveHTML($child);
-        }
-
-        return $output;
-    }
-}
-
 if (!function_exists('rb_render_layout_server_html')) {
     function rb_render_layout_server_html($layout_no, $is_index = false)
     {
@@ -250,14 +49,34 @@ if (!function_exists('rb_render_layout_server_html')) {
         if ($layout_no === '') {
             return '';
         }
-        if (isset($render_stack[$layout_no])) {
+
+        $is_shop = defined('_SHOP_');
+        $stack_key = ($is_shop ? 'shop:' : 'general:') . $layout_no;
+        if (isset($render_stack[$stack_key])) {
             return '';
         }
 
-        $render_stack[$layout_no] = true;
+        $render_stack[$stack_key] = true;
+
+        // 일반 방문자는 생성된 PHP 캐시를 바로 실행합니다. DB 체크와 생성기는
+        // 캐시가 없을 때만 동작하며, 관리자 편집 화면은 기존 실시간 렌더를 유지합니다.
+        $is_admin = isset($GLOBALS['is_admin']) ? $GLOBALS['is_admin'] : '';
+        if (!$is_admin) {
+            $rb_core = isset($GLOBALS['rb_core']) && is_array($GLOBALS['rb_core']) ? $GLOBALS['rb_core'] : array();
+            $theme_name = isset($rb_core['theme']) ? $rb_core['theme'] : '';
+            $layout_key = $is_shop ? 'layout_shop' : 'layout';
+            $layout_name = isset($rb_core[$layout_key]) ? $rb_core[$layout_key] : '';
+            $cache_hit = false;
+            $cached_html = rb_layout_cache_load($layout_no, $is_shop, $theme_name, $layout_name, (bool) $is_index, $cache_hit);
+            if ($cache_hit) {
+                unset($render_stack[$stack_key]);
+                return $cached_html;
+            }
+        }
+
         $render_map = rb_capture_layout_render_map(array($layout_no), $is_index);
         $html = isset($render_map[$layout_no]) ? $render_map[$layout_no] : '';
-        unset($render_stack[$layout_no]);
+        unset($render_stack[$stack_key]);
 
         return $html;
     }
@@ -296,5 +115,48 @@ if (!function_exists('rb_render_server_layout_box')) {
         }
 
         return '<div' . $attr_html . '>' . rb_render_layout_server_html($layout_no, (bool) $is_index) . '</div>';
+    }
+}
+
+if (!function_exists('rb_prime_server_layouts')) {
+    function rb_prime_server_layouts(array $layouts, $is_index = false)
+    {
+        $layouts = array_values(array_unique(array_filter(array_map('strval', $layouts), 'strlen')));
+        if (empty($layouts)) {
+            return;
+        }
+
+        $render_map = rb_capture_layout_render_map($layouts, (bool) $is_index);
+        if (empty($render_map)) {
+            return;
+        }
+
+        $json_flags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
+        $render_json = json_encode($render_map, $json_flags);
+        if ($render_json === false) {
+            return;
+        }
+
+        echo '<script>(function(w,d,map){'
+            . 'w.rbServerLayoutMap=Object.assign(w.rbServerLayoutMap||{},map||{});'
+            . 'if(!w.rbHydrateServerLayouts){'
+            . 'w.rbHydrateServerLayouts=function(root){'
+            . 'var source=w.rbServerLayoutMap||{};'
+            . 'var fill=function(node){'
+            . 'if(!node||node.nodeType!==1||!node.matches||!node.matches(".flex_box[data-layout]:not([data-layout-loaded])"))return;'
+            . 'var key=node.getAttribute("data-layout")||"";'
+            . 'if(!Object.prototype.hasOwnProperty.call(source,key))return;'
+            . 'node.setAttribute("data-layout-loaded","1");'
+            . 'if(w.jQuery){w.jQuery(node).html(source[key]);}else{node.innerHTML=source[key];}'
+            . '};'
+            . 'if(root&&root.nodeType===1)fill(root);'
+            . 'if(root&&root.querySelectorAll){root.querySelectorAll(".flex_box[data-layout]:not([data-layout-loaded])").forEach(fill);}'
+            . '};'
+            . 'var observer=new MutationObserver(function(records){records.forEach(function(record){Array.prototype.forEach.call(record.addedNodes,function(node){w.rbHydrateServerLayouts(node);});});});'
+            . 'observer.observe(d.documentElement,{childList:true,subtree:true});'
+            . 'd.addEventListener("DOMContentLoaded",function(){w.rbHydrateServerLayouts(d);});'
+            . '}'
+            . 'w.rbHydrateServerLayouts(d);'
+            . '})(window,document,' . $render_json . ');</script>' . "\n";
     }
 }

@@ -1,5 +1,6 @@
 <?php
 include_once '../../../common.php';
+include_once G5_PATH . '/rb/rb.config/layout.cache.php';
 
 if (!$is_admin) {
     header('Content-Type: application/json; charset=utf-8');
@@ -244,9 +245,11 @@ if ($mode === 'import') {
         }
     }
 
+    rb_layout_cache_delete_all();
     echo json_encode(array('status' => 'success'));
     exit;
 }
 
 echo json_encode(array('status' => 'error', 'msg' => '알 수 없는 mode'));
 exit;
+

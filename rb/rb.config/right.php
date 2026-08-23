@@ -158,7 +158,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
 
                     <ul class="rb_config_sec">
                         <h6 class="font-B">헤더컬러 설정 (공용)</h6>
-                        <h6 class="font-R rb_config_sub_txt">헤더 컬러 적용시 헤더의 텍스트는 흰색으로 고정 됩니다.<br>밝은톤의 헤더 컬러의 경우 자동 감지하여 강조컬러가 적용됩니다.<br>투명도가 30% 이하로 떨어지는 경우 강조컬러가 적용 됩니다.</h6>
+                        <h6 class="font-R rb_config_sub_txt">헤더 배경색의 실제 밝기를 자동으로 계산합니다.<br>밝은 배경에는 강조컬러와 기본 로고, 어두운 배경에는 흰색 텍스트와 흰색 로고가 적용됩니다.<br>투명도가 포함된 색상도 화면에 표시되는 색상을 기준으로 판별합니다.</h6>
                         <div class="config_wrap">
 
                             <ul>
@@ -4278,86 +4278,6 @@ foreach ($rb_side_panels as $rb_side_panel) {
     }
 
 
-    <?php
-    $rb_config_co_header = (isset($rb_config) && is_array($rb_config) && isset($rb_config['co_header'])) ? (string)$rb_config['co_header'] : '';
-    $rb_core_header = (isset($rb_core) && is_array($rb_core) && isset($rb_core['header'])) ? (string)$rb_core['header'] : '';
-    ?>
-    document.addEventListener('DOMContentLoaded', function() {
-
-        //페이지 로드후 컬러감지 자동적용
-        function isLightColor2(hex) { //밝은계통인지, 어두운 계통인지 판단 함수
-            var r, g, b, a = 1; // 기본 알파 값
-
-            // 8자리 HEX (RGBA) 체크
-            if (hex.length === 9) {
-                r = parseInt(hex.slice(1, 3), 16);
-                g = parseInt(hex.slice(3, 5), 16);
-                b = parseInt(hex.slice(5, 7), 16);
-                a = parseInt(hex.slice(7, 9), 16) / 255; // 0~255를 0~1로 변환
-            } else {
-                r = parseInt(hex.slice(1, 3), 16);
-                g = parseInt(hex.slice(3, 5), 16);
-                b = parseInt(hex.slice(5, 7), 16);
-            }
-
-            var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-            return {
-                isLight: yiq >= 210,
-                alpha: a
-            }; // 밝기와 알파 값을 반환
-
-        }
-
-        var colorInfo2 = isLightColor2(<?php echo json_encode($rb_config_co_header); ?>);
-
-        if (colorInfo2.alpha < 0.2) {
-            var newTextCode2 = 'black'; // 투명도가 낮으면 회색
-        } else if (colorInfo2.isLight) {
-            var newTextCode2 = 'black'; // 밝은색이면 검은색
-        } else {
-            var newTextCode2 = 'white'; // 어두운색이면 흰색
-        }
-
-        // 링크 태그의 href 속성 변경
-        $('link[href*="set.header.php"]').attr('href', '<?php echo G5_URL ?>/rb/rb.css/set.header.php?rb_header_set=<?php echo rawurlencode($rb_core_header); ?>&rb_header_code=' + encodeURIComponent(<?php echo json_encode($rb_config_co_header); ?>) + '&rb_header_txt=' + newTextCode2);
-
-        if (newTextCode2 == 'black') {
-            <?php if (isset($rb_builder['bu_logo_mo']) && !empty($rb_builder['bu_logo_mo_w'])) { ?>
-            var newSrcset1 = "<?php echo G5_URL ?>/data/logos/mo?ver=<?php echo G5_SERVER_TIME ?>";
-            <?php } else { ?>
-            var newSrcset1 = "<?php echo G5_THEME_URL ?>/rb.img/logos/mo.png?ver=<?php echo G5_SERVER_TIME ?>";
-            <?php } ?>
-
-            <?php if (isset($rb_builder['bu_logo_pc']) && !empty($rb_builder['bu_logo_pc_w'])) { ?>
-            var newSrcset2 = "<?php echo G5_URL ?>/data/logos/pc?ver=<?php echo G5_SERVER_TIME ?>";
-            <?php } else { ?>
-            var newSrcset2 = "<?php echo G5_THEME_URL ?>/rb.img/logos/pc.png?ver=<?php echo G5_SERVER_TIME ?>";
-            <?php } ?>
-
-        } else {
-
-            <?php if (isset($rb_builder['bu_logo_mo']) && !empty($rb_builder['bu_logo_mo_w'])) { ?>
-            var newSrcset1 = "<?php echo G5_URL ?>/data/logos/mo_w?ver=<?php echo G5_SERVER_TIME ?>";
-            <?php } else { ?>
-            var newSrcset1 = "<?php echo G5_THEME_URL ?>/rb.img/logos/mo_w.png?ver=<?php echo G5_SERVER_TIME ?>";
-            <?php } ?>
-
-            <?php if (isset($rb_builder['bu_logo_pc']) && !empty($rb_builder['bu_logo_pc_w'])) { ?>
-            var newSrcset2 = "<?php echo G5_URL ?>/data/logos/pc_w?ver=<?php echo G5_SERVER_TIME ?>";
-            <?php } else { ?>
-            var newSrcset2 = "<?php echo G5_THEME_URL ?>/rb.img/logos/pc_w.png?ver=<?php echo G5_SERVER_TIME ?>";
-            <?php } ?>
-        }
-
-        $('#sourceSmall').attr('srcset', newSrcset1);
-        $('#sourceLarge').attr('srcset', newSrcset2);
-        $('#fallbackImage').attr('src', newSrcset2);
-
-
-        ////
-    });
-
-
     // Ajax 실행 함수 정의
     async function executeAjax() {
 
@@ -4593,9 +4513,6 @@ foreach ($rb_side_panels as $rb_side_panel) {
                     var newColorSet = 'co_' + colorValues; // 예: co_6B4285
                     var newColorCode = data.co_color; // 원본 컬러 값 (#6b4285)
 
-                    var newHeaderSet = 'co_header_' + headerValues; // 예: co_6B4285
-                    var newHeaderCode = data.co_header; // 원본 컬러 값 (#6b4285)
-
                     if (data.co_sidemenu_hide == 1) {
                         $('#rb_sidemenu').addClass('pc');
                     } else {
@@ -4608,74 +4525,8 @@ foreach ($rb_side_panels as $rb_side_panel) {
                         $('#rb_sidemenu_shop').removeClass('pc');
                     }
 
-                    function isLightColor(hex) { //밝은계통인지, 어두운 계통인지 판단 함수
-                        var r, g, b, a = 1; // 기본 알파 값
-
-                        // 8자리 HEX (RGBA) 체크
-                        if (hex.length === 9) {
-                            r = parseInt(hex.slice(1, 3), 16);
-                            g = parseInt(hex.slice(3, 5), 16);
-                            b = parseInt(hex.slice(5, 7), 16);
-                            a = parseInt(hex.slice(7, 9), 16) / 255; // 0~255를 0~1로 변환
-                        } else {
-                            r = parseInt(hex.slice(1, 3), 16);
-                            g = parseInt(hex.slice(3, 5), 16);
-                            b = parseInt(hex.slice(5, 7), 16);
-                        }
-
-                        var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-                        return {
-                            isLight: yiq >= 210,
-                            alpha: a
-                        }; // 밝기와 알파 값을 반환
-
-                    }
-
-                    var colorInfo = isLightColor(data.co_header);
-
-                    if (colorInfo.alpha < 0.2) {
-                        var newTextCode = 'black'; // 투명도가 낮으면 회색
-                    } else if (colorInfo.isLight) {
-                        var newTextCode = 'black'; // 밝은색이면 검은색
-                    } else {
-                        var newTextCode = 'white'; // 어두운색이면 흰색
-                    }
-
-                    // 링크 태그의 href 속성 변경
+                    // 강조컬러는 즉시 반영하고, 헤더 대비색과 로고는 새로고침 시 서버에서 확정한다.
                     $('link[href*="set.color.php"]').attr('href', '<?php echo G5_URL ?>/rb/rb.css/set.color.php?rb_color_set=' + newColorSet + '&rb_color_code=' + encodeURIComponent(newColorCode));
-                    $('link[href*="set.header.php"]').attr('href', '<?php echo G5_URL ?>/rb/rb.css/set.header.php?rb_header_set=' + newHeaderSet + '&rb_header_code=' + encodeURIComponent(newHeaderCode) + '&rb_header_txt=' + newTextCode);
-
-                    if (newTextCode == 'black') {
-                        <?php if (isset($rb_builder['bu_logo_mo']) && !empty($rb_builder['bu_logo_mo_w'])) { ?>
-                        var newSrcset1 = "<?php echo G5_URL ?>/data/logos/mo?ver=<?php echo G5_SERVER_TIME ?>";
-                        <?php } else { ?>
-                        var newSrcset1 = "<?php echo G5_THEME_URL ?>/rb.img/logos/mo.png?ver=<?php echo G5_SERVER_TIME ?>";
-                        <?php } ?>
-
-                        <?php if (isset($rb_builder['bu_logo_pc']) && !empty($rb_builder['bu_logo_pc_w'])) { ?>
-                        var newSrcset2 = "<?php echo G5_URL ?>/data/logos/pc?ver=<?php echo G5_SERVER_TIME ?>";
-                        <?php } else { ?>
-                        var newSrcset2 = "<?php echo G5_THEME_URL ?>/rb.img/logos/pc.png?ver=<?php echo G5_SERVER_TIME ?>";
-                        <?php } ?>
-
-                    } else {
-
-                        <?php if (isset($rb_builder['bu_logo_mo']) && !empty($rb_builder['bu_logo_mo_w'])) { ?>
-                        var newSrcset1 = "<?php echo G5_URL ?>/data/logos/mo_w?ver=<?php echo G5_SERVER_TIME ?>";
-                        <?php } else { ?>
-                        var newSrcset1 = "<?php echo G5_THEME_URL ?>/rb.img/logos/mo_w.png?ver=<?php echo G5_SERVER_TIME ?>";
-                        <?php } ?>
-
-                        <?php if (isset($rb_builder['bu_logo_pc']) && !empty($rb_builder['bu_logo_pc_w'])) { ?>
-                        var newSrcset2 = "<?php echo G5_URL ?>/data/logos/pc_w?ver=<?php echo G5_SERVER_TIME ?>";
-                        <?php } else { ?>
-                        var newSrcset2 = "<?php echo G5_THEME_URL ?>/rb.img/logos/pc_w.png?ver=<?php echo G5_SERVER_TIME ?>";
-                        <?php } ?>
-                    }
-
-                    $('#sourceSmall').attr('srcset', newSrcset1);
-                    $('#sourceLarge').attr('srcset', newSrcset2);
-                    $('#fallbackImage').attr('src', newSrcset2);
 
                     //console.log('강조컬러 설정:#'+ data.co_color);
                     //console.log('헤더 설정:header'+ data.co_header);

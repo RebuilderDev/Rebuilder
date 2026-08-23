@@ -11,6 +11,7 @@ if(G5_COMMUNITY_USE === false) {
     include_once(G5_THEME_SHOP_PATH.'/shop.head.php');
     return;
 }
+include_once(G5_PATH.'/rb/rb.config/layout.render.php');
 include_once(G5_THEME_PATH.'/head.sub.php');
 include_once(G5_LIB_PATH.'/latest.lib.php');
 include_once(G5_LIB_PATH.'/outlogin.lib.php');
@@ -24,6 +25,29 @@ if(defined('_INDEX_')) { // index에서만 실행
 }
 
 include_once(G5_PATH.'/rb/rb.mod/alarm/alarm.php'); // 실시간 알림
+
+if (!defined('_INDEX_') && function_exists('rb_prime_server_layouts')) {
+    $rb_sub_layouts = array();
+    if (isset($bo_table) && $bo_table) {
+        $rb_sub_layouts[] = 'rb_bo_top_' . $bo_table;
+        $rb_sub_layouts[] = 'rb_bo_btm_' . $bo_table;
+    }
+    if (isset($co_id) && $co_id) {
+        $rb_sub_layouts[] = 'rb_co_top_' . $co_id;
+        $rb_sub_layouts[] = 'rb_co_btm_' . $co_id;
+    }
+    if (isset($fr_id) && $fr_id) {
+        $rb_sub_layouts[] = 'rb_fr_top_' . $fr_id;
+        $rb_sub_layouts[] = 'rb_fr_btm_' . $fr_id;
+    }
+    if (isset($_GET['gr_id']) && $_GET['gr_id']) {
+        $rb_sub_layouts[] = 'rb_gr_' . $_GET['gr_id'];
+    }
+    if (isset($rb_core['sidemenu']) && ($rb_core['sidemenu'] === 'left' || $rb_core['sidemenu'] === 'right')) {
+        $rb_sub_layouts[] = 'rb_sidemenu';
+    }
+    rb_prime_server_layouts($rb_sub_layouts, false);
+}
 
 if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id) && $co_id) {
     if ($rb_aos_exists) {

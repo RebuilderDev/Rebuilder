@@ -36,25 +36,20 @@ header("Pragma: no-cache"); // HTTP/1.0
 <head>
 
 <meta charset="utf-8">
-<script>
-document.documentElement.className += (document.documentElement.className ? ' ' : '') + 'rb-swiper-boot';
-window.setTimeout(function () {
-    document.documentElement.classList.remove('rb-swiper-boot');
-}, 3000);
-</script>
+
+<?php if (!empty($rb_builder['bu_module_spinner_use'])) { ?>
 <style>
-html.rb-swiper-boot .rb_swiper {
+html.rb-module-spinner-use .rb_layout_box .rb_swiper:not(.rb-swiper-ready):not(.rb-swiper-spinner-timeout) {
     position: relative;
     min-height: 70px;
 }
-html.rb-swiper-boot .rb_swiper .rb_swiper_inner {
+html.rb-module-spinner-use .rb_layout_box .rb_swiper:not(.rb-swiper-ready):not(.rb-swiper-spinner-timeout) .rb_swiper_inner {
     opacity: 0;
 }
-<?php if (!empty($rb_builder['bu_module_spinner_use'])) { ?>
-html .rb_swiper .rb_swiper_inner {
+html.rb-module-spinner-use .rb_layout_box .rb_swiper .rb_swiper_inner {
     transition: opacity 0.13s ease-out;
 }
-html.rb-swiper-boot .rb_swiper::after {
+html.rb-module-spinner-use .rb_layout_box .rb_swiper:not(.rb-swiper-ready):not(.rb-swiper-spinner-timeout)::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -66,17 +61,100 @@ html.rb-swiper-boot .rb_swiper::after {
     border: 2px solid rgba(160, 160, 160, 0.22);
     border-top-color: rgba(160, 160, 160, 0.72);
     border-radius: 50%;
-    animation: rbSwiperSpin 0.35s ease-in-out infinite;
+    animation: rbModuleSwiperSpin 0.35s ease-in-out infinite;
     pointer-events: none;
-    display: block;
     z-index: 20;
 }
-@keyframes rbSwiperSpin {
+@keyframes rbModuleSwiperSpin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
-<?php } ?>
 </style>
+<script>
+document.documentElement.classList.add('rb-module-spinner-use');
+</script>
+<?php } ?>
+
+<script>
+(function () {
+    function rbSwiperNumber(slider, name, fallback) {
+        var value = parseInt(slider.getAttribute('data-' + name), 10);
+        return Number.isFinite(value) ? value : fallback;
+    }
+
+    function rbPrepareSwiperGrid(slider) {
+        if (!slider || slider.nodeType !== 1 || slider.classList.contains('rb-swiper-ready')) return;
+        if (!slider.closest('.rb_layout_box')) return;
+
+        var wrapper = slider.querySelector('.rb-swiper-wrapper');
+        if (!wrapper) return;
+
+        var mobile = window.innerWidth <= 1024;
+        var cols = Math.max(1, rbSwiperNumber(slider, mobile ? 'mo-w' : 'pc-w', 1));
+        var rows = Math.max(1, rbSwiperNumber(slider, mobile ? 'mo-h' : 'pc-h', 1));
+        var gap = Math.max(0, rbSwiperNumber(slider, mobile ? 'mo-gap' : 'pc-gap', 0));
+        var pageSize = cols * rows;
+        var slides = Array.prototype.filter.call(wrapper.children, function (child) {
+            return child.classList && child.classList.contains('rb_swiper_list');
+        });
+
+        if (!slides.length) return;
+
+        slider.classList.add('rb-swiper-pregrid');
+        if (document.documentElement.classList.contains('rb-module-spinner-use') && !slider.hasAttribute('data-rb-spinner-timer')) {
+            slider.setAttribute('data-rb-spinner-timer', '1');
+            window.setTimeout(function () {
+                if (!slider.classList.contains('rb-swiper-ready')) {
+                    slider.classList.add('rb-swiper-spinner-timeout');
+                }
+            }, 3000);
+        }
+        wrapper.style.display = 'grid';
+        wrapper.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
+        wrapper.style.gridAutoFlow = 'row';
+        wrapper.style.columnGap = gap + 'px';
+        wrapper.style.rowGap = gap + 'px';
+        wrapper.style.transform = 'none';
+        wrapper.style.transition = 'none';
+
+        slides.forEach(function (slide, index) {
+            slide.classList.add('swiper-slide');
+            slide.style.display = index < pageSize ? '' : 'none';
+        });
+    }
+
+    function rbPrepareSwiperScope(node) {
+        if (!node || node.nodeType !== 1) return;
+
+        if (node.matches && node.matches('.rb_swiper')) rbPrepareSwiperGrid(node);
+        if (node.querySelectorAll) {
+            node.querySelectorAll('.rb_swiper').forEach(rbPrepareSwiperGrid);
+        }
+
+        var parentSlider = node.closest ? node.closest('.rb_swiper') : null;
+        if (parentSlider) rbPrepareSwiperGrid(parentSlider);
+    }
+
+    var observer = new MutationObserver(function (records) {
+        records.forEach(function (record) {
+            Array.prototype.forEach.call(record.addedNodes, rbPrepareSwiperScope);
+        });
+    });
+
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    document.addEventListener('DOMContentLoaded', function () {
+        rbPrepareSwiperScope(document.documentElement);
+    });
+
+    var resizeFrame = 0;
+    window.addEventListener('resize', function () {
+        window.cancelAnimationFrame(resizeFrame);
+        resizeFrame = window.requestAnimationFrame(function () {
+            document.querySelectorAll('.rb_swiper:not(.rb-swiper-ready)').forEach(rbPrepareSwiperGrid);
+        });
+    });
+})();
+</script>
 
 <!-- viewport { -->
 <?php if(isset($rb_builder['bu_viewport']) && $rb_builder['bu_viewport']) { ?>
@@ -420,16 +498,24 @@ if ($font === '') {
     $font = 'Pretendard';
 }
 
+$rb_header_use_white_logo = !empty($rb_core['header_logo_white']);
+$rb_header_logo_mo_url = function_exists('rb_header_logo_url')
+    ? rb_header_logo_url('mo', $rb_header_use_white_logo)
+    : G5_THEME_URL . '/rb.img/logos/mo' . ($rb_header_use_white_logo ? '_w' : '') . '.png';
+$rb_header_logo_pc_url = function_exists('rb_header_logo_url')
+    ? rb_header_logo_url('pc', $rb_header_use_white_logo)
+    : G5_THEME_URL . '/rb.img/logos/pc' . ($rb_header_use_white_logo ? '_w' : '') . '.png';
+
 add_javascript('<script src="'.G5_JS_URL.'/jquery-1.12.4.min.js"></script>', 0);
 add_javascript('<script src="'.G5_JS_URL.'/jquery-migrate-1.4.1.min.js"></script>', 0);
 
 if(defined('_SHOP_')) {
     if (isset($rb_core['layout_shop'])) {
-        add_javascript('<script src="' . G5_THEME_URL . '/rb.js/rb.layout.shop.js?ver=2.2.6"></script>', 0);
+        add_javascript('<script src="' . G5_THEME_URL . '/rb.js/rb.layout.shop.js?ver=2.2.7.1"></script>', 0);
     }
 } else {
     if (isset($rb_core['layout'])) {
-        add_javascript('<script src="' . G5_THEME_URL . '/rb.js/rb.layout.js?ver=2.2.6"></script>', 0);
+        add_javascript('<script src="' . G5_THEME_URL . '/rb.js/rb.layout.js?ver=2.2.7.1"></script>', 0);
     }
 }
 

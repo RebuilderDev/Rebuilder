@@ -1,4 +1,4 @@
-﻿$(document).ready(function () {
+$(document).ready(function () {
 
     function rbGetAosConfigsSafe() {
         var cfgs = window.RB_AOS_CONFIGS || {};
@@ -69,8 +69,8 @@
 
     function finalizeLayoutReady() {
         if (typeof initializeAllSliders === "function") initializeAllSliders($(document));
-        document.documentElement.classList.remove('rb-swiper-boot');
         requestAnimationFrame(function () {
+            document.documentElement.classList.remove('rb-swiper-boot');
             if (typeof refreshStandaloneSwipers === "function") refreshStandaloneSwipers($(document));
             if (typeof initializeCalendar === "function") initializeCalendar();
             rbAosRefresh();
@@ -310,59 +310,12 @@
 
 function initializeAllSliders($scope) {
     const $root = $scope && $scope.length ? $scope : $(document);
-    const immediate = [];
-    const deferred = [];
 
     $root.find('.rb_swiper').addBack('.rb_swiper').each(function () {
         const $slider = $(this);
         if ($slider.data('rb-swiper-queued')) return;
         $slider.data('rb-swiper-queued', true);
-
-        if (rbIsNearViewport(this, 0)) immediate.push(this);
-        else deferred.push(this);
-    });
-
-    immediate.forEach(function (el) {
-        setupResponsiveSlider($(el));
-    });
-
-    queueDeferredSliders(deferred);
-}
-
-function rbIsNearViewport(el, threshold) {
-    if (!el || typeof el.getBoundingClientRect !== 'function') return true;
-    const rect = el.getBoundingClientRect();
-    const extra = typeof threshold === 'number' ? threshold : 0;
-    const viewH = window.innerHeight || document.documentElement.clientHeight || 0;
-    return rect.bottom >= -extra && rect.top <= viewH + extra;
-}
-
-function queueDeferredSliders(sliders) {
-    if (!sliders || !sliders.length) return;
-
-    if ('IntersectionObserver' in window) {
-        const observer = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-                if (!entry.isIntersecting) return;
-                observer.unobserve(entry.target);
-                window.requestAnimationFrame(function () {
-                    setupResponsiveSlider($(entry.target));
-                });
-            });
-        }, {
-            rootMargin: '100px 0px 100px 0px'
-        });
-
-        sliders.forEach(function (el) {
-            observer.observe(el);
-        });
-        return;
-    }
-
-    sliders.forEach(function (el, index) {
-        window.setTimeout(function () {
-            setupResponsiveSlider($(el));
-        }, 60 * (index + 1));
+        setupResponsiveSlider($slider);
     });
 }
 
@@ -381,64 +334,38 @@ function refreshStandaloneSwipers($scope) {
 
 function setupResponsiveSlider($rb_slider) {
     let swiperInstance = $rb_slider.data('rb-swiper-instance') || null;
-    let currentMode = $rb_slider.data('rb-swiper-mode') || '';
     const sliderEl = $rb_slider[0];
     const innerEl = sliderEl ? sliderEl.querySelector('.rb_swiper_inner') : null;
+    const wrapperEl = sliderEl ? sliderEl.querySelector('.rb-swiper-wrapper') : null;
     const nextEl = sliderEl ? sliderEl.querySelector('.rb-swiper-next') : null;
     const prevEl = sliderEl ? sliderEl.querySelector('.rb-swiper-prev') : null;
 
-    function initSlider(mode) {
-        const isMobile = mode === 'mo';
-        const rows = parseInt($rb_slider.data(isMobile ? 'mo-h' : 'pc-h'), 10) || 1;
-        const cols = parseInt($rb_slider.data(isMobile ? 'mo-w' : 'pc-w'), 10) || 1;
-        const gap = parseInt($rb_slider.data(isMobile ? 'mo-gap' : 'pc-gap'), 10) || 0;
-        const swap = $rb_slider.data(isMobile ? 'mo-swap' : 'pc-swap') == 1;
-        const slidesPerView = rows * cols;
+    if (!innerEl || !wrapperEl || typeof Swiper !== 'function') return;
 
-        const speedData = $rb_slider.data(isMobile ? 'mo-speed' : 'pc-speed');
-        const speed = speedData !== undefined && speedData !== null && speedData !== ''
-            ? parseInt(speedData, 10)
-            : (parseInt($rb_slider.data('speed'), 10) || 400);
-
-        $rb_slider.removeClass('rb-swiper-ready').addClass('rb-swiper-pending');
-        configureSlides($rb_slider, slidesPerView, cols, gap);
-
-        if (swiperInstance) {
-            swiperInstance.destroy(true, true);
-        }
-
-        swiperInstance = new Swiper(innerEl, {
-            slidesPerView: 1,
-            initialSlide: 0,
-            spaceBetween: gap,
-            resistanceRatio: 0,
-            touchRatio: swap ? 1 : 0,
-            speed: speed,
-            autoplay: $rb_slider.data('autoplay') == 1 ? {
-                delay: parseInt($rb_slider.data('autoplay-time'), 10) || 3000,
-                disableOnInteraction: false,
-            } : false,
-            navigation: {
-                nextEl: nextEl,
-                prevEl: prevEl,
-            },
-        });
-
-        swiperInstance.update();
-        $rb_slider.removeClass('rb-swiper-pending').addClass('rb-swiper-ready');
-
-        $rb_slider.data('rb-swiper-instance', swiperInstance);
-        $rb_slider.data('rb-swiper-mode', mode);
+    function getNumber(name, fallback) {
+        const value = parseInt($rb_slider.data(name), 10);
+        return Number.isFinite(value) ? value : fallback;
     }
 
-    function configureSlides($rb_slider, view, cols, gap) {
-        const wrapperEl = sliderEl ? sliderEl.querySelector('.rb-swiper-wrapper') : null;
-        if (!wrapperEl) return;
+    function prepareDirectSlides() {
+        sliderEl.classList.remove('rb-swiper-pregrid');
+        wrapperEl.style.removeProperty('display');
+        wrapperEl.style.removeProperty('grid-template-columns');
+        wrapperEl.style.removeProperty('grid-auto-flow');
+        wrapperEl.style.removeProperty('column-gap');
+        wrapperEl.style.removeProperty('row-gap');
+        wrapperEl.style.removeProperty('transform');
+        wrapperEl.style.removeProperty('transition');
+
+        wrapperEl.querySelectorAll('.rb-swiper-grid-blank').forEach(function (el) {
+            el.remove();
+        });
 
         wrapperEl.querySelectorAll('.swiper-slide-duplicate').forEach(function (el) {
             el.remove();
         });
 
+        // 이전 버전에서 생성한 페이지 단위 슬라이드가 남아 있으면 한 번만 원상 복구합니다.
         Array.from(wrapperEl.children).forEach(function (child) {
             if (!child.classList || !child.classList.contains('rb-swiper-slide')) return;
             while (child.firstChild) {
@@ -447,45 +374,116 @@ function setupResponsiveSlider($rb_slider) {
             child.remove();
         });
 
-        const widthPercentage = `calc(${100 / cols}% - ${(gap * (cols - 1)) / cols}px)`;
-        const lists = Array.from(wrapperEl.querySelectorAll('.rb_swiper_list'));
-        if (!lists.length) return;
+        Array.from(wrapperEl.children).forEach(function (listEl) {
+            if (!listEl.classList || !listEl.classList.contains('rb_swiper_list')) return;
+            listEl.classList.add('swiper-slide');
+            listEl.style.removeProperty('display');
+            listEl.style.removeProperty('width');
+            listEl.style.removeProperty('min-width');
+            listEl.style.removeProperty('margin-right');
+            listEl.style.removeProperty('margin-top');
+            listEl.style.removeProperty('order');
+            listEl.style.removeProperty('-webkit-order');
+            listEl.style.removeProperty('-ms-flex-order');
+            listEl.style.removeProperty('-moz-box-ordinal-group');
+            listEl.style.removeProperty('-webkit-box-ordinal-group');
+        });
+    }
 
-        lists.forEach(function (listEl, index) {
-            listEl.style.width = widthPercentage;
-            listEl.style.marginRight = ((index + 1) % cols === 0) ? '0' : '';
+    function syncGridBlanks(rows, cols) {
+        wrapperEl.querySelectorAll('.rb-swiper-grid-blank').forEach(function (el) {
+            el.remove();
         });
 
-        for (let start = 0; start < lists.length; start += view) {
-            const slideEl = document.createElement('div');
-            slideEl.className = 'rb-swiper-slide swiper-slide';
-            slideEl.style.gap = `${gap}px`;
-            wrapperEl.insertBefore(slideEl, lists[start]);
+        const realSlides = Array.from(wrapperEl.children).filter(function (el) {
+            return el.classList && el.classList.contains('rb_swiper_list');
+        });
+        const pageSize = Math.max(1, rows * cols);
+        const remainder = realSlides.length % pageSize;
+        const blankCount = remainder === 0 ? 0 : pageSize - remainder;
 
-            for (let idx = start; idx < Math.min(start + view, lists.length); idx++) {
-                slideEl.appendChild(lists[idx]);
-            }
+        if (!blankCount) return;
+
+        const fragment = document.createDocumentFragment();
+        for (let i = 0; i < blankCount; i++) {
+            const blank = document.createElement('div');
+            blank.className = 'rb-swiper-grid-blank swiper-slide swiper-slide-invisible-blank';
+            blank.setAttribute('aria-hidden', 'true');
+            blank.setAttribute('tabindex', '-1');
+            fragment.appendChild(blank);
         }
+        wrapperEl.appendChild(fragment);
     }
 
-    function checkModeAndInit() {
-        const winWidth = window.innerWidth;
-        const mode = winWidth <= 1024 ? 'mo' : 'pc';
-
-        if (currentMode !== mode) {
-            currentMode = mode;
-            initSlider(mode);
-        }
+    if (swiperInstance && !swiperInstance.destroyed) {
+        syncGridBlanks(
+            Math.max(1, parseInt(swiperInstance.params.slidesPerColumn, 10) || 1),
+            Math.max(1, parseInt(swiperInstance.params.slidesPerView, 10) || 1)
+        );
+        swiperInstance.update();
+        $rb_slider.removeClass('rb-swiper-pending').addClass('rb-swiper-ready');
+        return;
     }
 
-    if (!$rb_slider.data('rb-swiper-bound')) {
-        window.__rbSwiperUid = (window.__rbSwiperUid || 0) + 1;
-        const resizeNamespace = '.rbSwiper' + window.__rbSwiperUid;
-        $(window).on('resize' + resizeNamespace + ' orientationchange' + resizeNamespace, checkModeAndInit);
-        $rb_slider.data('rb-swiper-bound', true);
-        $rb_slider.data('rb-swiper-resize-ns', resizeNamespace);
-    }
+    const moRows = Math.max(1, getNumber('mo-h', 1));
+    const moCols = Math.max(1, getNumber('mo-w', 1));
+    const moGap = Math.max(0, getNumber('mo-gap', 0));
+    const moSpeed = Math.max(0, getNumber('mo-speed', getNumber('speed', 400)));
+    const pcRows = Math.max(1, getNumber('pc-h', 1));
+    const pcCols = Math.max(1, getNumber('pc-w', 1));
+    const pcGap = Math.max(0, getNumber('pc-gap', 0));
+    const pcSpeed = Math.max(0, getNumber('pc-speed', getNumber('speed', 400)));
 
-    checkModeAndInit();
+    prepareDirectSlides();
+    if (window.innerWidth <= 1024) syncGridBlanks(moRows, moCols);
+    else syncGridBlanks(pcRows, pcCols);
+
+    swiperInstance = new Swiper(innerEl, {
+        slidesPerView: moCols,
+        slidesPerColumn: moRows,
+        slidesPerColumnFill: 'row',
+        slidesPerGroup: moCols,
+        initialSlide: 0,
+        spaceBetween: moGap,
+        resistanceRatio: 0,
+        touchRatio: $rb_slider.data('mo-swap') == 1 ? 1 : 0,
+        speed: moSpeed,
+        watchOverflow: true,
+        autoplay: $rb_slider.data('autoplay') == 1 ? {
+            delay: getNumber('autoplay-time', 3000) || 3000,
+            disableOnInteraction: false,
+        } : false,
+        navigation: {
+            nextEl: nextEl,
+            prevEl: prevEl,
+        },
+        breakpoints: {
+            1025: {
+                slidesPerView: pcCols,
+                slidesPerColumn: pcRows,
+                slidesPerGroup: pcCols,
+                spaceBetween: pcGap,
+                touchRatio: $rb_slider.data('pc-swap') == 1 ? 1 : 0,
+                speed: pcSpeed,
+            },
+        },
+        on: {
+            breakpoint: function () {
+                const instance = this;
+                window.requestAnimationFrame(function () {
+                    if (!instance || instance.destroyed) return;
+                    syncGridBlanks(
+                        Math.max(1, parseInt(instance.params.slidesPerColumn, 10) || 1),
+                        Math.max(1, parseInt(instance.params.slidesPerView, 10) || 1)
+                    );
+                    instance.update();
+                    instance.slideTo(0, 0, false);
+                });
+            },
+        },
+    });
+
+    $rb_slider.removeClass('rb-swiper-pending').addClass('rb-swiper-ready');
+    $rb_slider.data('rb-swiper-instance', swiperInstance);
+    $rb_slider.removeData('rb-swiper-mode');
 }
-

@@ -1,12 +1,25 @@
 <?php
 include_once('../../common.php');
-header("Content-Type: text/css");
+header("Content-Type: text/css; charset=utf-8");
 
-$rb_header_set = isset($_GET['rb_header_set']) ? htmlspecialchars($_GET['rb_header_set']) : htmlspecialchars($rb_core['header']);
-$rb_header_code = isset($_GET['rb_header_code']) ? htmlspecialchars($_GET['rb_header_code']) : htmlspecialchars($rb_config['co_header']);
-$rb_header_txt = isset($_GET['rb_header_txt']) ? htmlspecialchars($_GET['rb_header_txt']) : 'black';
+$rb_header_set_raw = isset($_GET['rb_header_set']) ? (string) $_GET['rb_header_set'] : (string) $rb_core['header'];
+$rb_header_set = preg_replace('/[^a-zA-Z0-9_-]/', '', $rb_header_set_raw);
+if ($rb_header_set === '') {
+    $rb_header_set = 'co_header_ffffff';
+}
 
-if($rb_header_code == "#ffffff" || $rb_header_code == "#FFFFFF" || $rb_header_code == "") {
+$rb_header_code_raw = isset($_GET['rb_header_code']) ? (string) $_GET['rb_header_code'] : (string) $rb_config['co_header'];
+$rb_header_info = function_exists('rb_header_color_info')
+    ? rb_header_color_info($rb_header_code_raw)
+    : array('color' => '#ffffff', 'text' => 'black');
+$rb_header_code = $rb_header_info['color'];
+
+$rb_header_mode = isset($_GET['rb_header_txt']) ? strtolower((string) $_GET['rb_header_txt']) : '';
+if ($rb_header_mode !== 'black' && $rb_header_mode !== 'white') {
+    $rb_header_mode = $rb_header_info['text'];
+}
+
+if ($rb_header_mode === 'black') {
     $rb_rgba_border = "border-color:rgba(0,0,0,0.1);";
     $rb_rgba_bg = "background-color:rgba(0,0,0,0.05);";
     $rb_header_txt = $rb_config['co_color'];
@@ -14,21 +27,12 @@ if($rb_header_code == "#ffffff" || $rb_header_code == "#FFFFFF" || $rb_header_co
     $rb_header_a = "";
     $arr_w = "";
 } else {
-    if($rb_header_txt == "black") { //밝은배경
-        $rb_rgba_border = "border-color:rgba(0,0,0,0.1);";
-        $rb_rgba_bg = "background-color:rgba(0,0,0,0.05);";
-        $rb_header_txt = $rb_config['co_color'];
-        $rb_header_search_h = "color:rgba(0,0,0,0.6);";
-        $rb_header_a = "";
-        $arr_w = "";
-    } else { //어두운 배경
-        $rb_rgba_border = "border-color:rgba(255,255,255,0.1);";
-        $rb_rgba_bg = "background-color:rgba(255,255,255,1);";
-        $rb_header_txt = "#fff";
-        $rb_header_search_h = "";
-        $rb_header_a = "#fff";
-        $arr_w = "background-image: url(../rb.config/image/arr_down_w.svg)";
-    }
+    $rb_rgba_border = "border-color:rgba(255,255,255,0.1);";
+    $rb_rgba_bg = "background-color:rgba(255,255,255,1);";
+    $rb_header_txt = "#fff";
+    $rb_header_search_h = "";
+    $rb_header_a = "#fff";
+    $arr_w = "background-image: url(../rb.config/image/arr_down_w.svg)";
 }
 ?>
 
@@ -46,6 +50,8 @@ if($rb_header_code == "#ffffff" || $rb_header_code == "#FFFFFF" || $rb_header_co
 .<?php echo $rb_header_set ?> #header .search_top_wrap_inner button svg path {}
 .<?php echo $rb_header_set ?> #header .gnb_wrap .snb_wrap .qm_wrap a svg path {fill:<?php echo $rb_header_a ?>}
 .<?php echo $rb_header_set ?> #header .gnb_wrap .snb_wrap .qm_wrap button svg path {fill:<?php echo $rb_header_a ?>}
+.<?php echo $rb_header_set ?> #header #rb_memo_top_btn svg g[fill="none"] > path:first-child:not(:last-child),
+.<?php echo $rb_header_set ?> #header #notification_top_btn svg g[fill="none"] > path:first-child:not(:last-child) {fill:none !important;}
 .<?php echo $rb_header_set ?> #header .gnb_all_menu {<?php echo $arr_w ?>}
 .<?php echo $rb_header_set ?> #header .gnb_wrap .snb_q_wrap a {color:<?php echo $rb_header_a ?>}
 

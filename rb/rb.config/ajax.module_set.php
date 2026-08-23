@@ -2,6 +2,11 @@
 include_once('../../common.php');
 if (!defined('_GNUBOARD_')) exit;
 
+include_once(__DIR__ . '/layout.cache.php');
+if ($is_admin) {
+    register_shutdown_function('rb_layout_cache_delete_all');
+}
+
 
 $md_id = isset($_POST['md_id']) ? $_POST['md_id'] : '';
 $md_title = isset($_POST['md_title']) ? $_POST['md_title'] : '';
@@ -507,3 +512,4 @@ if (isset($is_height) && $is_height == "1") {
             }
         }
     ?>
+

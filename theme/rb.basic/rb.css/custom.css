@@ -1,5 +1,11 @@
 @charset "utf-8";
 
+/* 모듈 탭은 전환 효과 없이 즉시 표시합니다. */
+.rb_latest_tabs_top .latest-tab-content-thumb-top,
+.rb_latest_tabs_left .latest-tab-content {
+    transition: none !important;
+}
+
 
 /* 1.1.4 { */
 .writer_prof {margin-top: 25px; margin-bottom: 20px;}
@@ -241,11 +247,11 @@ html {overflow-x: hidden;}
 .cbp-hrmenu .cbp-hrsub {max-width: 1024px;}
 .shop_main_list_rb {position: relative;}
 .rb_shop_list4 .swiper-slide {border: 0px;padding: 0px !important;border-radius: 0px;}
-.rb_shop_list4 .swiper-slide .rb_swiper_list {border: 1px solid rgba(0, 0, 0, 0.1); padding: 30px !important;border-radius: 10px; cursor: pointer}
-.rb_shop_list4 .swiper-slide .rb_swiper_list:hover {border-color:#25282B;}
+.rb_shop_list4 .swiper-slide .rb_swiper_list, .rb_shop_list4 .rb_swiper_list.swiper-slide {border: 1px solid rgba(0, 0, 0, 0.1); padding: 30px !important;border-radius: 10px; cursor: pointer}
+.rb_shop_list4 .swiper-slide .rb_swiper_list:hover, .rb_shop_list4 .rb_swiper_list.swiper-slide:hover {border-color:#25282B;}
 .rb_shop_list5 .swiper-slide {padding: 0px !important;border-radius: 0px;background-color: transparent;border: 0px;}
-.rb_shop_list5 .swiper-slide .rb_swiper_list {padding: 30px !important;border-radius: 10px;background-color: #f9f9f9;border: 1px solid #f9f9f9; cursor: pointer}
-.rb_shop_list5 .swiper-slide .rb_swiper_list:hover {border-color:#25282B;}
+.rb_shop_list5 .swiper-slide .rb_swiper_list, .rb_shop_list5 .rb_swiper_list.swiper-slide {padding: 30px !important;border-radius: 10px;background-color: #f9f9f9;border: 1px solid #f9f9f9; cursor: pointer}
+.rb_shop_list5 .swiper-slide .rb_swiper_list:hover, .rb_shop_list5 .rb_swiper_list.swiper-slide:hover {border-color:#25282B;}
 .rb_bbs_wrap .rb_bbs_list .swiper-slide {margin-top: 0px !important; margin-bottom: 30px !important;}
 .point_list_con img {border:0px !important;}
 /* } */

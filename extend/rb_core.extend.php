@@ -11,6 +11,75 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 define('RB_VER',  '2.2.7'); // 버전
 define('RB_TABLE_PREFIX', 'rb_'); // 리빌더 접두사
 
+// 헤더 배경색을 실제 표시색으로 합성한 뒤 검정/흰색 중 대비가 높은 색을 선택한다.
+if (!function_exists('rb_header_color_info')) {
+    function rb_header_color_info($color)
+    {
+        $hex = strtolower(ltrim(trim((string) $color), '#'));
+
+        if (strlen($hex) === 3 || strlen($hex) === 4) {
+            $expanded = '';
+            for ($i = 0, $length = strlen($hex); $i < $length; $i++) {
+                $expanded .= $hex[$i] . $hex[$i];
+            }
+            $hex = $expanded;
+        }
+
+        if (!preg_match('/^[0-9a-f]{6}([0-9a-f]{2})?$/', $hex)) {
+            $hex = 'ffffff';
+        }
+
+        $red = hexdec(substr($hex, 0, 2));
+        $green = hexdec(substr($hex, 2, 2));
+        $blue = hexdec(substr($hex, 4, 2));
+        $alpha = strlen($hex) === 8 ? hexdec(substr($hex, 6, 2)) / 255 : 1;
+
+        // 투명 헤더는 기존 화면 배경인 흰색 위에 합성하여 최초 표시색을 계산한다.
+        $red = ($red * $alpha) + (255 * (1 - $alpha));
+        $green = ($green * $alpha) + (255 * (1 - $alpha));
+        $blue = ($blue * $alpha) + (255 * (1 - $alpha));
+
+        $channels = array($red, $green, $blue);
+        foreach ($channels as $key => $channel) {
+            $channel /= 255;
+            $channels[$key] = $channel <= 0.04045
+                ? $channel / 12.92
+                : pow(($channel + 0.055) / 1.055, 2.4);
+        }
+
+        $luminance = (0.2126 * $channels[0]) + (0.7152 * $channels[1]) + (0.0722 * $channels[2]);
+        $black_contrast = ($luminance + 0.05) / 0.05;
+        $white_contrast = 1.05 / ($luminance + 0.05);
+        $text = $black_contrast >= $white_contrast ? 'black' : 'white';
+
+        return array(
+            'color' => '#' . $hex,
+            'alpha' => $alpha,
+            'luminance' => $luminance,
+            'text' => $text,
+        );
+    }
+}
+
+if (!function_exists('rb_header_logo_url')) {
+    function rb_header_logo_url($device, $use_white)
+    {
+        global $rb_builder;
+
+        $device = $device === 'mo' ? 'mo' : 'pc';
+        $suffix = $use_white ? '_w' : '';
+        $normal_key = 'bu_logo_' . $device;
+        $white_key = $normal_key . '_w';
+        $has_logo_pair = !empty($rb_builder[$normal_key]) && !empty($rb_builder[$white_key]);
+
+        if ($has_logo_pair) {
+            return G5_URL . '/data/logos/' . $device . $suffix;
+        }
+
+        return G5_THEME_URL . '/rb.img/logos/' . $device . $suffix . '.png';
+    }
+}
+
 // 검색 조건이 없는 알림·바로가기 진입에서도 관리 목록의 검색어 보존 변수를 보장한다.
 if (!isset($save_stx) || !is_scalar($save_stx)) {
     $save_stx = (isset($_REQUEST['save_stx']) && is_scalar($_REQUEST['save_stx']))
@@ -40,6 +109,9 @@ $rb_core['layout_hd'] = !empty($rb_config['co_layout_hd']) ? $rb_config['co_layo
 $rb_core['layout_ft'] = !empty($rb_config['co_layout_ft']) ? $rb_config['co_layout_ft'] : ''; // 레이아웃(푸터)
 $rb_core['color'] = !empty($rb_config['co_color']) ? 'co_'.$rb_config['co_color'] : ''; // 강조컬러
 $rb_core['header'] = !empty($rb_config['co_header']) ? 'co_header_'.$rb_config['co_header'] : ''; // 헤더스타일
+$rb_header_color_info = rb_header_color_info(isset($rb_config['co_header']) ? $rb_config['co_header'] : '');
+$rb_core['header_txt'] = $rb_header_color_info['text']; // 헤더 대비색
+$rb_core['header_logo_white'] = $rb_header_color_info['text'] === 'white' ? 1 : 0; // 헤더 로고 종류
 $rb_core['font'] = !empty($rb_config['co_font']) ? $rb_config['co_font'] : ''; // 폰트스타일
 $rb_core['sub_width'] = !empty($rb_config['co_sub_width']) ? $rb_config['co_sub_width'] : "1400"; // 서브가로사이즈
 $rb_core['main_width'] = !empty($rb_config['co_main_width']) ? $rb_config['co_main_width'] : "1400"; // 메인가로사이즈

@@ -42,59 +42,6 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 ?>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // PHP 데이터를 JavaScript 객체로 전달
-        const rbConfig = {
-            headerColor: "<?php echo isset($rb_config['co_header']) ? $rb_config['co_header'] : ''; ?>",
-            headerSet: "<?php echo isset($rb_core['header']) ? $rb_core['header'] : ''; ?>",
-            logoMo: "<?php echo !empty($rb_builder['bu_logo_mo']) && !empty($rb_builder['bu_logo_mo_w']) ? G5_URL . '/data/logos/mo' : G5_THEME_URL . '/rb.img/logos/mo.png' ?>",
-            logoMoWhite: "<?php echo !empty($rb_builder['bu_logo_mo']) && !empty($rb_builder['bu_logo_mo_w']) ? G5_URL . '/data/logos/mo_w' : G5_THEME_URL . '/rb.img/logos/mo_w.png' ?>",
-            logoPc: "<?php echo !empty($rb_builder['bu_logo_pc']) && !empty($rb_builder['bu_logo_pc_w']) ? G5_URL . '/data/logos/pc' : G5_THEME_URL . '/rb.img/logos/pc.png' ?>",
-            logoPcWhite: "<?php echo !empty($rb_builder['bu_logo_pc']) && !empty($rb_builder['bu_logo_pc_w']) ? G5_URL . '/data/logos/pc_w' : G5_THEME_URL . '/rb.img/logos/pc_w.png' ?>",
-            serverTime: "<?php echo G5_SERVER_TIME ?>"
-        };
-
-        // 밝기 계산 함수
-        function isLightColor(hex) {
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
-            const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-            return yiq >= 210;
-        }
-
-        // 밝기와 텍스트 색상 결정
-        const isLight = isLightColor(rbConfig.headerColor);
-        const newTextCode = isLight ? 'black' : 'white';
-
-        // 링크 태그 업데이트
-        const headerHref = `<?php echo G5_URL ?>/rb/rb.css/set.header.php?rb_header_set=${rbConfig.headerSet}&rb_header_code=${encodeURIComponent(rbConfig.headerColor)}&rb_header_txt=${newTextCode}`;
-        const headerLink = document.querySelector('link[href*="set.header.php"]');
-        if (headerLink) {
-            headerLink.setAttribute('href', headerHref);
-        }
-
-        // 로고 이미지 업데이트
-        const newSrcset1 = isLight ? rbConfig.logoMo : rbConfig.logoMoWhite;
-        const newSrcset2 = isLight ? rbConfig.logoPc : rbConfig.logoPcWhite;
-
-        const sourceSmall = document.getElementById('sourceSmall');
-        const sourceLarge = document.getElementById('sourceLarge');
-        const fallbackImage = document.getElementById('fallbackImage');
-
-        if (sourceSmall) {
-            sourceSmall.setAttribute('srcset', `${newSrcset1}?ver=${rbConfig.serverTime}`);
-        }
-        if (sourceLarge) {
-            sourceLarge.setAttribute('srcset', `${newSrcset2}?ver=${rbConfig.serverTime}`);
-        }
-        if (fallbackImage) {
-            fallbackImage.setAttribute('src', `${newSrcset2}?ver=${rbConfig.serverTime}`);
-        }
-    });
-</script>
-
-<script>
     $(function() {
         $('.content_box.rb_module_wide, .content_box.rb_module_mid, .rb_section_box.rb_sec_wide').each(function() {
             var parentWidth = $(this).parent().width();
@@ -604,6 +551,7 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 <?php
     $rb_core_colors = isset($rb_core['color']) ? $rb_core['color'] : '';
     $rb_core_headers = isset($rb_core['header']) ? $rb_core['header'] : '';
+    $rb_core_header_txt = isset($rb_core['header_txt']) ? $rb_core['header_txt'] : 'black';
     $rb_config_colors = isset($rb_config['co_color']) ? $rb_config['co_color'] : '';
     $rb_config_headers = isset($rb_config['co_header']) ? $rb_config['co_header'] : '';
 
@@ -614,7 +562,7 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 
 
     add_stylesheet('<link rel="stylesheet" href="'.G5_URL.'/rb/rb.css/set.color.php?rb_color_set=' . urlencode($rb_core_colors) . '&rb_color_code=' . urlencode($rb_config_colors) . '" />', 0);
-    add_stylesheet('<link rel="stylesheet" href="'.G5_URL.'/rb/rb.css/set.header.php?rb_header_set=' . urlencode($rb_core_headers) . '&rb_header_code=' . urlencode($rb_config_headers) . '" />', 0);
+    add_stylesheet('<link rel="stylesheet" href="'.G5_URL.'/rb/rb.css/set.header.php?rb_header_set=' . urlencode($rb_core_headers) . '&rb_header_code=' . urlencode($rb_config_headers) . '&rb_header_txt=' . urlencode($rb_core_header_txt) . '" />', 0);
     add_stylesheet('<link rel="stylesheet" href="'.G5_URL.'/rb/rb.css/set.style.php?ver='.G5_SERVER_TIME.'&rb_color_set=' . urlencode($rb_core_colors) . '&rb_color_code=' . urlencode($rb_config_colors) . '&rb_is_index='.$index_css.'&rb_is_shop='.$shop_css.'" />', 0);
     add_stylesheet('<link rel="stylesheet" href="'.G5_URL.'/rb/rb.css/set.style.css?ver='.G5_SERVER_TIME.'" />', 0);
 ?>

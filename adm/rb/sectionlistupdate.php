@@ -1,6 +1,7 @@
 <?php
 $sub_menu = '000210';
 include_once('./_common.php');
+include_once(G5_PATH . '/rb/rb.config/layout.cache.php');
 
 check_demo();
 
@@ -37,4 +38,7 @@ for ($i=0; $i<$post_sec_id_count; $i++)
 
 }
 
+rb_layout_cache_delete_all();
+
 goto_url("./section_list.php?tables=$table_name&amp;$qstr");
+

@@ -3,6 +3,8 @@ include_once('../../common.php');
 
 if (!defined('_GNUBOARD_')) exit;
 
+include_once(__DIR__ . '/layout.cache.php');
+
 $mod_type = !empty($_POST['mod_type']) ? $_POST['mod_type'] : '';
 $is_shop = !empty($_POST['is_shop']) ? $_POST['is_shop'] : '';
 
@@ -254,6 +256,9 @@ if($mod_type == "del_sec") { //섹션삭제
                 'co_sidemenu_hide_shop' => $co_sidemenu_hide_shop,
                 'status' => 'ok',
             );
+            if ($is_admin) {
+                rb_layout_cache_delete_all();
+            }
             echo json_encode($data);
         ?>
 <?php } ?>
@@ -3255,3 +3260,4 @@ if($mod_type == "del_sec") { //섹션삭제
     <div class="cb"></div>
 </ul>
 <?php } ?>
+

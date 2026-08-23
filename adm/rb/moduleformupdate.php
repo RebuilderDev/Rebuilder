@@ -1,6 +1,7 @@
 <?php
 $sub_menu = '000200';
 include_once('./_common.php');
+include_once(G5_PATH . '/rb/rb.config/layout.cache.php');
 
 auth_check_menu($auth, $sub_menu, "d");
 
@@ -21,7 +22,9 @@ if ($w == "d")
     // 삭제
     $sql = " delete from {$table_name} where md_id = '$md_id' ";
     sql_query($sql);
+    rb_layout_cache_delete_all();
 
 }
 
 goto_url("./module_list.php?tables=$table_name&amp;$qstr");
+

@@ -1,9 +1,12 @@
 <?php
 $sub_menu = "100280";
 include_once('./_common.php');
+include_once(G5_PATH . '/rb/rb.config/layout.cache.php');
 
 if ($is_admin != 'super')
     die('최고관리자만 접근 가능합니다.');
+
+register_shutdown_function('rb_layout_cache_delete_all');
 
 admin_referer_check();
 
@@ -336,3 +339,4 @@ if (!empty($rb_json_files)) {
 run_event('adm_theme_update', $theme, $post_set_default_skin);
 
 die('');
+
