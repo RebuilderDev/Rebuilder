@@ -351,6 +351,7 @@ function setupResponsiveSlider($rb_slider) {
         sliderEl.classList.remove('rb-swiper-pregrid');
         wrapperEl.style.removeProperty('display');
         wrapperEl.style.removeProperty('grid-template-columns');
+        wrapperEl.style.removeProperty('grid-template-rows');
         wrapperEl.style.removeProperty('grid-auto-flow');
         wrapperEl.style.removeProperty('column-gap');
         wrapperEl.style.removeProperty('row-gap');
@@ -415,12 +416,51 @@ function setupResponsiveSlider($rb_slider) {
         wrapperEl.appendChild(fragment);
     }
 
+    function syncSingleColumnOrder(rows, cols, gap) {
+        const slides = Array.from(wrapperEl.children).filter(function (el) {
+            return el.classList && el.classList.contains('swiper-slide');
+        });
+
+        slides.forEach(function (slide) {
+            slide.style.removeProperty('order');
+            slide.style.removeProperty('-webkit-order');
+            slide.style.removeProperty('-ms-flex-order');
+            slide.style.removeProperty('-moz-box-ordinal-group');
+            slide.style.removeProperty('-webkit-box-ordinal-group');
+        });
+
+        if (cols !== 1 || rows <= 1 || !slides.length) return;
+
+        const pageCount = Math.max(1, Math.ceil(slides.length / rows));
+        slides.forEach(function (slide, index) {
+            const page = Math.floor(index / rows);
+            const row = index % rows;
+            const order = row * pageCount + page;
+            slide.style.order = order;
+            slide.style.webkitOrder = order;
+            slide.style.msFlexOrder = order;
+            slide.style.marginTop = row === 0 || gap <= 0 ? '' : gap + 'px';
+        });
+    }
+
+    function syncColumnLayout(instance) {
+        if (!instance || instance.destroyed) return;
+
+        const rows = Math.max(1, parseInt(instance.params.slidesPerColumn, 10) || 1);
+        instance.params.slidesPerColumnFill = 'row';
+        innerEl.classList.toggle('swiper-container-multirow', rows > 1);
+        innerEl.classList.remove('swiper-container-multirow-column');
+    }
+
     if (swiperInstance && !swiperInstance.destroyed) {
-        syncGridBlanks(
-            Math.max(1, parseInt(swiperInstance.params.slidesPerColumn, 10) || 1),
-            Math.max(1, parseInt(swiperInstance.params.slidesPerView, 10) || 1)
-        );
+        syncColumnLayout(swiperInstance);
+        const currentRows = Math.max(1, parseInt(swiperInstance.params.slidesPerColumn, 10) || 1);
+        const currentCols = Math.max(1, parseInt(swiperInstance.params.slidesPerView, 10) || 1);
+        syncGridBlanks(currentRows, currentCols);
+        const currentGap = Math.max(0, parseFloat(swiperInstance.params.spaceBetween) || 0);
+        syncSingleColumnOrder(currentRows, currentCols, currentGap);
         swiperInstance.update();
+        syncSingleColumnOrder(currentRows, currentCols, currentGap);
         $rb_slider.removeClass('rb-swiper-pending').addClass('rb-swiper-ready');
         return;
     }
@@ -435,8 +475,10 @@ function setupResponsiveSlider($rb_slider) {
     const pcSpeed = Math.max(0, getNumber('pc-speed', getNumber('speed', 400)));
 
     prepareDirectSlides();
-    if (window.innerWidth <= 1024) syncGridBlanks(moRows, moCols);
-    else syncGridBlanks(pcRows, pcCols);
+    const initialRows = window.innerWidth <= 1024 ? moRows : pcRows;
+    const initialCols = window.innerWidth <= 1024 ? moCols : pcCols;
+    syncGridBlanks(initialRows, initialCols);
+    syncSingleColumnOrder(initialRows, initialCols, window.innerWidth <= 1024 ? moGap : pcGap);
 
     swiperInstance = new Swiper(innerEl, {
         slidesPerView: moCols,
@@ -461,6 +503,7 @@ function setupResponsiveSlider($rb_slider) {
             1025: {
                 slidesPerView: pcCols,
                 slidesPerColumn: pcRows,
+                slidesPerColumnFill: 'row',
                 slidesPerGroup: pcCols,
                 spaceBetween: pcGap,
                 touchRatio: $rb_slider.data('pc-swap') == 1 ? 1 : 0,
@@ -468,21 +511,29 @@ function setupResponsiveSlider($rb_slider) {
             },
         },
         on: {
+            init: function () {
+                syncColumnLayout(this);
+            },
             breakpoint: function () {
                 const instance = this;
                 window.requestAnimationFrame(function () {
                     if (!instance || instance.destroyed) return;
-                    syncGridBlanks(
-                        Math.max(1, parseInt(instance.params.slidesPerColumn, 10) || 1),
-                        Math.max(1, parseInt(instance.params.slidesPerView, 10) || 1)
-                    );
+                    syncColumnLayout(instance);
+                    const activeRows = Math.max(1, parseInt(instance.params.slidesPerColumn, 10) || 1);
+                    const activeCols = Math.max(1, parseInt(instance.params.slidesPerView, 10) || 1);
+                    const activeGap = Math.max(0, parseFloat(instance.params.spaceBetween) || 0);
+                    syncGridBlanks(activeRows, activeCols);
+                    syncSingleColumnOrder(activeRows, activeCols, activeGap);
                     instance.update();
+                    syncSingleColumnOrder(activeRows, activeCols, activeGap);
                     instance.slideTo(0, 0, false);
                 });
             },
         },
     });
 
+    syncColumnLayout(swiperInstance);
+    syncSingleColumnOrder(initialRows, initialCols, window.innerWidth <= 1024 ? moGap : pcGap);
     $rb_slider.removeClass('rb-swiper-pending').addClass('rb-swiper-ready');
     $rb_slider.data('rb-swiper-instance', swiperInstance);
     $rb_slider.removeData('rb-swiper-mode');

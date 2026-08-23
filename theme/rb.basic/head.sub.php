@@ -111,6 +111,7 @@ document.documentElement.classList.add('rb-module-spinner-use');
         }
         wrapper.style.display = 'grid';
         wrapper.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
+        wrapper.style.gridTemplateRows = 'repeat(' + rows + ', auto)';
         wrapper.style.gridAutoFlow = 'row';
         wrapper.style.columnGap = gap + 'px';
         wrapper.style.rowGap = gap + 'px';
@@ -511,11 +512,11 @@ add_javascript('<script src="'.G5_JS_URL.'/jquery-migrate-1.4.1.min.js"></script
 
 if(defined('_SHOP_')) {
     if (isset($rb_core['layout_shop'])) {
-        add_javascript('<script src="' . G5_THEME_URL . '/rb.js/rb.layout.shop.js?ver=2.2.7.1"></script>', 0);
+        add_javascript('<script src="' . G5_THEME_URL . '/rb.js/rb.layout.shop.js?ver=2.2.7.5"></script>', 0);
     }
 } else {
     if (isset($rb_core['layout'])) {
-        add_javascript('<script src="' . G5_THEME_URL . '/rb.js/rb.layout.js?ver=2.2.7.1"></script>', 0);
+        add_javascript('<script src="' . G5_THEME_URL . '/rb.js/rb.layout.js?ver=2.2.7.5"></script>', 0);
     }
 }
 
