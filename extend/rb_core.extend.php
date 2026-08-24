@@ -8,7 +8,7 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 //ini_set('display_startup_errors', 1);
 //error_reporting(E_ALL);
 
-define('RB_VER',  '2.2.7'); // 버전
+define('RB_VER',  '2.2.7.2'); // 버전
 define('RB_TABLE_PREFIX', 'rb_'); // 리빌더 접두사
 
 // 헤더 배경색을 실제 표시색으로 합성한 뒤 검정/흰색 중 대비가 높은 색을 선택한다.
@@ -738,11 +738,27 @@ function get_new_ico($bo_table, $ca_name) {
 
 // 전체 URL (SEO)
 function getCurrentUrl() {
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-    $host = $_SERVER['HTTP_HOST'];
-    $requestUri = $_SERVER['REQUEST_URI'];
+    $requestUri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/';
+    if ($requestUri === '' || $requestUri[0] !== '/') {
+        $requestUri = '/'.ltrim($requestUri, '/');
+    }
 
-    return $protocol . $host . $requestUri;
+    // 접속 주소의 www 유무와 관계없이 config.php에 설정된 공식 도메인을 사용합니다.
+    if (defined('G5_URL') && G5_URL) {
+        $scheme = parse_url(G5_URL, PHP_URL_SCHEME);
+        $host = parse_url(G5_URL, PHP_URL_HOST);
+        $port = parse_url(G5_URL, PHP_URL_PORT);
+
+        if ($scheme && $host) {
+            return $scheme.'://'.$host.($port ? ':'.$port : '').$requestUri;
+        }
+    }
+
+    $protocol = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (isset($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443)) ? 'https://' : 'http://';
+    $host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : '';
+
+    return $protocol.$host.$requestUri;
 }
 
 
