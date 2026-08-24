@@ -1,19 +1,31 @@
 <?php
 if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 
+// 정보공개 항목이 실제로 노출된 요청은 코어/소셜 가입 경로와 관계없이 값을 확정합니다.
+// 변경 제한기간에는 폼에 mb_open_default가 없으므로 기존 값을 건드리지 않습니다.
+if (($w === '' || $w === 'u') && isset($_POST['mb_open_default'])) {
+    $rb_mb_open = isset($_POST['mb_open']) && (string) $_POST['mb_open'] === '1' ? 1 : 0;
+    $rb_mb_open_default = (int) $_POST['mb_open_default'] ? 1 : 0;
+    $rb_mb_open_sql = "mb_open = '".$rb_mb_open."'";
+
+    if ($rb_mb_open_default !== $rb_mb_open) {
+        $rb_mb_open_sql .= ", mb_open_date = '".G5_TIME_YMD."'";
+    }
+
+    sql_query("UPDATE {$g5['member_table']}
+                  SET {$rb_mb_open_sql}
+                WHERE mb_id = '".sql_escape_string($mb_id)."'");
+}
+
 // 새 알림 설정 UI가 포함된 회원가입/정보수정 요청만 별도 설정을 저장합니다.
 // 테이블 구조는 빌더가 만들지 않고 공식 홈페이지 API의 DB 업데이트로만 설치합니다.
 if (($w === '' || $w === 'u')
     && isset($_POST['rb_notification_preference_present'])
     && (string) $_POST['rb_notification_preference_present'] === '1'
     && function_exists('rb_notification_save_preference')) {
-    $rb_notification_agree = isset($_POST['rb_notification_agree']) && (string) $_POST['rb_notification_agree'] === '1';
-    $rb_notify_push = $rb_notification_agree
-        && isset($_POST['rb_notify_push'])
-        && (string) $_POST['rb_notify_push'] === '1';
-    $rb_notify_site = $rb_notification_agree
-        && isset($_POST['rb_notify_site'])
-        && (string) $_POST['rb_notify_site'] === '1';
+    // 상위 알림수신 동의는 화면용 묶음 항목이므로 실제 하위 선택값을 기준으로 저장합니다.
+    $rb_notify_push = isset($_POST['rb_notify_push']) && (string) $_POST['rb_notify_push'] === '1';
+    $rb_notify_site = isset($_POST['rb_notify_site']) && (string) $_POST['rb_notify_site'] === '1';
     $rb_category_preferences = array();
     foreach (array('comment', 'reply', 'shop', 'subscribe', 'other') as $rb_notification_type) {
         $rb_post_key = 'rb_notify_'.$rb_notification_type;

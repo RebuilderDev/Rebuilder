@@ -4,6 +4,7 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 // add_stylesheet('css 구문', 출력순서); 숫자가 작을 수록 먼저 출력됨
 add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 0);
 add_javascript('<script src="'.G5_JS_URL.'/jquery.register_form.js"></script>', 0);
+add_javascript('<script src="'.G5_THEME_URL.'/rb.js/rb.member-consent-state.js?v='.G5_JS_VER.'.2271"></script>', 0);
 if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipin'] || $config['cf_cert_hp']))
     add_javascript('<script src="'.G5_JS_URL.'/certify.js?v='.G5_JS_VER.'"></script>', 0);
 
@@ -473,7 +474,7 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
                     <div class="alt_boxs">
                     <?php if (isset($member['mb_open_date']) && $member['mb_open_date'] <= date("Y-m-d", G5_SERVER_TIME - ($config['cf_open_modify'] * 86400)) || empty($member['mb_open_date'])) { // 정보공개 수정일이 지났다면 수정가능 ?>
                         <ul>
-                        <input type="checkbox" name="mb_open" value="1" id="reg_mb_open" <?php echo ($w=='' || $member['mb_open'])?'checked':''; ?>>
+                        <input type="checkbox" name="mb_open" value="1" id="reg_mb_open" <?php echo ($w=='' || $member['mb_open'])?'checked':''; ?> class="selec_chk" data-rb-saved-checked="<?php echo ($w=='' || !empty($member['mb_open'])) ? '1' : '0'; ?>" autocomplete="off">
                         <label for="reg_mb_open">프로필 정보공개 / 쪽지수신 동의</label>
                         <button type="button" class="js-open-consent" data-title="프로필 정보공개 / 쪽지수신 동의" data-template="#tpl_profile_open" data-check="#reg_mb_open" aria-controls="consentDialog">자세히보기</button>
                         <input type="hidden" name="mb_open_default" value="<?php echo $member['mb_open'] ?>">
@@ -501,35 +502,35 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
 
                         <input type="hidden" name="rb_notification_preference_present" value="1">
                         <ul>
-                            <input type="checkbox" name="rb_notification_agree" value="1" id="reg_rb_notification_agree" <?php echo $rb_notification_parent_checked ? 'checked' : ''; ?> class="selec_chk parent-notification">
+                            <input type="checkbox" name="rb_notification_agree" value="1" id="reg_rb_notification_agree" <?php echo $rb_notification_parent_checked ? 'checked' : ''; ?> class="selec_chk parent-notification" data-rb-saved-checked="<?php echo $rb_notification_parent_checked ? '1' : '0'; ?>" autocomplete="off">
                             <label for="reg_rb_notification_agree">알림수신 동의</label>
                             <button type="button" class="js-open-consent" data-title="알림수신 동의" data-template="#tpl_notification" data-check="#reg_rb_notification_agree" data-check-group=".child-notification" aria-controls="consentDialog">자세히보기</button>
                         </ul>
                         <div id="desc_notification" class="sound_only"><?php echo $rb_notification_push_available ? '앱 Push 알림과 사이트 내 알림' : '사이트 내 알림'; ?> 수신에 대한 안내입니다.</div>
                         <?php if ($rb_notification_push_available) { ?>
                         <ul class="desc_sub">
-                            <input type="checkbox" name="rb_notify_push" value="1" id="reg_rb_notify_push" <?php echo $rb_notification_push_checked ? 'checked' : ''; ?> class="selec_chk child-notification">
+                            <input type="checkbox" name="rb_notify_push" value="1" id="reg_rb_notify_push" <?php echo $rb_notification_push_checked ? 'checked' : ''; ?> class="selec_chk child-notification" data-rb-saved-checked="<?php echo $rb_notification_push_checked ? '1' : '0'; ?>" autocomplete="off">
                             <label for="reg_rb_notify_push">앱 Push 알림 동의</label>
                         </ul>
                         <?php } else { ?>
                         <input type="hidden" name="rb_notify_push" value="0">
                         <?php } ?>
                         <ul class="desc_sub">
-                            <input type="checkbox" name="rb_notify_site" value="1" id="reg_rb_notify_site" <?php echo $rb_notification_site_checked ? 'checked' : ''; ?> class="selec_chk child-notification">
+                            <input type="checkbox" name="rb_notify_site" value="1" id="reg_rb_notify_site" <?php echo $rb_notification_site_checked ? 'checked' : ''; ?> class="selec_chk child-notification" data-rb-saved-checked="<?php echo $rb_notification_site_checked ? '1' : '0'; ?>" autocomplete="off">
                             <label for="reg_rb_notify_site">사이트 내 알림 동의</label>
                         </ul>
                         <div class="desc_sub">
                             <ul class="desc_sub">
-                                <input type="checkbox" name="rb_notify_comment" value="1" id="reg_rb_notify_comment" <?php echo $rb_notification_category_checked['notify_comment'] ? 'checked' : ''; ?> class="selec_chk site-notification-option">
+                                <input type="checkbox" name="rb_notify_comment" value="1" id="reg_rb_notify_comment" <?php echo $rb_notification_category_checked['notify_comment'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_comment'] ? '1' : '0'; ?>" autocomplete="off">
                                 <label for="reg_rb_notify_comment">댓글 알림</label>
                             </ul>
                             <ul class="desc_sub">
-                                <input type="checkbox" name="rb_notify_reply" value="1" id="reg_rb_notify_reply" <?php echo $rb_notification_category_checked['notify_reply'] ? 'checked' : ''; ?> class="selec_chk site-notification-option">
+                                <input type="checkbox" name="rb_notify_reply" value="1" id="reg_rb_notify_reply" <?php echo $rb_notification_category_checked['notify_reply'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_reply'] ? '1' : '0'; ?>" autocomplete="off">
                                 <label for="reg_rb_notify_reply">대댓글 알림</label>
                             </ul>
                             <?php if ($rb_notification_shop_available) { ?>
                             <ul class="desc_sub">
-                                <input type="checkbox" name="rb_notify_shop" value="1" id="reg_rb_notify_shop" <?php echo $rb_notification_category_checked['notify_shop'] ? 'checked' : ''; ?> class="selec_chk site-notification-option">
+                                <input type="checkbox" name="rb_notify_shop" value="1" id="reg_rb_notify_shop" <?php echo $rb_notification_category_checked['notify_shop'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_shop'] ? '1' : '0'; ?>" autocomplete="off">
                                 <label for="reg_rb_notify_shop">쇼핑 알림</label>
                             </ul>
                             <?php } else { ?>
@@ -537,14 +538,14 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
                             <?php } ?>
                             <?php if ($rb_notification_subscribe_available) { ?>
                             <ul class="desc_sub">
-                                <input type="checkbox" name="rb_notify_subscribe" value="1" id="reg_rb_notify_subscribe" <?php echo $rb_notification_category_checked['notify_subscribe'] ? 'checked' : ''; ?> class="selec_chk site-notification-option">
+                                <input type="checkbox" name="rb_notify_subscribe" value="1" id="reg_rb_notify_subscribe" <?php echo $rb_notification_category_checked['notify_subscribe'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_subscribe'] ? '1' : '0'; ?>" autocomplete="off">
                                 <label for="reg_rb_notify_subscribe">구독 알림</label>
                             </ul>
                             <?php } else { ?>
                             <input type="hidden" name="rb_notify_subscribe" value="0">
                             <?php } ?>
                             <ul class="desc_sub">
-                                <input type="checkbox" name="rb_notify_other" value="1" id="reg_rb_notify_other" <?php echo $rb_notification_category_checked['notify_other'] ? 'checked' : ''; ?> class="selec_chk site-notification-option">
+                                <input type="checkbox" name="rb_notify_other" value="1" id="reg_rb_notify_other" <?php echo $rb_notification_category_checked['notify_other'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_other'] ? '1' : '0'; ?>" autocomplete="off">
                                 <label for="reg_rb_notify_other">기타 알림</label>
                             </ul>
                         </div>
@@ -588,7 +589,7 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
 
                                 <!-- (선택) 광고성 정보 수신 동의 (상위) -->
                                 <ul class="">
-                                        <input type="checkbox" name="mb_marketing_agree" value="1" id="reg_mb_marketing_agree" aria-describedby="desc_marketing" <?php echo !empty($member['mb_marketing_agree']) ? 'checked' : ''; ?> class="selec_chk marketing-sync">
+                                        <input type="checkbox" name="mb_marketing_agree" value="1" id="reg_mb_marketing_agree" aria-describedby="desc_marketing" <?php echo !empty($member['mb_marketing_agree']) ? 'checked' : ''; ?> class="selec_chk marketing-sync" data-rb-saved-checked="<?php echo !empty($member['mb_marketing_agree']) ? '1' : '0'; ?>" autocomplete="off">
                                         <label for="reg_mb_marketing_agree">(선택) 마케팅 목적의 개인정보 수집 및 이용</label>
                                         <button type="button" class="js-open-consent" data-title="마케팅 목적의 개인정보 수집 및 이용" data-template="#tpl_marketing" data-check="#reg_mb_marketing_agree" aria-controls="consentDialog">자세히보기</button>
                                 </ul>
@@ -607,7 +608,7 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
                                 </template>
 
                                 <ul class="">
-                                    <input type="checkbox" name="mb_promotion_agree" value="1" id="reg_mb_promotion_agree" aria-describedby="desc_promotion" class="selec_chk marketing-sync parent-promo">
+                                    <input type="checkbox" name="mb_promotion_agree" value="1" id="reg_mb_promotion_agree" aria-describedby="desc_promotion" <?php echo (!empty($member['mb_mailling']) || !empty($member['mb_sms'])) ? 'checked' : ''; ?> class="selec_chk marketing-sync parent-promo" data-rb-saved-checked="<?php echo (!empty($member['mb_mailling']) || !empty($member['mb_sms'])) ? '1' : '0'; ?>" autocomplete="off">
                                     <label for="reg_mb_promotion_agree">(선택) 광고성 정보 수신 동의</label>
                                     <button type="button" class="js-open-consent" data-title="광고성 정보 수신 동의" data-template="#tpl_promotion" data-check="#reg_mb_promotion_agree" data-check-group=".child-promo" aria-controls="consentDialog">자세히보기</button>
                                 </ul>
@@ -615,7 +616,7 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
 
                                 <!-- 하위 채널(이메일/SMS) -->
                                 <ul class="desc_sub">
-                                    <input type="checkbox" name="mb_mailling" value="1" id="reg_mb_mailling" <?php echo !empty($member['mb_mailling']) ? 'checked' : ''; ?> class="selec_chk child-promo">
+                                    <input type="checkbox" name="mb_mailling" value="1" id="reg_mb_mailling" <?php echo !empty($member['mb_mailling']) ? 'checked' : ''; ?> class="selec_chk child-promo" data-rb-saved-checked="<?php echo !empty($member['mb_mailling']) ? '1' : '0'; ?>" autocomplete="off">
                                     <label for="reg_mb_mailling">광고성 이메일 수신 동의</label>
                                 </ul>
                                 <input type="hidden" name="mb_mailling_default" value="<?php echo isset($member['mb_mailling']) ? htmlspecialchars((string)$member['mb_mailling'], ENT_QUOTES, 'UTF-8') : ''; ?>">
@@ -629,7 +630,7 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
                                 <!-- 휴대폰번호 입력 보이기 or 필수입력일 경우에만 -->
                                 <?php if (!empty($config['cf_use_hp']) || !empty($config['cf_req_hp']) || !empty($app['ap_title']) && !empty($app['ap_key']) && !empty($app['ap_pid'])) { ?>
                                 <ul class="desc_sub">
-                                    <input type="checkbox" name="mb_sms" value="1" id="reg_mb_sms" <?php echo !empty($member['mb_sms']) ? 'checked' : ''; ?> class="selec_chk child-promo">
+                                    <input type="checkbox" name="mb_sms" value="1" id="reg_mb_sms" <?php echo !empty($member['mb_sms']) ? 'checked' : ''; ?> class="selec_chk child-promo" data-rb-saved-checked="<?php echo !empty($member['mb_sms']) ? '1' : '0'; ?>" autocomplete="off">
                                     <label for="reg_mb_sms">광고성 SMS / 알림톡 수신동의</label>
                                 </ul>
                                 <input type="hidden" name="mb_sms_default" value="<?php echo isset($member['mb_sms']) ? htmlspecialchars((string)$member['mb_sms'], ENT_QUOTES, 'UTF-8') : ''; ?>">
@@ -662,7 +663,7 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
 
                                 <?php if (!empty($usedCompanies)) { ?>
                                 <ul class="">
-                                    <input type="checkbox" name="mb_thirdparty_agree" value="1" id="reg_mb_thirdparty_agree" aria-describedby="desc_thirdparty" <?php echo !empty($member['mb_thirdparty_agree']) ? 'checked' : ''; ?> class="selec_chk marketing-sync">
+                                    <input type="checkbox" name="mb_thirdparty_agree" value="1" id="reg_mb_thirdparty_agree" aria-describedby="desc_thirdparty" <?php echo !empty($member['mb_thirdparty_agree']) ? 'checked' : ''; ?> class="selec_chk marketing-sync" data-rb-saved-checked="<?php echo !empty($member['mb_thirdparty_agree']) ? '1' : '0'; ?>" autocomplete="off">
                                     <label for="reg_mb_thirdparty_agree">(선택) 개인정보 제3자 제공 동의</label>
                                     <button type="button" class="js-open-consent" data-title="개인정보 제3자 제공 동의" data-template="#tpl_thirdparty" data-check="#reg_mb_thirdparty_agree" aria-controls="consentDialog">자세히보기</button>
                                 </ul>
@@ -703,7 +704,7 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
 
                 <li>
                     <div class="btn_confirm">
-                        <button type="submit" class="btn_submit font-B" accesskey="s"><?php echo $w==''?'회원가입':'정보수정'; ?></button>
+                        <button type="submit" id="btn_submit" class="btn_submit font-B" accesskey="s"><?php echo $w==''?'회원가입':'정보수정'; ?></button>
 
                         <?php if($w == 'u') { ?>
                         <button type="button" class="btn_submit font-B mt-10" onclick="javascript:member_leaves();" style="background-color:#f1f1f1 !important; color:#000;">회원탈퇴</button>

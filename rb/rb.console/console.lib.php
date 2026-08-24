@@ -3,6 +3,37 @@ if (!defined('_GNUBOARD_')) exit;
 
 if (!defined('RB_BUSINESS_CONSOLE_VERSION')) define('RB_BUSINESS_CONSOLE_VERSION', '1.0.0');
 
+function rb_console_alert_output_clear()
+{
+    global $rb_console_alert_buffer_level;
+
+    if (!isset($rb_console_alert_buffer_level)) return;
+    while (ob_get_level() > (int) $rb_console_alert_buffer_level) {
+        ob_end_clean();
+    }
+}
+
+function rb_console_alert_output_start()
+{
+    global $rb_console_alert_buffer_level;
+
+    if (isset($rb_console_alert_buffer_level)) return;
+    $rb_console_alert_buffer_level = ob_get_level();
+    ob_start();
+    add_event('alert', 'rb_console_alert_output_clear', 999, 0);
+}
+
+function rb_console_alert_output_finish()
+{
+    global $rb_console_alert_buffer_level;
+
+    if (!isset($rb_console_alert_buffer_level)) return;
+    while (ob_get_level() > (int) $rb_console_alert_buffer_level) {
+        ob_end_flush();
+    }
+    unset($rb_console_alert_buffer_level);
+}
+
 function rb_console_h($value)
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');

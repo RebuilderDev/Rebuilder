@@ -83,18 +83,30 @@ if ($w == "")
 {
     $html_title .= "입력";
 
-    // 옵션은 쿠키에 저장된 값을 보여줌. 다음 입력을 위한것임
-    //$it[ca_id] = _COOKIE[ck_ca_id];
-    $it['ca_id'] = get_cookie("ck_ca_id");
-    $it['ca_id2'] = get_cookie("ck_ca_id2");
-    $it['ca_id3'] = get_cookie("ck_ca_id3");
-    if (!$it['ca_id'])
-    {
-        $sql = " select ca_id from {$g5['g5_shop_category_table']} order by ca_order, ca_id limit 1 ";
-        $row = sql_fetch($sql);
-        if (! (isset($row['ca_id']) && $row['ca_id']))
-            alert("등록된 분류가 없습니다. 우선 분류를 등록하여 주십시오.", G5_ADMIN_URL.'/shop_admin/categorylist.php');
-        $it['ca_id'] = $row['ca_id'];
+    // 쿠키에는 삭제된 분류번호가 남을 수 있으므로 반드시 DB에 존재하는지 확인한다.
+    $cookie_ca_id = preg_replace('/[^0-9a-z]/i', '', (string) get_cookie('ck_ca_id'));
+    $row = array();
+    if ($cookie_ca_id !== '') {
+        $row = sql_fetch(" select ca_id from {$g5['g5_shop_category_table']} where ca_id = '".sql_real_escape_string($cookie_ca_id)."' limit 1 ");
+    }
+    if (empty($row['ca_id'])) {
+        $row = sql_fetch(" select ca_id from {$g5['g5_shop_category_table']} order by ca_order, ca_id limit 1 ");
+    }
+    if (empty($row['ca_id'])) {
+        alert('등록된 분류가 없습니다.', G5_ADMIN_URL.'/shop_admin/categorylist.php');
+    }
+    $it['ca_id'] = $row['ca_id'];
+
+    $it['ca_id2'] = '';
+    $it['ca_id3'] = '';
+    foreach (array('ca_id2', 'ca_id3') as $cookie_category_key) {
+        $cookie_category_id = preg_replace('/[^0-9a-z]/i', '', (string) get_cookie('ck_'.$cookie_category_key));
+        if ($cookie_category_id === '') continue;
+
+        $cookie_category = sql_fetch(" select ca_id from {$g5['g5_shop_category_table']} where ca_id = '".sql_real_escape_string($cookie_category_id)."' limit 1 ");
+        if (!empty($cookie_category['ca_id'])) {
+            $it[$cookie_category_key] = $cookie_category['ca_id'];
+        }
     }
     //$it[it_maker]  = stripslashes($_COOKIE[ck_maker]);
     //$it[it_origin] = stripslashes($_COOKIE[ck_origin]);

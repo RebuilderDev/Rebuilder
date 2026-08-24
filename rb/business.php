@@ -13,6 +13,7 @@ $route = isset($_GET['route']) ? preg_replace('/[^a-z0-9._-]/i', '', $_GET['rout
 if ($route === '') $route = preg_replace('/[^a-z0-9._-]/i', '', $console_config['bc_default_route']);
 if (!isset($rb_console_registry[$route])) $route = isset($rb_console_registry['dashboard']) ? 'dashboard' : key($rb_console_registry);
 if (!$route || !isset($rb_console_registry[$route])) alert('이용 가능한 비즈니스 메뉴가 없습니다.', G5_URL);
+rb_console_alert_output_start();
 $rb_console_current = $rb_console_registry[$route];
 $rb_console_context['route'] = $route;
 $rb_console_context['current'] = $rb_console_current;
@@ -23,3 +24,4 @@ if ($route !== 'dashboard') echo '<div class="container_wr">';
 call_user_func($rb_console_current['callback'], $rb_console_context);
 if ($route !== 'dashboard') echo '</div>';
 include_once(G5_PATH.'/rb/rb.console/console.tail.php');
+rb_console_alert_output_finish();

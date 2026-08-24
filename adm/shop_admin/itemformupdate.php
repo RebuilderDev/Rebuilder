@@ -22,6 +22,23 @@ $ca_id = isset($_POST['ca_id']) ? preg_replace('/[^0-9a-z]/i', '', $_POST['ca_id
 $ca_id2 = isset($_POST['ca_id2']) ? preg_replace('/[^0-9a-z]/i', '', $_POST['ca_id2']) : '';
 $ca_id3 = isset($_POST['ca_id3']) ? preg_replace('/[^0-9a-z]/i', '', $_POST['ca_id3']) : '';
 
+// 화면 검사를 우회한 직접 요청도 실제 등록된 분류가 없으면 저장하지 않는다.
+if ($w === '' || $w === 'u') {
+    $category = sql_fetch(" select ca_id from {$g5['g5_shop_category_table']} where ca_id = '".sql_real_escape_string($ca_id)."' limit 1 ");
+    if (empty($category['ca_id'])) {
+        alert($w === '' ? '등록된 분류가 없습니다.' : '선택한 분류가 존재하지 않습니다.');
+    }
+
+    foreach (array('ca_id2', 'ca_id3') as $category_key) {
+        if (${$category_key} === '') continue;
+
+        $sub_category = sql_fetch(" select ca_id from {$g5['g5_shop_category_table']} where ca_id = '".sql_real_escape_string(${$category_key})."' limit 1 ");
+        if (empty($sub_category['ca_id'])) {
+            ${$category_key} = '';
+        }
+    }
+}
+
 if ($is_admin != 'super') {     // 최고관리자가 아니면 체크
     if( $w === '' ){
         $sql = "select ca_mb_id from {$g5['g5_shop_category_table']} where ca_id = '$ca_id'";
