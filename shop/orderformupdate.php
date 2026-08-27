@@ -176,6 +176,11 @@ if($is_member) {
     for($i=0; $i<$it_cp_cnt; $i++) {
         $cid = isset($_POST['cp_id'][$i]) ? safe_replace_regex($_POST['cp_id'][$i], 'cp_id') : '';
         $it_id = isset($rb_order_post_it_ids[$i]) ? safe_replace_regex($rb_order_post_it_ids[$i], 'it_id') : '';
+
+        // 한 상품에는 상품쿠폰 하나만 적용 (동일 상품 반복 전송 무시)
+        if(isset($arr_it_cp_prc[$it_id]))
+            continue;
+
         $sql = " select cp_id, cp_method, cp_target, cp_type, cp_price, cp_trunc, cp_minimum, cp_maximum
                     from {$g5['g5_shop_coupon_table']}
                     where cp_id = '$cid'
@@ -749,7 +754,7 @@ $exists_order = sql_fetch($exists_sql);
 // 주문정보 입력 오류시 결제 취소
 if(! $result || ! (isset($exists_order['od_id']) && $od_id && $exists_order['od_id'] === $od_id)) {
     if($tno) {
-        $cancel_msg = '주문정보 입력 오류 : '.$sql;
+        $cancel_msg = '주문정보 입력 오류';
         include G5_SHOP_PATH.'/cancel_pg.inc.php';
     }
 
@@ -877,10 +882,15 @@ $od_memo = nl2br(htmlspecialchars2(stripslashes($od_memo))) . "&nbsp;";
 $coupon_duplicate = false;
 if($is_member) {
     $it_cp_cnt = (isset($_POST['cp_id']) && is_array($_POST['cp_id'])) ? count($_POST['cp_id']) : 0;
+    $arr_it_cp_logged = array();
     for($i=0; $i<$it_cp_cnt; $i++) {
         $cid = isset($_POST['cp_id'][$i]) ? safe_replace_regex($_POST['cp_id'][$i], 'cp_id') : '';
         $cp_it_id = isset($_POST['it_id'][$i]) ? safe_replace_regex($_POST['it_id'][$i], 'it_id') : '';
         $cp_prc = isset($arr_it_cp_prc[$cp_it_id]) ? (int) $arr_it_cp_prc[$cp_it_id] : 0;
+
+        // 한 상품에는 상품쿠폰 하나만 기록 (동일 상품 반복 전송 무시)
+        if(isset($arr_it_cp_logged[$cp_it_id]))
+            continue;
 
         if(trim($cid)) {
 
@@ -904,6 +914,8 @@ if($is_member) {
                 $coupon_duplicate = true;
                 break;
             }
+
+            $arr_it_cp_logged[$cp_it_id] = true;
         }
 
         // 쿠폰사용금액 cart에 기록

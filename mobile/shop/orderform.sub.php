@@ -1286,7 +1286,7 @@ function calculate_order_price()
     var send_coupon = parseInt($("input[name=od_send_coupon]").val());
     var tot_price = sell_price + send_cost + send_cost2 - send_coupon;
 
-    $("form[name=sm_form] input[name=good_mny]").val(tot_price);
+    $("form[name=sm_form] input[name=good_mny], form[name=forderform] input[name=good_mny]").val(tot_price);
     $("#od_tot_price").text(number_format(String(tot_price)));
     <?php if($temp_point > 0 && $is_member) { ?>
     calculate_temp_point();
@@ -1405,6 +1405,9 @@ function pay_approval()
         var send_coupon = pf.od_send_coupon ? (parseInt(pf.od_send_coupon.value) || 0) : 0;
         if (f.good_mny) {
             f.good_mny.value = od_price + send_cost + send_cost2 - send_coupon - temp_point;
+        }
+        if (pf.good_mny && f.good_mny) {
+            pf.good_mny.value = f.good_mny.value;
         }
     }
 
@@ -1700,9 +1703,6 @@ function pay_approval()
         f.TaxFreeAmt.value = pf.comm_free_mny.value;
         <?php } ?>
 
-        if (! nicepay_create_signdata(f)) {
-            return false;
-        }
         <?php } ?>
 
         // 주문 정보 임시저장
@@ -1729,6 +1729,10 @@ function pay_approval()
         <?php } ?>
 
         <?php if ($default['de_pg_service'] == 'nicepay') { ?>
+        if (! nicepay_create_signdata(f)) {
+            return false;
+        }
+
         nicepayStart(f);
         return false;
         <?php } ?>

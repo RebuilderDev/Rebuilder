@@ -7,9 +7,15 @@ auth_check_menu($auth, $sub_menu, "w");
 check_admin_token();
 
 $od_id = isset($_POST['od_id']) ? safe_replace_regex($_POST['od_id'], 'od_id') : '';
-$ct_status = isset($_POST['ct_status']) ? trim((string)$_POST['ct_status']) : '';
+$ct_status = isset($_POST['ct_status']) ? trim(clean_xss_tags($_POST['ct_status'], 1, 1)) : '';
+if ($ct_status === '' && isset($_POST['submit_ct_status'])) {
+    $ct_status = trim(clean_xss_tags($_POST['submit_ct_status'], 1, 1));
+}
 $mb_id = isset($_POST['mb_id']) ? trim((string)$_POST['mb_id']) : '';
-$pg_cancel = isset($_POST['pg_cancel']) ? (int)$_POST['pg_cancel'] : 0;
+$pg_cancel = isset($_POST['pg_cancel']) ? (int) $_POST['pg_cancel'] : 0;
+$nicepay_refund_acct_no = isset($_POST['RefundAcctNo']) ? preg_replace('/[^0-9]/', '', $_POST['RefundAcctNo']) : '';
+$nicepay_refund_bank_cd = isset($_POST['RefundBankCd']) ? preg_replace('/[^0-9]/', '', $_POST['RefundBankCd']) : '';
+$nicepay_refund_acct_nm = isset($_POST['RefundAcctNm']) ? trim(clean_xss_tags($_POST['RefundAcctNm'], 1, 1)) : '';
 
 $ct_chk_count = isset($_POST['ct_chk']) ? count($_POST['ct_chk']) : 0;
 if(!$ct_chk_count)
@@ -148,6 +154,38 @@ if (in_array($_POST['ct_status'], $status_cancel)) {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+if ($pg_cancel === 1 && in_array($ct_status, $status_cancel)) {
+    $nicepay_refund_order = sql_fetch(" select od_id, od_pg, od_settle_case, od_status, od_receipt_price from {$g5['g5_shop_order_table']} where od_id = '$od_id' ");
+
+    if (isset($nicepay_refund_order['od_id']) && $nicepay_refund_order['od_pg'] === 'nicepay' && $nicepay_refund_order['od_settle_case'] === '가상계좌' && is_cancel_shop_pg_order($nicepay_refund_order)) {
+        $nicepay_refund_required = ((int) $nicepay_refund_order['od_receipt_price'] > 0);
+        $nicepay_refund_inputted = ($nicepay_refund_acct_no !== '' || $nicepay_refund_bank_cd !== '' || $nicepay_refund_acct_nm !== '');
+
+        if (!$nicepay_refund_required && !$nicepay_refund_inputted) {
+            $nicepay_refund_acct_no = '';
+            $nicepay_refund_bank_cd = '';
+            $nicepay_refund_acct_nm = '';
+        } else {
+            if ($nicepay_refund_acct_no === '' || strlen($nicepay_refund_acct_no) > 16) {
+                alert('나이스페이 가상계좌 취소를 위해 환불계좌번호를 숫자 16자리 이하로 입력해 주십시오.');
+            }
+
+            if (!preg_match('/^[0-9]{3}$/', $nicepay_refund_bank_cd)) {
+                alert('나이스페이 가상계좌 취소를 위해 환불계좌코드를 숫자 3자리로 입력해 주십시오.');
+            }
+
+            if ($nicepay_refund_acct_nm === '') {
+                alert('나이스페이 가상계좌 취소를 위해 환불계좌주명을 입력해 주십시오.');
+            }
+
+            $nicepay_refund_acct_nm_euckr = function_exists('iconv') ? @iconv('UTF-8', 'EUC-KR//IGNORE', $nicepay_refund_acct_nm) : $nicepay_refund_acct_nm;
+            if (strlen($nicepay_refund_acct_nm_euckr) > 10) {
+                alert('나이스페이 환불계좌주명은 10 byte 이하로 입력해 주십시오.');
             }
         }
     }
@@ -359,7 +397,7 @@ if(is_array($arr_it_id) && !empty($arr_it_id)) {
 
 // 장바구니 상품 모두 취소일 경우 주문상태 변경
 $cancel_change = false;
-if (in_array($_POST['ct_status'], $status_cancel)) {
+if (in_array($ct_status, $status_cancel)) {
     $sql = " select count(*) as od_count1,
                     SUM(IF(ct_status = '취소' OR ct_status = '반품' OR ct_status = '품절', 1, 0)) as od_count2
                 from {$g5['g5_shop_cart_table']}
@@ -444,17 +482,24 @@ if (in_array($_POST['ct_status'], $status_cancel)) {
 
                         $tno = $od['od_tno'];
 
-                        $cancelAmt = $od['od_receipt_price'];
+                        $cancelAmt = (int)$od['od_receipt_price'];
+                        if($od['od_settle_case'] == '가상계좌' && $od['od_status'] == '주문' && $cancelAmt == 0)
+                            $cancelAmt = (int)$od['od_misu'];
 
                         // 0:전체 취소, 1:부분 취소(별도 계약 필요)
                         $partialCancelCode = 0;
 
+                        if($cancelAmt <= 0) {
+                            $pg_res_cd = 'NO_CANCEL_AMT';
+                            $pg_res_msg = '취소 요청금액이 없습니다.';
+                            break;
+                        }
 
                         include G5_SHOP_PATH.'/nicepay/cancel_process.php';
 
                         if (isset($result['ResultCode'])) {
                             // 실패했다면
-                            if ($result['ResultCode'] !== '2001') {
+                            if (! in_array($result['ResultCode'], array('2001', '2211'), true)) {
                                 $pg_res_cd = $result['ResultCode'];
                                 $pg_res_msg = $result['ResultMsg'];
                             }
@@ -526,7 +571,7 @@ if (in_array($_POST['ct_status'], $status_cancel)) {
         }
 
         // 관리자 주문취소 로그
-        $mod_history .= G5_TIME_YMDHIS.' '.$member['mb_id'].' 주문'.$_POST['ct_status'].' 처리'.$pg_cancel_log."\n";
+        $mod_history .= G5_TIME_YMDHIS.' '.$member['mb_id'].' 주문'.$ct_status.' 처리'.$pg_cancel_log."\n";
     }
 }
 

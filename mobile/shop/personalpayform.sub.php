@@ -334,10 +334,6 @@ function pay_approval()
     f.TaxFreeAmt.value = pf.comm_free_mny.value;
     <?php } ?>
 
-    if (! nicepay_create_signdata(f)) {
-        return false;
-    }
-
     <?php } ?>
 
     //var new_win = window.open("about:blank", "tar_opener", "scrollbars=yes,resizable=yes");
@@ -367,6 +363,10 @@ function pay_approval()
     <?php } ?>
 
     <?php if($default['de_pg_service'] == 'nicepay') { ?>
+        if (! nicepay_create_signdata(f)) {
+            return false;
+        }
+
         nicepayStart(f);
 
         return;
