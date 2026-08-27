@@ -84,10 +84,11 @@ $(document).ready(function () {
         });
     }
 
+    packModulesIntoSectionsOnce();
+
     var layoutRoot = document.querySelector('.flex_box');
     var hasServerRenderedModules = layoutRoot && layoutRoot.querySelector(':scope > .rb_layout_box, :scope > .rb_section_box');
     if (hasServerRenderedModules) {
-        packModulesIntoSectionsOnce();
         processFlexBoxesOnce($(layoutRoot), function () {
             finalizeLayoutReady();
         });

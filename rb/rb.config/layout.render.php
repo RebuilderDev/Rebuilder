@@ -148,6 +148,7 @@ if (!function_exists('rb_prime_server_layouts')) {
             . 'var source=w.rbServerLayoutMap||{};'
             . 'var fill=function(node){'
             . 'if(!node||node.nodeType!==1||!node.matches||!node.matches(".flex_box[data-layout]:not([data-layout-loaded])"))return;'
+            . 'if(node.closest(".rb_section_box"))return;'
             . 'var key=node.getAttribute("data-layout")||"";'
             . 'if(!Object.prototype.hasOwnProperty.call(source,key))return;'
             . 'node.setAttribute("data-layout-loaded","1");'
