@@ -18,7 +18,7 @@ function rb_notification_admin_member_form_add($mb, $w, $position)
         'push' => array('앱 Push 알림 동의', !empty($preference['notify_push'])),
         'site' => array('사이트 내 알림 동의', !empty($preference['notify_site'])),
         'comment' => array('댓글 알림', !empty($preference['notify_comment'])),
-        'reply' => array('대댓글 알림', !empty($preference['notify_reply'])),
+        'reply' => array('답글·대댓글 알림', !empty($preference['notify_reply'])),
         'shop' => array('쇼핑 알림', !empty($preference['notify_shop'])),
         'subscribe' => array('구독 알림', !empty($preference['notify_subscribe'])),
         'other' => array('기타 알림', !empty($preference['notify_other'])),

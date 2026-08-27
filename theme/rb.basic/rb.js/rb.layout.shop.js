@@ -318,9 +318,29 @@ function initializeAllSliders($scope) {
 
     $root.find('.rb_swiper').addBack('.rb_swiper').each(function () {
         const $slider = $(this);
-        if ($slider.data('rb-swiper-queued')) return;
-        $slider.data('rb-swiper-queued', true);
-        setupResponsiveSlider($slider);
+        if ($slider.data('rb-swiper-initializing')) return;
+
+        $slider.data('rb-swiper-initializing', true);
+        const result = setupResponsiveSlider($slider);
+        $slider.removeData('rb-swiper-initializing');
+
+        if (result === true) {
+            $slider.data('rb-swiper-queued', true).removeData('rb-swiper-retry-count');
+            return;
+        }
+
+        $slider.removeData('rb-swiper-queued');
+
+        // 라이브러리 로딩 순서가 늦은 경우에만 제한적으로 재시도합니다.
+        if (result === false) {
+            const retryCount = parseInt($slider.data('rb-swiper-retry-count'), 10) || 0;
+            if (retryCount < 20) {
+                $slider.data('rb-swiper-retry-count', retryCount + 1);
+                window.setTimeout(function () {
+                    initializeAllSliders($slider);
+                }, 50);
+            }
+        }
     });
 }
 
@@ -337,224 +357,134 @@ function refreshStandaloneSwipers($scope) {
     });
 }
 
-function setupResponsiveSlider($rb_slider) {
-    let swiperInstance = $rb_slider.data('rb-swiper-instance') || null;
-    const sliderEl = $rb_slider[0];
+function rbModuleSwiperMode() {
+    return window.innerWidth <= 1024 ? 'mo' : 'pc';
+}
+
+function rbModuleSwiperIsVisible(element) {
+    if (!element) return false;
+    return element.getClientRects().length > 0;
+}
+
+function setupResponsiveSlider($rb_slider, forceRebuild) {
+    const sliderEl = $rb_slider && $rb_slider.length ? $rb_slider[0] : null;
     const innerEl = sliderEl ? sliderEl.querySelector('.rb_swiper_inner') : null;
     const wrapperEl = sliderEl ? sliderEl.querySelector('.rb-swiper-wrapper') : null;
-    const nextEl = sliderEl ? sliderEl.querySelector('.rb-swiper-next') : null;
-    const prevEl = sliderEl ? sliderEl.querySelector('.rb-swiper-prev') : null;
 
-    if (!innerEl || !wrapperEl || typeof Swiper !== 'function') return;
+    if (!sliderEl || !innerEl || !wrapperEl) return false;
+    if (!rbModuleSwiperIsVisible(sliderEl)) return null;
+    if (typeof Swiper !== 'function' || typeof window.rbBuildSwiperPages !== 'function') return false;
+
+    const mode = rbModuleSwiperMode();
+    const state = $rb_slider.data('rb-module-swiper-state') || null;
+
+    if (!forceRebuild && state && state.mode === mode && state.instance && !state.instance.destroyed) {
+        state.instance.update();
+        $rb_slider
+            .removeClass('rb-swiper-pending rb-swiper-pregrid rb-swiper-spinner-timeout')
+            .addClass('rb-swiper-ready')
+            .data('rb-swiper-queued', true);
+        return true;
+    }
+
+    if (state && state.instance && !state.instance.destroyed) {
+        state.instance.destroy(true, true);
+    }
+
+    if (innerEl.swiper && (!state || innerEl.swiper !== state.instance) && !innerEl.swiper.destroyed) {
+        innerEl.swiper.destroy(true, true);
+    }
+
+    $rb_slider.removeData('rb-module-swiper-state').removeData('rb-swiper-instance');
+
+    const pageInfo = window.rbBuildSwiperPages(sliderEl, {
+        mode: mode,
+        force: true,
+        pregrid: false,
+    });
+
+    if (!pageInfo) {
+        // 게시물이 없는 모듈은 no_data 영역을 그대로 노출합니다.
+        if (!wrapperEl.querySelector('.rb_swiper_list')) {
+            $rb_slider
+                .removeClass('rb-swiper-pending rb-swiper-pregrid rb-swiper-spinner-timeout')
+                .addClass('rb-swiper-ready')
+                .data('rb-swiper-queued', true);
+            return true;
+        }
+        return false;
+    }
 
     function getNumber(name, fallback) {
-        const value = parseInt($rb_slider.data(name), 10);
+        const value = parseInt($rb_slider.attr('data-' + name), 10);
         return Number.isFinite(value) ? value : fallback;
     }
 
-    function prepareDirectSlides() {
-        sliderEl.classList.remove('rb-swiper-pregrid');
-        wrapperEl.style.removeProperty('display');
-        wrapperEl.style.removeProperty('grid-template-columns');
-        wrapperEl.style.removeProperty('grid-template-rows');
-        wrapperEl.style.removeProperty('grid-auto-flow');
-        wrapperEl.style.removeProperty('column-gap');
-        wrapperEl.style.removeProperty('row-gap');
-        wrapperEl.style.removeProperty('transform');
-        wrapperEl.style.removeProperty('transition');
+    const manualSwipe = $rb_slider.attr('data-' + mode + '-swap') == '1';
+    const speed = Math.max(0, getNumber(mode + '-speed', getNumber('speed', 400)));
+    const nextEl = sliderEl.querySelector('.rb-swiper-next');
+    const prevEl = sliderEl.querySelector('.rb-swiper-prev');
 
-        wrapperEl.querySelectorAll('.rb-swiper-grid-blank').forEach(function (el) {
-            el.remove();
-        });
-
-        wrapperEl.querySelectorAll('.swiper-slide-duplicate').forEach(function (el) {
-            el.remove();
-        });
-
-        // 이전 버전에서 생성한 페이지 단위 슬라이드가 남아 있으면 한 번만 원상 복구합니다.
-        Array.from(wrapperEl.children).forEach(function (child) {
-            if (!child.classList || !child.classList.contains('rb-swiper-slide')) return;
-            while (child.firstChild) {
-                wrapperEl.insertBefore(child.firstChild, child);
-            }
-            child.remove();
-        });
-
-        Array.from(wrapperEl.children).forEach(function (listEl) {
-            if (!listEl.classList || !listEl.classList.contains('rb_swiper_list')) return;
-            listEl.classList.add('swiper-slide');
-            listEl.style.removeProperty('display');
-            listEl.style.removeProperty('width');
-            listEl.style.removeProperty('min-width');
-            listEl.style.removeProperty('margin-right');
-            listEl.style.removeProperty('margin-top');
-            listEl.style.removeProperty('order');
-            listEl.style.removeProperty('-webkit-order');
-            listEl.style.removeProperty('-ms-flex-order');
-            listEl.style.removeProperty('-moz-box-ordinal-group');
-            listEl.style.removeProperty('-webkit-box-ordinal-group');
-        });
-    }
-
-    function getRealSlides() {
-        return Array.from(wrapperEl.children).filter(function (el) {
-            return el.classList && el.classList.contains('rb_swiper_list');
-        });
-    }
-
-    function getEffectiveRows(rows, cols, slideCount) {
-        const safeRows = Math.max(1, parseInt(rows, 10) || 1);
-        const safeCols = Math.max(1, parseInt(cols, 10) || 1);
-        const safeCount = Math.max(0, parseInt(slideCount, 10) || 0);
-
-        if (!safeCount) return 1;
-        return Math.max(1, Math.min(safeRows, Math.ceil(safeCount / safeCols)));
-    }
-
-    function syncGridBlanks(rows, cols) {
-        wrapperEl.querySelectorAll('.rb-swiper-grid-blank').forEach(function (el) {
-            el.remove();
-        });
-
-        const realSlides = getRealSlides();
-        const effectiveRows = getEffectiveRows(rows, cols, realSlides.length);
-        const pageSize = Math.max(1, effectiveRows * cols);
-        const remainder = realSlides.length % pageSize;
-        const blankCount = remainder === 0 ? 0 : pageSize - remainder;
-
-        if (!blankCount) return;
-
-        const fragment = document.createDocumentFragment();
-        for (let i = 0; i < blankCount; i++) {
-            const blank = document.createElement('div');
-            blank.className = 'rb-swiper-grid-blank swiper-slide swiper-slide-invisible-blank';
-            blank.setAttribute('aria-hidden', 'true');
-            blank.setAttribute('tabindex', '-1');
-            fragment.appendChild(blank);
-        }
-        wrapperEl.appendChild(fragment);
-    }
-
-    function syncSingleColumnOrder(rows, cols, gap) {
-        const slides = Array.from(wrapperEl.children).filter(function (el) {
-            return el.classList && el.classList.contains('swiper-slide');
-        });
-
-        slides.forEach(function (slide) {
-            slide.style.removeProperty('order');
-            slide.style.removeProperty('-webkit-order');
-            slide.style.removeProperty('-ms-flex-order');
-            slide.style.removeProperty('-moz-box-ordinal-group');
-            slide.style.removeProperty('-webkit-box-ordinal-group');
-        });
-
-        if (cols !== 1 || rows <= 1 || !slides.length) return;
-
-        const pageCount = Math.max(1, Math.ceil(slides.length / rows));
-        slides.forEach(function (slide, index) {
-            const page = Math.floor(index / rows);
-            const row = index % rows;
-            const order = row * pageCount + page;
-            slide.style.order = order;
-            slide.style.webkitOrder = order;
-            slide.style.msFlexOrder = order;
-            slide.style.marginTop = row === 0 || gap <= 0 ? '' : gap + 'px';
-        });
-    }
-
-    function syncColumnLayout(instance) {
-        if (!instance || instance.destroyed) return;
-
-        const rows = Math.max(1, parseInt(instance.params.slidesPerColumn, 10) || 1);
-        instance.params.slidesPerColumnFill = 'row';
-        innerEl.classList.toggle('swiper-container-multirow', rows > 1);
-        innerEl.classList.remove('swiper-container-multirow-column');
-    }
-
-    if (swiperInstance && !swiperInstance.destroyed) {
-        syncColumnLayout(swiperInstance);
-        const currentRows = Math.max(1, parseInt(swiperInstance.params.slidesPerColumn, 10) || 1);
-        const currentCols = Math.max(1, parseInt(swiperInstance.params.slidesPerView, 10) || 1);
-        syncGridBlanks(currentRows, currentCols);
-        const currentGap = Math.max(0, parseFloat(swiperInstance.params.spaceBetween) || 0);
-        syncSingleColumnOrder(currentRows, currentCols, currentGap);
-        swiperInstance.update();
-        syncSingleColumnOrder(currentRows, currentCols, currentGap);
-        $rb_slider.removeClass('rb-swiper-pending').addClass('rb-swiper-ready');
-        return;
-    }
-
-    prepareDirectSlides();
-
-    const moCols = Math.max(1, getNumber('mo-w', 1));
-    const moRows = getEffectiveRows(getNumber('mo-h', 1), moCols, getRealSlides().length);
-    const moGap = Math.max(0, getNumber('mo-gap', 0));
-    const moSpeed = Math.max(0, getNumber('mo-speed', getNumber('speed', 400)));
-    const pcCols = Math.max(1, getNumber('pc-w', 1));
-    const pcRows = getEffectiveRows(getNumber('pc-h', 1), pcCols, getRealSlides().length);
-    const pcGap = Math.max(0, getNumber('pc-gap', 0));
-    const pcSpeed = Math.max(0, getNumber('pc-speed', getNumber('speed', 400)));
-
-    const initialRows = window.innerWidth <= 1024 ? moRows : pcRows;
-    const initialCols = window.innerWidth <= 1024 ? moCols : pcCols;
-    syncGridBlanks(initialRows, initialCols);
-    syncSingleColumnOrder(initialRows, initialCols, window.innerWidth <= 1024 ? moGap : pcGap);
-
-    swiperInstance = new Swiper(innerEl, {
-        slidesPerView: moCols,
-        slidesPerColumn: moRows,
-        slidesPerColumnFill: 'row',
-        slidesPerGroup: moCols,
+    const swiperOptions = {
+        slidesPerView: 1,
+        slidesPerGroup: 1,
         initialSlide: 0,
-        spaceBetween: moGap,
+        spaceBetween: 0,
         resistanceRatio: 0,
-        touchRatio: $rb_slider.data('mo-swap') == 1 ? 1 : 0,
-        speed: moSpeed,
+        touchRatio: manualSwipe ? 1 : 0,
+        allowTouchMove: manualSwipe,
+        simulateTouch: manualSwipe,
+        speed: speed,
         watchOverflow: true,
-        autoplay: $rb_slider.data('autoplay') == 1 ? {
+        roundLengths: true,
+        autoHeight: false,
+        autoplay: $rb_slider.attr('data-autoplay') == '1' ? {
             delay: getNumber('autoplay-time', 3000) || 3000,
             disableOnInteraction: false,
         } : false,
-        navigation: {
+    };
+
+    if (nextEl && prevEl) {
+        swiperOptions.navigation = {
             nextEl: nextEl,
             prevEl: prevEl,
-        },
-        breakpoints: {
-            1025: {
-                slidesPerView: pcCols,
-                slidesPerColumn: pcRows,
-                slidesPerColumnFill: 'row',
-                slidesPerGroup: pcCols,
-                spaceBetween: pcGap,
-                touchRatio: $rb_slider.data('pc-swap') == 1 ? 1 : 0,
-                speed: pcSpeed,
-            },
-        },
-        on: {
-            init: function () {
-                syncColumnLayout(this);
-            },
-            breakpoint: function () {
-                const instance = this;
-                window.requestAnimationFrame(function () {
-                    if (!instance || instance.destroyed) return;
-                    syncColumnLayout(instance);
-                    const activeRows = Math.max(1, parseInt(instance.params.slidesPerColumn, 10) || 1);
-                    const activeCols = Math.max(1, parseInt(instance.params.slidesPerView, 10) || 1);
-                    const activeGap = Math.max(0, parseFloat(instance.params.spaceBetween) || 0);
-                    syncGridBlanks(activeRows, activeCols);
-                    syncSingleColumnOrder(activeRows, activeCols, activeGap);
-                    instance.update();
-                    syncSingleColumnOrder(activeRows, activeCols, activeGap);
-                    instance.slideTo(0, 0, false);
-                });
-            },
-        },
-    });
+        };
+    }
 
-    syncColumnLayout(swiperInstance);
-    syncSingleColumnOrder(initialRows, initialCols, window.innerWidth <= 1024 ? moGap : pcGap);
-    $rb_slider.removeClass('rb-swiper-pending').addClass('rb-swiper-ready');
-    $rb_slider.data('rb-swiper-instance', swiperInstance);
-    $rb_slider.removeData('rb-swiper-mode');
+    const swiperInstance = new Swiper(innerEl, swiperOptions);
+
+    $rb_slider
+        .data('rb-module-swiper-state', {
+            mode: mode,
+            instance: swiperInstance,
+            pageSize: pageInfo.pageSize,
+            pageCount: pageInfo.pageCount,
+        })
+        .data('rb-swiper-instance', swiperInstance)
+        .data('rb-swiper-queued', true)
+        .removeClass('rb-swiper-pending rb-swiper-pregrid rb-swiper-spinner-timeout')
+        .addClass('rb-swiper-ready');
+
+    return true;
 }
+
+
+(function ($) {
+    let resizeFrame = 0;
+
+    $(window)
+        .off('resize.rbModuleSwiperLayout')
+        .on('resize.rbModuleSwiperLayout', function () {
+            window.cancelAnimationFrame(resizeFrame);
+            resizeFrame = window.requestAnimationFrame(function () {
+                $('.rb_swiper').each(function () {
+                    const $slider = $(this);
+                    if (!rbModuleSwiperIsVisible(this)) return;
+
+                    const state = $slider.data('rb-module-swiper-state') || null;
+                    const modeChanged = state && state.mode !== rbModuleSwiperMode();
+                    setupResponsiveSlider($slider, !!modeChanged);
+                });
+            });
+        });
+})(jQuery);

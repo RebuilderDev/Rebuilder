@@ -526,7 +526,7 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
                             </ul>
                             <ul class="desc_sub">
                                 <input type="checkbox" name="rb_notify_reply" value="1" id="reg_rb_notify_reply" <?php echo $rb_notification_category_checked['notify_reply'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_reply'] ? '1' : '0'; ?>" autocomplete="off">
-                                <label for="reg_rb_notify_reply">대댓글 알림</label>
+                                <label for="reg_rb_notify_reply">답글·대댓글 알림</label>
                             </ul>
                             <?php if ($rb_notification_shop_available) { ?>
                             <ul class="desc_sub">

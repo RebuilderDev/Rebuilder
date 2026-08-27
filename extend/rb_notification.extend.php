@@ -638,6 +638,50 @@ function memo_auto_send($title, $link_url, $recv_id, $send_id, $category = '', $
     return rb_notification_send($category, $title, $title, $link_url, $recv_id, $send_id, $options);
 }
 
+/** 게시판 답글 등록 시 답글 대상 회원에게 알림을 보냅니다. */
+function rb_notification_board_reply_after($board, $wr_id, $w, $qstr, $redirect_url)
+{
+    global $config, $member, $wr;
+
+    if ($w !== 'r' || empty($board['bo_table']) || !$wr_id || empty($wr['mb_id'])) {
+        return;
+    }
+
+    $recv_id = trim((string) $wr['mb_id']);
+    $send_id = !empty($member['mb_id']) ? trim((string) $member['mb_id']) : 'system-msg';
+    if ($recv_id === '' || ($send_id !== 'system-msg' && $recv_id === $send_id)) {
+        return;
+    }
+
+    $bo_table = trim((string) $board['bo_table']);
+    if (!preg_match('/^[A-Za-z0-9_]{1,20}$/', $bo_table)) {
+        return;
+    }
+
+    $source_id = $bo_table.':'.(int) $wr_id;
+    if (rb_notification_table_ready()) {
+        $duplicate = sql_fetch("SELECT noti_id FROM rb_notification
+                                 WHERE noti_recv_mb_id='".sql_real_escape_string($recv_id)."'
+                                   AND noti_source_type='board_reply'
+                                   AND noti_source_id='".sql_real_escape_string($source_id)."'
+                                 LIMIT 1", false);
+        if (!empty($duplicate['noti_id'])) {
+            return;
+        }
+    }
+
+    $title = (isset($board['bo_subject']) ? (string) $board['bo_subject'] : '게시판')
+        .'의 게시물에 답글이 등록되었습니다.';
+    $link_url = G5_BBS_URL.'/board.php?bo_table='.urlencode($bo_table).'&wr_id='.(int) $wr_id;
+
+    rb_notification_send('board', $title, $title, $link_url, $recv_id, $send_id, array(
+        'source_type' => 'board_reply',
+        'source_id' => $source_id,
+        'board_table' => $bo_table,
+    ));
+}
+add_event('write_update_after', 'rb_notification_board_reply_after', G5_HOOK_DEFAULT_PRIORITY + 10, 5);
+
 /* 기존 앱 및 부가기능이 사용하는 푸시 공통함수 이름을 계속 지원합니다. */
 if (!function_exists('get_user_tokens')) {
     function get_user_tokens($recv_id)
