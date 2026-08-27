@@ -424,7 +424,7 @@ function setupResponsiveSlider($rb_slider, forceRebuild) {
         slidesPerView: 1,
         slidesPerGroup: 1,
         initialSlide: 0,
-        spaceBetween: 0,
+        spaceBetween: pageInfo.gap,
         resistanceRatio: 0,
         touchRatio: manualSwipe ? 1 : 0,
         allowTouchMove: manualSwipe,
