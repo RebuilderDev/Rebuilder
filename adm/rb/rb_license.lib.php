@@ -627,6 +627,7 @@ function rb_license_apply_schema_tables($schema, &$changed)
         }
 
         $add_columns = array();
+        $added_column_names = array();
         foreach ($info['columns'] as $column => $definition) {
             $definition = trim((string) $definition);
             if (!rb_license_valid_identifier($column) || $definition === '' || strlen($definition) > 1000
@@ -640,6 +641,7 @@ function rb_license_apply_schema_tables($schema, &$changed)
             }
             if (mysqli_num_rows($column_result) === 0) {
                 $add_columns[] = 'ADD `'.$column.'` '.$definition;
+                $added_column_names[] = $column;
             }
         }
         if ($add_columns && !sql_query('ALTER TABLE `'.$table.'` '.implode(', ', $add_columns), false)) {
@@ -647,6 +649,26 @@ function rb_license_apply_schema_tables($schema, &$changed)
         }
         if ($add_columns) {
             $changed = true;
+        }
+
+        // 신규 컬럼을 추가한 최초 1회에만 기존 컬럼값을 승계합니다.
+        if ($added_column_names && !empty($info['copy_on_add'])) {
+            if (!is_array($info['copy_on_add'])) {
+                return '['.$table.'] 컬럼 승계 정보를 확인할 수 없습니다.';
+            }
+            foreach ($info['copy_on_add'] as $target_column => $source_column) {
+                if (!in_array($target_column, $added_column_names, true)) {
+                    continue;
+                }
+                if (!rb_license_valid_identifier($target_column)
+                    || !rb_license_valid_identifier($source_column)
+                    || !isset($info['columns'][$target_column], $info['columns'][$source_column])) {
+                    return '['.$table.'] 컬럼 승계 정보를 확인할 수 없습니다.';
+                }
+                if (!sql_query('UPDATE `'.$table.'` SET `'.$target_column.'`=`'.$source_column.'`', false)) {
+                    return '['.$table.'] ['.$target_column.'] 기존값 승계 실패: '.mysqli_error($GLOBALS['g5']['connect_db']);
+                }
+            }
         }
 
         if (!empty($info['enforce_options']) && !empty($info['options'])) {

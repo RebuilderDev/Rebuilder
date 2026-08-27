@@ -21,7 +21,7 @@ $rb_notification_preference = function_exists('rb_notification_get_preference')
 $rb_notification_push_checked = !empty($rb_notification_preference['notify_push']);
 $rb_notification_site_checked = !empty($rb_notification_preference['notify_site']);
 $rb_notification_category_checked = array();
-foreach (array('notify_comment', 'notify_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $rb_notification_key) {
+foreach (array('notify_comment', 'notify_reply', 'notify_comment_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $rb_notification_key) {
     $rb_notification_category_checked[$rb_notification_key] = !empty($rb_notification_preference[$rb_notification_key]);
 }
 $rb_notification_visible_categories = function_exists('rb_notification_visible_categories') ? rb_notification_visible_categories() : array();
@@ -526,7 +526,11 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
                             </ul>
                             <ul class="desc_sub">
                                 <input type="checkbox" name="rb_notify_reply" value="1" id="reg_rb_notify_reply" <?php echo $rb_notification_category_checked['notify_reply'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_reply'] ? '1' : '0'; ?>" autocomplete="off">
-                                <label for="reg_rb_notify_reply">답글·대댓글 알림</label>
+                                <label for="reg_rb_notify_reply">답글 알림</label>
+                            </ul>
+                            <ul class="desc_sub">
+                                <input type="checkbox" name="rb_notify_comment_reply" value="1" id="reg_rb_notify_comment_reply" <?php echo $rb_notification_category_checked['notify_comment_reply'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_comment_reply'] ? '1' : '0'; ?>" autocomplete="off">
+                                <label for="reg_rb_notify_comment_reply">대댓글 알림</label>
                             </ul>
                             <?php if ($rb_notification_shop_available) { ?>
                             <ul class="desc_sub">

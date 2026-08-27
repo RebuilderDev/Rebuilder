@@ -124,6 +124,7 @@ function rb_notification_get_preference($mb_id)
         'notify_site' => 0,
         'notify_comment' => 0,
         'notify_reply' => 0,
+        'notify_comment_reply' => 0,
         'notify_shop' => 0,
         'notify_subscribe' => 0,
         'notify_other' => 0,
@@ -143,7 +144,7 @@ function rb_notification_get_preference($mb_id)
 
     $columns = rb_notification_preference_columns();
     $select = array('notify_push', 'notify_site', 'notify_updated_at');
-    foreach (array('notify_comment', 'notify_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $column) {
+    foreach (array('notify_comment', 'notify_reply', 'notify_comment_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $column) {
         if (isset($columns[$column])) {
             $select[] = $column;
         }
@@ -158,10 +159,14 @@ function rb_notification_get_preference($mb_id)
     }
 
     $preference = $defaults;
-    foreach (array('notify_push', 'notify_site', 'notify_comment', 'notify_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $column) {
+    foreach (array('notify_push', 'notify_site', 'notify_comment', 'notify_reply', 'notify_comment_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $column) {
         if (array_key_exists($column, $row)) {
             $preference[$column] = !empty($row[$column]) ? 1 : 0;
         }
+    }
+    // DB 업데이트 전에는 기존 통합 답글 설정을 대댓글 설정의 호환값으로 사용합니다.
+    if (!isset($columns['notify_comment_reply'])) {
+        $preference['notify_comment_reply'] = $preference['notify_reply'];
     }
     $preference['notify_updated_at'] = isset($row['notify_updated_at']) ? (string) $row['notify_updated_at'] : '';
     $preference['is_saved'] = 1;
@@ -181,7 +186,7 @@ function rb_notification_save_preference($mb_id, $notify_push, $notify_site, $ca
         'notify_push' => $notify_push ? 1 : 0,
         'notify_site' => $notify_site ? 1 : 0,
     );
-    foreach (array('notify_comment', 'notify_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $column) {
+    foreach (array('notify_comment', 'notify_reply', 'notify_comment_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $column) {
         if (!$values['notify_site']) {
             $values[$column] = 0;
         } elseif (array_key_exists($column, $category_preferences)) {
@@ -241,8 +246,11 @@ function rb_notification_preference_key($category, $title = '', $source_type = '
     if ($category === 'other') return 'notify_other';
     if ($category !== 'board') return '';
 
-    if (in_array($source_type, array('reply', 'comment_reply', 'board_reply'), true)
+    if ($source_type === 'comment_reply'
         || strpos((string) $title, '댓글에 댓글') !== false) {
+        return 'notify_comment_reply';
+    }
+    if (in_array($source_type, array('reply', 'board_reply'), true)) {
         return 'notify_reply';
     }
     if (in_array($source_type, array('comment', 'board_comment'), true)

@@ -27,7 +27,7 @@ if (($w === '' || $w === 'u')
     $rb_notify_push = isset($_POST['rb_notify_push']) && (string) $_POST['rb_notify_push'] === '1';
     $rb_notify_site = isset($_POST['rb_notify_site']) && (string) $_POST['rb_notify_site'] === '1';
     $rb_category_preferences = array();
-    foreach (array('comment', 'reply', 'shop', 'subscribe', 'other') as $rb_notification_type) {
+    foreach (array('comment', 'reply', 'comment_reply', 'shop', 'subscribe', 'other') as $rb_notification_type) {
         $rb_post_key = 'rb_notify_'.$rb_notification_type;
         $rb_category_preferences['notify_'.$rb_notification_type] = $rb_notify_site
             && isset($_POST[$rb_post_key])

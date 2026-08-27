@@ -18,7 +18,8 @@ function rb_notification_admin_member_form_add($mb, $w, $position)
         'push' => array('앱 Push 알림 동의', !empty($preference['notify_push'])),
         'site' => array('사이트 내 알림 동의', !empty($preference['notify_site'])),
         'comment' => array('댓글 알림', !empty($preference['notify_comment'])),
-        'reply' => array('답글·대댓글 알림', !empty($preference['notify_reply'])),
+        'reply' => array('답글 알림', !empty($preference['notify_reply'])),
+        'comment_reply' => array('대댓글 알림', !empty($preference['notify_comment_reply'])),
         'shop' => array('쇼핑 알림', !empty($preference['notify_shop'])),
         'subscribe' => array('구독 알림', !empty($preference['notify_subscribe'])),
         'other' => array('기타 알림', !empty($preference['notify_other'])),
@@ -27,7 +28,8 @@ function rb_notification_admin_member_form_add($mb, $w, $position)
     $pairs = array(
         array('push', 'site'),
         array('comment', 'reply'),
-        array('shop', 'subscribe'),
+        array('comment_reply', 'shop'),
+        array('subscribe', 'other'),
     );
     foreach ($pairs as $pair) {
         echo '<tr>';
@@ -37,9 +39,6 @@ function rb_notification_admin_member_form_add($mb, $w, $position)
         echo '</tr>';
     }
 
-    echo '<tr>';
-    rb_notification_admin_member_radio('other', $items['other'][0], $items['other'][1], 3);
-    echo '</tr>';
 }
 
 function rb_notification_admin_member_radio($key, $label, $checked, $colspan = 1)
@@ -76,7 +75,7 @@ function rb_notification_admin_member_form_update($w, $mb_id)
     $notify_push = $enabled('rb_notify_push');
     $notify_site = $enabled('rb_notify_site');
     $categories = array();
-    foreach (array('comment', 'reply', 'shop', 'subscribe', 'other') as $type) {
+    foreach (array('comment', 'reply', 'comment_reply', 'shop', 'subscribe', 'other') as $type) {
         $categories['notify_'.$type] = $enabled('rb_notify_'.$type);
     }
 
