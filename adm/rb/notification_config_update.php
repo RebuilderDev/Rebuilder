@@ -6,26 +6,18 @@ check_demo();
 auth_check_menu($auth, $sub_menu, 'w');
 check_admin_token();
 
-$retention_column = sql_fetch("SHOW COLUMNS FROM rb_builder LIKE 'bu_notification_retention_days'", false);
-$polling_column = sql_fetch("SHOW COLUMNS FROM rb_builder LIKE 'bu_notification_polling_seconds'", false);
-if (empty($retention_column['Field']) || empty($polling_column['Field'])) {
-    alert('빌더설정 > DB업데이트를 먼저 실행해 주세요.', './notification_form.php');
-}
-
-$config_columns = array(
-    'bu_notification_floating_use' => "tinyint(1) NOT NULL DEFAULT '1'",
-    'bu_notification_floating_position' => "varchar(20) NOT NULL DEFAULT 'left_bottom'",
-    'bu_notification_floating_offset' => "int(11) NOT NULL DEFAULT '50'",
-    'bu_notification_visible_categories' => "varchar(100) NOT NULL DEFAULT 'board,shop,subscribe,notice,other'",
+$required_columns = array(
+    'bu_notification_retention_days',
+    'bu_notification_polling_seconds',
+    'bu_notification_floating_use',
+    'bu_notification_floating_position',
+    'bu_notification_floating_offset',
+    'bu_notification_visible_categories',
 );
-foreach ($config_columns as $column_name => $column_definition) {
+foreach ($required_columns as $column_name) {
     $column = sql_fetch("SHOW COLUMNS FROM rb_builder LIKE '{$column_name}'", false);
     if (empty($column['Field'])) {
-        sql_query("ALTER TABLE rb_builder ADD `{$column_name}` {$column_definition}", false);
-        $column = sql_fetch("SHOW COLUMNS FROM rb_builder LIKE '{$column_name}'", false);
-        if (empty($column['Field'])) {
-            alert('알림 설정 항목을 추가하지 못했습니다. DB 권한을 확인해 주세요.');
-        }
+        alert('빌더설정 > DB업데이트를 먼저 실행해 주세요.', './notification_form.php');
     }
 }
 
