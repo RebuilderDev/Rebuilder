@@ -2,6 +2,8 @@
 @media all and (max-width:1024px) {
     .gnb_wrap .inner {padding-left: 0px !important; padding-right: 0px !important;}
     .gnb_wrap .snb_wrap .qm_wrap > a {width:auto; margin-left: 0px; padding-left: 15px;}
+    .gnb_wrap .tog_wrap.rb_mobile_menu_left {margin-right:15px;}
+    .gnb_wrap .tog_wrap.rb_mobile_menu_right {margin-left:15px;}
 }
 
 .cbp-hrmenu .cbp-hrsub-inner > div {min-width: 140px;}

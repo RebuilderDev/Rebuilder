@@ -40,7 +40,7 @@ $sql = " select * from rb_builder limit 1";
 $bu = sql_fetch($sql);
 $bu_mobile_menu_position = isset($bu['bu_mobile_menu_position']) && $bu['bu_mobile_menu_position'] === 'right' ? 'right' : 'left';
 $bu_mobile_menu_icon = isset($bu['bu_mobile_menu_icon']) ? (int) $bu['bu_mobile_menu_icon'] : 1;
-if ($bu_mobile_menu_icon < 1 || $bu_mobile_menu_icon > 7) {
+if ($bu_mobile_menu_icon < 1 || $bu_mobile_menu_icon > 8) {
     $bu_mobile_menu_icon = 1;
 }
 $bu_mobile_menu_icon_color_disable = !empty($bu['bu_mobile_menu_icon_color_disable']) ? 1 : 0;
@@ -452,12 +452,15 @@ $pg_anchor = '<ul class="anchor">
                         <td colspan="3">
                             <?php echo help('사용할 메뉴 아이콘을 선택하세요. 대표컬러 사용 안함 설정시 검정색 컬러가 적용 됩니다.') ?>
                             <div class="rb_mobile_menu_icon_options">
-                                <?php for ($rb_mobile_icon_index = 1; $rb_mobile_icon_index <= 6; $rb_mobile_icon_index++) { ?>
+                                <?php
+                                $rb_mobile_menu_preset_icons = array(1, 2, 8, 3, 4, 5, 6);
+                                foreach ($rb_mobile_menu_preset_icons as $rb_mobile_icon_order => $rb_mobile_icon_index) {
+                                ?>
                                 <label class="rb_mobile_menu_icon_option" for="bu_mobile_menu_icon_<?php echo $rb_mobile_icon_index; ?>">
                                     <input type="radio" name="bu_mobile_menu_icon" value="<?php echo $rb_mobile_icon_index; ?>" id="bu_mobile_menu_icon_<?php echo $rb_mobile_icon_index; ?>" <?php echo $bu_mobile_menu_icon === $rb_mobile_icon_index ? 'checked' : ''; ?>>
                                     <span class="rb_mobile_menu_icon_preview">
                                         <?php echo rb_mobile_menu_icon_svg($rb_mobile_icon_index); ?>
-                                        <span class="sound_only">아이콘 <?php echo $rb_mobile_icon_index; ?></span>
+                                        <span class="sound_only">아이콘 <?php echo $rb_mobile_icon_order + 1; ?></span>
                                     </span>
                                 </label>
                                 <?php } ?>
@@ -482,7 +485,7 @@ $pg_anchor = '<ul class="anchor">
                                 <button type="button" class="rb_mobile_menu_icon_modal_backdrop" data-rb-mobile-icon-close aria-label="닫기"></button>
                                 <div class="rb_mobile_menu_icon_modal_panel" role="document">
                                     <div class="rb_mobile_menu_icon_modal_header">
-                                        <h3 id="rb_mobile_menu_icon_modal_title">모바일 메뉴 아이콘 직접 추가</h3>
+                                        <h3 id="rb_mobile_menu_icon_modal_title">모바일 메뉴 아이콘 추가</h3>
                                         <button type="button" class="rb_mobile_menu_icon_modal_close" data-rb-mobile-icon-close aria-label="닫기">&times;</button>
                                     </div>
                                     <textarea name="bu_mobile_menu_icon_svg" id="bu_mobile_menu_icon_svg" maxlength="30000" placeholder="&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;...&lt;/svg&gt;"><?php echo htmlspecialchars($bu_mobile_menu_icon_svg, ENT_QUOTES, 'UTF-8'); ?></textarea>

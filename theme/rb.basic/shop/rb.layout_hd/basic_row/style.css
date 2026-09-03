@@ -71,6 +71,7 @@
     .search_top_wrap {width: 30%;}
     .gnb_wrap .snb_wrap .qm_wrap a {width: auto; padding-left: 0px; margin-left: 20px;}
     .gnb_wrap .tog_wrap {margin-right: 20px;}
+    .gnb_wrap .tog_wrap.rb_mobile_menu_right {margin-left: 15px;}
 
     /* 1.0.1 { */
     .mobile_cb {clear: both;}

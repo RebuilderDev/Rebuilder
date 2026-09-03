@@ -100,7 +100,7 @@ if (!function_exists('rb_mobile_menu_icon')) {
 
         $icon = isset($rb_builder['bu_mobile_menu_icon']) ? (int) $rb_builder['bu_mobile_menu_icon'] : 1;
 
-        return $icon >= 1 && $icon <= 7 ? $icon : 1;
+        return $icon >= 1 && $icon <= 8 ? $icon : 1;
     }
 }
 
@@ -276,6 +276,9 @@ if (!function_exists('rb_mobile_menu_icon_svg')) {
         switch ($icon) {
             case 2:
                 return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="m14.707 5.636 5.657 5.657a1 1 0 0 1 0 1.414l-5.657 5.657a1 1 0 0 1-1.414-1.414l3.95-3.95H4a1 1 0 1 1 0-2h13.243l-3.95-3.95a1 1 0 1 1 1.414-1.414Z"/></svg>';
+
+            case 8:
+                return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3.636 11.293a1 1 0 0 0 0 1.414l5.657 5.657a1 1 0 0 0 1.414-1.414L6.757 13H20a1 1 0 1 0 0-2H6.757l3.95-3.95a1 1 0 0 0-1.414-1.414l-5.657 5.657Z"/></svg>';
 
             case 3:
                 return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M11 20a1 1 0 1 0 2 0v-7h7a1 1 0 1 0 0-2h-7V4a1 1 0 1 0-2 0v7H4a1 1 0 1 0 0 2h7z"/></svg>';

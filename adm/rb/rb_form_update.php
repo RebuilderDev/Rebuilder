@@ -80,7 +80,7 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
     $bu_purchase_confirm_use = !empty($_POST['bu_purchase_confirm_use']) ? 1 : 0;
     $bu_mobile_menu_position = isset($_POST['bu_mobile_menu_position']) && $_POST['bu_mobile_menu_position'] === 'right' ? 'right' : 'left';
     $bu_mobile_menu_icon = isset($_POST['bu_mobile_menu_icon']) ? (int) $_POST['bu_mobile_menu_icon'] : 1;
-    if ($bu_mobile_menu_icon < 1 || $bu_mobile_menu_icon > 7) {
+    if ($bu_mobile_menu_icon < 1 || $bu_mobile_menu_icon > 8) {
         $bu_mobile_menu_icon = 1;
     }
     $bu_mobile_menu_icon_color_disable = !empty($_POST['bu_mobile_menu_icon_color_disable']) ? 1 : 0;
