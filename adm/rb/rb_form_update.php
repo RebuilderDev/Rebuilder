@@ -84,7 +84,8 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
         $bu_mobile_menu_icon = 1;
     }
     $bu_mobile_menu_icon_color_disable = !empty($_POST['bu_mobile_menu_icon_color_disable']) ? 1 : 0;
-    $bu_mobile_menu_icon_svg_raw = isset($_POST['bu_mobile_menu_icon_svg']) ? trim((string) $_POST['bu_mobile_menu_icon_svg']) : '';
+    // 그누보드 공통 처리에서 POST 값에 추가한 SQL 이스케이프를 SVG XML 검사 전에 원복한다.
+    $bu_mobile_menu_icon_svg_raw = isset($_POST['bu_mobile_menu_icon_svg']) ? trim(stripslashes((string) $_POST['bu_mobile_menu_icon_svg'])) : '';
     $bu_mobile_menu_icon_svg = rb_sanitize_mobile_menu_svg($bu_mobile_menu_icon_svg_raw);
     if ($bu_mobile_menu_icon_svg_raw !== '' && $bu_mobile_menu_icon_svg === '') {
         alert('사용할 수 없는 SVG 코드입니다. 올바른 SVG 코드를 입력해 주세요.', './rb_form.php#anc_rb5');
