@@ -9,3 +9,12 @@
 .rb-license-token-form{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .rb-license-token-form .frm_input{width:min(520px,100%)}
 .rb-license-token-actions{margin:12px 0 20px !important}
+
+.rb_mobile_menu_icon_options{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rb_mobile_menu_icon_option{display:block;position:relative;margin:0 !important;cursor:pointer}
+.rb_mobile_menu_icon_option > input{position:absolute;width:1px;height:1px;margin:0;overflow:hidden;opacity:0;pointer-events:none}
+.rb_mobile_menu_icon_preview{display:flex;align-items:center;justify-content:center;width:54px;height:54px;border:1px solid #d8dde3;border-radius:6px;background:#fff;color:#09244b;box-sizing:border-box;transition:border-color .15s ease,box-shadow .15s ease,background-color .15s ease}
+.rb_mobile_menu_icon_preview svg{display:block;flex:none}
+.rb_mobile_menu_icon_option:hover .rb_mobile_menu_icon_preview{border-color:#8e98a4;background:#f8f9fb}
+.rb_mobile_menu_icon_option > input:checked + .rb_mobile_menu_icon_preview{border-color:#aa20ff;box-shadow:0 0 0 2px rgba(170,32,255,.14)}
+.rb_mobile_menu_icon_option > input:focus-visible + .rb_mobile_menu_icon_preview{outline:2px solid #09244b;outline-offset:2px}

@@ -68,6 +68,15 @@ label {word-break: keep-all !important;}
 .gnb_wrap .snb_wrap .my_btn_wrap {margin-left: 40px;}
 .gnb_wrap .inner {box-sizing: border-box;}
 .gnb_wrap #ol_after_scrap {margin-top: 10px;}
+
+@media all and (max-width:1024px) {
+    .gnb_wrap .tog_wrap.rb_mobile_menu_right {
+        float:right;
+        order:99;
+        margin-right:0;
+        margin-left:20px;
+    }
+}
 /* } */
 
 /* 검색창 { */

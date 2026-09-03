@@ -38,6 +38,11 @@ $rb_license_state_labels = array(
 <?php
 $sql = " select * from rb_builder limit 1";
 $bu = sql_fetch($sql);
+$bu_mobile_menu_position = isset($bu['bu_mobile_menu_position']) && $bu['bu_mobile_menu_position'] === 'right' ? 'right' : 'left';
+$bu_mobile_menu_icon = isset($bu['bu_mobile_menu_icon']) ? (int) $bu['bu_mobile_menu_icon'] : 1;
+if ($bu_mobile_menu_icon < 1 || $bu_mobile_menu_icon > 6) {
+    $bu_mobile_menu_icon = 1;
+}
 
 $pg_anchor = '<ul class="anchor">
     <li><a href="#anc_rb0">빌더정보</a></li>
@@ -426,6 +431,35 @@ $pg_anchor = '<ul class="anchor">
                         <td colspan="3">
                         <?php echo help('빌더의 기본 뷰포트 값은 0.9 입니다. 값이 없으면 0.9 로 적용되며,<br>/theme/테마폴더/head.sub.php 파일의 meta name="viewport" 값이 변경 됩니다.<br>숫자가 작을수록 오브젝트의 크기가 축소되며, 1이 정비율 입니다.<br>커스텀 테마를 사용하시는 경우 적용이 되지않을 수 있습니다.') ?>
                         <input type="text" name="bu_viewport" value="<?php echo isset($bu['bu_viewport']) ? get_sanitize_input($bu['bu_viewport']) : ''; ?>" id="bu_viewport" class="frm_input" size="10">
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">모바일 메뉴설정</th>
+                        <td colspan="3">
+                        <?php echo help('모바일 헤더의 메뉴 아이콘 위치를 설정합니다. 모바일 메뉴 패널의 기존 열림 방향은 변경되지 않습니다.') ?>
+                        <input type="radio" name="bu_mobile_menu_position" value="left" id="bu_mobile_menu_position_left" <?php echo $bu_mobile_menu_position === 'left' ? 'checked' : ''; ?>>
+                        <label for="bu_mobile_menu_position_left">좌측</label>
+                        <input type="radio" name="bu_mobile_menu_position" value="right" id="bu_mobile_menu_position_right" <?php echo $bu_mobile_menu_position === 'right' ? 'checked' : ''; ?>>
+                        <label for="bu_mobile_menu_position_right">우측</label>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">모바일 메뉴 아이콘</th>
+                        <td colspan="3">
+                            <?php echo help('사용할 메뉴 아이콘을 선택합니다. 실제 헤더에서는 헤더 색상 설정에 맞는 기존 SVG 색상이 적용됩니다.') ?>
+                            <div class="rb_mobile_menu_icon_options">
+                                <?php for ($rb_mobile_icon_index = 1; $rb_mobile_icon_index <= 6; $rb_mobile_icon_index++) { ?>
+                                <label class="rb_mobile_menu_icon_option" for="bu_mobile_menu_icon_<?php echo $rb_mobile_icon_index; ?>">
+                                    <input type="radio" name="bu_mobile_menu_icon" value="<?php echo $rb_mobile_icon_index; ?>" id="bu_mobile_menu_icon_<?php echo $rb_mobile_icon_index; ?>" <?php echo $bu_mobile_menu_icon === $rb_mobile_icon_index ? 'checked' : ''; ?>>
+                                    <span class="rb_mobile_menu_icon_preview">
+                                        <?php echo rb_mobile_menu_icon_svg($rb_mobile_icon_index); ?>
+                                        <span class="sound_only">아이콘 <?php echo $rb_mobile_icon_index; ?></span>
+                                    </span>
+                                </label>
+                                <?php } ?>
+                            </div>
                         </td>
                     </tr>
 

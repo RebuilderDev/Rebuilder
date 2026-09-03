@@ -1226,6 +1226,8 @@ footer .footer_gnb {background-color: #fff;}
     .rb_btm_skey .ser_label {background-color: #f0f5f9; color:#000; padding: 10px 15px; border-radius: 6px;}
     .rb_btm_sbbs {padding: 25px; padding-top: 0px;}
     .rb_btm_sbbs h6 {font-size: 18px; margin-bottom: 15px;}
+    .rb_btm_sbbs .rb_btm_hot_list {display:flex; flex-direction:column; gap:20px; width:100%;}
+    .rb_btm_sbbs .rb_btm_hot_item {display:block; width:100%; box-sizing:border-box;}
     .rb_btm_sbbs .rb_swiper_hub_1_wrap_ul2 {position: absolute; top:0px; left: 0px;}
     .rb_btm_sbbs .rb_swiper_hub_1_wrap_ul2 img {height:80px; width: 80px; border-radius: 10px; object-fit: cover;}
     .rb_btm_sbbs .rb_swiper_hub_1_wrap_ul1 {padding-left: 100px;}

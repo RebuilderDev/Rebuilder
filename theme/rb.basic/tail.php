@@ -234,23 +234,7 @@ if(G5_COMMUNITY_USE === false) {
 
 
             <div class="hub_latest">
-
-                <div class="rb_swiper"
-                    id="rb_swiper_hub_2"
-                    data-pc-w="1"
-                    data-pc-h="5"
-                    data-mo-w="1"
-                    data-mo-h="5"
-                    data-pc-gap="30"
-                    data-mo-gap="20"
-                    data-autoplay="0"
-                    data-autoplay-time="0"
-                    data-pc-swap="0"
-                    data-mo-swap="0"
-                >
-
-                    <div class="rb_swiper_inner">
-                        <div class="rb-swiper-wrapper swiper-wrapper">
+                <div class="rb_btm_hot_list">
 
                             <?php
                             for ($i=0; $i < count($hot_list); $i++) {
@@ -274,7 +258,7 @@ if(G5_COMMUNITY_USE === false) {
                             ?>
 
                             <!-- 카드 -->
-                              <div class="rb_swiper_list rb_swiper_hub_1_wrap rb_swiper_hub_top_skin">
+                              <div class="rb_btm_hot_item rb_swiper_hub_1_wrap rb_swiper_hub_top_skin">
                                 <!-- 이 안의 ul에도 li 없던 문제는 유지하되, 구조 문제 있으면 li로 감싸세요 -->
                                 <ul class="rb_swiper_hub_1_wrap_ul2">
                                   <li><a href="<?php echo $hrefs ?>"><?php echo run_replace('thumb_image_tag', $img_content, $thumb); ?></a></li>
@@ -298,8 +282,6 @@ if(G5_COMMUNITY_USE === false) {
                               </div>
                               <?php } // for ?>
 
-                            </div>
-
                             <?php if (count($hot_list) == 0) { ?>
                               <div>
                                 <ul>
@@ -307,12 +289,7 @@ if(G5_COMMUNITY_USE === false) {
                                 </ul>
                               </div>
                             <?php } ?>
-                          </div>
-
-
                 </div>
-
-
             </div>
 
 

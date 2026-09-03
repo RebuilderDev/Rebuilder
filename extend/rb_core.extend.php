@@ -80,6 +80,57 @@ if (!function_exists('rb_header_logo_url')) {
     }
 }
 
+// 모바일 헤더 메뉴 버튼 설정과 아이콘 출력을 모든 헤더 스킨에서 공통으로 사용한다.
+if (!function_exists('rb_mobile_menu_position')) {
+    function rb_mobile_menu_position()
+    {
+        global $rb_builder;
+
+        return isset($rb_builder['bu_mobile_menu_position'])
+            && $rb_builder['bu_mobile_menu_position'] === 'right'
+            ? 'right'
+            : 'left';
+    }
+}
+
+if (!function_exists('rb_mobile_menu_icon')) {
+    function rb_mobile_menu_icon()
+    {
+        global $rb_builder;
+
+        $icon = isset($rb_builder['bu_mobile_menu_icon']) ? (int) $rb_builder['bu_mobile_menu_icon'] : 1;
+
+        return $icon >= 1 && $icon <= 6 ? $icon : 1;
+    }
+}
+
+if (!function_exists('rb_mobile_menu_icon_svg')) {
+    function rb_mobile_menu_icon_svg($icon = 1)
+    {
+        $icon = (int) $icon;
+
+        switch ($icon) {
+            case 2:
+                return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="m14.707 5.636 5.657 5.657a1 1 0 0 1 0 1.414l-5.657 5.657a1 1 0 0 1-1.414-1.414l3.95-3.95H4a1 1 0 1 1 0-2h13.243l-3.95-3.95a1 1 0 1 1 1.414-1.414Z"/></svg>';
+
+            case 3:
+                return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M11 20a1 1 0 1 0 2 0v-7h7a1 1 0 1 0 0-2h-7V4a1 1 0 1 0-2 0v7H4a1 1 0 1 0 0 2h7z"/></svg>';
+
+            case 4:
+                return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8m0 10a4 4 0 1 0 0 8 4 4 0 0 0 0-8m6-6a4 4 0 1 1 8 0 4 4 0 0 1-8 0m4 6a4 4 0 1 0 0 8 4 4 0 0 0 0-8"/></svg>';
+
+            case 5:
+                return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M5 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4m7 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4m7 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4"/></svg>';
+
+            case 6:
+                return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 17a2 2 0 1 1 0 4 2 2 0 0 1 0-4m0-7a2 2 0 1 1 0 4 2 2 0 0 1 0-4m0-7a2 2 0 1 1 0 4 2 2 0 0 1 0-4"/></svg>';
+
+            default:
+                return '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="16" viewBox="0 0 18 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17 14C17.2549 14.0003 17.5 14.0979 17.6854 14.2728C17.8707 14.4478 17.9822 14.687 17.9972 14.9414C18.0121 15.1958 17.9293 15.4464 17.7657 15.6418C17.6021 15.8373 17.3701 15.9629 17.117 15.993L17 16H1C0.74512 15.9997 0.499968 15.9021 0.314632 15.7272C0.129296 15.5522 0.017765 15.313 0.00282788 15.0586C-0.0121092 14.8042 0.0706746 14.5536 0.234265 14.3582C0.397855 14.1627 0.629904 14.0371 0.883 14.007L1 14H17ZM17 7C17.2652 7 17.5196 7.10536 17.7071 7.29289C17.8946 7.48043 18 7.73478 18 8C18 8.26522 17.8946 8.51957 17.7071 8.70711C17.5196 8.89464 17.2652 9 17 9H1C0.734784 9 0.48043 8.89464 0.292893 8.70711C0.105357 8.51957 0 8.26522 0 8C0 7.73478 0.105357 7.48043 0.292893 7.29289C0.48043 7.10536 0.734784 7 1 7H17ZM17 0C17.2652 0 17.5196 0.105357 17.7071 0.292893C17.8946 0.48043 18 0.734784 18 1C18 1.26522 17.8946 1.51957 17.7071 1.70711C17.5196 1.89464 17.2652 2 17 2H1C0.734784 2 0.48043 1.89464 0.292893 1.70711C0.105357 1.51957 0 1.26522 0 1C0 0.734784 0.105357 0.48043 0.292893 0.292893C0.48043 0.105357 0.734784 0 1 0H17Z"/></svg>';
+        }
+    }
+}
+
 // 검색 조건이 없는 알림·바로가기 진입에서도 관리 목록의 검색어 보존 변수를 보장한다.
 if (!isset($save_stx) || !is_scalar($save_stx)) {
     $save_stx = (isset($_REQUEST['save_stx']) && is_scalar($_REQUEST['save_stx']))
