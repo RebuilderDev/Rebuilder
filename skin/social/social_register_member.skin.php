@@ -136,8 +136,8 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
                         </ul>
                     </div>
                     <template id="tpl_notification">
-                        선택한 항목의 사이트 내 알림이 생성되면 앱 기능 또는 PWA 기능을 사용하는 환경에서는 같은 알림이 푸시로도 전송됩니다.<br>
-                        운영자가 발송하는 공지 알림은 알림수신을 거부할 수 없습니다.
+                        사이트 내 활동 및 소식 알림을 받으실 수 있습니다.<br>
+                        운영자가 발송하는 공지 알림은 수신을 거부할 수 없습니다.
                     </template>
                 </div>
             </li>
