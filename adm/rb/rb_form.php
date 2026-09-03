@@ -40,9 +40,11 @@ $sql = " select * from rb_builder limit 1";
 $bu = sql_fetch($sql);
 $bu_mobile_menu_position = isset($bu['bu_mobile_menu_position']) && $bu['bu_mobile_menu_position'] === 'right' ? 'right' : 'left';
 $bu_mobile_menu_icon = isset($bu['bu_mobile_menu_icon']) ? (int) $bu['bu_mobile_menu_icon'] : 1;
-if ($bu_mobile_menu_icon < 1 || $bu_mobile_menu_icon > 6) {
+if ($bu_mobile_menu_icon < 1 || $bu_mobile_menu_icon > 7) {
     $bu_mobile_menu_icon = 1;
 }
+$bu_mobile_menu_icon_color_disable = !empty($bu['bu_mobile_menu_icon_color_disable']) ? 1 : 0;
+$bu_mobile_menu_icon_svg = isset($bu['bu_mobile_menu_icon_svg']) ? rb_sanitize_mobile_menu_svg($bu['bu_mobile_menu_icon_svg']) : '';
 
 $pg_anchor = '<ul class="anchor">
     <li><a href="#anc_rb0">빌더정보</a></li>
@@ -448,7 +450,7 @@ $pg_anchor = '<ul class="anchor">
                     <tr>
                         <th scope="row">모바일 메뉴 아이콘</th>
                         <td colspan="3">
-                            <?php echo help('사용할 메뉴 아이콘을 선택합니다. 실제 헤더에서는 헤더 색상 설정에 맞는 기존 SVG 색상이 적용됩니다.') ?>
+                            <?php echo help('사용할 메뉴 아이콘을 선택하세요. 대표컬러 사용 안함 설정시 검정색 컬러가 적용 됩니다.') ?>
                             <div class="rb_mobile_menu_icon_options">
                                 <?php for ($rb_mobile_icon_index = 1; $rb_mobile_icon_index <= 6; $rb_mobile_icon_index++) { ?>
                                 <label class="rb_mobile_menu_icon_option" for="bu_mobile_menu_icon_<?php echo $rb_mobile_icon_index; ?>">
@@ -459,6 +461,40 @@ $pg_anchor = '<ul class="anchor">
                                     </span>
                                 </label>
                                 <?php } ?>
+                                <div class="rb_mobile_menu_icon_option rb_mobile_menu_icon_custom_option">
+                                    <input type="radio" name="bu_mobile_menu_icon" value="7" id="bu_mobile_menu_icon_7" <?php echo $bu_mobile_menu_icon === 7 ? 'checked' : ''; ?>>
+                                    <button type="button" class="rb_mobile_menu_icon_preview rb_mobile_menu_icon_custom_open" id="rb_mobile_menu_icon_custom_open" aria-haspopup="dialog" aria-controls="rb_mobile_menu_icon_modal" aria-label="직접 추가 아이콘 <?php echo $bu_mobile_menu_icon_svg !== '' ? '수정' : '추가'; ?>">
+                                        <span class="rb_mobile_menu_icon_custom_content">
+                                            <?php if ($bu_mobile_menu_icon_svg !== '') { ?>
+                                                <?php echo rb_mobile_menu_icon_svg(7, $bu_mobile_menu_icon_svg); ?>
+                                            <?php } else { ?>
+                                                <span class="rb_mobile_menu_icon_custom_text">추가</span>
+                                            <?php } ?>
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="rb_mobile_menu_icon_color_option">
+                                <input type="checkbox" name="bu_mobile_menu_icon_color_disable" value="1" id="bu_mobile_menu_icon_color_disable" <?php echo $bu_mobile_menu_icon_color_disable ? 'checked' : ''; ?>>
+                                <label for="bu_mobile_menu_icon_color_disable">대표컬러 사용 안함</label>
+                            </div>
+                            <div class="rb_mobile_menu_icon_modal" id="rb_mobile_menu_icon_modal" role="dialog" aria-modal="true" aria-labelledby="rb_mobile_menu_icon_modal_title" aria-hidden="true">
+                                <button type="button" class="rb_mobile_menu_icon_modal_backdrop" data-rb-mobile-icon-close aria-label="닫기"></button>
+                                <div class="rb_mobile_menu_icon_modal_panel" role="document">
+                                    <div class="rb_mobile_menu_icon_modal_header">
+                                        <h3 id="rb_mobile_menu_icon_modal_title">모바일 메뉴 아이콘 직접 추가</h3>
+                                        <button type="button" class="rb_mobile_menu_icon_modal_close" data-rb-mobile-icon-close aria-label="닫기">&times;</button>
+                                    </div>
+                                    <textarea name="bu_mobile_menu_icon_svg" id="bu_mobile_menu_icon_svg" maxlength="30000" placeholder="&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;...&lt;/svg&gt;"><?php echo htmlspecialchars($bu_mobile_menu_icon_svg, ENT_QUOTES, 'UTF-8'); ?></textarea>
+                                    <p class="rb_mobile_menu_icon_modal_help">
+                                        fill 속성으로 컬러 변경이 불가능한 SVG는 대표컬러 사용 안함 을 체크해주세요.<br>
+                                        SVG 코드예제 : <a href="https://www.mingcute.com" target="_blank" rel="noopener noreferrer">https://www.mingcute.com</a>
+                                    </p>
+                                    <div class="rb_mobile_menu_icon_modal_actions">
+                                        <button type="button" class="btn btn_02" data-rb-mobile-icon-close>취소</button>
+                                        <button type="button" class="btn btn_submit" id="rb_mobile_menu_icon_custom_apply">적용</button>
+                                    </div>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -773,6 +809,110 @@ $pg_anchor = '<ul class="anchor">
 
 <script>
 $(function() {
+    var $mobileIconModal = $('#rb_mobile_menu_icon_modal');
+    var $mobileIconTextarea = $('#bu_mobile_menu_icon_svg');
+    var $mobileIconCustomRadio = $('#bu_mobile_menu_icon_7');
+    var $mobileIconCustomButton = $('#rb_mobile_menu_icon_custom_open');
+    var mobileIconLastFocus = null;
+
+    function openMobileIconModal() {
+        mobileIconLastFocus = document.activeElement;
+        $mobileIconModal.addClass('is-open').attr('aria-hidden', 'false');
+        $('body').addClass('rb_mobile_menu_icon_modal_open');
+        window.setTimeout(function() {
+            $mobileIconTextarea.trigger('focus');
+        }, 0);
+    }
+
+    function closeMobileIconModal() {
+        $mobileIconModal.removeClass('is-open').attr('aria-hidden', 'true');
+        $('body').removeClass('rb_mobile_menu_icon_modal_open');
+        if (mobileIconLastFocus && typeof mobileIconLastFocus.focus === 'function') {
+            mobileIconLastFocus.focus();
+        }
+    }
+
+    function sanitizeMobileIconSvg(svgCode) {
+        var allowedElements = ['svg', 'g', 'path', 'circle', 'ellipse', 'rect', 'line', 'polyline', 'polygon'];
+        var allowedAttributes = [
+            'xmlns', 'width', 'height', 'viewbox', 'preserveaspectratio',
+            'fill', 'fill-rule', 'clip-rule', 'fill-opacity',
+            'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin',
+            'stroke-miterlimit', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity',
+            'opacity', 'd', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y',
+            'x1', 'y1', 'x2', 'y2', 'points', 'transform', 'vector-effect',
+            'aria-hidden', 'focusable'
+        ];
+        var documentNode;
+
+        try {
+            documentNode = (new DOMParser()).parseFromString(svgCode, 'image/svg+xml');
+        } catch (error) {
+            return '';
+        }
+
+        if (!documentNode.documentElement
+            || documentNode.querySelector('parsererror')
+            || String(documentNode.documentElement.localName).toLowerCase() !== 'svg'
+            || documentNode.doctype) {
+            return '';
+        }
+
+        function cleanNode(node) {
+            Array.prototype.slice.call(node.childNodes).forEach(function(child) {
+                if (child.nodeType !== 1 || allowedElements.indexOf(String(child.localName).toLowerCase()) === -1) {
+                    node.removeChild(child);
+                    return;
+                }
+                cleanNode(child);
+            });
+
+            Array.prototype.slice.call(node.attributes || []).forEach(function(attribute) {
+                var attributeName = String(attribute.name).toLowerCase();
+                var attributeValue = $.trim(attribute.value);
+                if (allowedAttributes.indexOf(attributeName) === -1
+                    || /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(attributeValue)
+                    || /(?:javascript\s*:|data\s*:|url\s*\()/i.test(attributeValue)) {
+                    node.removeAttribute(attribute.name);
+                }
+            });
+        }
+
+        cleanNode(documentNode.documentElement);
+        documentNode.documentElement.setAttribute('width', '24');
+        documentNode.documentElement.setAttribute('height', '24');
+        documentNode.documentElement.setAttribute('aria-hidden', 'true');
+        documentNode.documentElement.setAttribute('focusable', 'false');
+
+        return (new XMLSerializer()).serializeToString(documentNode.documentElement);
+    }
+
+    $mobileIconCustomButton.on('click', openMobileIconModal);
+    $('[data-rb-mobile-icon-close]').on('click', closeMobileIconModal);
+    $(document).on('keydown.rbMobileMenuIcon', function(event) {
+        if (event.key === 'Escape' && $mobileIconModal.hasClass('is-open')) {
+            closeMobileIconModal();
+        }
+    });
+
+    $('#rb_mobile_menu_icon_custom_apply').on('click', function() {
+        var svgCode = $.trim($mobileIconTextarea.val());
+        var sanitizedSvg = sanitizeMobileIconSvg(svgCode);
+        if (sanitizedSvg === '') {
+            alert('올바른 SVG 코드를 입력해 주세요.');
+            $mobileIconTextarea.trigger('focus');
+            return;
+        }
+
+        $mobileIconTextarea.val(sanitizedSvg);
+        $mobileIconCustomRadio.prop('checked', true);
+        $mobileIconCustomButton
+            .attr('aria-label', '직접 추가 아이콘 수정')
+            .find('.rb_mobile_menu_icon_custom_content')
+            .html(sanitizedSvg);
+        closeMobileIconModal();
+    });
+
     function rememberActionLabel($button) {
         if (!$button.attr('data-rb-default-label')) {
             $button.attr('data-rb-default-label', $.trim($button.find('.rb-license-action-label').text()));

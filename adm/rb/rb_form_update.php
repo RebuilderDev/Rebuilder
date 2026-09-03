@@ -67,7 +67,9 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
 
     $mobile_menu_position_col = sql_fetch(" SHOW COLUMNS FROM rb_builder LIKE 'bu_mobile_menu_position' ");
     $mobile_menu_icon_col = sql_fetch(" SHOW COLUMNS FROM rb_builder LIKE 'bu_mobile_menu_icon' ");
-    if (empty($mobile_menu_position_col['Field']) || empty($mobile_menu_icon_col['Field'])) {
+    $mobile_menu_icon_color_col = sql_fetch(" SHOW COLUMNS FROM rb_builder LIKE 'bu_mobile_menu_icon_color_disable' ");
+    $mobile_menu_icon_svg_col = sql_fetch(" SHOW COLUMNS FROM rb_builder LIKE 'bu_mobile_menu_icon_svg' ");
+    if (empty($mobile_menu_position_col['Field']) || empty($mobile_menu_icon_col['Field']) || empty($mobile_menu_icon_color_col['Field']) || empty($mobile_menu_icon_svg_col['Field'])) {
         alert('모바일 메뉴 설정 DB가 적용되지 않았습니다. 빌더정보의 DB 설치 및 업데이트를 먼저 실행해 주세요.', './rb_form.php#anc_rb5');
     }
 
@@ -78,9 +80,19 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
     $bu_purchase_confirm_use = !empty($_POST['bu_purchase_confirm_use']) ? 1 : 0;
     $bu_mobile_menu_position = isset($_POST['bu_mobile_menu_position']) && $_POST['bu_mobile_menu_position'] === 'right' ? 'right' : 'left';
     $bu_mobile_menu_icon = isset($_POST['bu_mobile_menu_icon']) ? (int) $_POST['bu_mobile_menu_icon'] : 1;
-    if ($bu_mobile_menu_icon < 1 || $bu_mobile_menu_icon > 6) {
+    if ($bu_mobile_menu_icon < 1 || $bu_mobile_menu_icon > 7) {
         $bu_mobile_menu_icon = 1;
     }
+    $bu_mobile_menu_icon_color_disable = !empty($_POST['bu_mobile_menu_icon_color_disable']) ? 1 : 0;
+    $bu_mobile_menu_icon_svg_raw = isset($_POST['bu_mobile_menu_icon_svg']) ? trim((string) $_POST['bu_mobile_menu_icon_svg']) : '';
+    $bu_mobile_menu_icon_svg = rb_sanitize_mobile_menu_svg($bu_mobile_menu_icon_svg_raw);
+    if ($bu_mobile_menu_icon_svg_raw !== '' && $bu_mobile_menu_icon_svg === '') {
+        alert('사용할 수 없는 SVG 코드입니다. 올바른 SVG 코드를 입력해 주세요.', './rb_form.php#anc_rb5');
+    }
+    if ($bu_mobile_menu_icon === 7 && $bu_mobile_menu_icon_svg === '') {
+        alert('직접 추가 아이콘을 사용하려면 SVG 코드를 입력해 주세요.', './rb_form.php#anc_rb5');
+    }
+    $bu_mobile_menu_icon_svg_sql = sql_escape_string($bu_mobile_menu_icon_svg);
 
     $bu_mini_use1 = isset($_POST['bu_mini_use1']) && is_numeric($_POST['bu_mini_use1']) ? (int)$_POST['bu_mini_use1'] : 0;
     $bu_mini_use2 = isset($_POST['bu_mini_use2']) && is_numeric($_POST['bu_mini_use2']) ? (int)$_POST['bu_mini_use2'] : 0;
@@ -131,6 +143,8 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
                     bu_viewport = '{$_POST['bu_viewport']}',
                     bu_mobile_menu_position = '{$bu_mobile_menu_position}',
                     bu_mobile_menu_icon = '{$bu_mobile_menu_icon}',
+                    bu_mobile_menu_icon_color_disable = '{$bu_mobile_menu_icon_color_disable}',
+                    bu_mobile_menu_icon_svg = '{$bu_mobile_menu_icon_svg_sql}',
                     bu_systemmsg_use = '{$bu_systemmsg_use}',
                     bu_datetime = '".G5_TIME_YMDHIS."' ";
             sql_query($sql);
@@ -178,6 +192,8 @@ if (isset($_POST['install']) && $_POST['install'] == 1) {
                     bu_viewport = '{$_POST['bu_viewport']}',
                     bu_mobile_menu_position = '{$bu_mobile_menu_position}',
                     bu_mobile_menu_icon = '{$bu_mobile_menu_icon}',
+                    bu_mobile_menu_icon_color_disable = '{$bu_mobile_menu_icon_color_disable}',
+                    bu_mobile_menu_icon_svg = '{$bu_mobile_menu_icon_svg_sql}',
                     bu_systemmsg_use = '{$bu_systemmsg_use}',
                     bu_datetime = '".G5_TIME_YMDHIS."' ";
             sql_query($sql);

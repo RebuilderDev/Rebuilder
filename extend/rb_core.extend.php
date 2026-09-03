@@ -100,14 +100,178 @@ if (!function_exists('rb_mobile_menu_icon')) {
 
         $icon = isset($rb_builder['bu_mobile_menu_icon']) ? (int) $rb_builder['bu_mobile_menu_icon'] : 1;
 
-        return $icon >= 1 && $icon <= 6 ? $icon : 1;
+        return $icon >= 1 && $icon <= 7 ? $icon : 1;
+    }
+}
+
+if (!function_exists('rb_sanitize_mobile_menu_svg')) {
+    function rb_sanitize_mobile_menu_svg($svg)
+    {
+        if (!is_string($svg)) {
+            return '';
+        }
+
+        $svg = trim(preg_replace('/^\xEF\xBB\xBF/', '', $svg));
+        if ($svg === '' || strlen($svg) > 30000) {
+            return '';
+        }
+
+        $svg = preg_replace('/<\?xml[^>]*\?>/i', '', $svg);
+        if (preg_match('/<!DOCTYPE|<!ENTITY/i', $svg)) {
+            return '';
+        }
+
+        $allowed_elements = array('svg', 'g', 'path', 'circle', 'ellipse', 'rect', 'line', 'polyline', 'polygon');
+        $allowed_attributes = array(
+            'xmlns', 'width', 'height', 'viewbox', 'preserveaspectratio',
+            'fill', 'fill-rule', 'clip-rule', 'fill-opacity',
+            'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin',
+            'stroke-miterlimit', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity',
+            'opacity', 'd', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y',
+            'x1', 'y1', 'x2', 'y2', 'points', 'transform', 'vector-effect',
+            'aria-hidden', 'focusable'
+        );
+
+        // 일부 호스팅에서 DOM 확장이 빠진 경우에도 허용 태그와 속성만 다시 조립한다.
+        if (!class_exists('DOMDocument')) {
+            if (!preg_match('/^\s*<svg\b[\s\S]*<\/svg>\s*$/i', $svg)) {
+                return '';
+            }
+
+            $sanitized = preg_replace_callback(
+                '/<\s*(\/?)\s*([a-zA-Z][a-zA-Z0-9:-]*)([^>]*)>/s',
+                function ($matches) use ($allowed_elements, $allowed_attributes) {
+                    $is_closing = $matches[1] === '/';
+                    $element = strtolower($matches[2]);
+                    if (!in_array($element, $allowed_elements, true)) {
+                        return '';
+                    }
+                    if ($is_closing) {
+                        return '</'.$element.'>';
+                    }
+
+                    $attributes = array();
+                    if (preg_match_all('/([a-zA-Z_:][a-zA-Z0-9:._-]*)\s*=\s*(["\x27])(.*?)\2/s', $matches[3], $attribute_matches, PREG_SET_ORDER)) {
+                        foreach ($attribute_matches as $attribute_match) {
+                            $attribute_name = strtolower($attribute_match[1]);
+                            $attribute_value = trim($attribute_match[3]);
+                            if (!in_array($attribute_name, $allowed_attributes, true)
+                                || preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', $attribute_value)
+                                || preg_match('/(?:javascript\s*:|data\s*:|url\s*\()/i', $attribute_value)) {
+                                continue;
+                            }
+                            $output_attribute_name = $attribute_name;
+                            if ($attribute_name === 'viewbox') {
+                                $output_attribute_name = 'viewBox';
+                            } elseif ($attribute_name === 'preserveaspectratio') {
+                                $output_attribute_name = 'preserveAspectRatio';
+                            }
+                            $attributes[$output_attribute_name] = $attribute_value;
+                        }
+                    }
+
+                    if ($element === 'svg') {
+                        $attributes['width'] = '24';
+                        $attributes['height'] = '24';
+                        $attributes['aria-hidden'] = 'true';
+                        $attributes['focusable'] = 'false';
+                    }
+
+                    $attribute_html = '';
+                    foreach ($attributes as $attribute_name => $attribute_value) {
+                        $attribute_html .= ' '.$attribute_name.'="'.htmlspecialchars($attribute_value, ENT_QUOTES | ENT_XML1, 'UTF-8').'"';
+                    }
+
+                    return '<'.$element.$attribute_html.(preg_match('/\/\s*$/', $matches[3]) ? '/>' : '>');
+                },
+                $svg
+            );
+            $sanitized = preg_replace('/>[^<]+</s', '><', $sanitized);
+
+            return preg_match('/^\s*<svg\b[\s\S]*<\/svg>\s*$/i', $sanitized) ? trim($sanitized) : '';
+        }
+
+        $previous_errors = libxml_use_internal_errors(true);
+        $document = new DOMDocument('1.0', 'UTF-8');
+        $loaded = $document->loadXML($svg, LIBXML_NONET | LIBXML_NOBLANKS);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous_errors);
+
+        if (!$loaded || !$document->documentElement || strtolower($document->documentElement->localName) !== 'svg') {
+            return '';
+        }
+
+        $sanitize_node = function ($node) use (&$sanitize_node, $allowed_elements, $allowed_attributes) {
+            $children = array();
+            foreach ($node->childNodes as $child) {
+                $children[] = $child;
+            }
+
+            foreach ($children as $child) {
+                if ($child->nodeType !== XML_ELEMENT_NODE) {
+                    $node->removeChild($child);
+                    continue;
+                }
+
+                if (!in_array(strtolower($child->localName), $allowed_elements, true)) {
+                    $node->removeChild($child);
+                    continue;
+                }
+
+                $sanitize_node($child);
+            }
+
+            if (!$node->hasAttributes()) {
+                return;
+            }
+
+            $attributes = array();
+            foreach ($node->attributes as $attribute) {
+                $attributes[] = $attribute;
+            }
+
+            foreach ($attributes as $attribute) {
+                $attribute_name = strtolower($attribute->nodeName);
+                $attribute_value = trim($attribute->nodeValue);
+                if (!in_array($attribute_name, $allowed_attributes, true)
+                    || preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', $attribute_value)
+                    || preg_match('/(?:javascript\s*:|data\s*:|url\s*\()/i', $attribute_value)) {
+                    $node->removeAttributeNode($attribute);
+                }
+            }
+        };
+
+        $sanitize_node($document->documentElement);
+        $document->documentElement->setAttribute('width', '24');
+        $document->documentElement->setAttribute('height', '24');
+        $document->documentElement->setAttribute('aria-hidden', 'true');
+        $document->documentElement->setAttribute('focusable', 'false');
+
+        $sanitized = $document->saveXML($document->documentElement);
+
+        return is_string($sanitized) ? trim($sanitized) : '';
     }
 }
 
 if (!function_exists('rb_mobile_menu_icon_svg')) {
-    function rb_mobile_menu_icon_svg($icon = 1)
+    function rb_mobile_menu_icon_svg($icon = 1, $custom_svg = null)
     {
+        global $rb_builder;
+
         $icon = (int) $icon;
+
+        if ($icon === 7) {
+            if ($custom_svg === null) {
+                $custom_svg = isset($rb_builder['bu_mobile_menu_icon_svg']) ? $rb_builder['bu_mobile_menu_icon_svg'] : '';
+            }
+
+            $custom_svg = rb_sanitize_mobile_menu_svg($custom_svg);
+            if ($custom_svg !== '') {
+                return $custom_svg;
+            }
+
+            $icon = 1;
+        }
 
         switch ($icon) {
             case 2:

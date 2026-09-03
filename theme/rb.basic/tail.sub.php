@@ -554,6 +554,7 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
     $rb_core_header_txt = isset($rb_core['header_txt']) ? $rb_core['header_txt'] : 'black';
     $rb_config_colors = isset($rb_config['co_color']) ? $rb_config['co_color'] : '';
     $rb_config_headers = isset($rb_config['co_header']) ? $rb_config['co_header'] : '';
+    $rb_mobile_menu_icon_color_disable = !empty($rb_builder['bu_mobile_menu_icon_color_disable']) ? 1 : 0;
 
     $index_css = '';
     $shop_css = '';
@@ -562,7 +563,7 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 
 
     add_stylesheet('<link rel="stylesheet" href="'.G5_URL.'/rb/rb.css/set.color.php?rb_color_set=' . urlencode($rb_core_colors) . '&rb_color_code=' . urlencode($rb_config_colors) . '" />', 0);
-    add_stylesheet('<link rel="stylesheet" href="'.G5_URL.'/rb/rb.css/set.header.php?rb_header_set=' . urlencode($rb_core_headers) . '&rb_header_code=' . urlencode($rb_config_headers) . '&rb_header_txt=' . urlencode($rb_core_header_txt) . '" />', 0);
+    add_stylesheet('<link rel="stylesheet" href="'.G5_URL.'/rb/rb.css/set.header.php?rb_header_set=' . urlencode($rb_core_headers) . '&rb_header_code=' . urlencode($rb_config_headers) . '&rb_header_txt=' . urlencode($rb_core_header_txt) . '&rb_mobile_menu_icon_color_disable=' . $rb_mobile_menu_icon_color_disable . '" />', 0);
     add_stylesheet('<link rel="stylesheet" href="'.G5_URL.'/rb/rb.css/set.style.php?ver='.G5_SERVER_TIME.'&rb_color_set=' . urlencode($rb_core_colors) . '&rb_color_code=' . urlencode($rb_config_colors) . '&rb_is_index='.$index_css.'&rb_is_shop='.$shop_css.'" />', 0);
     add_stylesheet('<link rel="stylesheet" href="'.G5_URL.'/rb/rb.css/set.style.css?ver='.G5_SERVER_TIME.'" />', 0);
 ?>

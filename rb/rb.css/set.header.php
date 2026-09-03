@@ -19,6 +19,10 @@ if ($rb_header_mode !== 'black' && $rb_header_mode !== 'white') {
     $rb_header_mode = $rb_header_info['text'];
 }
 
+$rb_mobile_menu_icon_color_disable = isset($_GET['rb_mobile_menu_icon_color_disable'])
+    ? (int) $_GET['rb_mobile_menu_icon_color_disable']
+    : (!empty($rb_builder['bu_mobile_menu_icon_color_disable']) ? 1 : 0);
+
 if ($rb_header_mode === 'black') {
     $rb_rgba_border = "border-color:rgba(0,0,0,0.1);";
     $rb_rgba_bg = "background-color:rgba(0,0,0,0.05);";
@@ -34,12 +38,22 @@ if ($rb_header_mode === 'black') {
     $rb_header_a = "#fff";
     $arr_w = "background-image: url(../rb.config/image/arr_down_w.svg)";
 }
+$rb_mobile_menu_icon_color = $rb_mobile_menu_icon_color_disable ? '#000' : $rb_header_txt;
 ?>
 
 
 .<?php echo $rb_header_set ?> #header {background-color: <?php echo $rb_header_code ?>; border-bottom: 1px solid <?php echo $rb_header_code ?>;}
 .<?php echo $rb_header_set ?> #header .rows_gnb_wrap {<?php echo $rb_rgba_border ?>}
-.<?php echo $rb_header_set ?> #header .tog_wrap button svg path {fill:<?php echo $rb_header_txt ?>;}
+.<?php echo $rb_header_set ?> #header .tog_wrap button svg path:not([fill="none"]),
+.<?php echo $rb_header_set ?> #header .tog_wrap button svg circle:not([fill="none"]),
+.<?php echo $rb_header_set ?> #header .tog_wrap button svg ellipse:not([fill="none"]),
+.<?php echo $rb_header_set ?> #header .tog_wrap button svg rect:not([fill="none"]),
+.<?php echo $rb_header_set ?> #header .tog_wrap button svg polygon:not([fill="none"]) {fill:<?php echo $rb_mobile_menu_icon_color ?>;}
+.<?php echo $rb_header_set ?> #header .tog_wrap button svg [fill="none"] path:not([fill]),
+.<?php echo $rb_header_set ?> #header .tog_wrap button svg [fill="none"] circle:not([fill]),
+.<?php echo $rb_header_set ?> #header .tog_wrap button svg [fill="none"] ellipse:not([fill]),
+.<?php echo $rb_header_set ?> #header .tog_wrap button svg [fill="none"] rect:not([fill]),
+.<?php echo $rb_header_set ?> #header .tog_wrap button svg [fill="none"] polygon:not([fill]) {fill:none;}
 .<?php echo $rb_header_set ?> #header .gnb_wrap nav a {color:<?php echo $rb_header_a ?>;}
 .<?php echo $rb_header_set ?> #header .gnb_wrap nav a:hover{color:<?php echo $rb_header_txt ?>;}
 .<?php echo $rb_header_set ?> #header .gnb_wrap .snb_wrap .member_info_wrap span {color:<?php echo $rb_header_txt ?>;}
