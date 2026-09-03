@@ -41,15 +41,15 @@ if (function_exists('rb_notification_table_ready') && rb_notification_table_read
 ?>
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title><?php echo rb_console_h($console_title.' | '.$console_config['bc_name']); ?></title>
-<link rel="stylesheet" href="<?php echo G5_ADMIN_URL; ?>/css/admin.css?ver=<?php echo G5_CSS_VER; ?>">
+<link rel="stylesheet" href="<?php echo get_versioned_asset_url(G5_ADMIN_URL.'/css/admin.css'); ?>">
 <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/base/jquery-ui.css">
-<?php if (is_file(G5_THEME_PATH.'/rb.css/datepicker.css')) { ?><link rel="stylesheet" href="<?php echo G5_THEME_URL; ?>/rb.css/datepicker.css?ver=<?php echo G5_CSS_VER; ?>"><?php } ?>
+<?php if (is_file(G5_THEME_PATH.'/rb.css/datepicker.css')) { ?><link rel="stylesheet" href="<?php echo get_versioned_asset_url(G5_THEME_URL.'/rb.css/datepicker.css'); ?>"><?php } ?>
 <link rel="stylesheet" href="<?php echo G5_ADMIN_URL; ?>/fonts/Pretendard/Pretendard.css">
 <?php foreach ((array) glob(G5_ADMIN_PATH.'/css/admin_extend_*.css') as $css) { ?><link rel="stylesheet" href="<?php echo rb_console_h(str_replace(G5_ADMIN_PATH, G5_ADMIN_URL, $css)); ?>"><?php } ?>
 <link rel="stylesheet" href="<?php echo G5_JS_URL; ?>/font-awesome/css/font-awesome.min.css">
 <script>var g5_url=<?php echo json_encode(G5_URL); ?>,g5_bbs_url=<?php echo json_encode(G5_BBS_URL); ?>,g5_admin_url=<?php echo json_encode(G5_ADMIN_URL); ?>,g5_is_member="1",g5_is_admin="",g5_is_mobile=<?php echo json_encode((string) G5_IS_MOBILE); ?>;</script>
-<script src="<?php echo G5_JS_URL; ?>/jquery-1.12.4.min.js"></script><script src="<?php echo G5_JS_URL; ?>/jquery-migrate-1.4.1.min.js"></script><script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script><script src="<?php echo G5_JS_URL; ?>/common.js?ver=<?php echo G5_JS_VER; ?>"></script><script src="<?php echo G5_JS_URL; ?>/wrest.js?ver=<?php echo G5_JS_VER; ?>"></script>
-<?php if ($console_notification_category_tabs) { ?><script src="<?php echo G5_URL; ?>/rb/rb.console/console.notification.js?ver=<?php echo G5_JS_VER; ?>"></script><?php } ?>
+<script src="<?php echo G5_JS_URL; ?>/jquery-1.12.4.min.js"></script><script src="<?php echo G5_JS_URL; ?>/jquery-migrate-1.4.1.min.js"></script><script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script><script src="<?php echo get_versioned_asset_url(G5_JS_URL.'/common.js'); ?>"></script><script src="<?php echo get_versioned_asset_url(G5_JS_URL.'/wrest.js'); ?>"></script>
+<?php if ($console_notification_category_tabs) { ?><script src="<?php echo get_versioned_asset_url(G5_URL.'/rb/rb.console/console.notification.js'); ?>"></script><?php } ?>
 <?php if (is_file(G5_THEME_PATH.'/shop/apexcharts/apexcharts.js')) { ?><script src="<?php echo G5_THEME_URL; ?>/shop/apexcharts/apexcharts.js"></script><?php } ?>
 <?php if ($console_is_dashboard && is_file(G5_ADMIN_PATH.'/rb/rb.widget/sortable.min.js')) { ?><script src="<?php echo G5_ADMIN_URL; ?>/rb/rb.widget/sortable.min.js"></script><?php } ?>
 </head><body class="business-console<?php echo $console_is_dark ? ' adm-dark' : ''; ?>"><div id="to_content"><a href="#container">본문 바로가기</a></div>

@@ -15,8 +15,8 @@ $rb_media_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'c
 ?>
 
 <!-- 장바구니 시작 { -->
-<script src="<?php echo G5_JS_URL; ?>/shop.js?ver=<?php echo G5_JS_VER; ?>"></script>
-<script src="<?php echo G5_JS_URL; ?>/shop.override.js?ver=<?php echo G5_JS_VER; ?>"></script>
+<script src="<?php echo get_versioned_asset_url(G5_JS_URL.'/shop.js'); ?>"></script>
+<script src="<?php echo get_versioned_asset_url(G5_JS_URL.'/shop.override.js'); ?>"></script>
 <style>
 .rb-file-order-tag {
         font-size: 12px !important;

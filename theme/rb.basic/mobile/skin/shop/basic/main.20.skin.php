@@ -14,7 +14,7 @@ add_javascript('<script src="'.G5_THEME_JS_URL.'/theme.shop.list.js"></script>',
 <script>
 var kakao_javascript_apikey = "<?php echo $config['cf_kakao_js_apikey']; ?>";
 </script>
-<script src="<?php echo G5_JS_URL; ?>/kakaolink.js?ver=<?php echo G5_JS_VER; ?>"></script>
+<script src="<?php echo get_versioned_asset_url(G5_JS_URL.'/kakaolink.js'); ?>"></script>
 <?php } ?>
 
 <!-- 메인상품진열 20 시작 { -->
@@ -117,4 +117,3 @@ if ($i > 0) echo "</ul>\n";
 if($i == 0) echo "<p class=\"sct_noitem\">등록된 상품이 없습니다.</p>\n";
 ?>
 <!-- } 상품진열 20 끝 -->
-

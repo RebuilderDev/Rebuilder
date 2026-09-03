@@ -30,7 +30,7 @@ $admin_notification_h = static function ($value) {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 };
 
-add_javascript('<script src="'.G5_URL.'/rb/rb.console/console.notification.js?ver='.G5_JS_VER.'"></script>', 20);
+add_javascript('<script src="'.G5_URL.'/rb/rb.console/console.notification.js"></script>', 20);
 ?>
 <li class="tnb_li rb-admin-notification">
     <a href="#" id="notification_top_btn" title="알림" aria-label="알림" aria-haspopup="true" aria-expanded="false">

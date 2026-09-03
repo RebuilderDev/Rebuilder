@@ -1,6 +1,6 @@
 <?php if (!defined('_GNUBOARD_') || !defined('RB_BUSINESS_CONSOLE')) exit; ?>
 <footer id="ft"><p>@ <?php echo rb_console_h(rb_console_config()['bc_name']); ?></p></footer></div></div>
-<script src="<?php echo G5_ADMIN_URL; ?>/admin.js?ver=<?php echo G5_JS_VER; ?>"></script><script src="<?php echo G5_ADMIN_URL; ?>/js/rb.common.js?ver=<?php echo G5_JS_VER; ?>"></script>
+<script src="<?php echo get_versioned_asset_url(G5_ADMIN_URL.'/admin.js'); ?>"></script><script src="<?php echo get_versioned_asset_url(G5_ADMIN_URL.'/js/rb.common.js'); ?>"></script>
 <script>
 (function($){
     if (!$ || !$.datepicker) return;
