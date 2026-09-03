@@ -242,7 +242,8 @@ function rb_notification_save_preference($mb_id, $notify_push, $notify_site, $ca
 
     $current = rb_notification_get_preference($mb_id);
     $values = array(
-        'notify_push' => $notify_push ? 1 : 0,
+        // notify_push 컬럼은 이전 버전 호환용으로 유지하되 대표 알림 동의와 동일하게 저장합니다.
+        'notify_push' => $notify_site ? 1 : 0,
         'notify_site' => $notify_site ? 1 : 0,
     );
     foreach (array('notify_comment', 'notify_reply', 'notify_comment_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $column) {
@@ -287,7 +288,8 @@ function rb_notification_save_preference($mb_id, $notify_push, $notify_site, $ca
 function rb_notification_push_allowed($mb_id)
 {
     $preference = rb_notification_get_preference($mb_id);
-    return !empty($preference['notify_push']);
+    // 앱 Push의 별도 회원 동의는 제거되었으며 대표 알림 동의를 공통 기준으로 사용합니다.
+    return !empty($preference['notify_site']);
 }
 
 function rb_notification_site_allowed($mb_id)
@@ -742,7 +744,11 @@ function rb_notification_send($category, $title, $content, $link_url, $recv_id, 
         $noti_id = function_exists('sql_insert_id') ? sql_insert_id() : mysqli_insert_id($GLOBALS['g5']['connect_db']);
     }
 
-    // PWA는 자체 구독·수신동의 절차를 사용하며, 회원의 앱 Push 설정과 분리합니다.
+    // 자동 Push/PWA는 선택 항목의 사이트 내 알림이 실제 저장된 경우에만 이어서 발송합니다.
+    if (!$noti_id) {
+        return $noti_id;
+    }
+
     $pwa_push = (!isset($options['pwa_push']) || (bool) $options['pwa_push']);
     $preference_force = ($category === 'notice' || $admin_system_force);
     $app_push = ($preference_force || rb_notification_push_allowed($recv_id))

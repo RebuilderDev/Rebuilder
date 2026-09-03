@@ -17,8 +17,7 @@ $rb_sms_cert_show = ($rb_sms_cert_render && ($w == '' || ($w == 'u' && !$rb_sms_
 $rb_sms_cert_initial_hidden = ($rb_sms_cert_render && !$rb_sms_cert_show) ? 1 : 0;
 $rb_notification_preference = function_exists('rb_notification_get_preference')
     ? rb_notification_get_preference(isset($member['mb_id']) ? $member['mb_id'] : '')
-    : array('notify_push' => 0, 'notify_site' => 0);
-$rb_notification_push_checked = !empty($rb_notification_preference['notify_push']);
+    : array('notify_site' => 0);
 $rb_notification_site_checked = !empty($rb_notification_preference['notify_site']);
 $rb_notification_category_checked = array();
 foreach (array('notify_comment', 'notify_reply', 'notify_comment_reply', 'notify_shop', 'notify_subscribe', 'notify_other') as $rb_notification_key) {
@@ -27,9 +26,7 @@ foreach (array('notify_comment', 'notify_reply', 'notify_comment_reply', 'notify
 $rb_notification_visible_categories = function_exists('rb_notification_visible_categories') ? rb_notification_visible_categories() : array();
 $rb_notification_shop_available = isset($rb_notification_visible_categories['shop']);
 $rb_notification_subscribe_available = isset($rb_notification_visible_categories['subscribe']);
-$rb_notification_push_available = isset($app) && is_array($app)
-    && !empty($app['ap_title']) && !empty($app['ap_pid']) && !empty($app['ap_key']);
-$rb_notification_parent_checked = (($rb_notification_push_available && $rb_notification_push_checked) || $rb_notification_site_checked);
+$rb_notification_parent_checked = $rb_notification_site_checked;
 ?>
 
 <!-- 회원정보 입력/수정 시작 { -->
@@ -506,35 +503,23 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
                             <label for="reg_rb_notification_agree">알림수신 동의</label>
                             <button type="button" class="js-open-consent" data-title="알림수신 동의" data-template="#tpl_notification" data-check="#reg_rb_notification_agree" data-check-group=".child-notification" aria-controls="consentDialog">자세히보기</button>
                         </ul>
-                        <div id="desc_notification" class="sound_only"><?php echo $rb_notification_push_available ? '앱 Push 알림과 사이트 내 알림' : '사이트 내 알림'; ?> 수신에 대한 안내입니다.</div>
-                        <?php if ($rb_notification_push_available) { ?>
-                        <ul class="desc_sub">
-                            <input type="checkbox" name="rb_notify_push" value="1" id="reg_rb_notify_push" <?php echo $rb_notification_push_checked ? 'checked' : ''; ?> class="selec_chk child-notification" data-rb-saved-checked="<?php echo $rb_notification_push_checked ? '1' : '0'; ?>" autocomplete="off">
-                            <label for="reg_rb_notify_push">앱 Push 알림 동의</label>
-                        </ul>
-                        <?php } else { ?>
-                        <input type="hidden" name="rb_notify_push" value="0">
-                        <?php } ?>
-                        <ul class="desc_sub">
-                            <input type="checkbox" name="rb_notify_site" value="1" id="reg_rb_notify_site" <?php echo $rb_notification_site_checked ? 'checked' : ''; ?> class="selec_chk child-notification" data-rb-saved-checked="<?php echo $rb_notification_site_checked ? '1' : '0'; ?>" autocomplete="off">
-                            <label for="reg_rb_notify_site">사이트 내 알림 동의</label>
-                        </ul>
+                        <div id="desc_notification" class="sound_only">선택한 항목의 알림 수신에 대한 안내입니다.</div>
                         <div class="desc_sub">
                             <ul class="desc_sub">
-                                <input type="checkbox" name="rb_notify_comment" value="1" id="reg_rb_notify_comment" <?php echo $rb_notification_category_checked['notify_comment'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_comment'] ? '1' : '0'; ?>" autocomplete="off">
+                                <input type="checkbox" name="rb_notify_comment" value="1" id="reg_rb_notify_comment" <?php echo $rb_notification_category_checked['notify_comment'] ? 'checked' : ''; ?> class="selec_chk child-notification site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_comment'] ? '1' : '0'; ?>" autocomplete="off">
                                 <label for="reg_rb_notify_comment">댓글 알림</label>
                             </ul>
                             <ul class="desc_sub">
-                                <input type="checkbox" name="rb_notify_reply" value="1" id="reg_rb_notify_reply" <?php echo $rb_notification_category_checked['notify_reply'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_reply'] ? '1' : '0'; ?>" autocomplete="off">
+                                <input type="checkbox" name="rb_notify_reply" value="1" id="reg_rb_notify_reply" <?php echo $rb_notification_category_checked['notify_reply'] ? 'checked' : ''; ?> class="selec_chk child-notification site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_reply'] ? '1' : '0'; ?>" autocomplete="off">
                                 <label for="reg_rb_notify_reply">답글 알림</label>
                             </ul>
                             <ul class="desc_sub">
-                                <input type="checkbox" name="rb_notify_comment_reply" value="1" id="reg_rb_notify_comment_reply" <?php echo $rb_notification_category_checked['notify_comment_reply'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_comment_reply'] ? '1' : '0'; ?>" autocomplete="off">
+                                <input type="checkbox" name="rb_notify_comment_reply" value="1" id="reg_rb_notify_comment_reply" <?php echo $rb_notification_category_checked['notify_comment_reply'] ? 'checked' : ''; ?> class="selec_chk child-notification site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_comment_reply'] ? '1' : '0'; ?>" autocomplete="off">
                                 <label for="reg_rb_notify_comment_reply">대댓글 알림</label>
                             </ul>
                             <?php if ($rb_notification_shop_available) { ?>
                             <ul class="desc_sub">
-                                <input type="checkbox" name="rb_notify_shop" value="1" id="reg_rb_notify_shop" <?php echo $rb_notification_category_checked['notify_shop'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_shop'] ? '1' : '0'; ?>" autocomplete="off">
+                                <input type="checkbox" name="rb_notify_shop" value="1" id="reg_rb_notify_shop" <?php echo $rb_notification_category_checked['notify_shop'] ? 'checked' : ''; ?> class="selec_chk child-notification site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_shop'] ? '1' : '0'; ?>" autocomplete="off">
                                 <label for="reg_rb_notify_shop">쇼핑 알림</label>
                             </ul>
                             <?php } else { ?>
@@ -542,22 +527,19 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
                             <?php } ?>
                             <?php if ($rb_notification_subscribe_available) { ?>
                             <ul class="desc_sub">
-                                <input type="checkbox" name="rb_notify_subscribe" value="1" id="reg_rb_notify_subscribe" <?php echo $rb_notification_category_checked['notify_subscribe'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_subscribe'] ? '1' : '0'; ?>" autocomplete="off">
+                                <input type="checkbox" name="rb_notify_subscribe" value="1" id="reg_rb_notify_subscribe" <?php echo $rb_notification_category_checked['notify_subscribe'] ? 'checked' : ''; ?> class="selec_chk child-notification site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_subscribe'] ? '1' : '0'; ?>" autocomplete="off">
                                 <label for="reg_rb_notify_subscribe">구독 알림</label>
                             </ul>
                             <?php } else { ?>
                             <input type="hidden" name="rb_notify_subscribe" value="0">
                             <?php } ?>
                             <ul class="desc_sub">
-                                <input type="checkbox" name="rb_notify_other" value="1" id="reg_rb_notify_other" <?php echo $rb_notification_category_checked['notify_other'] ? 'checked' : ''; ?> class="selec_chk site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_other'] ? '1' : '0'; ?>" autocomplete="off">
+                                <input type="checkbox" name="rb_notify_other" value="1" id="reg_rb_notify_other" <?php echo $rb_notification_category_checked['notify_other'] ? 'checked' : ''; ?> class="selec_chk child-notification site-notification-option" data-rb-saved-checked="<?php echo $rb_notification_category_checked['notify_other'] ? '1' : '0'; ?>" autocomplete="off">
                                 <label for="reg_rb_notify_other">기타 알림</label>
                             </ul>
                         </div>
                         <template id="tpl_notification">
-                            <?php if ($rb_notification_push_available) { ?>
-                            앱 Push 알림을 받으면 새로운 활동 소식을 앱 알림으로 확인할 수 있습니다.
-                            <?php } ?>
-                            사이트 내 알림은 게시물, 댓글, 쇼핑 및 구독 등의 활동과 관련된 소식을 실시간 알림으로 받아 보실 수 있습니다.<br>
+                            선택한 항목의 사이트 내 알림이 생성되면 앱 기능 또는 PWA 기능을 사용하는 환경에서는 같은 알림이 푸시로도 전송됩니다.<br>
                             운영자가 발송하는 공지 알림은 알림수신을 거부할 수 없습니다.
                         </template>
                     </div>
@@ -1235,8 +1217,6 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
     document.addEventListener('DOMContentLoaded', function() {
         const parentNotification = document.getElementById('reg_rb_notification_agree');
         const childNotification = Array.from(document.querySelectorAll('.child-notification'));
-        const siteNotification = document.getElementById('reg_rb_notify_site');
-        const siteOptions = Array.from(document.querySelectorAll('.site-notification-option'));
         if (!parentNotification || childNotification.length === 0) return;
 
         const syncParentFromChildren = () => {
@@ -1245,29 +1225,16 @@ $rb_notification_parent_checked = (($rb_notification_push_available && $rb_notif
         const syncChildrenFromParent = () => {
             childNotification.forEach(cb => {
                 cb.checked = parentNotification.checked;
+                cb.setAttribute('data-rb-consent-dirty', '1');
             });
-            siteOptions.forEach(cb => {
-                cb.checked = parentNotification.checked;
-            });
-        };
-        const syncSiteOptionsFromParent = () => {
-            siteOptions.forEach(cb => {
-                cb.checked = siteNotification.checked;
-            });
-            syncParentFromChildren();
-        };
-        const syncSiteParentFromOptions = () => {
-            if (siteOptions.length) {
-                siteNotification.checked = siteOptions.some(cb => cb.checked);
-            }
-            syncParentFromChildren();
         };
 
         syncParentFromChildren();
         parentNotification.addEventListener('change', syncChildrenFromParent);
-        childNotification.forEach(cb => cb.addEventListener('change', syncParentFromChildren));
-        if (siteNotification) siteNotification.addEventListener('change', syncSiteOptionsFromParent);
-        siteOptions.forEach(cb => cb.addEventListener('change', syncSiteParentFromOptions));
+        childNotification.forEach(cb => cb.addEventListener('change', function() {
+            syncParentFromChildren();
+            parentNotification.setAttribute('data-rb-consent-dirty', '1');
+        }));
     });
 </script>
 

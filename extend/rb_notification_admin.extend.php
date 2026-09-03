@@ -15,8 +15,7 @@ function rb_notification_admin_member_form_add($mb, $w, $position)
         ? rb_notification_get_preference($mb_id)
         : array();
     $items = array(
-        'push' => array('앱 Push 알림 동의', !empty($preference['notify_push'])),
-        'site' => array('사이트 내 알림 동의', !empty($preference['notify_site'])),
+        'site' => array('알림수신 동의', !empty($preference['notify_site'])),
         'comment' => array('댓글 알림', !empty($preference['notify_comment'])),
         'reply' => array('답글 알림', !empty($preference['notify_reply'])),
         'comment_reply' => array('대댓글 알림', !empty($preference['notify_comment_reply'])),
@@ -26,10 +25,9 @@ function rb_notification_admin_member_form_add($mb, $w, $position)
     );
 
     $pairs = array(
-        array('push', 'site'),
-        array('comment', 'reply'),
-        array('comment_reply', 'shop'),
-        array('subscribe', 'other'),
+        array('site', 'comment'),
+        array('reply', 'comment_reply'),
+        array('shop', 'subscribe'),
     );
     foreach ($pairs as $pair) {
         echo '<tr>';
@@ -38,7 +36,9 @@ function rb_notification_admin_member_form_add($mb, $w, $position)
         }
         echo '</tr>';
     }
-
+    echo '<tr>';
+    rb_notification_admin_member_radio('other', $items['other'][0], $items['other'][1], 3);
+    echo '</tr>';
 }
 
 function rb_notification_admin_member_radio($key, $label, $checked, $colspan = 1)
@@ -50,7 +50,7 @@ function rb_notification_admin_member_radio($key, $label, $checked, $colspan = 1
 
     echo '<th scope="row">'.htmlspecialchars($label, ENT_QUOTES).'</th>';
     echo '<td'.$colspan_attr.'>';
-    if ($key === 'push') {
+    if ($key === 'site') {
         echo '<input type="hidden" name="rb_notification_preference_present" value="1">';
     }
     echo '<input type="radio" name="'.$name.'" value="1" id="'.$name.'_yes"'.$yes.'>';
@@ -72,14 +72,13 @@ function rb_notification_admin_member_form_update($w, $mb_id)
     $enabled = function ($key) {
         return isset($_POST[$key]) && (string) $_POST[$key] === '1';
     };
-    $notify_push = $enabled('rb_notify_push');
     $notify_site = $enabled('rb_notify_site');
     $categories = array();
     foreach (array('comment', 'reply', 'comment_reply', 'shop', 'subscribe', 'other') as $type) {
         $categories['notify_'.$type] = $enabled('rb_notify_'.$type);
     }
 
-    if (!rb_notification_save_preference($mb_id, $notify_push, $notify_site, $categories)) {
+    if (!rb_notification_save_preference($mb_id, $notify_site, $notify_site, $categories)) {
         alert('알림 수신 설정을 저장하지 못했습니다. 알림 설정 DB 테이블을 확인해 주세요.');
     }
 }

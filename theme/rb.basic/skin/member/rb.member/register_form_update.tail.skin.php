@@ -23,9 +23,7 @@ if (($w === '' || $w === 'u')
     && isset($_POST['rb_notification_preference_present'])
     && (string) $_POST['rb_notification_preference_present'] === '1'
     && function_exists('rb_notification_save_preference')) {
-    // 상위 알림수신 동의는 화면용 묶음 항목이므로 실제 하위 선택값을 기준으로 저장합니다.
-    $rb_notify_push = isset($_POST['rb_notify_push']) && (string) $_POST['rb_notify_push'] === '1';
-    $rb_notify_site = isset($_POST['rb_notify_site']) && (string) $_POST['rb_notify_site'] === '1';
+    $rb_notify_site = isset($_POST['rb_notification_agree']) && (string) $_POST['rb_notification_agree'] === '1';
     $rb_category_preferences = array();
     foreach (array('comment', 'reply', 'comment_reply', 'shop', 'subscribe', 'other') as $rb_notification_type) {
         $rb_post_key = 'rb_notify_'.$rb_notification_type;
@@ -33,7 +31,11 @@ if (($w === '' || $w === 'u')
             && isset($_POST[$rb_post_key])
             && (string) $_POST[$rb_post_key] === '1';
     }
-    rb_notification_save_preference($mb_id, $rb_notify_push, $rb_notify_site, $rb_category_preferences);
+    // 선택 항목이 하나도 없으면 대표 알림 동의도 해제된 것으로 확정합니다.
+    if (!in_array(true, $rb_category_preferences, true)) {
+        $rb_notify_site = false;
+    }
+    rb_notification_save_preference($mb_id, $rb_notify_site, $rb_notify_site, $rb_category_preferences);
 }
 
 if (($w == "" || $w == "u") && function_exists('rb_sms_cert_is_enabled') && rb_sms_cert_is_enabled() && get_session('ss_rb_sms_cert_verified') === '1') {
