@@ -23,7 +23,7 @@ function rb_alarm_url(value) {
 
 function check_alarm() {
     $.ajax({type:'POST', data:{act:'alarm'}, url:memo_alarm_url + '/get-events.php', dataType:'json', cache:false,
-        success:function (result) { if (typeof rb_notification_update_badge === 'function') rb_notification_update_badge(result.unread_count); rb_alarm_update_memo_badge(result.memo_unread_count); if (result.msg === 'SUCCESS') show_alarm(result); }});
+        success:function (result) { if (typeof rb_notification_update_badge === 'function') rb_notification_update_badge(result.unread_count); rb_alarm_update_memo_badge(result.memo_unread_count); if (result.msg === 'SUCCESS' && (typeof rb_alarm_floating_enabled === 'undefined' || rb_alarm_floating_enabled)) show_alarm(result); }});
 }
 
 function rb_alarm_update_memo_badge(count) {
@@ -65,6 +65,7 @@ function rb_alarm_card_html(data) {
 }
 
 function show_alarm(data) {
+    if(typeof rb_alarm_floating_enabled!=='undefined'&&!rb_alarm_floating_enabled)return;
     var events=$.isArray(data.events)&&data.events.length?data.events:[data];
     rb_alarm_queue=[];
     $.each(events,function(index,eventData){if(rb_alarm_card_html(eventData))rb_alarm_queue.push(eventData);});
@@ -77,7 +78,8 @@ function rb_alarm_show_next() {
     var card=rb_alarm_card_html(rb_alarm_queue.shift());
     if(!card){rb_alarm_show_next();return;}
     show_alarm_exist=true;
-    $('body').prepend('<div id="alarm_layer" class="wrapper-notification bottom right side" style="display:none">'+card+'</div>');
+    var layerStyle=typeof rb_alarm_floating_style==='string'?rb_alarm_floating_style:'left:50px;right:auto;top:auto;bottom:40px;transform:none;';
+    $('body').prepend('<div id="alarm_layer" class="wrapper-notification bottom right side" style="'+layerStyle+'display:none">'+card+'</div>');
     $('#alarm_layer').fadeIn();
     rb_alarm_timer=setTimeout(function(){rb_alarm_finish_current(true);},30000);
 }

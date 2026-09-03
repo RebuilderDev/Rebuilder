@@ -7,6 +7,12 @@ $polling_seconds = function_exists('rb_notification_polling_seconds')
     : 60;
 $wset['delay'] = $polling_seconds * 1000;
 $alarm_url = G5_URL . "/rb/rb.mod/alarm";
+$floating_settings = function_exists('rb_notification_floating_settings')
+    ? rb_notification_floating_settings()
+    : array('use' => 1, 'position' => 'left_bottom', 'offset' => 50, 'is_saved' => 0);
+$floating_style = function_exists('rb_notification_floating_style')
+    ? rb_notification_floating_style($floating_settings)
+    : 'left:50px;right:auto;top:auto;bottom:40px;transform:none;';
 ?>
 
 <?php
@@ -26,6 +32,8 @@ if (!in_array(basename($_SERVER['PHP_SELF']), $except_alarm_page)) {
         <script>
             var memo_alarm_url = "<?php echo $alarm_url; ?>";
             var memo_alarm_bbs_url = "<?php echo G5_BBS_URL; ?>";
+            var rb_alarm_floating_enabled = <?php echo !empty($floating_settings['use']) ? 'true' : 'false'; ?>;
+            var rb_alarm_floating_style = <?php echo json_encode($floating_style); ?>;
             //var audio = new Audio("<?php echo $alarm_url;?>/memo_on.mp3");  // 임의 폴더 아래에 사운드 파일을 넣고 자바스크립트 동일경로
         </script>
         <?php

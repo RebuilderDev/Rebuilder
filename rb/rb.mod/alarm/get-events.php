@@ -18,9 +18,13 @@ if ($act == 'alarm') {
     $mb_id = sql_real_escape_string($member['mb_id']);
     $notification = array();
     if ($notification_ready) {
+        $visible_category_sql = function_exists('rb_notification_visible_category_sql')
+            ? rb_notification_visible_category_sql()
+            : '1=1';
         $notification = sql_fetch("SELECT * FROM rb_notification
                                     WHERE noti_recv_mb_id='{$mb_id}'
                                       AND noti_read_at IS NULL
+                                      AND {$visible_category_sql}
                                     ORDER BY noti_id DESC
                                     LIMIT 1", false);
     }

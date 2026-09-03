@@ -58,6 +58,18 @@ $retention_days = function_exists('rb_notification_retention_days')
 $polling_seconds = function_exists('rb_notification_polling_seconds')
     ? rb_notification_polling_seconds()
     : 60;
+$floating_settings = function_exists('rb_notification_floating_settings')
+    ? rb_notification_floating_settings()
+    : array('use' => 1, 'position' => 'left_bottom', 'offset' => 50, 'is_saved' => 0);
+$floating_use = !empty($floating_settings['use']) ? 1 : 0;
+$floating_position = isset($floating_settings['position']) ? (string) $floating_settings['position'] : 'left_bottom';
+$floating_offset = isset($floating_settings['offset']) ? (int) $floating_settings['offset'] : 50;
+$notification_available_categories = function_exists('rb_notification_available_categories')
+    ? rb_notification_available_categories()
+    : $categories;
+$notification_enabled_categories = function_exists('rb_notification_enabled_categories')
+    ? rb_notification_enabled_categories()
+    : $categories;
 $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urlencode($sca);
 ?>
 
@@ -82,6 +94,40 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
                     <td>
                         <?php echo help('새 알림을 확인하는 주기입니다. 10초부터 3600초까지 설정할 수 있습니다.'); ?>
                         <input type="number" name="notification_polling_seconds" value="<?php echo $polling_seconds; ?>" id="notification_polling_seconds" required min="10" max="3600" class="frm_input required" size="5"> 초
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">알림 항목</th>
+                    <td>
+                        <?php echo help('체크한 항목만 회원 알림 탭·전체 목록·알림 개수·플로팅 알림에 표시됩니다. 데이터 저장과 알림 발송 기능에는 영향을 주지 않습니다.'); ?>
+                        <?php foreach ($notification_available_categories as $category_key => $category_label) { ?>
+                        <label style="margin-right:15px"><input type="checkbox" name="notification_categories[]" value="<?php echo get_text($category_key); ?>"<?php echo isset($notification_enabled_categories[$category_key]) ? ' checked' : ''; ?>> <?php echo get_text($category_label); ?></label>
+                        <?php } ?>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">플로팅 알림</th>
+                    <td>
+                        <?php echo help('새 쪽지와 새 알림을 화면에 플로팅으로 표시할지 설정합니다. 사용하지 않아도 알림 개수는 정상적으로 갱신됩니다.'); ?>
+                        <label><input type="radio" name="notification_floating_use" value="1"<?php echo get_checked($floating_use, 1); ?>> 사용함</label>
+                        <label style="margin-left:15px"><input type="radio" name="notification_floating_use" value="0"<?php echo get_checked($floating_use, 0); ?>> 사용안함</label>
+                    </td>
+                </tr>
+                <tr class="notification_floating_detail">
+                    <th scope="row">플로팅 알림 위치</th>
+                    <td>
+                        <label><input type="radio" name="notification_floating_position" value="left_top"<?php echo get_checked($floating_position, 'left_top'); ?>> 좌상단</label>
+                        <label style="margin-left:15px"><input type="radio" name="notification_floating_position" value="left_bottom"<?php echo get_checked($floating_position, 'left_bottom'); ?>> 좌하단</label>
+                        <label style="margin-left:15px"><input type="radio" name="notification_floating_position" value="right_top"<?php echo get_checked($floating_position, 'right_top'); ?>> 우상단</label>
+                        <label style="margin-left:15px"><input type="radio" name="notification_floating_position" value="right_bottom"<?php echo get_checked($floating_position, 'right_bottom'); ?>> 우하단</label>
+                        <label style="margin-left:15px"><input type="radio" name="notification_floating_position" value="center"<?php echo get_checked($floating_position, 'center'); ?>> 중앙</label>
+                    </td>
+                </tr>
+                <tr class="notification_floating_detail" id="notification_floating_offset_row">
+                    <th scope="row"><label for="notification_floating_offset">화면 가장자리 간격</label></th>
+                    <td>
+                        <?php echo help('선택한 모서리의 가로·세로 가장자리에서 동일하게 띄울 간격입니다.'); ?>
+                        <input type="number" name="notification_floating_offset" value="<?php echo $floating_offset; ?>" id="notification_floating_offset" required min="0" max="1000" class="frm_input required" size="5"> px
                     </td>
                 </tr>
                 </tbody>
@@ -213,6 +259,28 @@ $qstr_noti = 'sfl='.urlencode($sfl).'&amp;stx='.urlencode($stx).'&amp;sca='.urle
 </section>
 
 <script>
+function rb_notification_floating_toggle() {
+    var use = document.querySelector('input[name="notification_floating_use"]:checked');
+    var position = document.querySelector('input[name="notification_floating_position"]:checked');
+    var detailRows = document.querySelectorAll('.notification_floating_detail');
+    var enabled = use && use.value === '1';
+    for (var i = 0; i < detailRows.length; i++) {
+        detailRows[i].style.display = enabled ? '' : 'none';
+    }
+
+    var offsetRow = document.getElementById('notification_floating_offset_row');
+    var offsetInput = document.getElementById('notification_floating_offset');
+    var usesOffset = enabled && (!position || position.value !== 'center');
+    if (offsetRow) offsetRow.style.display = usesOffset ? '' : 'none';
+    if (offsetInput) offsetInput.disabled = !usesOffset;
+}
+document.addEventListener('DOMContentLoaded', function () {
+    var floatingInputs = document.querySelectorAll('input[name="notification_floating_use"], input[name="notification_floating_position"]');
+    for (var i = 0; i < floatingInputs.length; i++) {
+        floatingInputs[i].addEventListener('change', rb_notification_floating_toggle);
+    }
+    rb_notification_floating_toggle();
+});
 function rb_notification_target_change(value) {
     document.getElementById('target_member_row').style.display = value === 'member' ? '' : 'none';
     document.getElementById('target_level_row').style.display = value === 'level' ? '' : 'none';

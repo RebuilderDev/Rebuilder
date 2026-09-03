@@ -53,6 +53,65 @@ function rb_notification_polling_seconds()
     return $seconds;
 }
 
+/**
+ * 플로팅 알림 설정입니다.
+ *
+ * 설정 컬럼이 아직 없는 기존 설치본은 현재 기본 위치(좌 50px, 하단 40px)를
+ * 그대로 사용합니다. 관리자가 설정을 저장한 뒤에는 선택한 위치와 간격을 적용합니다.
+ */
+function rb_notification_floating_settings()
+{
+    global $rb_builder;
+
+    $has_saved_settings = is_array($rb_builder)
+        && array_key_exists('bu_notification_floating_use', $rb_builder)
+        && array_key_exists('bu_notification_floating_position', $rb_builder)
+        && array_key_exists('bu_notification_floating_offset', $rb_builder);
+    $allowed_positions = array('left_top', 'left_bottom', 'right_top', 'right_bottom', 'center');
+    $position = $has_saved_settings
+        ? trim((string) $rb_builder['bu_notification_floating_position'])
+        : 'left_bottom';
+    if (!in_array($position, $allowed_positions, true)) {
+        $position = 'left_bottom';
+    }
+
+    $offset = $has_saved_settings ? (int) $rb_builder['bu_notification_floating_offset'] : 50;
+    if ($offset < 0 || $offset > 1000) {
+        $offset = 50;
+    }
+
+    return array(
+        'use' => !$has_saved_settings || !empty($rb_builder['bu_notification_floating_use']) ? 1 : 0,
+        'position' => $position,
+        'offset' => $offset,
+        'is_saved' => $has_saved_settings ? 1 : 0,
+    );
+}
+
+function rb_notification_floating_style($settings = array())
+{
+    if (!$settings) {
+        $settings = rb_notification_floating_settings();
+    }
+
+    // 설정이 없는 기존 사이트는 지금까지 사용하던 기본 CSS 좌표를 유지합니다.
+    if (empty($settings['is_saved'])) {
+        return 'left:50px;right:auto;top:auto;bottom:40px;transform:none;';
+    }
+
+    $offset = isset($settings['offset']) ? max(0, min(1000, (int) $settings['offset'])) : 50;
+    $position = isset($settings['position']) ? (string) $settings['position'] : 'left_bottom';
+    $styles = array(
+        'left_top' => "left:{$offset}px;right:auto;top:{$offset}px;bottom:auto;transform:none;",
+        'left_bottom' => "left:{$offset}px;right:auto;top:auto;bottom:{$offset}px;transform:none;",
+        'right_top' => "left:auto;right:{$offset}px;top:{$offset}px;bottom:auto;transform:none;",
+        'right_bottom' => "left:auto;right:{$offset}px;top:auto;bottom:{$offset}px;transform:none;",
+        'center' => 'left:50%;right:auto;top:50%;bottom:auto;transform:translate(-50%, -50%);',
+    );
+
+    return isset($styles[$position]) ? $styles[$position] : $styles['left_bottom'];
+}
+
 function rb_notification_cleanup_expired()
 {
     if (!rb_notification_table_ready()) {
@@ -339,7 +398,31 @@ function rb_notification_categories()
     );
 }
 
-function rb_notification_visible_categories()
+function rb_notification_enabled_categories()
+{
+    global $rb_builder;
+
+    $categories = rb_notification_categories();
+    if (!is_array($rb_builder) || !array_key_exists('bu_notification_visible_categories', $rb_builder)) {
+        return $categories;
+    }
+
+    $saved = trim((string) $rb_builder['bu_notification_visible_categories']);
+    if ($saved === '') {
+        return array();
+    }
+
+    $saved_keys = preg_split('/[\s,]+/', $saved, -1, PREG_SPLIT_NO_EMPTY);
+    $enabled = array();
+    foreach ($categories as $key => $label) {
+        if (in_array($key, $saved_keys, true)) {
+            $enabled[$key] = $label;
+        }
+    }
+    return $enabled;
+}
+
+function rb_notification_available_categories()
 {
     $categories = rb_notification_categories();
 
@@ -353,17 +436,45 @@ function rb_notification_visible_categories()
     return $categories;
 }
 
+function rb_notification_visible_categories()
+{
+    return array_intersect_key(
+        rb_notification_available_categories(),
+        rb_notification_enabled_categories()
+    );
+}
+
+function rb_notification_visible_category_sql($column = 'noti_category')
+{
+    $column = (string) $column;
+    if (!preg_match('/^[A-Za-z0-9_.]+$/', $column)) {
+        $column = 'noti_category';
+    }
+
+    $keys = array_keys(rb_notification_visible_categories());
+    if (!$keys) {
+        return '1=0';
+    }
+    $quoted = array();
+    foreach ($keys as $key) {
+        $quoted[] = "'".sql_real_escape_string($key)."'";
+    }
+    return $column.' IN ('.implode(', ', $quoted).')';
+}
+
 function rb_notification_unread_count($mb_id)
 {
     $mb_id = trim((string) $mb_id);
     if ($mb_id === '' || !rb_notification_table_ready()) {
         return 0;
     }
+    $category_sql = rb_notification_visible_category_sql();
 
     $row = sql_fetch("SELECT COUNT(*) AS cnt
                         FROM rb_notification
                        WHERE noti_recv_mb_id='".sql_real_escape_string($mb_id)."'
-                         AND noti_read_at IS NULL", false);
+                         AND noti_read_at IS NULL
+                         AND {$category_sql}", false);
     return isset($row['cnt']) ? (int) $row['cnt'] : 0;
 }
 
@@ -399,11 +510,17 @@ function rb_notification_member_list($mb_id, $category = 'all', $limit = 50)
         return array();
     }
 
-    $categories = rb_notification_categories();
+    $categories = rb_notification_visible_categories();
+    if (!$categories) {
+        return array();
+    }
     $category = strtolower(trim((string) $category));
-    $category_sql = isset($categories[$category])
-        ? " AND noti_category='".sql_real_escape_string($category)."'"
-        : '';
+    if ($category !== 'all' && !isset($categories[$category])) {
+        return array();
+    }
+    $category_sql = $category === 'all'
+        ? ' AND '.rb_notification_visible_category_sql()
+        : " AND noti_category='".sql_real_escape_string($category)."'";
     $limit = max(1, min(100, (int) $limit));
 
     $items = array();
@@ -429,11 +546,16 @@ function rb_notification_member_get($mb_id, $notification_id, $mark_read = false
     }
 
     $escaped_mb_id = sql_real_escape_string($mb_id);
+    $category_sql = rb_notification_visible_category_sql();
+    if ($category_sql === '1=0') {
+        return array();
+    }
     if ($mark_read) {
         sql_query("UPDATE rb_notification
                       SET noti_read_at='".sql_real_escape_string(G5_TIME_YMDHIS)."'
                     WHERE noti_id='{$notification_id}'
                       AND noti_recv_mb_id='{$escaped_mb_id}'
+                      AND {$category_sql}
                       AND noti_read_at IS NULL", false);
     }
 
@@ -442,6 +564,7 @@ function rb_notification_member_get($mb_id, $notification_id, $mark_read = false
                         FROM rb_notification
                        WHERE noti_id='{$notification_id}'
                          AND noti_recv_mb_id='{$escaped_mb_id}'
+                         AND {$category_sql}
                        LIMIT 1", false);
     return rb_notification_member_item($row);
 }
