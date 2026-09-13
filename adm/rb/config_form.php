@@ -208,6 +208,15 @@ foreach ($rbcfg_groups as $scope=>$fields) {
 }
 $pg_anchor .= '<li><a href="#config_tools">사이트 관리</a></li></ul>';
 ?>
+<style>
+#rbcfg_form input.coloris.mod_co_color,
+#rbcfg_form input.coloris.mod_co_color:focus {
+    background: transparent !important;
+    border: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+</style>
 <div class="local_desc01 local_desc"><p>웹사이트의 전반적인 환경설정 입니다.<br>현재 적용 테마: <strong><?php echo rbcfg_h($rbcfg_theme); ?></strong>. 프런트 환경설정과 같은 값이 적용됩니다. 각 탭에서 수정한 내용은 확인 버튼을 누르면 함께 저장됩니다.</p></div>
 <form id="rbcfg_form" action="./config_form.php" method="post">
     <input type="hidden" name="token" value="<?php echo rbcfg_h($rbcfg_token); ?>">
