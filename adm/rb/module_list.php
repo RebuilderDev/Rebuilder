@@ -22,7 +22,7 @@ if(isset($_GET['tables']) && $_GET['tables'] == "rb_module_shop") {
     $cr2 = "";
 }
 
-$listall = '<a href="'.$_SERVER['SCRIPT_NAME'].'" class="ov_listall" '.$cr1.'>일반모듈</a>';
+$listall = '<a href="'.$_SERVER['SCRIPT_NAME'].'" class="ov_listall" '.$cr1.'>커뮤니티모듈</a>';
 $listall2 = '<a href="'.$_SERVER['SCRIPT_NAME'].'?tables=rb_module_shop" class="ov_listall" '.$cr2.'>마켓모듈</a>';
 
 

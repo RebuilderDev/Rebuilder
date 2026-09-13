@@ -24,7 +24,7 @@ if(isset($_GET['tables']) && $_GET['tables'] == "rb_section_shop") {
 
 $module_table = ($table_name === 'rb_section_shop') ? 'rb_module_shop' : 'rb_module';
 
-$listall = '<a href="'.$_SERVER['SCRIPT_NAME'].'" class="ov_listall" '.$cr1.'>일반섹션</a>';
+$listall = '<a href="'.$_SERVER['SCRIPT_NAME'].'" class="ov_listall" '.$cr1.'>커뮤니티섹션</a>';
 $listall2 = '<a href="'.$_SERVER['SCRIPT_NAME'].'?tables=rb_section_shop" class="ov_listall" '.$cr2.'>마켓섹션</a>';
 
 
