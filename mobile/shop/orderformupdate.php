@@ -1,6 +1,42 @@
 <?php
 include_once('./_common.php');
 
+// KVE-2026-2345: 5.6.38 공통 검증에 빌더의 특수상품 수량 정책을 반영한다.
+if (!function_exists('rb_shop_validate_order_cart')) {
+    function rb_shop_validate_order_cart($cart_id)
+    {
+        global $g5;
+        $id = sql_escape_string($cart_id);
+        $result = sql_query(" select * from {$g5['g5_shop_cart_table']} where od_id = '$id' and ct_select = '1' order by ct_id asc ");
+        $products = array();
+        while ($row = sql_fetch_array($result)) {
+            if ($row['ct_status'] !== '쇼핑') {
+                return '이미 처리되었거나 올바르지 않은 장바구니입니다.';
+            }
+            $products[$row['it_id']][] = $row;
+        }
+        if (!$products) {
+            return '주문하실 상품을 선택해 주십시오.';
+        }
+        foreach ($products as $it_id => $rows) {
+            list($item, $options) = shop_cart_option_data($it_id);
+            // 빌더의 특수상품은 배송 재고·구매수량 대신 각 기능의 이용 조건을 사용한다.
+            // 상품 사용 여부, 옵션 종류·구성, 음수 가격과 저장 가격 검사는 공통 규칙을 유지한다.
+            if (isset($item['it_types']) && in_array((int)$item['it_types'], array(1, 2, 3), true)) {
+                $item['it_stock_qty'] = 2147483647;
+                $item['it_buy_min_qty'] = 0;
+                $item['it_buy_max_qty'] = 0;
+            }
+            $validated = shop_validate_cart_rows($item, $options, $rows, true);
+            if ($validated['error'] !== '') {
+                return $validated['error'];
+            }
+        }
+        return '';
+    }
+}
+
+
 // 구 주문서나 직접 POST로도 SIRK 전용 결제를 다시 시작하지 않는다.
 if (isset($od_settle_case) && $od_settle_case === 'KAKAOPAY') {
     alert('이 결제 방식은 더 이상 지원하지 않습니다. 다른 결제수단을 선택해 주십시오.');
@@ -66,9 +102,14 @@ if (get_session('ss_direct'))
 else
     $tmp_cart_id = get_session('ss_cart_id');
 
-if (get_cart_count($tmp_cart_id) == 0) {    // 장바구니에 담기
-    if(function_exists('add_order_post_log')) add_order_post_log('장바구니가 비어 있습니다.');
-    alert('장바구니가 비어 있습니다.\\n\\n이미 주문하셨거나 장바구니에 담긴 상품이 없는 경우입니다.', G5_SHOP_URL.'/cart.php');
+// KVE-2026-2345: 승인 이후 장바구니가 삭제된 경우도 취소 처리로 연결한다.
+$cart_validation_error = get_cart_count($tmp_cart_id) == 0
+    ? '장바구니가 비어 있습니다.'
+    : rb_shop_validate_order_cart($tmp_cart_id);
+if ($cart_validation_error !== '') {
+    if ($default['de_pg_service'] === 'inicis')
+        include G5_MSHOP_PATH.'/inicis/cart_validation_cancel.php';
+    alert($cart_validation_error, G5_SHOP_URL.'/cart.php');
 }
 
 // 변수 초기화
@@ -648,6 +689,9 @@ else
 }
 
 $od_pg = $default['de_pg_service'];
+// KCP 통보는 결제 당시 사용한 상점코드와 대조한다.
+$od_kcp_site_cd = ($od_pg === 'kcp' && isset($g_conf_site_cd))
+    ? sql_escape_string($g_conf_site_cd) : '';
 
 // 주문금액과 결제금액이 일치하는지 체크
 if($tno) {
@@ -751,6 +795,7 @@ $sql = " insert {$g5['g5_shop_order_table']}
                 od_receipt_time   = '$od_receipt_time',
                 od_misu           = '$od_misu',
                 od_pg             = '$od_pg',
+                od_kcp_site_cd    = '$od_kcp_site_cd',
                 od_tno            = '$od_tno',
                 od_app_no         = '$od_app_no',
                 od_escrow         = '$od_escrow',

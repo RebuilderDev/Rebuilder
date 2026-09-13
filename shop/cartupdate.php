@@ -1,6 +1,63 @@
 <?php
 include_once('./_common.php');
 
+// KVE-2026-2345: 5.6.38 공통 검증에 빌더의 특수상품 수량 정책을 반영한다.
+if (!function_exists('rb_shop_validate_cart_request')) {
+    function rb_shop_validate_cart_request($post, $multi = false)
+    {
+        $error = '장바구니 요청 정보가 올바르지 않습니다.';
+        $products = array();
+        if (empty($post['it_id']) || !is_array($post['it_id']) ||
+            array_keys($post['it_id']) !== range(0, count($post['it_id']) - 1)) {
+            return array('error' => $error);
+        }
+        foreach ($post['it_id'] as $i => $id) {
+            if ($multi && empty($post['chk_it_id'][$i])) {
+                continue;
+            }
+            if (!is_string($id) || $id === '' || safe_replace_regex($id, 'it_id') !== $id || isset($products[$id])) {
+                return array('error' => $error);
+            }
+            foreach (array('io_id', 'io_type', 'ct_qty') as $field) {
+                if (!isset($post[$field][$id]) || !is_array($post[$field][$id]) || !$post[$field][$id]) {
+                    return array('error' => $error);
+                }
+            }
+            $keys = range(0, count($post['io_id'][$id]) - 1);
+            foreach (array('io_id', 'io_type', 'ct_qty') as $field) {
+                if (array_keys($post[$field][$id]) !== $keys) {
+                    return array('error' => $error);
+                }
+            }
+            $rows = array();
+            foreach ($keys as $k) {
+                $io_id = $post['io_id'][$id][$k];
+                if (!is_string($io_id) || preg_replace(G5_OPTION_ID_FILTER, '', $io_id) !== $io_id ||
+                    (isset($post['io_value'][$id][$k]) && !is_string($post['io_value'][$id][$k]))) {
+                    return array('error' => $error);
+                }
+                $rows[] = array('io_id' => $io_id, 'io_type' => $post['io_type'][$id][$k], 'ct_qty' => $post['ct_qty'][$id][$k]);
+            }
+            list($item, $options) = shop_cart_option_data($id);
+            // 빌더의 특수상품은 배송 재고·구매수량 대신 각 기능의 이용 조건을 사용한다.
+            // 상품 사용 여부, 옵션 종류·구성, 음수 가격과 저장 가격 검사는 공통 규칙을 유지한다.
+            if (isset($item['it_types']) && in_array((int)$item['it_types'], array(1, 2, 3), true)) {
+                $item['it_stock_qty'] = 2147483647;
+                $item['it_buy_min_qty'] = 0;
+                $item['it_buy_max_qty'] = 0;
+            }
+            $validated = shop_validate_cart_rows($item, $options, $rows);
+            if ($validated['error'] !== '') {
+                return $validated;
+            }
+            $validated['item'] = $item;
+            $products[$id] = $validated;
+        }
+        return array('error' => $products ? '' : $error, 'products' => $products);
+    }
+}
+
+
 // CSRF 방지: Origin/Referer 헤더로 요청 출처 검증
 if (function_exists('check_request_origin')) check_request_origin(G5_SHOP_URL);
 
@@ -149,6 +206,29 @@ else // 장바구니에 담기
     if ($count < 1)
         alert('장바구니에 담을 상품을 선택하여 주십시오.');
 
+    $cart_validation = rb_shop_validate_cart_request($_POST, $act === 'multi');
+    if ($cart_validation['error'] !== '')
+        alert($cart_validation['error']);
+
+    // 예약·파일·미디어는 기존 행에 수량을 더하지 않고 선택 내용을 교체한다.
+    $rb_cart_merge_products = array();
+    foreach ($cart_validation['products'] as $cart_it_id => $cart_product) {
+        if (!isset($cart_product['item']['it_types']) || !in_array((int)$cart_product['item']['it_types'], array(1, 2, 3), true)) {
+            $rb_cart_merge_products[$cart_it_id] = $cart_product;
+        }
+    }
+    $cart_merge_error = shop_validate_cart_merge($tmp_cart_id, $rb_cart_merge_products, !empty($sw_direct), $act === 'optionmod');
+    if ($cart_merge_error !== '')
+        alert($cart_merge_error);
+
+    // 구매 자격 오류도 바로구매 삭제와 다중 상품 변경 전에 확인한다.
+    if (!$is_admin) {
+        foreach ($cart_validation['products'] as $cart_it_id => $cart_product) {
+            $msg = shop_member_cert_check($cart_it_id, 'item');
+            if ($msg) alert($msg, G5_SHOP_URL);
+        }
+    }
+
     $ct_count = 0;
     $post_chk_it_id = (isset($_POST['chk_it_id']) && is_array($_POST['chk_it_id'])) ? $_POST['chk_it_id'] : array();
     $post_io_ids = (isset($_POST['io_id']) && is_array($_POST['io_id'])) ? $_POST['io_id'] : array();
@@ -174,15 +254,8 @@ else // 장바구니에 담기
         if($opt_count && isset($post_io_types[$it_id][0]) && $post_io_types[$it_id][0] != 0)
             alert('상품의 선택옵션을 선택해 주십시오.');
 
-        // 본인인증, 성인인증체크
-        if(!$is_admin) {
-            $msg = shop_member_cert_check($it_id, 'item');
-            if($msg)
-                alert($msg, G5_SHOP_URL);
-        }
-
         // 상품정보
-        $it = get_shop_item($it_id, false);
+        $it = $cart_validation['products'][$it_id]['item'];
         if(!$it['it_id'])
             alert('상품정보가 존재하지 않습니다.');
 
@@ -399,30 +472,14 @@ else // 장바구니에 담기
             }
         }
 
-        // 옵션정보를 얻어서 배열에 저장
-        $opt_list = array();
-        $sql = " select * from {$g5['g5_shop_item_option_table']} where it_id = '$it_id' and io_use = 1 order by io_no asc ";
-        $result = sql_query($sql);
-        $lst_count = 0;
-        for($k=0; $row=sql_fetch_array($result); $k++) {
-            $opt_list[$row['io_type']][$row['io_id']]['id'] = $row['io_id'];
-            $opt_list[$row['io_type']][$row['io_id']]['use'] = $row['io_use'];
-            $opt_list[$row['io_type']][$row['io_id']]['price'] = $row['io_price'];
-            $opt_list[$row['io_type']][$row['io_id']]['stock'] = $row['io_stock_qty'];
-
-            // 선택옵션 개수
-            if(!$row['io_type'])
-                $lst_count++;
-        }
-
         //--------------------------------------------------------
         //  재고 검사, 바로구매일 때만 체크
         //--------------------------------------------------------
         // 이미 주문폼에 있는 같은 상품의 수량합계를 구한다.
         if($sw_direct && !$rb_replace_cart_item) {
             for($k=0; $k<$opt_count; $k++) {
-                $io_id = isset($_POST['io_id'][$it_id][$k]) ? preg_replace(G5_OPTION_ID_FILTER, '', $_POST['io_id'][$it_id][$k]) : '';
-                $io_type = isset($_POST['io_type'][$it_id][$k]) ? preg_replace('#[^01]#', '', $_POST['io_type'][$it_id][$k]) : '';
+                $io_id = $cart_validation['products'][$it_id]['rows'][$k]['io_id'];
+                $io_type = $cart_validation['products'][$it_id]['rows'][$k]['io_type'];
                 $io_value = isset($_POST['io_value'][$it_id][$k]) ? $_POST['io_value'][$it_id][$k] : '';
 
                 $sql = " select SUM(ct_qty) as cnt from {$g5['g5_shop_cart_table']}
@@ -558,6 +615,7 @@ else // 장바구니에 담기
 
         // 장바구니에 Insert
         $comma = '';
+        $ct_count = 0;
 
         $columns = [
             "od_id", "mb_id", "it_id", "it_name", "it_sc_type", "it_sc_method",
@@ -615,19 +673,11 @@ else // 장바구니에 담기
 
 
         for($k=0; $k<$opt_count; $k++) {
-            $io_id = isset($_POST['io_id'][$it_id][$k]) ? preg_replace(G5_OPTION_ID_FILTER, '', $_POST['io_id'][$it_id][$k]) : '';
-            $io_type = isset($_POST['io_type'][$it_id][$k]) ? preg_replace('#[^01]#', '', $_POST['io_type'][$it_id][$k]) : '';
+            $io_id = $cart_validation['products'][$it_id]['rows'][$k]['io_id'];
+            $io_type = $cart_validation['products'][$it_id]['rows'][$k]['io_type'];
             $io_value = isset($_POST['io_value'][$it_id][$k]) ? $_POST['io_value'][$it_id][$k] : '';
 
-            // 선택옵션정보가 존재하는데 선택된 옵션이 없으면 건너뜀
-            if($lst_count && $io_id == '')
-                continue;
-
-            // 구매할 수 없는 옵션은 건너뜀
-            if($io_id && !$opt_list[$io_type][$io_id]['use'])
-                continue;
-
-            $io_price = isset($opt_list[$io_type][$io_id]['price']) ? $opt_list[$io_type][$io_id]['price'] : 0;
+            $io_price = $cart_validation['products'][$it_id]['rows'][$k]['io_price'];
             $ct_file_price = 0;
             $ct_media_price = 0;
             if($rb_file_columns_ready && function_exists('rb_file_is_item') && rb_file_is_item($it) && $io_type == '0') {
@@ -648,11 +698,12 @@ else // 장바구니에 담기
             }
 
             // 동일옵션의 상품이 있으면 수량 더함
-            $sql2 = " select ct_id, io_type, ct_qty
+            $sql2 = " select ct_id, io_type, ct_qty, ct_price, io_price
                         from {$g5['g5_shop_cart_table']}
                         where od_id = '$tmp_cart_id'
                           and it_id = '$it_id'
-                          and io_id = '$io_id' ";
+                          and io_id = '$io_id'
+                          and io_type = '$io_type' ";
             if ($rb_file_columns_ready) {
                 $sql2 .= " and ct_file_ids = '" . sql_real_escape_string($rb_file_selection['picked_text']) . "' ";
             }
@@ -662,6 +713,8 @@ else // 장바구니에 담기
             $sql2 .= " and ct_status = '쇼핑' ";
             $row2 = sql_fetch($sql2);
             if(isset($row2['ct_id']) && $row2['ct_id']) {
+                if ((int) $row2['ct_price'] !== (int) $it['it_price'] || (int) $row2['io_price'] !== $io_price)
+                    alert('기존 장바구니의 상품 정보가 변경되었습니다. 삭제한 뒤 다시 담아 주십시오.');
                 // 재고체크
                 $tmp_ct_qty = $row2['ct_qty'];
                 if(!$io_id)
