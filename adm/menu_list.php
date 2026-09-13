@@ -11,23 +11,12 @@ if (!isset($g5['menu_table'])) {
     die('<meta charset="utf-8">dbconfig.php 파일에 <strong>$g5[\'menu_table\'] = G5_TABLE_PREFIX.\'menu\';</strong> 를 추가해 주세요.');
 }
 
-if (!sql_query(" DESCRIBE {$g5['menu_table']} ", false)) {
-    sql_query(
-        " CREATE TABLE IF NOT EXISTS `{$g5['menu_table']}` (
-                  `me_id` int(11) NOT NULL AUTO_INCREMENT,
-                  `me_code` varchar(255) NOT NULL DEFAULT '',
-                  `me_name` varchar(255) NOT NULL DEFAULT '',
-                  `me_link` varchar(255) NOT NULL DEFAULT '',
-                  `me_target` varchar(255) NOT NULL DEFAULT '0',
-                  `me_order` int(11) NOT NULL DEFAULT '0',
-                  `me_use` tinyint(4) NOT NULL DEFAULT '0',
-                  `me_mobile_use` tinyint(4) NOT NULL DEFAULT '0',
-                  `me_level` tinyint(4) NOT NULL DEFAULT '1',
-                  `me_level_opt` tinyint(4) NOT NULL DEFAULT '1',
-                  PRIMARY KEY (`me_id`)
-                ) ENGINE=MyISAM DEFAULT CHARSET=utf8 ",
-        true
-    );
+// 그누보드 공통 테이블은 DB업그레이드에서 관리하고, 빌더의 메뉴 권한 필드는 유지한다.
+if (!sql_query(" select me_level from {$g5['menu_table']} limit 1 ", false)) {
+    sql_query(" ALTER TABLE `{$g5['menu_table']}` ADD `me_level` tinyint(4) NOT NULL DEFAULT '1' ", false);
+}
+if (!sql_query(" select me_level_opt from {$g5['menu_table']} limit 1 ", false)) {
+    sql_query(" ALTER TABLE `{$g5['menu_table']}` ADD `me_level_opt` tinyint(4) NOT NULL DEFAULT '1' ", false);
 }
 
 // // 기존처럼 me_id 정렬 유지(표기 방식 유지)

@@ -251,12 +251,7 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
             <?php if ($config["cf_cert_use"]) { ?>
                 <input type="hidden" id="reg_mb_name" name="mb_name" value="<?php echo $user_name ? $user_name : $user_nick ?>">
             <?php } ?>
-            <?php if ($config['cf_use_hp'] || ($config["cf_cert_use"] && ($config['cf_cert_hp'] || $config['cf_cert_simple']))) {  ?>
-                <input type="hidden" name="mb_hp" value="<?php echo get_text($user_phone); ?>" id="reg_mb_hp">
-                <?php if ($config['cf_cert_use'] && ($config['cf_cert_hp'] || $config['cf_cert_simple'])) { ?>
-                    <input type="hidden" name="old_mb_hp" value="<?php echo get_text($user_phone); ?>">
-                <?php } ?>
-            <?php }  ?>
+
 
 
             <?php if ($config['cf_cert_use']) { ?>
@@ -295,6 +290,16 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
             </li>
 
 
+
+            <?php if ($config['cf_use_hp'] || $config['cf_req_hp'] || ($config['cf_cert_use'] && ($config['cf_cert_hp'] || $config['cf_cert_simple']))) { ?>
+            <li>
+                <label for="reg_mb_hp"><span>휴대폰번호<?php echo $config['cf_req_hp'] ? ' (필수)' : ''; ?></span></label>
+                <input type="tel" name="mb_hp" value="<?php echo get_text($user_phone); ?>" id="reg_mb_hp" <?php echo $config['cf_req_hp'] ? 'required' : ''; ?> class="input full_input <?php echo $config['cf_req_hp'] ? 'required' : ''; ?>" maxlength="20" placeholder="휴대폰번호">
+                <?php if ($config['cf_cert_use'] && ($config['cf_cert_hp'] || $config['cf_cert_simple'])) { ?>
+                    <input type="hidden" name="old_mb_hp" value="<?php echo get_text($user_phone); ?>">
+                <?php } ?>
+            </li>
+            <?php } ?>
 
             <li>
             <div class="btn_confirm">
