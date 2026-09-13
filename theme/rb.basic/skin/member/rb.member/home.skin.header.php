@@ -38,19 +38,71 @@
                         <input type="file" id="prof_image_ch_input" accept="image/*" style="display:none;">
                         <script>
                         $(document).ready(function() {
-                            $('#prof_ch_btn').on('click', function() { $('#prof_image_ch_input').click(); });
-                            $('#prof_image_ch_input').on('change', function(e) {
-                                var file = e.target.files[0];
-                                if (!file) return;
+                            var $button = $('#prof_ch_btn');
+                            var $input = $('#prof_image_ch_input');
+                            var $profile = $('#prof_image_ch');
+                            var uploading = false;
+                            var imageVersion = 0;
+
+                            function finishUpload() {
+                                uploading = false;
+                                $button.prop('disabled', false);
+                                $input.prop('disabled', false);
+                                $profile.removeAttr('aria-busy');
+                            }
+
+                            $button.on('click', function() {
+                                if (!uploading) $input[0].click();
+                            });
+                            $input.on('change', function(e) {
+                                var file = e.target.files && e.target.files[0];
+                                e.target.value = ''; // 같은 파일을 다시 선택해도 change가 발생하도록 초기화합니다.
+                                if (!file || uploading) return;
+                                uploading = true;
+                                $button.prop('disabled', true);
+                                $input.prop('disabled', true);
+                                $profile.attr('aria-busy', 'true');
+
                                 var formData = new FormData();
                                 formData.append('profile_image', file);
                                 $.ajax({
                                     url: '<?php echo G5_URL; ?>/rb/rb.lib/ajax.upload_prof_image.php',
                                     type: 'POST', data: formData, contentType: false, processData: false,
-                                    success: function(res) {
-                                        var d = JSON.parse(res);
-                                        if (d.success) { $('#prof_image_ch').html('<img src="'+d.image_url+'" alt="profile_image">'); location.reload(); }
-                                        else alert(d.message);
+                                    dataType: 'json',
+                                    success: function(d) {
+                                        if (!d || !d.success || typeof d.image_url !== 'string' || !d.image_url) {
+                                            finishUpload();
+                                            alert(d && d.message ? d.message : '프로필 사진을 변경하지 못했습니다.');
+                                            return;
+                                        }
+
+                                        // 서버에 저장된 사진을 직접 표시해 PWA의 이전 이미지 캐시를 피합니다.
+                                        var imageUrl = d.image_url + (d.image_url.indexOf('?') === -1 ? '?' : '&')
+                                            + '_rb_profile=' + new Date().getTime() + '-' + (++imageVersion);
+                                        var imageData = typeof d.image_data === 'string'
+                                            && /^data:image\/(gif|jpeg|png);base64,/.test(d.image_data) ? d.image_data : '';
+                                        var triedImageUrl = !imageData;
+                                        var img = new Image();
+                                        img.alt = 'profile_image';
+                                        img.onload = function() {
+                                            $profile.empty().append(img);
+                                            finishUpload();
+                                        };
+                                        img.onerror = function() {
+                                            // data: 이미지를 제한하는 사이트는 캐시 구분 URL로 한 번 더 시도합니다.
+                                            if (!triedImageUrl) {
+                                                triedImageUrl = true;
+                                                img.src = imageUrl;
+                                                return;
+                                            }
+                                            finishUpload();
+                                            alert('사진은 저장되었지만 이미지를 불러오지 못했습니다. 네트워크 연결을 확인한 뒤 다시 시도해주세요.');
+                                        };
+                                        img.src = imageData || imageUrl;
+                                    },
+                                    error: function() {
+                                        finishUpload();
+                                        alert('프로필 사진 업로드 응답을 확인하지 못했습니다. 네트워크 연결을 확인한 뒤 다시 시도해주세요.');
                                     }
                                 });
                             });
