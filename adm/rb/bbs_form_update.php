@@ -280,7 +280,7 @@ if ($w == "") {
                      mb_id = '{$mb_id}',
                      wr_name = '{$wr_name}',
                      wr_email = '{$wr_email}',
-                     wr_homepage = '{$wr_homepage}'
+                     wr_homepage = '{$wr_homepage}',
                      {$wr_extras_set}
                      {$sql_ip}
                      {$sql_password}
@@ -530,7 +530,9 @@ $row = sql_fetch(" select count(*) as cnt from {$g5['board_file_table']} where b
 sql_query(" update {$write_table} set wr_file = '{$row['cnt']}' where wr_id = '{$wr_id}' ");
 
 // 자동저장된 레코드를 삭제한다.
-sql_query(" delete from {$g5['autosave_table']} where as_uid = '{$uid}' ");
+if (isset($uid) && $uid !== '') {
+    sql_query(" delete from {$g5['autosave_table']} where as_uid = '{$uid}' ");
+}
 //------------------------------------------------------------------------------
 
 
