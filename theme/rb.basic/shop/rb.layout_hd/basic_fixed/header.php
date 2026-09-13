@@ -998,6 +998,7 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
 
                     <script>
 
+                            $(function() {
                             var swiper = new Swiper('.swiper-container-gnb', {
                                 slidesPerView: 'auto',
                                 observer: true,
@@ -1021,9 +1022,6 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
                                 }
                             });
 
-                    </script>
-
-                    <script>
                     var didScroll;
                     var lastScrollTop = 0;
                     var delta = 5;
@@ -1057,6 +1055,7 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
 
                         lastScrollTop = st;
                     }
+                    });
                     </script>
 
 

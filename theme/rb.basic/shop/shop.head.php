@@ -121,7 +121,6 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
     </script>
 
     <div class="contents_wrap" id="contents_wrap">
-        <script>adjustContentPadding();</script>
 
         <?php if (!defined("_INDEX_")) { ?>
             <?php include_once(G5_PATH.'/rb/rb.config/topvisual.shop.php'); ?>
@@ -280,6 +279,8 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
         <?php } else { ?>
 
         <?php } ?>
+
+        <script>adjustContentPadding();</script>
 
         <section class="<?php if (defined("_INDEX_")) { ?>index co_gap_pc_<?php echo $rb_core['gap_pc'] ?><?php } else { ?>sub co_gap_pc_<?php echo $rb_core['gap_pc'] ?><?php } ?>">
 

@@ -108,7 +108,6 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
     </script>
 
     <div class="contents_wrap" id="contents_wrap">
-        <script>adjustContentPadding();</script>
 
         <?php if (!defined("_INDEX_")) { ?>
             <?php include_once(G5_PATH.'/rb/rb.config/topvisual.php'); ?>
@@ -267,6 +266,8 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
     <?php } else { ?>
 
     <?php } ?>
+
+        <script>adjustContentPadding();</script>
 
         <!--
         $rb_core['sub_width'] 는 반드시 포함해주세요 (환경설정 > 서브가로폭)
