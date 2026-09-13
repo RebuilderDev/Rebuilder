@@ -696,6 +696,10 @@ if(function_exists('is_use_easypay') && is_use_easypay('global_nhnkcp')){  // �
             echo run_replace('shop_orderform_easypay_buttons', implode(PHP_EOL, $easypay_prints), $easypay_prints, $multi_settle);
         }
 
+        if ($default['de_bank_use'] || $default['de_vbank_use'] || $default['de_iche_use'] || $default['de_card_use'] || $default['de_hp_use'] || $default['de_easy_pay_use'] || is_use_easypay('global_nhnkcp') || is_inicis_simple_pay()) {
+            echo '</ul>';
+        }
+
         $temp_point = 0;
         // 회원이면서 포인트사용이면
         if ($is_member && $config['cf_use_point'])

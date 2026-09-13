@@ -283,7 +283,7 @@ if (!function_exists('rb_shop_get_order_info')) {
     }
 }
 
-/** 주문 DB를 실제 비즈니스 상품금액으로 동기화하고 과소결제 상태의 이용권 발급을 막는다. */
+/** 주문 DB를 실제 비즈니스 상품금액으로 동기화한다. 상태 변경은 각 처리 화면에서 담당한다. */
 if (!function_exists('rb_shop_sync_order_info')) {
     function rb_shop_sync_order_info($od_id)
     {
@@ -294,7 +294,6 @@ if (!function_exists('rb_shop_sync_order_info')) {
         $info = rb_shop_get_order_info($od_id);
         if (!$info) return false;
 
-        $order = sql_fetch("SELECT od_status FROM {$g5['g5_shop_order_table']} WHERE od_id='".sql_real_escape_string($od_id)."'", false);
         $sql = "UPDATE {$g5['g5_shop_order_table']} SET
                     od_cart_price='".(int)$info['od_cart_price']."',
                     od_cart_coupon='".(int)$info['od_cart_coupon']."',
@@ -307,12 +306,7 @@ if (!function_exists('rb_shop_sync_order_info')) {
                     od_vat_mny='".(int)$info['od_vat_mny']."',
                     od_free_mny='".(int)$info['od_free_mny']."'";
 
-        // 실제 결제액이 부족한데 입금으로 기록된 경우 권한이 발급되지 않도록 주문으로 되돌린다.
-        if ((int)$info['od_misu'] > 0 && isset($order['od_status']) && $order['od_status'] === '입금') {
-            $sql .= ", od_status='주문'";
-            sql_query("UPDATE {$g5['g5_shop_cart_table']} SET ct_status='주문'
-                        WHERE od_id='".sql_real_escape_string($od_id)."' AND ct_status='입금'", false);
-        }
+        // 관리자 상태 변경과 입금액 입력은 별도 작업이므로 금액 재계산으로 상태를 되돌리지 않는다.
         $sql .= " WHERE od_id='".sql_real_escape_string($od_id)."'";
         sql_query($sql, false);
         return $info;
@@ -579,6 +573,7 @@ function rb_shop_confirm_purchase($od_id, $buyer_id)
     $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
     $history = "\n완료|{$buyer_id}|{$now}|{$ip}|구매자 구매확정";
     $changed_item_ids = array();
+    $complete_time_sql = get_cart_complete_time_sql('완료');
 
     foreach ($cart_rows as $cart) {
         $ct_id = (int) $cart['ct_id'];
@@ -613,7 +608,8 @@ function rb_shop_confirm_purchase($od_id, $buyer_id)
         }
 
         $updated = sql_query("UPDATE {$cart_table}
-                                 SET ct_status='완료',
+                                 SET ct_complete_time=$complete_time_sql,
+                                     ct_status='완료',
                                      ct_stock_use='{$stock_use}',
                                      ct_point_use='{$point_use}',
                                      ct_history=CONCAT(COALESCE(ct_history,''), '".sql_real_escape_string($history)."')
@@ -666,6 +662,9 @@ function rb_shop_confirm_purchase($od_id, $buyer_id)
     }
 
     sql_query('COMMIT', false);
+
+    // 관리자 완료 처리와 동일하게 완료 시각부터 포인트 지급 대기일을 적용한다.
+    save_order_point();
 
     $admin_id = isset($config['cf_admin']) ? trim((string) $config['cf_admin']) : '';
     $admin_names = array();
