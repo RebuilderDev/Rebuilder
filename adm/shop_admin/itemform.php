@@ -236,6 +236,7 @@ $pg_anchor .= '<li><a href="#anc_sitfrm_compact">요약정보</a></li>
 <li><a href="#anc_sitfrm_extra">여분필드</a></li>
 </ul>
 ';
+$pg_anchor = run_replace('rb_shop_itemform_anchor', $pg_anchor, $it);
 
 
 // 쿠폰적용안함 설정 필드 추가
