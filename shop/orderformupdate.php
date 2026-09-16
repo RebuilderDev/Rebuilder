@@ -1,5 +1,10 @@
 <?php
 include_once('./_common.php');
+include_once(G5_LIB_PATH.'/shop_order_access.lib.php');
+shop_order_state_prepare(false);
+// PG 호출 전에 저장된 비회원 비밀번호 해시의 주문 소유권을 확인한다.
+$saved_order_password = ($is_member || $od_settle_case === '무통장') ? null : shop_order_access_password((string)get_session('ss_order_id'));
+
 
 // KVE-2026-2345: 5.6.38 공통 검증에 빌더의 특수상품 수량 정책을 반영한다.
 if (!function_exists('rb_shop_validate_order_cart')) {
@@ -170,7 +175,8 @@ $rb_has_shipping_items = rb_shop_order_has_shipping_items($tmp_cart_id, true);
 $rb_deliveryless_order_only = !$rb_has_shipping_items;
 $rb_file_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_file_price');
 $rb_media_columns_ready = rb_shop_table_has_column($g5['g5_shop_cart_table'], 'ct_media_price');
-$rb_order_post_it_ids = isset($_POST['rb_order_it_id']) && is_array($_POST['rb_order_it_id']) ? $_POST['rb_order_it_id'] : (isset($_POST['it_id']) && is_array($_POST['it_id']) ? $_POST['it_id'] : array());
+// 결제 복귀 시 검증된 임시 저장 상품번호를 우선하고, 직접 주문은 빌더 필드를 사용한다.
+$rb_order_post_it_ids = isset($_POST['it_id']) && is_array($_POST['it_id']) ? $_POST['it_id'] : (isset($_POST['rb_order_it_id']) && is_array($_POST['rb_order_it_id']) ? $_POST['rb_order_it_id'] : array());
 
 // 주문금액이 상이함
 if($rb_reservation_order_only) { // 예약상품일 경우 합계방식을 변경함
@@ -669,7 +675,8 @@ if($tno) {
 if ($is_member)
     $od_pwd = $member['mb_password'];
 else
-    $od_pwd = isset($_POST['od_pwd']) ? get_encrypt_string($_POST['od_pwd']) : get_encrypt_string(mt_rand());
+    $od_pwd = $saved_order_password !== null ? $saved_order_password :
+        (isset($_POST['od_pwd']) ? get_encrypt_string($_POST['od_pwd']) : get_encrypt_string(mt_rand()));
 
 // 주문번호를 얻는다.
 $od_id = get_session('ss_order_id');
@@ -770,6 +777,7 @@ $sql = " insert {$g5['g5_shop_order_table']}
                 od_cash_info      = '{$pg_receipt_infos['od_cash_info']}',
                 od_test           = '{$default['de_card_test']}'
                 ";
+shop_order_state_finalizing();
 $result = sql_query($sql, false);
 
 // 정말로 insert 가 되었는지 한번더 체크한다.
@@ -910,7 +918,7 @@ if($is_member) {
     $arr_it_cp_logged = array();
     for($i=0; $i<$it_cp_cnt; $i++) {
         $cid = isset($_POST['cp_id'][$i]) ? safe_replace_regex($_POST['cp_id'][$i], 'cp_id') : '';
-        $cp_it_id = isset($_POST['it_id'][$i]) ? safe_replace_regex($_POST['it_id'][$i], 'it_id') : '';
+        $cp_it_id = isset($rb_order_post_it_ids[$i]) ? safe_replace_regex($rb_order_post_it_ids[$i], 'it_id') : '';
         $cp_prc = isset($arr_it_cp_prc[$cp_it_id]) ? (int) $arr_it_cp_prc[$cp_it_id] : 0;
 
         // 한 상품에는 상품쿠폰 하나만 기록 (동일 상품 반복 전송 무시)
@@ -1123,14 +1131,13 @@ $uid = function_exists('get_shop_uid') ? get_shop_uid('order', $od_id, G5_TIME_Y
 set_session('ss_orderview_uid', $uid);
 
 // 주문 정보 임시 데이터 삭제
-if($od_pg == 'inicis') {
-    $sql = " delete from {$g5['g5_shop_order_data_table']} where od_id = '$od_id' and dt_pg = '$od_pg' ";
-    sql_query($sql);
-}
+$sql = " delete from {$g5['g5_shop_order_data_table']} where od_id = '$od_id' and dt_pg = '$od_pg' ";
+sql_query($sql);
 
 if(function_exists('add_order_post_log')) add_order_post_log('', 'delete');
 
 // 주문번호제거
+shop_order_access_forget((string)$od_id);
 set_session('ss_order_id', '');
 
 // 기존자료 세션에서 제거

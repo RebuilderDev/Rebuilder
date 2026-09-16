@@ -1,5 +1,6 @@
 <?php
 if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
+include_once(G5_LIB_PATH.'/shop_order_access.lib.php');
 
 require_once(G5_SHOP_PATH.'/settle_'.$default['de_pg_service'].'.inc.php');
 
@@ -53,7 +54,9 @@ $rb_deliveryless_order_only = !$rb_has_shipping_items;
         color: #3a8afd;
     }
 </style>
+<script src="<?php echo G5_JS_URL; ?>/shop.order-state.js"></script>
 <form name="forderform" id="forderform" method="post" action="<?php echo $order_action_url; ?>" autocomplete="off">
+<?php echo shop_order_checkout_fields((string)$od_id, false); ?>
 <div id="sod_frm" class="sod_frm_pc">
     <!-- 주문상품 확인 시작 { -->
     <div class="tbl_head03 tbl_wrap od_prd_list">
@@ -852,7 +855,7 @@ $(function() {
         $cp_btn_el = $(this);
         $cp_row_el = $(this).closest("tr");
         $("#cp_frm").remove();
-        var it_id = $cp_btn_el.closest("tr").find("input[name^=it_id]").val();
+        var it_id = $cp_btn_el.closest("tr").find("input[name^=rb_order_it_id]").val();
 
         $.post(
             "./orderitemcoupon.php",
@@ -1747,14 +1750,14 @@ function forderform_check(f)
 
         <?php if($default['de_escrow_use']) { ?>
         f.cardUseEscrow.value = 'true';
-        f.escrowProducts.value = JSON.stringify(<?php echo json_encode($escrow_products, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>);
+        f.escrowProducts.value = JSON.stringify(<?php echo json_encode($escrow_products); ?>);
         <?php } ?>
 
         f.cardflowMode.value = 'DEFAULT';
         f.cardeasyPay.value = '';
         if(settle_method == "간편결제") {
             var provider = $("input[name=od_settle_case]:checked").attr("data-pay");
-            var providers = <?php echo json_encode(array_values(array_map(function ($provider) { return $provider[1]; }, shop_easypay_catalog('toss')))); ?>;
+            var providers = <?php echo json_encode(shop_order_toss_providers()); ?>;
             if (providers.indexOf(provider) === -1) {
                 alert('간편결제 수단을 다시 선택해 주세요.');
                 return false;
@@ -1772,16 +1775,19 @@ function forderform_check(f)
 
         if(f.method.value != "무통장") {
             // 주문정보 임시저장
-            var order_data = $(f).serialize();
-            var save_result = "";
+            // 빌더 상품번호를 5.6.39 임시 저장 허용 필드로 전달한다.
+            var order_data = $.param($(f).serializeArray().map(function(field) {
+                return {name: field.name.replace(/^rb_order_it_id\[/, 'it_id['), value: field.value};
+            }));
+            var save_result = "결제 요청을 저장하지 못했습니다.";
             $.ajax({
                 type: "POST",
                 data: order_data,
                 url: g5_url+"/shop/ajax.orderdatasave.php",
                 cache: false,
                 async: false,
-                success: function(data) {
-                    save_result = data;
+                success: function(data, textStatus, xhr) {
+                    save_result = data || g5_order_state_accept(xhr);
                 }
             });
 
@@ -1811,16 +1817,19 @@ function forderform_check(f)
 
         if(f.gopaymethod.value != "무통장") {
             // 주문정보 임시저장
-            var order_data = $(f).serialize();
-            var save_result = "";
+            // 빌더 상품번호를 5.6.39 임시 저장 허용 필드로 전달한다.
+            var order_data = $.param($(f).serializeArray().map(function(field) {
+                return {name: field.name.replace(/^rb_order_it_id\[/, 'it_id['), value: field.value};
+            }));
+            var save_result = "결제 요청을 저장하지 못했습니다.";
             $.ajax({
                 type: "POST",
                 data: order_data,
                 url: g5_url+"/shop/ajax.orderdatasave.php",
                 cache: false,
                 async: false,
-                success: function(data) {
-                    save_result = data;
+                success: function(data, textStatus, xhr) {
+                    save_result = data || g5_order_state_accept(xhr);
                 }
             });
 
@@ -1854,16 +1863,19 @@ function forderform_check(f)
 
         if(f.PayMethod.value != "무통장") {
             // 주문정보 임시저장
-            var order_data = $(f).serialize();
-            var save_result = "";
+            // 빌더 상품번호를 5.6.39 임시 저장 허용 필드로 전달한다.
+            var order_data = $.param($(f).serializeArray().map(function(field) {
+                return {name: field.name.replace(/^rb_order_it_id\[/, 'it_id['), value: field.value};
+            }));
+            var save_result = "결제 요청을 저장하지 못했습니다.";
             $.ajax({
                 type: "POST",
                 data: order_data,
                 url: g5_url+"/shop/ajax.orderdatasave.php",
                 cache: false,
                 async: false,
-                success: function(data) {
-                    save_result = data;
+                success: function(data, textStatus, xhr) {
+                    save_result = data || g5_order_state_accept(xhr);
                 }
             });
 

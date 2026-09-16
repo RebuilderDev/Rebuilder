@@ -4,18 +4,21 @@ if (!defined("_GNUBOARD_")) exit; // 개별 페이지 접근 불가
 $str = '';
 $exists = false;
 
-$ca_id_len = strlen($ca_id);
-$len2 = $ca_id_len + 2;
-$len4 = $ca_id_len + 4;
+$category_groups = get_shop_category_menu_groups($ca_id);
+foreach ($category_groups as $category_group) {
+    foreach ($category_group['categories'] as $row) {
 
-$sql = " select ca_id, ca_name from {$g5['g5_shop_category_table']} where ca_id like '$ca_id%' and length(ca_id) = $len2 and ca_use = '1' order by ca_order, ca_id ";
-$result = sql_query($sql);
-while ($row=sql_fetch_array($result)) {
+        $row2 = sql_fetch(" select count(*) as cnt from {$g5['g5_shop_item_table']} where (ca_id like '{$row['ca_id']}%' or ca_id2 like '{$row['ca_id']}%' or ca_id3 like '{$row['ca_id']}%') and it_use = '1'  ");
 
-    $row2 = sql_fetch(" select count(*) as cnt from {$g5['g5_shop_item_table']} where (ca_id like '{$row['ca_id']}%' or ca_id2 like '{$row['ca_id']}%' or ca_id3 like '{$row['ca_id']}%') and it_use = '1'  ");
-
-    $str .= '<li><a href="'.shop_category_url($row['ca_id']).'">'.$row['ca_name'].' <span class="prd_cnt">'.$row2['cnt'].'</span></a></li>';
-    $exists = true;
+        $current_attr = '';
+        if ($row['ca_id'] === $ca_id) {
+            $current_attr = ' class="sct_ct_here" aria-current="page"';
+        } elseif (strpos($ca_id, $row['ca_id']) === 0) {
+            $current_attr = ' class="sct_ct_here sct_ct_parent"';
+        }
+        $str .= '<li><a'.$current_attr.' href="'.shop_category_url($row['ca_id']).'">'.get_text($row['ca_name']).' <span class="prd_cnt">'.$row2['cnt'].'</span></a></li>';
+        $exists = true;
+    }
 }
 
 if ($exists) {
