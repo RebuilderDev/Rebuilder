@@ -164,7 +164,7 @@ catch (Throwable $e) { $rb_theme_publications=array(); $rb_theme_export_error=$e
         }
         var publicationMode = selectedMode(), publicationId = series.value;
         var message = (publicationMode === 'update' ? '기존 테마 업데이트로 내보냅니다.' : '새 테마로 내보냅니다.')
-            + '\n테마 폴더명: ' + name + '\n\n위젯은 /rb/rb.widget/' + name + '/기존위젯명/ 폴더에 저장됩니다.\n배너 스킨은 /rb/rb.mod/banner/skin/' + name + '/기존스킨명/ 폴더에 저장됩니다.\n\n테마를 내보내시겠습니까?';
+            + ' (' + name + ')\n\n위젯 : /rb/rb.widget/' + name + '/\n배너 : /rb/rb.mod/banner/skin/' + name + '/\n폴더에 저장됩니다.\n\n테마를 내보내시겠습니까?';
         confirming = true;
         var confirmation = typeof rb_confirm === 'function' ? rb_confirm(message) : Promise.resolve(window.confirm(message));
         confirmation.then(function (ok) {
