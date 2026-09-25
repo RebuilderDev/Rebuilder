@@ -273,6 +273,7 @@
 
 #carousel_modal .preview_inner {
     width: 100%;
+    box-sizing: border-box;
     padding: 0 70px;
 }
 
@@ -605,7 +606,8 @@
 #carousel_modal .cm_right::-webkit-scrollbar-thumb { background: #e4e4e4; border-radius: 4px; }
 
 #carousel_modal .cm_preview_box {
-    height: 220px;
+    --cm-preview-height: 220px;
+    height: var(--cm-preview-height);
     background: #1c1c2e;
     border-radius: 12px;
     overflow: hidden;
@@ -615,7 +617,26 @@
     flex-shrink: 0;
 }
 
-#carousel_modal .cm_preview_box::after {
+#carousel_modal .cm_preview_surface {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    margin: 0 auto;
+    overflow: hidden;
+    background: #1c1c2e;
+    background-size: cover;
+    background-position: center;
+}
+
+#carousel_modal[data-cm-preview-device="mobile"] .cm_preview_surface {
+    width: calc(var(--cm-preview-height) * 0.5625);
+}
+
+#carousel_modal[data-cm-preview-device="mobile"] .cm_preview_box,
+#carousel_modal[data-cm-preview-device="mobile"] #cm_fullpreview_popup {background: #f0f5f9;}
+
+#carousel_modal .cm_preview_box .cm_preview_surface::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -667,6 +688,11 @@
 
 #carousel_modal .cm_tab_panel.on { display: flex; }
 
+#carousel_modal [data-cm-device-panel] {display:flex; flex-direction:column; gap:20px;}
+#carousel_modal [data-cm-device-panel][hidden] {display:none !important;}
+#carousel_modal .cm_device_group .cm_field_row {grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+#carousel_modal .cm_mobile_range_reset {float:right; padding:0; border:0; background:none; color:#999; font-size:11px; line-height:inherit; cursor:pointer;}
+
 #carousel_modal .cm_field_label {
     font-size: 12px;
     color: #aaa;
@@ -679,7 +705,7 @@
 #carousel_modal .cm_field_row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 15px;
 }
 
 #carousel_modal .cm_left textarea,
@@ -918,7 +944,8 @@
     left: 0;
     transform: translateY(-50%);
     width: 100vw;
-    height: 400px;
+    --cm-preview-height: 400px;
+    height: var(--cm-preview-height);
     z-index: 99999;
     border-radius: 0;
     overflow: hidden;

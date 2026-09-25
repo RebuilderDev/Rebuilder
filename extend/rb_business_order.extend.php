@@ -132,7 +132,8 @@ if (!function_exists('rb_shop_order_has_shipping_items')) {
                            LEFT JOIN {$g5['g5_shop_item_table']} i ON i.it_id=c.it_id
                           WHERE c.od_id='".sql_real_escape_string($order_id)."'
                             {$selected_sql} AND c.io_type='0' AND {$type_sql}", false);
-        return !empty($row['shipping_cnt']);
+        // 등록된 필터가 없으면 기존 배송 판정 결과를 그대로 사용한다.
+        return (bool) run_replace('rb_shop_order_has_shipping_items', !empty($row['shipping_cnt']), $order_id, $selected_only);
     }
 }
 

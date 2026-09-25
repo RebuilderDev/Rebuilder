@@ -1,6 +1,41 @@
 <?php
 if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 
+// shop.extend.php가 코어 라이브러리를 읽은 다음, 구버전에 없는 함수만 보완한다.
+// 이 파일이 먼저 로드되므로 여기서 즉시 선언하면 최신 코어와 함수명이 충돌한다.
+add_event('common_header', 'rb_shop_category_compat', 0);
+function rb_shop_category_compat()
+{
+    if (function_exists('get_shop_category_menu_groups')) return;
+    function get_shop_category_menu_groups($ca_id)
+    {
+        global $g5;
+        $ca_id=(string)$ca_id;
+        if (!preg_match('/\A(?:[A-Za-z0-9]{2}){0,5}\z/',$ca_id)) return array();
+        $length=strlen($ca_id);
+        $queries=$length>=8
+            ? array(array('5단계 분류',substr($ca_id,0,8),10),array('4단계 분류',substr($ca_id,0,6),8))
+            : array(array('하위 분류',$ca_id,$length+2));
+        $read=function($prefix,$depth) use($g5) {
+            $sql="SELECT * FROM {$g5['g5_shop_category_table']} WHERE ca_use='1'";
+            if ($prefix!=='') $sql.=" AND ca_id LIKE '".sql_real_escape_string($prefix)."%'";
+            $result=sql_query($sql.' AND length(ca_id)='.(int)$depth.' ORDER BY ca_order,ca_id');
+            $rows=array();
+            while ($row=sql_fetch_array($result)) $rows[]=$row;
+            return $rows;
+        };
+        foreach ($queries as $query) {
+            $rows=$read($query[1],$query[2]);
+            if (!$rows && $length<8) {
+                $query[0]='현재 단계 분류';
+                $rows=$read(substr($ca_id,0,-2),$length);
+            }
+            if ($rows) return array(array('label'=>$query[0],'categories'=>$rows));
+        }
+        return array();
+    }
+}
+
 // 크롭옵션을 사용하기위해 별도함수 사용
 function rb_it_image($it_id, $width, $height=0, $anchor=false, $img_id='', $img_alt='', $is_crop=true)
 {

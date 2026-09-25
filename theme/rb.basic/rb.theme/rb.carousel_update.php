@@ -1,5 +1,6 @@
 <?php
 include_once '../../../common.php';
+include_once G5_PATH.'/rb/rb.lib/rb_carousel.lib.php';
 
 // btn_margin 컬럼 없으면 추가
 $chk = sql_query("SHOW COLUMNS FROM `rb_theme_carousel` LIKE 'btn_margin'");
@@ -11,6 +12,16 @@ if (!sql_fetch_array($chk)) {
 if (!$is_admin) {
     echo json_encode(['success' => false, 'message' => '권한이 없습니다.']);
     exit;
+}
+
+$mobile_sql='';
+if(array_key_exists('mobile_settings',$_POST)) {
+    try { $mobile=rb_carousel_mobile_settings($_POST['mobile_settings'],true); }
+    catch(InvalidArgumentException $e) { echo json_encode(array('success'=>false,'message'=>$e->getMessage())); exit; }
+    if(!rb_carousel_has_mobile_column()) {
+        echo json_encode(array('success'=>false,'message'=>'Mobile 설정을 저장하려면 관리자모드 > 빌더설정에서 DB 업데이트를 먼저 실행해 주세요.')); exit;
+    }
+    $mobile_sql=", mobile_settings='".sql_real_escape_string(json_encode((object)$mobile))."'";
 }
 
 $mode = isset($_POST['mode']) ? $_POST['mode'] : 'insert';
@@ -82,7 +93,6 @@ $carousel_type_mode = isset($_POST['carousel_type_mode']) ? $_POST['carousel_typ
 if (!in_array($carousel_type_mode, array('shop', 'community'))) {
     $carousel_type_mode = 'community';
 }
-$is_sub = (isset($_POST['is_sub']) && (int)$_POST['is_sub'] === 1) ? 1 : 0;
 
 
 $image_path = '';
@@ -134,9 +144,7 @@ if ($mode == 'update') {
             }
         }
     }
-    if ($is_sub === 1) {
-        sql_query("UPDATE rb_theme_carousel SET is_sub = 0 WHERE cf_theme = '" . sql_real_escape_string($cf_theme) . "' AND carousel_type_mode = '" . $carousel_type_mode . "' AND id != '$id'");
-    }
+
     $sql = "UPDATE rb_theme_carousel SET
             main_text = '" . sql_real_escape_string($main_text) . "',
             main_size = '$main_size',
@@ -164,14 +172,13 @@ if ($mode == 'update') {
             btn_border_color = '" . $btn_border_color . "',
             btn_svg = '" . sql_real_escape_string($btn_svg) . "',
             btn_align = '" . $btn_align . "',
-            is_sub = '$is_sub',
             carousel_type_mode = '" . $carousel_type_mode . "'";
 
     if ($image_path) {
         $sql .= ", image_path = '" . sql_real_escape_string($image_path) . "'";
     }
 
-    $sql .= " WHERE id = '$id' AND cf_theme = '$cf_theme'";
+    $sql .= $mobile_sql." WHERE id = '$id' AND cf_theme = '$cf_theme'";
 
     sql_query($sql);
 
@@ -185,9 +192,7 @@ if ($mode == 'insert') {
     $sort_row = sql_fetch("SELECT MAX(sort_order) as max_sort FROM rb_theme_carousel WHERE cf_theme = '$cf_theme'");
     $sort_order = $sort_row ? (int)$sort_row['max_sort'] + 1 : 1;
 
-    if ($is_sub === 1) {
-        sql_query("UPDATE rb_theme_carousel SET is_sub = 0 WHERE cf_theme = '" . sql_real_escape_string($cf_theme) . "' AND carousel_type_mode = '" . $carousel_type_mode . "'");
-    }
+
 
     $sql = "INSERT INTO rb_theme_carousel SET
             cf_theme = '" . sql_real_escape_string($cf_theme) . "',
@@ -217,11 +222,11 @@ if ($mode == 'insert') {
             btn_svg = '" . sql_real_escape_string($btn_svg) . "',
             btn_align = '" . $btn_align . "',
             carousel_type_mode = '" . $carousel_type_mode . "',
-            is_sub = '$is_sub',
             image_path = '" . sql_real_escape_string($image_path) . "',
             sort_order = '$sort_order',
             reg_date = '".G5_TIME_YMDHIS."'";
 
+    $sql .= $mobile_sql;
     sql_query($sql);
 
     echo json_encode(['success' => true, 'message' => '등록 되었습니다.']);

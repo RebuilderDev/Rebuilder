@@ -137,11 +137,17 @@ if($mod_type == "del_sec") { //섹션삭제
             }
 
             // AOS
-            if ($rb_aos_exists) {
+            if ($rb_aos_exists && $is_admin) {
 
             // // 공통 저장 함수(UPDATE or INSERT) - ON DUPLICATE KEY 미사용
             if (!function_exists('rb_aos_save_row')) {
                 function rb_aos_save_row($table, $type, $use, $aos, $offset, $delay, $duration, $easing, $mirror, $once, $anchor) {
+                    global $co_theme;
+                    // 설치한 테마의 효과는 해당 테마에 저장한다. 다른 테마의 공통 AOS 설정은 유지한다.
+                    if (rb_tp_save_aos($co_theme, $type, array('use'=>(int)$use, 'aos'=>(string)$aos,
+                        'offset'=>(string)$offset, 'delay'=>(string)$delay, 'duration'=>(string)$duration,
+                        'easing'=>(string)$easing, 'mirror'=>(string)(int)$mirror, 'once'=>(string)(int)$once,
+                        'anchor_placement'=>(string)$anchor))) return;
                     $type_esc = sql_real_escape_string((string)$type);
 
                     $use = (int)$use;
@@ -3260,4 +3266,3 @@ if($mod_type == "del_sec") { //섹션삭제
     <div class="cb"></div>
 </ul>
 <?php } ?>
-

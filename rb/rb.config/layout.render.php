@@ -5,6 +5,37 @@ if (!defined('_GNUBOARD_')) {
 
 include_once(__DIR__ . '/layout.cache.php');
 
+if (!function_exists('rb_module_has_connection')) {
+    function rb_module_has_connection(array $module)
+    {
+        // 새 설치 자료에서 연결을 생략한 경우만 처리한다. 기존 테마의 기본 설문 등은 유지한다.
+        if (empty($module['md_theme']) || !function_exists('rb_tp_state')) return true;
+        $state=rb_tp_state($module['md_theme']);
+        if (!isset($state['scope']) || $state['scope']!=='main-design') return true;
+        $type=isset($module['md_type'])?$module['md_type']:'';
+        if (($type==='item' || $type==='item_tab') && (!defined('G5_USE_SHOP') || !G5_USE_SHOP)) return false;
+        static $catalogs=array();
+        $kind=($type==='latest' || $type==='tab')?'board':($type==='poll'?'poll':(($type==='item' || $type==='item_tab')?'category':''));
+        if($kind!=='' && !isset($catalogs[$kind])) $catalogs[$kind]=rb_tp_catalog($kind);
+        if ($type==='latest') return !empty($module['md_bo_table']) && isset($catalogs['board'][$module['md_bo_table']]);
+        if ($type==='poll') return !empty($module['md_poll_id']) && isset($catalogs['poll'][$module['md_poll_id']]);
+        if ($type==='item' && !empty($module['md_sca'])) return isset($catalogs['category'][$module['md_sca']]);
+        if ($type==='tab' || $type==='item_tab') {
+            $field=$type==='tab'?'md_tab_list':'md_item_tab_list';
+            $tabs=isset($module[$field])?json_decode($module[$field],true):null;
+            if(!is_array($tabs) || !$tabs) return false;
+            foreach($tabs as $tab) {
+                if(!is_string($tab) && !is_int($tab)) return false;
+                $parts=explode('||',(string)$tab,2);
+                if($parts[0]==='' || !isset($catalogs[$kind][$parts[0]])) return false;
+            }
+            return true;
+        }
+        // 일반 상품 모듈은 분류 미지정 시 전체 상품을 표시하는 기존 동작을 유지한다.
+        return true;
+    }
+}
+
 if (!function_exists('rb_capture_layout_render_map')) {
     function rb_capture_layout_render_map(array $layouts, $is_index)
     {

@@ -2,6 +2,7 @@
 $sub_menu = "100280";
 include_once('./_common.php');
 include_once(G5_PATH . '/rb/rb.config/layout.cache.php');
+include_once(G5_PATH.'/rb/rb.lib/rb_theme_package.lib.php');
 
 if ($is_admin != 'super')
     die('최고관리자만 접근 가능합니다.');
@@ -62,8 +63,8 @@ function rb_backup_theme_data($theme_key) {
 if($post_type == 'reset') {
     $reset_theme = sql_real_escape_string(trim($config['cf_theme']));
 
-    $sql = " update {$g5['config_table']} set cf_theme = '' ";
-    sql_query($sql);
+    try { rb_tp_apply_theme(''); }
+    catch (RuntimeException $e) { die(htmlspecialchars($e->getMessage(),ENT_QUOTES,'UTF-8')); }
 
     die('');
 }
@@ -157,12 +158,15 @@ if($post_type == 'reset_data') {
 if(!in_array($theme, $theme_dir))
     die('선택하신 테마가 설치되어 있지 않습니다.');
 
-// 테마적용
-$sql = " update {$g5['config_table']} set cf_theme = '$theme' ";
-sql_query($sql);
+if (rb_tp_slug($theme) && is_file(G5_PATH.'/theme/'.$theme.'/rb-package/manifest.json') && !rb_tp_state($theme))
+    die('FTP 업로드 테마는 먼저 이 화면에서 설치를 완료해 주세요.');
+
+// 테마적용: 쇼핑몰 스킨은 여기서 저장/복원하므로 shop.config.php 수정이 필요 없다.
+try { rb_tp_apply_theme($theme); }
+catch (RuntimeException $e) { die(htmlspecialchars($e->getMessage(),ENT_QUOTES,'UTF-8')); }
 
 // 테마 설정 스킨 적용
-if($post_set_default_skin == 1) {
+if($post_set_default_skin == 1 && !rb_tp_state($theme)) {
     $keys = 'set_default_skin, cf_member_skin, cf_mobile_member_skin, cf_new_skin, cf_mobile_new_skin, cf_search_skin, cf_mobile_search_skin, cf_connect_skin, cf_mobile_connect_skin, cf_faq_skin, cf_mobile_faq_skin, qa_skin, qa_mobile_skin, de_shop_skin, de_shop_mobile_skin';
 
     $tconfig = get_theme_config_value($theme, $keys);
@@ -339,4 +343,3 @@ if (!empty($rb_json_files)) {
 run_event('adm_theme_update', $theme, $post_set_default_skin);
 
 die('');
-

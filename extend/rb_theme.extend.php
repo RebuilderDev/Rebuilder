@@ -1,5 +1,6 @@
 <?php
 if (!defined('_GNUBOARD_')) exit;
+include_once(G5_PATH.'/rb/rb.lib/rb_carousel.lib.php');
 
 // 테이블 보장
 $theme_config_tables = 'rb_theme';
@@ -201,7 +202,7 @@ while ($rb_carousel_f_row = sql_fetch_array($carousel_list)) {
         'btn_align' => isset($rb_carousel_f_row['btn_align']) ? $rb_carousel_f_row['btn_align'] : 'center',
         'btn_link_blank' => isset($rb_carousel_f_row['btn_link_blank']) ? (int)$rb_carousel_f_row['btn_link_blank'] : 0,
         'carousel_type_mode' => isset($rb_carousel_f_row['carousel_type_mode']) ? $rb_carousel_f_row['carousel_type_mode'] : 'community',
-        'is_sub' => isset($rb_carousel_f_row['is_sub']) ? (int)$rb_carousel_f_row['is_sub'] : 0,
+        'mobile_settings' => rb_carousel_mobile_settings(isset($rb_carousel_f_row['mobile_settings'])?$rb_carousel_f_row['mobile_settings']:''),
         'image_path' => $rb_carousel_f_row['image_path'] ? G5_DATA_URL . '/'.$rb_theme_key.'/carousel_img/' . $rb_carousel_f_row['image_path'] : ''
     );
 }

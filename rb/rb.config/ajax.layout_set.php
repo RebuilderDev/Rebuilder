@@ -224,6 +224,13 @@ foreach ($layouts as $layout_no) {
 
 
 
+                    <?php if (!rb_module_has_connection($row_mod)) { ?>
+                        <?php if ($is_admin) { ?><li class="no_data">모듈 설정에서 표시할 데이터를 연결해 주세요.</li><?php } ?>
+                    <?php } else {
+                        // 생성된 캐시를 읽을 때도 삭제된 연결 대상을 다시 확인한다.
+                        $rb_connection_fields=array_intersect_key($row_mod,array_flip(array('md_theme','md_type','md_bo_table','md_poll_id','md_sca','md_tab_list','md_item_tab_list')));
+                        echo '<?php if (rb_module_has_connection('.var_export($rb_connection_fields,true).')) { ?>';
+                    ?>
                     <?php if (isset($row_mod['md_type']) && $row_mod['md_type'] == 'latest') { ?>
                         <div class="rb-module-wrap module_latest_wrap md_arrow_<?php echo isset($row_mod['md_arrow_type']) ? $row_mod['md_arrow_type'] : ''; ?>"
                            style="
@@ -535,6 +542,7 @@ foreach ($layouts as $layout_no) {
 
 
 
+                    <?php echo '<?php } ?>'; } // 연결 없는 모듈도 아래 설정 버튼은 유지한다. ?>
                     <?php if ($is_admin) { ?>
                         <span class="admin_ov">
                             <?php if ($is_admin) { ?>
@@ -659,8 +667,8 @@ foreach ($layouts as $layout_no) {
 
                 <div class="flex_box" style="
                    <?php if (isset($row_sec['sec_con_width']) && $row_sec['sec_con_width'] == 1) { ?>max-width: calc(100% + <?php echo $rb_core['gap_pc'] ?>px);<?php } else { ?>width: calc(<?php if($is_index) { ?><?php echo $rb_core['main_width'] ?>px<?php } else { ?><?php echo $rb_core['sub_width'] ?>px<?php } ?> + <?php echo $rb_core['gap_pc'] ?>px); transform: translateX(0px);<?php } ?>"
-                    data-layout="<?php echo $row_sec['sec_layout']; ?>"
-                    data-order-id="<?php echo (int)$row_sec['sec_order_id']; ?>"
+                     data-layout="<?php echo $row_sec['sec_layout']; ?>"
+                     data-order-id="<?php echo (int)$row_sec['sec_order_id']; ?>"
                     data-sec-key="<?php echo $row_sec['sec_key']; ?>"
                     data-sec-uid="<?php echo $row_sec['sec_uid']; ?>"
                     data-shop="0"

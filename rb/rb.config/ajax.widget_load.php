@@ -31,16 +31,14 @@ if ($bad_origin || $bad_referer) {
 
 /* ---------- 입력/검증 ---------- */
 
-$folder = isset($_GET['folder']) ? trim($_GET['folder']) : '';
-// 읽기: 점(.) 허용
-if ($folder === '' ||
-    !preg_match('/^(?!\.)(?!.*\.\.)[A-Za-z0-9_.-]+$/', $folder) ||
-    strpos($folder,'/')!==false || strpos($folder,'\\')!==false) {
+$folder = isset($_GET['folder']) && is_string($_GET['folder']) ? trim($_GET['folder']) : '';
+if (!rb_widget_folder_valid($folder)) {
   echo json_encode(['ok'=>false,'msg'=>'폴더명 형식 오류']); exit;
 }
 
 $BASE = G5_PATH . '/rb/rb.widget';
-$target_dir  = $BASE . '/' . $folder;
+$target_dir  = rb_widget_folder_path($folder);
+if ($target_dir === false) { echo json_encode(['ok'=>false,'msg'=>'위젯 경로를 확인해 주세요.']); exit; }
 $target_file = $target_dir . '/widget.php';
 
 if (!is_dir($target_dir) || !file_exists($target_file)) {

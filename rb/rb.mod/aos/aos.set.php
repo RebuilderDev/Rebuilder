@@ -18,6 +18,18 @@ $configs = array(
     'market'  => array('use' => 0)
 );
 
+$rb_aos_package=rb_tp_state(isset($config['cf_theme'])?$config['cf_theme']:'');
+if(isset($rb_aos_package['aos']['general'],$rb_aos_package['aos']['market'])) {
+    foreach(array('general','market') as $type) {
+        $row=$rb_aos_package['aos'][$type];
+        foreach(array('mirror','once') as $key) if(isset($row[$key])) $row[$key]=((int)$row[$key]===1?'true':'false');
+        foreach(array('use','offset','delay','duration') as $key) if(isset($row[$key]) && $row[$key]!=='') $row[$key]=(int)$row[$key];
+        if(isset($row['anchor_placement'])) { $row['anchorPlacement']=$row['anchor_placement']; unset($row['anchor_placement']); }
+        $configs[$type]=$row ? $row : array('use'=>0);
+    }
+    rb_aos_js_exit($configs);
+}
+
 // // 테이블 없으면 그대로 종료
 $tbl_esc = sql_real_escape_string($tbl);
 $row_tbl = sql_fetch("SHOW TABLES LIKE '{$tbl_esc}'", false);

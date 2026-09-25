@@ -72,17 +72,12 @@ if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST')
     rb_json_exit(array('ok' => false, 'msg' => 'Invalid method'));
 }
 
-$folder    = isset($_POST['folder']) ? trim((string)$_POST['folder']) : '';
+$folder    = isset($_POST['folder']) && is_string($_POST['folder']) ? trim($_POST['folder']) : '';
 $overwrite = isset($_POST['overwrite']) ? trim((string)$_POST['overwrite']) : '0';
 $code      = isset($_POST['code']) ? (string)$_POST['code'] : '';
 
-$pattern = ($overwrite === '1')
-    ? '/^(?!\.)(?!.*\.\.)[A-Za-z0-9_.-]+$/'
-    : '/^(?!\.)(?!.*\.\.)[A-Za-z0-9_-]+$/';
-
-if ($folder === '' ||
-    !preg_match($pattern, $folder) ||
-    strpos($folder, '/') !== false || strpos($folder, '\\') !== false) {
+// 생성은 종전의 공용 폴더 규칙을 유지하고, 편집은 테마/위젯 경로까지 허용한다.
+if (!rb_widget_folder_valid($folder) || ($overwrite !== '1' && !preg_match('/\A[A-Za-z0-9_-]+\z/',$folder))) {
     rb_json_exit(array('ok' => false, 'msg' => '폴더명 형식 오류'));
 }
 
@@ -107,7 +102,8 @@ if (!is_dir($BASE)) {
     rb_json_exit(array('ok' => false, 'msg' => 'BASE 경로가 없습니다: ' . $BASE));
 }
 
-$target_dir  = $BASE . '/' . $folder;
+$target_dir  = rb_widget_folder_path($folder);
+if ($target_dir === false) rb_json_exit(array('ok' => false, 'msg' => '위젯 경로를 확인해 주세요.'));
 $target_file = $target_dir . '/widget.php';
 
 // // 폴더가 없으면 BASE에 mkdir 해야 하므로 BASE writable 체크

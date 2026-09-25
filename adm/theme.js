@@ -91,42 +91,6 @@ $(function() {
         });
     });
 
-    $(".theme_reset_data").on("click", function() {
-        var $btn = $(this);
-        var theme = $btn.data("theme");
-        var name  = $btn.data("name");
-
-        function useConfirm(msg) {
-            if (typeof rb_confirm === 'function') {
-                return rb_confirm(msg);
-            }
-            return Promise.resolve(window.confirm(msg));
-        }
-
-        useConfirm(name + " 테마를 초기화 하시겠습니까?\n모듈/섹션/설정 데이터가 모두\nJSON 파일을 기준으로 초기화되며, 기존 설정 데이터는\n/data/rb.backup/ 으로 백업 됩니다.").then(function(ok) {
-            if (!ok) return;
-            useConfirm("정말 초기화 하시겠습니까?\n이 작업은 되돌릴 수 없습니다.").then(function(ok2) {
-                if (!ok2) return;
-                $.ajax({
-                    type: "POST",
-                    url: "./theme_update.php",
-                    data: {
-                        "theme": theme,
-                        "type": "reset_data"
-                    },
-                    cache: false,
-                    success: function(data) {
-                        if (data) {
-                            alert(data);
-                            return false;
-                        }
-                        document.location.reload();
-                    }
-                });
-            });
-        });
-    });
-
     $(".theme_preview").on("click", function() {
         var theme = $(this).data("theme");
 

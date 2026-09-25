@@ -8,6 +8,10 @@ if ($is_admin != 'super')
 // 테마 필드 추가
 
 $theme = get_theme_dir();
+$theme = array_values(array_filter($theme, function ($name) use ($config) {
+    $path = G5_PATH.'/theme/'.$name;
+    return $name===$config['cf_theme'] || !is_file($path.'/rb-package/manifest.json') || is_file($path.'/rb-package.json');
+}));
 if($config['cf_theme'] && in_array($config['cf_theme'], $theme))
     array_unshift($theme, $config['cf_theme']);
 $theme = array_values(array_unique($theme));
@@ -22,6 +26,7 @@ include_once('./admin.head.php');
 ?>
 
 <script src="<?php echo G5_ADMIN_URL; ?>/theme.js"></script>
+<?php include_once('./theme_package.inc.php'); ?>
 <div class="local_wr">
     <span class="btn_ov01"><span class="ov_txt">설치된 테마</span><span class="ov_num">  <?php echo number_format($total_count); ?></span></span>
 
@@ -40,19 +45,11 @@ include_once('./admin.head.php');
             $screenshot = '<img src="'.G5_ADMIN_URL.'/img/theme_img.jpg" alt="">';
 
         if($config['cf_theme'] == $theme[$i]) {
-            // 수정
-            $json_files = glob(G5_PATH . '/theme/' . $theme[$i] . '/' . $theme[$i] . '_*.json');
-            $has_json = !empty($json_files);
-
             $btn_active = '<span class="theme_sl theme_sl_use">사용중</span>
             <button type="button" class="theme_sl theme_deactive" data-theme="'.$theme[$i].'" data-name="'.$name.'">사용안함</button>';
-
-            if ($has_json) {
-                $btn_active .= '<button type="button" class="theme_sl theme_reset_data" data-theme="'.$theme[$i].'" data-name="'.$name.'" style="margin-left:4px">초기화</button>';
-            }
         } else {
             $tconfig = get_theme_config_value($theme[$i], 'set_default_skin');
-            if($tconfig['set_default_skin'])
+            if($tconfig['set_default_skin'] && !is_file(G5_PATH.'/theme/'.$theme[$i].'/rb-package.json'))
                 $set_default_skin = 'true';
             else
                 $set_default_skin = 'false';

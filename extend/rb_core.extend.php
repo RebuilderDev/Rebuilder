@@ -1,5 +1,6 @@
 <?php
 if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
+include_once(G5_PATH.'/rb/rb.lib/rb_theme_package.lib.php');
 
 // 500 에러가 나오시는 경우 아래 코드를 주석해제하셔서
 // 보이는 에러구문을 알려주세요.
@@ -8,7 +9,7 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 //ini_set('display_startup_errors', 1);
 //error_reporting(E_ALL);
 
-define('RB_VER',  '2.2.7.5'); // 버전
+define('RB_VER',  '2.2.7.6'); // 버전
 define('RB_TABLE_PREFIX', 'rb_'); // 리빌더 접두사
 
 // 헤더 배경색을 실제 표시색으로 합성한 뒤 검정/흰색 중 대비가 높은 색을 선택한다.
@@ -68,6 +69,9 @@ if (!function_exists('rb_header_logo_url')) {
 
         $device = $device === 'mo' ? 'mo' : 'pc';
         $suffix = $use_white ? '_w' : '';
+        if (defined('G5_THEME_PATH') && rb_tp_state(isset($GLOBALS['config']['cf_theme'])?$GLOBALS['config']['cf_theme']:'')
+            && is_file(G5_THEME_PATH.'/rb.img/logos/'.$device.$suffix.'.png'))
+            return G5_THEME_URL.'/rb.img/logos/'.$device.$suffix.'.png';
         $normal_key = 'bu_logo_' . $device;
         $white_key = $normal_key . '_w';
         $has_logo_pair = !empty($rb_builder[$normal_key]) && !empty($rb_builder[$white_key]);
@@ -320,6 +324,11 @@ if (empty($rb_config_col['co_theme'])) { // 환경설정 테이블에 테마명�
 
 $rb_config = sql_fetch (" select * from rb_config where co_theme = '{$config['cf_theme']}' "); // 환경설정 테이블 조회
 $rb_builder = sql_fetch (" select * from rb_builder "); // 빌더설정 테이블 조회
+$rb_package_display=rb_tp_state(isset($config['cf_theme'])?$config['cf_theme']:'');
+if (!(defined('G5_IS_ADMIN') && G5_IS_ADMIN) && !empty($rb_package_display['builder_display'])) {
+    foreach(array('bu_mobile_menu_position','bu_mobile_menu_icon','bu_mobile_menu_icon_svg') as $rb_display_key)
+        if(isset($rb_package_display['builder_display'][$rb_display_key])) $rb_builder[$rb_display_key]=$rb_package_display['builder_display'][$rb_display_key];
+}
 
 $rb_core['theme'] = !empty($config['cf_theme']) ? $config['cf_theme'] : ''; // 테마
 $rb_core['layout'] = !empty($rb_config['co_layout']) ? $rb_config['co_layout'] : ''; // 레이아웃(메인)
@@ -388,6 +397,9 @@ if (isset($bo_table) && $bo_table) {
 
 
 // 노드 신규등록
+$rb_package_state = rb_tp_state(isset($config['cf_theme']) ? $config['cf_theme'] : '');
+if (isset($rb_package_state['topvisual'][$rb_page_urls])) $rb_page_urls = $rb_package_state['topvisual'][$rb_page_urls];
+unset($rb_package_state);
 rb_auto_insert_node_if_inherited($rb_page_urls);
 
 $rb_page_sql = "SELECT * FROM rb_topvisual WHERE v_code = '{$rb_page_urls}'";
@@ -1416,32 +1428,37 @@ function rb_skin_dir($skin, $skin_path = G5_SKIN_PATH)
 
 
 // 위젯디렉토리에 지정한 위젯이 있는지 여부 검사
+function rb_widget_folder_valid($folder)
+{
+    return is_string($folder) && strpos($folder,'..')===false && rb_tp_path($folder)
+        && preg_match('~\A[A-Za-z0-9_-][A-Za-z0-9_.-]*(?:/[A-Za-z0-9_-][A-Za-z0-9_.-]*)?\z~',$folder);
+}
+
+// 공용 위젯과 테마/위젯의 두 단계만 허용한다. 읽기·저장 전에 중간 경로도 확인한다.
+function rb_widget_folder_path($folder,$root=null)
+{
+    if($root===null) $root=G5_PATH.'/rb/rb.widget';
+    return rb_module_asset_folder_path($folder,$root,'widget.php');
+}
+
+function rb_module_asset_folder_path($folder,$root,$entry)
+{
+    if(!rb_widget_folder_valid($folder)) return false;
+    if(!is_dir($root) || is_link($root)) return false;
+    $path=$root;
+    foreach(explode('/',$folder) as $piece) {
+        $path.='/'.$piece;
+        if(is_link($path) || (file_exists($path) && (!is_dir($path) || !rb_tp_under($path,$root)))) return false;
+    }
+    $file=$path.'/'.$entry;
+    if(is_link($file) || (file_exists($file) && (!is_file($file) || !rb_tp_under($file,$root)))) return false;
+    return $path;
+}
+
 function rb_widget_select_is($skin_gubun, $selected = '')
 {
-    global $config;
-
-    $skins = array();
-    $str = "false"; // 기본값 설정
-
-    $dirs = rb_widget_dir($skin_gubun, G5_PATH . '/rb');
-    if (!empty($dirs)) {
-        foreach ($dirs as $dir) {
-            $skins[] = 'rb.widget/' . $dir;
-        }
-    }
-
-    $skins = array_merge($skins, rb_skin_dir($skin_gubun));
-
-    for ($i = 0; $i < count($skins); $i++) {
-        if (strpos($skins[$i], "rb.widget/") !== false) {
-            if ($skins[$i] == $selected) {
-                $str = "true";
-                break; // 선택된 스킨을 찾으면 반복문을 종료
-            }
-        }
-    }
-
-    return $str;
+    if(!is_string($selected) || strpos($selected,'rb.widget/')!==0) return 'false';
+    return in_array(substr($selected,10),rb_widget_dir($skin_gubun,G5_PATH.'/rb'),true)?'true':'false';
 }
 
 
@@ -1450,62 +1467,47 @@ function rb_widget_select_is($skin_gubun, $selected = '')
 function rb_widget_select($skin_gubun, $selected = '')
 {
     global $config;
-
-    $str = "";
-
-    $skins = array();
-
-
-        $dirs = rb_widget_dir($skin_gubun, G5_PATH . '/rb');
-        if (!empty($dirs)) {
-            foreach ($dirs as $dir) {
-                $skins[] = 'rb.widget/' . $dir;
-            }
-        }
-
-
-    $skins = array_merge($skins, rb_widget_dir($skin_gubun));
-
-
-    for ($i = 0; $i < count($skins); $i++) {
-
-        if (preg_match('#^rb.widget/(.+)$#', $skins[$i], $match)) {
-            $text = $match[1];
-        }
-
-        if(strpos($skins[$i], "rb.widget/") !== false) {
-            $str .= option_selected($skins[$i], $selected, $text);
-        }
+    $str=''; $groups=array(''=>array());
+    foreach(rb_widget_dir($skin_gubun,G5_PATH.'/rb') as $folder) {
+        $parts=explode('/',$folder,2); $group=count($parts)===2?$parts[0]:'';
+        $groups[$group][$folder]=count($parts)===2?$parts[1]:$folder;
     }
-
+    $current=isset($config['cf_theme'])?(string)$config['cf_theme']:'';
+    $order=array(''); if($current!=='' && isset($groups[$current])) $order[]=$current;
+    foreach(array_keys($groups) as $group) { $group=(string)$group; if($group!=='' && $group!==$current) $order[]=$group; }
+    foreach($order as $group) {
+        if(empty($groups[$group])) continue;
+        $label=$group===''?'공용 위젯':($group===$current?'현재 테마 · ':'테마 · ').$group;
+        $str.='<optgroup label="'.htmlspecialchars($label,ENT_QUOTES,'UTF-8').'">';
+        foreach($groups[$group] as $folder=>$name) {
+            $value='rb.widget/'.$folder;
+            $str.='<option value="'.htmlspecialchars($value,ENT_QUOTES,'UTF-8').'"'.($value===$selected?' selected':'').'>'
+                .htmlspecialchars($name,ENT_QUOTES,'UTF-8').'</option>';
+        }
+        $str.='</optgroup>';
+    }
     return $str;
 }
 
 // 위젯디렉토리 조회 내부함수
 function rb_widget_dir($skin, $skin_path = G5_SKIN_PATH)
 {
-    global $g5;
-
-    $result_array = array();
-
-    $dirname = $skin_path . '/' . $skin . '/';
-    if (!is_dir($dirname)) {
-        return array();
-    }
-
-    $handle = opendir($dirname);
-    while ($file = readdir($handle)) {
-        if ($file == '.' || $file == '..') {
-            continue;
+    $result_array=array(); $dirname=$skin_path.'/'.$skin;
+    if(!is_dir($dirname) || is_link($dirname)) return $result_array;
+    foreach(scandir($dirname) as $folder) {
+        $path=rb_widget_folder_path($folder,$dirname);
+        if(!$path || !is_dir($path)) continue;
+        if(is_file($path.'/widget.php')) {
+            $result_array[]=$folder;
+            // 기존 공용 위젯과 테마 폴더명이 같아도 양쪽 위젯을 모두 표시한다.
+            if(!is_dir(G5_PATH.'/theme/'.$folder)) continue;
         }
-
-        if (is_dir($dirname . $file)) {
-            $result_array[] = $file;
+        foreach(scandir($path) as $child) {
+            $relative=$folder.'/'.$child; $widget=rb_widget_folder_path($relative,$dirname);
+            if($widget && is_file($widget.'/widget.php')) $result_array[]=$relative;
         }
     }
-    closedir($handle);
-    sort($result_array);
-
+    sort($result_array,SORT_NATURAL|SORT_FLAG_CASE);
     return $result_array;
 }
 
@@ -1515,62 +1517,47 @@ function rb_widget_dir($skin, $skin_path = G5_SKIN_PATH)
 function rb_banner_skin_select($skin_gubun, $selected = '')
 {
     global $config;
-
-    $str = "";
-
-    $skins = array();
-
-
-        $dirs = rb_banner_dir($skin_gubun, G5_PATH . '/rb');
-        if (!empty($dirs)) {
-            foreach ($dirs as $dir) {
-                $skins[] = 'rb.mod/banner/skin/' . $dir;
-            }
-        }
-
-
-    $skins = array_merge($skins, rb_widget_dir($skin_gubun));
-
-
-    for ($i = 0; $i < count($skins); $i++) {
-
-        if (preg_match('#^rb.mod/banner/skin/(.+)$#', $skins[$i], $match)) {
-            $text = $match[1];
-        }
-
-        if(strpos($skins[$i], "rb.mod/banner/skin/") !== false) {
-            $str .= option_selected($skins[$i], $selected, $text);
-        }
+    $str=''; $groups=array(''=>array());
+    foreach(rb_banner_dir($skin_gubun,G5_PATH.'/rb') as $folder) {
+        $parts=explode('/',$folder,2); $group=count($parts)===2?$parts[0]:'';
+        $groups[$group][$folder]=count($parts)===2?$parts[1]:$folder;
     }
-
+    $current=isset($config['cf_theme'])?(string)$config['cf_theme']:'';
+    $order=array(''); if($current!=='' && isset($groups[$current])) $order[]=$current;
+    foreach(array_keys($groups) as $group) { $group=(string)$group; if($group!=='' && $group!==$current) $order[]=$group; }
+    foreach($order as $group) {
+        if(empty($groups[$group])) continue;
+        $label=$group===''?'공용 배너 스킨':($group===$current?'현재 테마 · ':'테마 · ').$group;
+        $str.='<optgroup label="'.htmlspecialchars($label,ENT_QUOTES,'UTF-8').'">';
+        foreach($groups[$group] as $folder=>$name) {
+            $value='rb.mod/banner/skin/'.$folder;
+            $str.='<option value="'.htmlspecialchars($value,ENT_QUOTES,'UTF-8').'"'.($value===$selected?' selected':'').'>'
+                .htmlspecialchars($name,ENT_QUOTES,'UTF-8').'</option>';
+        }
+        $str.='</optgroup>';
+    }
     return $str;
 }
 
 // 배너 스킨 디렉토리 조회 내부함수
 function rb_banner_dir($skin, $skin_path = G5_SKIN_PATH)
 {
-    global $g5;
-
-    $result_array = array();
-
-    $dirname = $skin_path . '/' . $skin . '/';
-    if (!is_dir($dirname)) {
-        return array();
-    }
-
-    $handle = opendir($dirname);
-    while ($file = readdir($handle)) {
-        if ($file == '.' || $file == '..') {
-            continue;
+    $result_array=array(); $dirname=$skin_path.'/'.$skin;
+    if(!is_dir($dirname) || is_link($dirname)) return $result_array;
+    foreach(scandir($dirname) as $folder) {
+        $path=rb_module_asset_folder_path($folder,$dirname,'banner.skin.php');
+        if(!$path || !is_dir($path)) continue;
+        if(is_file($path.'/banner.skin.php')) {
+            $result_array[]=$folder;
+            if(!is_dir(G5_PATH.'/theme/'.$folder)) continue;
         }
-
-        if (is_dir($dirname . $file)) {
-            $result_array[] = $file;
+        foreach(scandir($path) as $child) {
+            $relative=$folder.'/'.$child;
+            $banner=rb_module_asset_folder_path($relative,$dirname,'banner.skin.php');
+            if($banner && is_file($banner.'/banner.skin.php')) $result_array[]=$relative;
         }
     }
-    closedir($handle);
-    sort($result_array);
-
+    sort($result_array,SORT_NATURAL|SORT_FLAG_CASE);
     return $result_array;
 }
 
@@ -2224,6 +2211,10 @@ if ($rb_aos_exists) {
     $row_market = sql_fetch("SELECT * FROM `{$rb_aos_tbl}` WHERE ra_type='market' LIMIT 1", false);
     if (is_array($row_market) && !empty($row_market)) {
         $rb_aos_shop = rb_aos_row_map($row_market);
+    }
+    if (!(defined('G5_IS_ADMIN') && G5_IS_ADMIN) && isset($rb_package_display['aos']['general'],$rb_package_display['aos']['market'])) {
+        $rb_aos=$rb_package_display['aos']['general'];
+        $rb_aos_shop=$rb_package_display['aos']['market'];
     }
 
     // // use만 기본 0에서 덮기

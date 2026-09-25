@@ -5363,7 +5363,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
 
 
     const RB_FOLDER_RE_CREATE = /^(?!\.)(?!.*\.\.)[A-Za-z0-9_-]+$/; // 생성: 점 불가
-    const RB_FOLDER_RE_ANY = /^(?!\.)(?!.*\.\.)[A-Za-z0-9_.-]+$/; // 편집/읽기: 점 허용
+    const RB_FOLDER_RE_ANY = /^(?!.*\.\.)[A-Za-z0-9_-][A-Za-z0-9_.-]*(?:\/[A-Za-z0-9_-][A-Za-z0-9_.-]*)?$/; // 편집/읽기: 공용 또는 테마/위젯
 
 
     // 엔터를 <br>로만 강제
@@ -6411,10 +6411,10 @@ foreach ($rb_side_panels as $rb_side_panel) {
         var $panel = $('.rb-sh-side-css');
         $panel.css('transition', 'all 600ms cubic-bezier(0.86,0,0.07,1)').addClass('open');
 
-        // 선택값 파싱: "rb.widget/폴더명" → folder
+        // 공용 위젯과 "rb.widget/테마폴더/위젯폴더"를 모두 편집한다.
         var folderMatched = null;
-        if (selectedValue && typeof selectedValue === 'string') {
-            var m = selectedValue.match(/^rb\.widget\/([^\/]+)$/);
+        if (selectedValue && typeof selectedValue === 'string' && RB_FOLDER_RE_ANY.test(selectedValue.slice(10))) {
+            var m = selectedValue.match(/^rb\.widget\/([A-Za-z0-9_-][A-Za-z0-9_.-]*(?:\/[A-Za-z0-9_-][A-Za-z0-9_.-]*)?)$/);
             folderMatched = m ? m[1] : null;
         }
         var isEdit = !!folderMatched;

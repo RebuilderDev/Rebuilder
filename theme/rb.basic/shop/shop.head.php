@@ -145,8 +145,7 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
             $carousel_height_pc = max(1, (int)$rb_theme_row['carousel_height_pc_shop']);
             $carousel_height_mo = max(1, (int)$rb_theme_row['carousel_height_mo_shop']);
             ?>
-        <?php if ($carousel_use === 1) { ?>
-        <?php if(defined('_INDEX_')) { ?>
+        <?php if ($carousel_use === 1 && defined('_INDEX_')) { ?>
 
         <?php if (empty($filtered_carousel)) { ?>
         <!-- 캐러셀 데이터가 없을 때 -->
@@ -164,7 +163,6 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
                             <span class="text2 font-R">
                                 <p class="text2_sub" style="font-size: 16px; color: #cccccc; margin-top: 20px; text-align: center;">
                                     캐러셀을 추가하시면 본 영역에 출력 됩니다.<br>
-                                    서브페이지 캐러셀은 캐러셀 설정에서 지정하실 수 있습니다.
                                 </p>
                             </span>
                         </div>
@@ -184,7 +182,7 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
         <div class="rb_carousel rb_carousel_main" style="--rb-carousel-height-pc: <?php echo $carousel_height_pc; ?>px; --rb-carousel-height-mo: <?php echo $carousel_height_mo; ?>px;">
             <ul class="rb_carousel_img">
                 <?php foreach ($filtered_carousel as $item) { ?>
-                <li>
+                <li<?php echo rb_carousel_mobile_attributes(isset($item['mobile_settings'])?$item['mobile_settings']:array()); ?>>
                     <?php if ($item['image_path']) { ?>
                     <div class="bg" style="background:url('<?php echo $item['image_path']; ?>') no-repeat center /cover">
                         <div class="bg_bl"></div>
@@ -233,51 +231,6 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
             });
         </script>
         <?php } ?>
-        <?php } else { ?>
-        <?php
-            $sub_item = null;
-            foreach ($filtered_carousel as $fitem) {
-                if (!empty($fitem['is_sub'])) {
-                    $sub_item = $fitem;
-                    break;
-                }
-            }
-        ?>
-        <?php if ($sub_item) { ?>
-        <div class="rb_carousel sub_rb_carousel_b">
-            <ul class="rb_carousel_img">
-                <li>
-                    <?php if ($sub_item['image_path']) { ?>
-                    <div class="bg" style="background:url('<?php echo $sub_item['image_path']; ?>') no-repeat center /cover">
-                        <div class="bg_bl"></div>
-                    </div>
-                    <?php } else { ?>
-                    <div class="bg" style="background-color:#000;">
-                        <div class="bg_bl"></div>
-                    </div>
-                    <?php } ?>
-                    <div class="slogan">
-                        <div class="inner">
-                            <span class="text1 font-B text-center"><?php echo get_head_title($g5['title']); ?></span>
-                        </div>
-                    </div>
-                </li>
-            </ul>
-            <span class="rb_carousel_btn_prev">prev</span>
-            <span class="rb_carousel_btn_next">next</span>
-            <ul class="rb_carousel_btn"></ul>
-        </div>
-        <script>
-            $('.rb_carousel').rb_carousel({
-                type: '<?php echo $carousel_type; ?>',
-                speed: <?php echo $carousel_speed; ?>,
-                autoRollingTime: <?php echo $carousel_time; ?>
-            });
-        </script>
-        <?php } ?>
-        <?php } ?>
-        <?php } else { ?>
-
         <?php } ?>
 
         <script>adjustContentPadding();</script>

@@ -1,3 +1,4 @@
+<?php if (!defined('_GNUBOARD_')) exit; ?>
 
 <!-- 캐러셀 추가/수정 모달 -->
 <div id="carousel_modal" class="rb_modal" style="display:none;">
@@ -24,6 +25,7 @@
                 <div class="cm_left">
 
                     <div class="cm_preview_box" id="carousel_preview">
+                        <div class="cm_preview_surface" id="cm_preview_surface">
                         <div class="preview_inner" id="preview_inner">
                             <div class="preview_text_main" id="preview_main">메인텍스트</div>
                             <div class="preview_text_sub" id="preview_sub">서브텍스트</div>
@@ -32,6 +34,7 @@
                                     <span id="preview_btn_text">버튼텍스트</span>
                                 </button>
                             </div>
+                        </div>
                         </div>
                     </div>
                     <div class="cm_preview_actions">
@@ -53,6 +56,13 @@
                         <div>
                             <textarea id="main_text" name="main_text" rows="3" placeholder="메인텍스트를 입력하세요"></textarea>
                         </div>
+                        <div class="cm_device_group" data-cm-section="main">
+                            <div class="rb-device-setting-tabs" role="tablist" aria-label="메인텍스트 기기별 설정">
+                                <button type="button" class="rb-device-setting-tab active" data-cm-device="pc" role="tab" aria-selected="true">PC</button>
+                                <button type="button" class="rb-device-setting-tab" data-cm-device="mobile" role="tab" aria-selected="false" tabindex="-1">Mobile</button>
+                            </div>
+                            <div class="config_wrap_bg" style="margin-top:0;">
+                                <div data-cm-device-panel="pc">
                         <div class="cm_field_row">
                             <div>
                                 <span class="cm_field_label">정렬</span>
@@ -85,6 +95,12 @@
                                 <input type="hidden" id="main_size" name="main_size" value="20">
                             </div>
                         </div>
+                                </div>
+                                <div data-cm-device-panel="mobile" hidden>
+                                    <?php rb_carousel_mobile_controls('main'); ?>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 서브 텍스트 탭 -->
@@ -92,6 +108,13 @@
                         <div>
                             <textarea id="sub_text" name="sub_text" rows="3" placeholder="서브텍스트를 입력하세요"></textarea>
                         </div>
+                        <div class="cm_device_group" data-cm-section="sub">
+                            <div class="rb-device-setting-tabs" role="tablist" aria-label="서브텍스트 기기별 설정">
+                                <button type="button" class="rb-device-setting-tab active" data-cm-device="pc" role="tab" aria-selected="true">PC</button>
+                                <button type="button" class="rb-device-setting-tab" data-cm-device="mobile" role="tab" aria-selected="false" tabindex="-1">Mobile</button>
+                            </div>
+                            <div class="config_wrap_bg" style="margin-top:0;">
+                                <div data-cm-device-panel="pc">
                         <div class="cm_field_row">
                             <div>
                                 <span class="cm_field_label">정렬</span>
@@ -129,6 +152,12 @@
                             <div id="sub_margin_range" class="rb_range_item"></div>
                             <input type="hidden" id="sub_margin" name="sub_margin" value="10">
                         </div>
+                                </div>
+                                <div data-cm-device-panel="mobile" hidden>
+                                    <?php rb_carousel_mobile_controls('sub'); ?>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 버튼 탭 -->
@@ -137,6 +166,13 @@
                             <span class="cm_field_label">텍스트</span>
                             <input type="text" id="btn_text" name="btn_text" maxlength="100" placeholder="버튼 텍스트를 입력하세요">
                         </div>
+                        <div class="cm_device_group" data-cm-section="btn">
+                            <div class="rb-device-setting-tabs" role="tablist" aria-label="버튼 기기별 설정">
+                                <button type="button" class="rb-device-setting-tab active" data-cm-device="pc" role="tab" aria-selected="true">PC</button>
+                                <button type="button" class="rb-device-setting-tab" data-cm-device="mobile" role="tab" aria-selected="false" tabindex="-1">Mobile</button>
+                            </div>
+                            <div class="config_wrap_bg" style="margin-top:0;">
+                                <div data-cm-device-panel="pc">
                         <div class="cm_field_row">
                             <div>
                                 <span class="cm_field_label">배경 컬러</span>
@@ -214,6 +250,12 @@
                                 </select>
                             </div>
                         </div>
+                                </div>
+                                <div data-cm-device-panel="mobile" hidden>
+                                    <?php rb_carousel_mobile_controls('btn'); ?>
+                                </div>
+                            </div>
+                        </div>
                         <div>
                             <span class="cm_field_label">링크 URL</span>
                             <div style="display:flex;gap:8px;align-items:center;">
@@ -266,15 +308,6 @@
                         </div>
                     </div>
 
-                    <div class="cm_r_card">
-                        <div class="cm_toggle_row">
-                            <span class="cm_toggle_label">서브페이지 공통 배경</span>
-                            <button type="button" class="cm_toggle" id="is_sub_toggle"></button>
-                            <input type="hidden" id="is_sub" name="is_sub" value="0">
-                        </div>
-                        <div class="cm_toggle_sub">서브페이지 상단에 이미지만 공통 적용</div>
-
-                    </div>
                     <button type="button" id="is_sub_load_btn" class="cm_load_btn">기존 설정 불러오기</button>
 
                 </div>
@@ -294,15 +327,17 @@
         <!-- 실제크기 미리보기 팝업 -->
         <div id="cm_fullpreview_overlay"></div>
         <div id="cm_fullpreview_popup">
+            <div class="cm_preview_surface" id="cm_fullpreview_surface">
             <div id="cm_fullpreview_bg" style="position:absolute;inset:0;background-size:cover;background-position:center;z-index:0;"></div>
-            <button type="button" class="fp_close" id="cm_fullpreview_close">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>
-            </button>
             <div class="fp_inner" id="fp_inner">
                 <div id="fp_main"></div>
                 <div id="fp_sub"></div>
                 <div id="fp_btn_wrap"><button type="button" id="fp_btn"><span id="fp_btn_text"></span></button></div>
             </div>
+            </div>
+            <button type="button" class="fp_close" id="cm_fullpreview_close">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 1l10 10M11 1L1 11" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>
+            </button>
         </div>
 
     </div>
@@ -361,12 +396,6 @@
             updatePreview();
         });
 
-        // 서브페이지 토글
-        $("#is_sub_toggle").on("click", function() {
-            $(this).toggleClass("on");
-            $("#is_sub").val($(this).hasClass("on") ? "1" : "0");
-        });
-
         // 컬러 스와치 동기화
         function syncSwatch(inputId, swatchId) {
             $("#" + inputId).on("change input", function() {
@@ -405,21 +434,12 @@
                             var currentIdVal = $("#carousel_id").val();
                             var currentMode = $("#carousel_mode").val();
                             var currentTypeMode = $("#carousel_type_mode").val();
-                            var currentIsSub = $("#is_sub").val();
                             var carouselData = $.extend({}, res.carousel);
                             carouselData.image_url = '';
-                            fillFormWithData(carouselData);
+                            fillFormWithData(carouselData, true);
                             $("#carousel_id").val(currentIdVal);
                             $("#carousel_mode").val(currentMode);
                             $("#carousel_type_mode").val(currentTypeMode);
-                            $("#is_sub").val(currentIsSub);
-                            if (currentIsSub == "1") {
-                                $("#is_sub_toggle").addClass("on");
-                            } else {
-                                $("#is_sub_toggle").removeClass("on");
-                            }
-                            $("#carousel_image").val("");
-                            $("#carousel_preview").css("background-image", "none");
                         });
                 },
                 error: function() { alert("서버 오류"); }
@@ -493,32 +513,106 @@
             return 'rgba('+r+','+g+','+b+','+a+')';
         }
 
+        var cmPreviewDevice = 'pc';
+        function cmMobileValue(field) {
+            var value = $('#cm_mobile_' + field).val();
+            if (value !== undefined && value !== '') return value;
+            var defaults = {main_size:24, sub_size:16, main_align:'center', sub_align:'center', btn_align:'center'};
+            if (Object.prototype.hasOwnProperty.call(defaults, field)) return defaults[field];
+            return $('#' + field).val();
+        }
+        function cmValue(field) {
+            if (cmPreviewDevice === 'mobile') return cmMobileValue(field);
+            return $('#' + field).val();
+        }
+        function syncMobileSliders() {
+            $('#carousel_modal [data-cm-mobile-range]').each(function() {
+                var range = $(this), field = range.attr('data-cm-mobile-range');
+                if (!range.hasClass('ui-slider')) return;
+                var value = $('#cm_mobile_' + field).val();
+                var inherited = value === '';
+                var effective = parseInt(cmMobileValue(field), 10);
+                if (isNaN(effective)) effective = range.slider('option', 'min');
+                range.slider('value', effective);
+                range.find('.ui-slider-handle').text(effective).attr({
+                    'role':'slider', 'aria-labelledby':'cm_mobile_' + field + '_label',
+                    'aria-valuemin':range.slider('option', 'min'), 'aria-valuemax':range.slider('option', 'max'),
+                    'aria-valuenow':effective, 'aria-valuetext':inherited ? '자동 (' + effective + 'px)' : effective + 'px'
+                });
+                $('#cm_mobile_' + field + '_val').text(inherited ? '자동' : value);
+                $('#cm_mobile_' + field + '_unit').prop('hidden', inherited);
+                $('[data-cm-mobile-reset="' + field + '"]').prop('hidden', inherited);
+            });
+        }
+        $('#carousel_modal [data-cm-mobile-range]').each(function() {
+            var range = $(this), field = range.attr('data-cm-mobile-range');
+            range.slider({
+                range:'min', min:Number(range.attr('data-min')), max:Number(range.attr('data-max')), step:1,
+                value:parseInt(cmMobileValue(field), 10),
+                slide:function(event, ui) {
+                    $('#cm_mobile_' + field).val(ui.value);
+                    updatePreview();
+                }
+            });
+        });
+        syncMobileSliders();
+        function cmSetDevice(device) {
+            cmPreviewDevice = device === 'mobile' ? 'mobile' : 'pc';
+            $('#carousel_modal').attr('data-cm-preview-device', cmPreviewDevice);
+            $('#carousel_modal [data-cm-device]').each(function() {
+                var active = $(this).attr('data-cm-device') === cmPreviewDevice;
+                $(this).toggleClass('active', active).attr('aria-selected', active ? 'true' : 'false').attr('tabindex', active ? '0' : '-1');
+            });
+            $('#carousel_modal [data-cm-device-panel]').each(function() {
+                $(this).prop('hidden', $(this).attr('data-cm-device-panel') !== cmPreviewDevice);
+            });
+            $('.cm_preview_hint').text((cmPreviewDevice === 'mobile' ? 'Mobile' : 'PC') + ' · 실제 크기보다 2배 작게 표시됩니다');
+            updatePreview();
+        }
+        $('#carousel_modal').on('click', '[data-cm-device]', function() {
+            cmSetDevice($(this).attr('data-cm-device'));
+        }).on('keydown', '[data-cm-device]', function(event) {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+            event.preventDefault();
+            var group = $(this).closest('.cm_device_group');
+            cmSetDevice(cmPreviewDevice === 'pc' ? 'mobile' : 'pc');
+            group.find('[data-cm-device="' + cmPreviewDevice + '"]').trigger('focus');
+        }).on('input change', '[data-cm-mobile-field]', updatePreview)
+          .on('click', '[data-cm-mobile-reset]', function() {
+            $('#cm_mobile_' + $(this).attr('data-cm-mobile-reset')).val('');
+            updatePreview();
+        });
+
         function updatePreview() {
+            syncMobileSliders();
+            $('#carousel_modal [data-cm-mobile-field].coloris-modal').each(function() {
+                $('#' + this.id + '_swatch').css('background', cmMobileValue($(this).attr('data-cm-mobile-field')));
+            });
             var mainText   = $("#main_text").val() || "메인텍스트";
-            var mainSize   = $("#main_size").val();
-            var mainColor  = hexToRgba($("#main_color").val());
-            var mainAlign  = $("#main_align").val();
-            var mainWeight = $("#main_weight").val();
+            var mainSize   = cmValue("main_size");
+            var mainColor  = hexToRgba(cmValue("main_color"));
+            var mainAlign  = cmValue("main_align");
+            var mainWeight = cmValue("main_weight");
 
             var subText   = $("#sub_text").val() || "서브텍스트";
-            var subSize   = $("#sub_size").val();
-            var subColor  = hexToRgba($("#sub_color").val());
-            var subMargin = $("#sub_margin").val();
-            var subAlign  = $("#sub_align").val();
-            var subWeight = $("#sub_weight").val();
+            var subSize   = cmValue("sub_size");
+            var subColor  = hexToRgba(cmValue("sub_color"));
+            var subMargin = cmValue("sub_margin");
+            var subAlign  = cmValue("sub_align");
+            var subWeight = cmValue("sub_weight");
 
             var btnText       = $("#btn_text").val() || "버튼텍스트";
-            var btnSize       = $("#btn_size").val();
-            var btnRadius     = $("#btn_radius").val();
-            var btnBorder     = $("#btn_border").val();
-            var btnPadding    = $("#btn_padding").val();
-            var btnPaddingLr  = $("#btn_padding_lr").val();
-            var btnBgColor    = hexToRgba($("#btn_bg_color").val());
-            var btnTextColor  = hexToRgba($("#btn_text_color").val());
-            var btnBorderColor= hexToRgba($("#btn_border_color").val());
-            var btnAlign      = $("#btn_align").val();
-            var btnWeight     = $("#btn_weight").val();
-            var btnMargin     = $("#btn_margin").val();
+            var btnSize       = cmValue("btn_size");
+            var btnRadius     = cmValue("btn_radius");
+            var btnBorder     = cmValue("btn_border");
+            var btnPadding    = cmValue("btn_padding");
+            var btnPaddingLr  = cmValue("btn_padding_lr");
+            var btnBgColor    = hexToRgba(cmValue("btn_bg_color"));
+            var btnTextColor  = hexToRgba(cmValue("btn_text_color"));
+            var btnBorderColor= hexToRgba(cmValue("btn_border_color"));
+            var btnAlign      = cmValue("btn_align");
+            var btnWeight     = cmValue("btn_weight");
+            var btnMargin     = cmValue("btn_margin");
 
             $("#preview_main").html(convertNewlineToBr(mainText)).css({
                 "font-size": (mainSize/2)+"px",
@@ -577,7 +671,7 @@
             if (file) {
                 var reader = new FileReader();
                 reader.onload = function(e) {
-                    $("#carousel_preview").css("background-image", "url("+e.target.result+")");
+                    $("#cm_preview_surface").css("background-image", "url("+e.target.result+")");
                 };
                 reader.readAsDataURL(file);
             }
@@ -603,21 +697,21 @@
 
         // 실제크기 미리보기
         $("#cm_fullpreview_btn").on("click", function() {
-            var bgImg = $("#carousel_preview").css("background-image");
+            var bgImg = $("#cm_preview_surface").css("background-image");
             $("#cm_fullpreview_bg").css("background-image", bgImg);
 
             var mainText   = $("#main_text").val() || "메인텍스트";
-            var mainSize   = parseInt($("#main_size").val());
-            var mainColor  = hexToRgba($("#main_color").val());
-            var mainAlign  = $("#main_align").val();
-            var mainWeight = $("#main_weight").val();
+            var mainSize   = parseInt(cmValue("main_size"));
+            var mainColor  = hexToRgba(cmValue("main_color"));
+            var mainAlign  = cmValue("main_align");
+            var mainWeight = cmValue("main_weight");
 
             var subText   = $("#sub_text").val() || "서브텍스트";
-            var subSize   = parseInt($("#sub_size").val());
-            var subColor  = hexToRgba($("#sub_color").val());
-            var subMargin = parseInt($("#sub_margin").val());
-            var subAlign  = $("#sub_align").val();
-            var subWeight = $("#sub_weight").val();
+            var subSize   = parseInt(cmValue("sub_size"));
+            var subColor  = hexToRgba(cmValue("sub_color"));
+            var subMargin = parseInt(cmValue("sub_margin"));
+            var subAlign  = cmValue("sub_align");
+            var subWeight = cmValue("sub_weight");
 
             $("#fp_main").html(convertNewlineToBr(mainText)).css({
                 "font-size": mainSize + "px",
@@ -635,17 +729,17 @@
 
             if ($("#btn_use_toggle").hasClass("on")) {
                 var btnText        = $("#btn_text").val() || "버튼텍스트";
-                var btnSize        = parseInt($("#btn_size").val());
-                var btnRadius      = parseInt($("#btn_radius").val());
-                var btnBorder      = parseInt($("#btn_border").val());
-                var btnPadding     = parseInt($("#btn_padding").val());
-                var btnPaddingLr   = parseInt($("#btn_padding_lr").val());
-                var btnBgColor     = hexToRgba($("#btn_bg_color").val());
-                var btnTextColor   = hexToRgba($("#btn_text_color").val());
-                var btnBorderColor = hexToRgba($("#btn_border_color").val());
-                var btnAlign       = $("#btn_align").val();
-                var btnWeight      = $("#btn_weight").val();
-                var btnMargin      = parseInt($("#btn_margin").val());
+                var btnSize        = parseInt(cmValue("btn_size"));
+                var btnRadius      = parseInt(cmValue("btn_radius"));
+                var btnBorder      = parseInt(cmValue("btn_border"));
+                var btnPadding     = parseInt(cmValue("btn_padding"));
+                var btnPaddingLr   = parseInt(cmValue("btn_padding_lr"));
+                var btnBgColor     = hexToRgba(cmValue("btn_bg_color"));
+                var btnTextColor   = hexToRgba(cmValue("btn_text_color"));
+                var btnBorderColor = hexToRgba(cmValue("btn_border_color"));
+                var btnAlign       = cmValue("btn_align");
+                var btnWeight      = cmValue("btn_weight");
+                var btnMargin      = parseInt(cmValue("btn_margin"));
 
                 $("#fp_btn_text").text(btnText);
                 $("#fp_btn").css({
@@ -708,11 +802,13 @@
         });
 
         function resetForm() {
+            $("[data-cm-mobile-field]").val("");
+            cmSetDevice("pc");
             $("#carousel_form")[0].reset();
             $("#carousel_id").val("");
             $("#carousel_type_mode").val("<?php echo (defined('_SHOP_')) ? 'shop' : 'community'; ?>");
             $("#image_preview").hide().html("");
-            $("#carousel_preview").css("background-image", "none");
+            $("#cm_preview_surface").css("background-image", "none");
 
             $("#main_align").val("left");
             $("#sub_align").val("left");
@@ -744,8 +840,6 @@
 
             $("#btn_use_toggle").removeClass("on");
             $("#btn_use").val("0");
-            $("#is_sub_toggle").removeClass("on");
-            $("#is_sub").val("0");
             $("#btn_link_blank").prop("checked", false);
 
             updatePreview();
@@ -775,7 +869,15 @@
             });
         }
 
-        function fillFormWithData(data) {
+        function fillFormWithData(data, preserveImage) {
+            function savedNumber(field, fallback) {
+                return data[field] === undefined || data[field] === null || data[field] === '' ? fallback : data[field];
+            }
+            var mobile = data.mobile_settings || {};
+            $('[data-cm-mobile-field]').each(function() {
+                var key = $(this).attr('data-cm-mobile-field');
+                $(this).val(Object.prototype.hasOwnProperty.call(mobile, key) ? mobile[key] : '');
+            });
             $("#carousel_id").val(data.id);
             $("#main_text").val(data.main_text);
             $("#sub_text").val(data.sub_text);
@@ -802,15 +904,15 @@
             $("#sub_weight").val(data.sub_weight || "font-R");
             $("#btn_weight").val(data.btn_weight || "font-R");
 
-            setSlider("#main_size_range", "#main_size", "#main_size_val", 12, 80, 1, data.main_size || 20);
-            setSlider("#sub_size_range", "#sub_size", "#sub_size_val", 12, 50, 1, data.sub_size || 14);
-            setSlider("#sub_margin_range", "#sub_margin", "#sub_margin_val", 0, 200, 5, data.sub_margin || 10);
-            setSlider("#btn_size_range", "#btn_size", "#btn_size_val", 12, 50, 1, data.btn_size || 14);
-            setSlider("#btn_radius_range", "#btn_radius", "#btn_radius_val", 0, 100, 2, data.btn_radius || 4);
-            setSlider("#btn_border_range", "#btn_border", "#btn_border_val", 0, 20, 1, data.btn_border || 1);
-            setSlider("#btn_padding_range", "#btn_padding", "#btn_padding_val", 0, 100, 1, data.btn_padding || 10);
-            setSlider("#btn_padding_lr_range", "#btn_padding_lr", "#btn_padding_lr_val", 0, 100, 1, data.btn_padding_lr || 20);
-            setSlider("#btn_margin_range", "#btn_margin", "#btn_margin_val", 0, 200, 5, data.btn_margin || 0);
+            setSlider("#main_size_range", "#main_size", "#main_size_val", 12, 80, 1, savedNumber('main_size',20));
+            setSlider("#sub_size_range", "#sub_size", "#sub_size_val", 12, 50, 1, savedNumber('sub_size',14));
+            setSlider("#sub_margin_range", "#sub_margin", "#sub_margin_val", 0, 200, 5, savedNumber('sub_margin',10));
+            setSlider("#btn_size_range", "#btn_size", "#btn_size_val", 12, 50, 1, savedNumber('btn_size',14));
+            setSlider("#btn_radius_range", "#btn_radius", "#btn_radius_val", 0, 100, 2, savedNumber('btn_radius',4));
+            setSlider("#btn_border_range", "#btn_border", "#btn_border_val", 0, 20, 1, savedNumber('btn_border',1));
+            setSlider("#btn_padding_range", "#btn_padding", "#btn_padding_val", 0, 100, 1, savedNumber('btn_padding',10));
+            setSlider("#btn_padding_lr_range", "#btn_padding_lr", "#btn_padding_lr_val", 0, 100, 1, savedNumber('btn_padding_lr',20));
+            setSlider("#btn_margin_range", "#btn_margin", "#btn_margin_val", 0, 200, 5, savedNumber('btn_margin',0));
 
             var hasBtn = (data.btn_text && data.btn_text.trim() !== '');
             if (hasBtn) {
@@ -821,17 +923,9 @@
                 $("#btn_use").val("0");
             }
 
-            var isSub = (data.is_sub == 1);
-            if (isSub) {
-                $("#is_sub_toggle").addClass("on");
-                $("#is_sub").val("1");
-            } else {
-                $("#is_sub_toggle").removeClass("on");
-                $("#is_sub").val("0");
-            }
-
-            if (data.image_url) {
-                $("#carousel_preview").css("background-image", "url("+data.image_url+")");
+            if (!preserveImage) {
+                $("#carousel_image").val("");
+                $("#cm_preview_surface").css("background-image", data.image_url ? "url("+data.image_url+")" : "none");
             }
 
             updatePreview();
@@ -852,7 +946,6 @@
             formData.set("sub_text", $("#sub_text").val());
             formData.set("carousel_type_mode", $("#carousel_type_mode").val());
             formData.set("btn_use", $("#btn_use_toggle").hasClass("on") ? "1" : "0");
-            formData.set("is_sub", $("#is_sub_toggle").hasClass("on") ? "1" : "0");
             formData.set("btn_margin", $("#btn_margin").val());
 
             $.ajax({

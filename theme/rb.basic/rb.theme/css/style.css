@@ -68,9 +68,6 @@
 .rb_carousel .rb_carousel_link span {float: left;}
 .rb_carousel .rb_carousel_link i {float: right;margin-top: 1px;}
 .rb_carousel_img li .slogan .text2 p {margin-top: 10px; display: block;}
-.sub_rb_carousel_b {max-height: 150px;}
-.sub_rb_carousel_b .rb_carousel_img li .slogan .text1 {font-size: 26px;}
-.sub_rb_carousel_b .rb_carousel_img li .slogan {}
 
 .rb_theme_box { display:flex; gap:20px; align-items:flex-start; }
 .rb_theme_img { width:100px; max-width:30vw; border-radius:10px; overflow:hidden; flex:0 0 auto; }
@@ -103,7 +100,29 @@
     .rb_carousel .rb_carousel_btn_prev, .rb_carousel .rb_carousel_btn_next {width: 60px;}
     .rb_carousel .rb_carousel_btn_prev, .rb_carousel .rb_carousel_btn_next {width: 60px;}
 
-    .sub_rb_carousel_b {max-height: 150px;}
-    .sub_rb_carousel_b .rb_carousel_img li .slogan .text1 {font-size: 22px; top:0 !important;}
 
+}
+
+/* 지정된 Mobile 항목만 기존 1024px 반응형 규칙을 덮어쓴다. */
+@media all and (max-width:1024px) {
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="main_align"] .slogan .text1 {text-align:var(--rb-carousel-main-align) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="main_weight"] .slogan .text1 {font-family:var(--rb-carousel-main-weight) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="main_color"] .slogan .text1 {color:var(--rb-carousel-main-color) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="main_size"] .slogan .text1 {font-size:var(--rb-carousel-main-size) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="sub_align"] .slogan .text2 .text2_sub {text-align:var(--rb-carousel-sub-align) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="sub_weight"] .slogan .text2 .text2_sub {font-family:var(--rb-carousel-sub-weight) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="sub_color"] .slogan .text2 .text2_sub {color:var(--rb-carousel-sub-color) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="sub_size"] .slogan .text2 .text2_sub {font-size:var(--rb-carousel-sub-size) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="sub_margin"] .slogan .text2 .text2_sub {margin-top:var(--rb-carousel-sub-margin) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="btn_bg_color"] .slogan .rb_carousel_link {background-color:var(--rb-carousel-btn-bg-color) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="btn_text_color"] .slogan .rb_carousel_link {color:var(--rb-carousel-btn-text-color) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="btn_border_color"] .slogan .rb_carousel_link {border-color:var(--rb-carousel-btn-border-color) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="btn_border"] .slogan .rb_carousel_link {border-width:var(--rb-carousel-btn-border) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="btn_radius"] .slogan .rb_carousel_link {border-radius:var(--rb-carousel-btn-radius) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="btn_padding"] .slogan .rb_carousel_link {padding-top:var(--rb-carousel-btn-padding) !important; padding-bottom:var(--rb-carousel-btn-padding) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="btn_padding_lr"] .slogan .rb_carousel_link {padding-left:var(--rb-carousel-btn-padding-lr) !important; padding-right:var(--rb-carousel-btn-padding-lr) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="btn_size"] .slogan .rb_carousel_link {font-size:var(--rb-carousel-btn-size) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="btn_weight"] .slogan .rb_carousel_link {font-family:var(--rb-carousel-btn-weight) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="btn_align"] .slogan .rb_carousel_btn_more {text-align:var(--rb-carousel-btn-align) !important;}
+    .rb_carousel .rb_carousel_img li[data-rb-carousel-mobile~="btn_margin"] .slogan .rb_carousel_btn_more {margin-top:var(--rb-carousel-btn-margin) !important;}
 }
