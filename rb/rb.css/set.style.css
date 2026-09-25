@@ -187,14 +187,22 @@ section.co_gap_pc_30 {margin-top: -10px;}
     .rb_module_padding_25 .rb-module-wrap {padding: 25px;}
     .rb_module_padding_30 .rb-module-wrap {padding: 30px;}
 
-    main.gap_pc_ #header {padding-left: 0px; padding-right: 0px;}
-    main.gap_pc_0 #header {padding-left: 0px; padding-right: 0px;}
-    main.gap_pc_5 #header {padding-left: 5px; padding-right: 5px;}
-    main.gap_pc_10 #header {padding-left: 10px; padding-right: 10px;}
-    main.gap_pc_15 #header {padding-left: 15px; padding-right: 15px;}
-    main.gap_pc_20 #header {padding-left: 20px; padding-right: 20px;}
-    main.gap_pc_25 #header {padding-left: 25px; padding-right: 25px;}
-    main.gap_pc_30 #header {padding-left: 30px; padding-right: 30px;}
+    main.gap_pc_ #header,
+    main.gap_pc_ .rb_carousel .rb_carousel_img li .slogan {padding-left: 0px; padding-right: 0px;}
+    main.gap_pc_0 #header,
+    main.gap_pc_0 .rb_carousel .rb_carousel_img li .slogan {padding-left: 0px; padding-right: 0px;}
+    main.gap_pc_5 #header,
+    main.gap_pc_5 .rb_carousel .rb_carousel_img li .slogan {padding-left: 5px; padding-right: 5px;}
+    main.gap_pc_10 #header,
+    main.gap_pc_10 .rb_carousel .rb_carousel_img li .slogan {padding-left: 10px; padding-right: 10px;}
+    main.gap_pc_15 #header,
+    main.gap_pc_15 .rb_carousel .rb_carousel_img li .slogan {padding-left: 15px; padding-right: 15px;}
+    main.gap_pc_20 #header,
+    main.gap_pc_20 .rb_carousel .rb_carousel_img li .slogan {padding-left: 20px; padding-right: 20px;}
+    main.gap_pc_25 #header,
+    main.gap_pc_25 .rb_carousel .rb_carousel_img li .slogan {padding-left: 25px; padding-right: 25px;}
+    main.gap_pc_30 #header,
+    main.gap_pc_30 .rb_carousel .rb_carousel_img li .slogan {padding-left: 30px; padding-right: 30px;}
 
     .sub.co_gap_pc_ {padding-left: 0px; padding-right: 0px;}
     .sub.co_gap_pc_0 {padding-left: 0px; padding-right: 0px;}
