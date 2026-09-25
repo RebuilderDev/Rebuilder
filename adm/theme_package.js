@@ -6,30 +6,58 @@
     var status = document.getElementById('rb-tp-status');
     var details = document.getElementById('rb-tp-details');
     var mappings = document.getElementById('rb-tp-maps');
+    var layouts = document.getElementById('rb-tp-layouts');
     var check = document.getElementById('rb-tp-check');
     var install = document.getElementById('rb-tp-install');
     var busy = false, updating = false, optionalConnections = false, moduleConnections = false;
-    function moduleLabel(label, module) {
-        var title = document.createElement('b'), location = document.createElement('span');
-        title.style.cssText = 'display:block; margin-bottom:6px;';
-        title.textContent = module.title || module.type + ' 모듈 ' + module.id;
-        location.className = 'frm_info'; location.style.cssText = 'display:block; padding:0;';
-        location.textContent = module.area + ' · ' + module.type;
-        var position = document.createElement('span'); position.style.cssText = 'display:block; margin-top:2px;';
-        position.textContent = '모듈 ' + module.id;
-        if (module.tabs && module.tabs.length) position.textContent += ' · 탭 ' + module.tabs.join(', ');
-        location.append(position); label.append(title, location);
+    function moduleTitle(module) {
+        var type = (module.type || '모듈').replace('(단일)', '').replace('(탭)', ' 탭');
+        return module.title ? module.title + ' (' + type + ')' : type;
     }
-    function connectionRow(module, index, categories) {
-        var row = document.createElement('tr'), heading = document.createElement('th'), cell = document.createElement('td');
-        heading.scope = 'row'; moduleLabel(heading, module);
+    function moduleLabel(label, module) {
+        var title = document.createElement('b');
+        title.style.cssText = 'display:block; line-height:1.5; color:inherit;';
+        title.textContent = moduleTitle(module); label.append(title);
+    }
+    function connectionFields(cell, module, index, categories) {
+        cell.style.overflowX = 'auto';
+        var tabs = null, tabPanels = [], tabButtons = [];
+        if (module.slots.some(function (slot) { return slot.tab; })) {
+            tabs = document.createElement('div'); tabs.setAttribute('role', 'tablist');
+            tabs.setAttribute('aria-label', '모듈 탭 연결');
+            tabs.style.cssText = 'display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;'; cell.append(tabs);
+        }
         module.slots.forEach(function (slot, slotIndex) {
             var block = document.createElement('div'), label = document.createElement('label'), select = document.createElement('select');
-            if (slot.tab) {
-                block.style.cssText = 'display:inline-block; vertical-align:top; background:#f0f5f9; padding:16px; margin:0 16px 16px 0;';
-                var tabTitle = document.createElement('strong');
-                tabTitle.style.cssText = 'display:block; margin-bottom:12px;';
-                tabTitle.textContent = '탭 ' + slot.tab; block.append(tabTitle);
+            block.style.cssText = 'padding:16px; background:#f0f5f9;';
+            if (tabs) {
+                var tab = document.createElement('button'); tab.type = 'button';
+                tab.id = 'rb-tp-tab-' + index + '-' + slotIndex;
+                block.id = tab.id + '-panel'; block.setAttribute('role', 'tabpanel'); block.setAttribute('aria-labelledby', tab.id);
+                tab.setAttribute('role', 'tab'); tab.setAttribute('aria-controls', block.id);
+                tab.textContent = '탭 ' + slot.tab;
+                function activate() {
+                    tabPanels.forEach(function (panel, i) {
+                        var active = i === slotIndex; panel.hidden = !active;
+                        tabButtons[i].className = active ? 'btn btn_03' : 'btn btn_02';
+                        tabButtons[i].setAttribute('aria-selected', active ? 'true' : 'false');
+                        tabButtons[i].tabIndex = active ? 0 : -1;
+                    });
+                }
+                tab.addEventListener('click', activate);
+                tab.addEventListener('keydown', function (event) {
+                    var next = slotIndex;
+                    if (event.key === 'ArrowRight') next = (slotIndex + 1) % tabButtons.length;
+                    else if (event.key === 'ArrowLeft') next = (slotIndex + tabButtons.length - 1) % tabButtons.length;
+                    else if (event.key === 'Home') next = 0;
+                    else if (event.key === 'End') next = tabButtons.length - 1;
+                    else return;
+                    event.preventDefault(); tabButtons[next].click(); tabButtons[next].focus();
+                });
+                tabPanels.push(block); tabButtons.push(tab); tabs.append(tab);
+                block.hidden = slotIndex !== 0;
+                tab.className = slotIndex === 0 ? 'btn btn_03' : 'btn btn_02';
+                tab.setAttribute('aria-selected', slotIndex === 0 ? 'true' : 'false'); tab.tabIndex = slotIndex === 0 ? 0 : -1;
             }
             select.id = 'rb-tp-module-' + index + '-' + slotIndex;
             select.dataset.connection = slot.key;
@@ -56,7 +84,128 @@
             }
             cell.append(block);
         });
+    }
+    function connectionRow(module, index, categories) {
+        var row = document.createElement('tr'), heading = document.createElement('th'), cell = document.createElement('td');
+        heading.scope = 'row'; moduleLabel(heading, module);
+        connectionFields(cell, module, index, categories);
         row.append(heading, cell); return row;
+    }
+    function renderLayoutPreview(data) {
+        var choices = Object.create(null), panels = Object.create(null), buttons = Object.create(null);
+        data.choices.forEach(function (choice, index) { choices[choice.key] = {module:choice, index:index}; });
+        var help = document.createElement('p'); help.className = 'frm_info';
+        help.style.cssText = 'display:block; margin:0 0 16px; padding:0; line-height:1.6;';
+        [
+            '적용될 테마의 레이아웃입니다.',
+            '현재 운영 상황에 맞게 각 영역을 선택하여 연결할 게시판 또는 분류 등을 지정할 수 있습니다.',
+            '지금 연결하지 않아도 테마 설치 후 모듈 설정에서 연결할 수 있습니다.',
+            '배너와 위젯은 영역만 표시하며, 실제 콘텐츠와 높이는 표시하지 않습니다.'
+        ].forEach(function (line, index) {
+            if (index) help.append(document.createElement('br'));
+            help.append(document.createTextNode(line));
+        });
+        var body = document.createElement('div'), canvas = document.createElement('div'), editor = document.createElement('aside');
+        body.style.cssText = 'display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start;';
+        canvas.style.cssText = 'flex:1 1 600px; min-width:0; overflow-x:auto;';
+        editor.style.cssText = 'flex:0 1 340px; min-width:0; max-width:100%; box-sizing:border-box; position:sticky; top:20px; padding:20px; border:1px solid #d6dce1; background:#fff;';
+        editor.setAttribute('aria-label', '선택한 모듈 연결 설정');
+        var empty = document.createElement('p'); empty.className = 'frm_info'; empty.style.cssText = 'margin:0; padding:0;';
+        empty.textContent = data.choices.length ? '연결할 모듈 박스를 선택하세요.' : '지금 연결할 모듈이 없습니다. 바로 테마를 설치할 수 있습니다.';
+        editor.append(empty); body.append(canvas, editor); layouts.append(help, body);
+        function choose(key) {
+            if (busy) return;
+            empty.hidden = true; empty.style.display = 'none';
+            Object.keys(panels).forEach(function (id) {
+                var active = id === key; panels[id].hidden = !active;
+                buttons[id].setAttribute('aria-pressed', active ? 'true' : 'false');
+                buttons[id].parentNode.style.borderColor = active ? '#3f72d4' : 'transparent';
+            });
+        }
+        function moduleBox(node, parentWidth) {
+            var width = node.unit === 'px' ? node.width / parentWidth * 100 : node.width;
+            width = Math.max(0.1, Math.min(100, width));
+            var wrap = document.createElement('div'), box = document.createElement('div');
+            wrap.style.cssText = 'flex:0 0 ' + width + '%; max-width:' + width + '%; min-width:0; padding:8px; box-sizing:border-box;';
+            box.style.cssText = 'height:100%; box-sizing:border-box; border:2px solid transparent; border-radius:10px; background:#fff;';
+            wrap.dataset.moduleKey = node.key;
+            var entry = choices[node.key], button = document.createElement(entry && !panels[node.key] ? 'button' : 'div');
+            button.style.cssText = 'display:flex; align-items:center; width:100%; min-width:0; min-height:100px; box-sizing:border-box; padding:20px; border:0; border-radius:10px; background:#fff; color:#344054; text-align:left; overflow-wrap:anywhere; font:inherit;';
+            var name = document.createElement('strong');
+            name.style.cssText = 'display:block; line-height:1.5; color:inherit;';
+            name.textContent = moduleTitle(node); button.append(name);
+            if (entry && !panels[node.key]) {
+                button.type = 'button'; button.style.cursor = 'pointer'; button.setAttribute('aria-pressed', 'false');
+                var panel = document.createElement('div'); panel.hidden = true;
+                panel.id = 'rb-tp-editor-' + entry.index; button.setAttribute('aria-controls', panel.id);
+                var heading = document.createElement('div'); heading.style.marginBottom = '20px'; moduleLabel(heading, entry.module);
+                panel.append(heading); connectionFields(panel, entry.module, entry.index, data.board_categories || {});
+                panels[node.key] = panel; buttons[node.key] = button; editor.append(panel);
+                function refresh() {
+                    var count = Array.prototype.filter.call(panel.querySelectorAll('select[data-connection]'), function (select) { return !!select.value; }).length;
+                    name.style.color = count ? '#247044' : 'inherit';
+                }
+                panel.addEventListener('change', refresh); refresh();
+                button.addEventListener('click', function () { choose(node.key); });
+            }
+            box.append(button);
+            if (node.children && node.children.length) {
+                var nested = document.createElement('div'); nested.style.cssText = 'margin:0 8px 8px; padding:8px; border-radius:10px; background:#f0f5f9;';
+                nested.append(grid(node.children, parentWidth * width / 100)); box.append(nested);
+            }
+            wrap.append(box); return wrap;
+        }
+        function grid(nodes, parentWidth, alignSections) {
+            var row = document.createElement('div'); row.style.cssText = 'display:flex; flex-wrap:wrap; align-items:stretch; margin:-8px;';
+            var outside = [];
+            function appendOutside() {
+                if (!outside.length) return;
+                var group = document.createElement('div');
+                group.style.cssText = 'flex:0 0 100%; min-width:0; padding:8px 28px; box-sizing:border-box;';
+                group.append(grid(outside, parentWidth)); row.append(group); outside = [];
+            }
+            nodes.forEach(function (node) {
+                if (node.kind !== 'section') {
+                    if (alignSections) outside.push(node);
+                    else row.append(moduleBox(node, parentWidth));
+                    return;
+                }
+                appendOutside();
+                var outer = document.createElement('div'), section = document.createElement('section'), title = document.createElement('strong');
+                outer.style.cssText = 'flex:0 0 100%; min-width:0; padding:8px; box-sizing:border-box;';
+                outer.dataset.sectionId = node.id;
+                section.style.cssText = 'padding:20px; border:0; border-radius:0; background:#f0f5f9;';
+                title.style.cssText = 'display:block; margin-bottom:16px; line-height:1.5; overflow-wrap:anywhere; color:inherit;';
+                title.textContent = node.title ? node.title + ' (섹션)' : '섹션';
+                section.append(title, grid(node.children || [], parentWidth)); outer.append(section); row.append(outer);
+            });
+            appendOutside();
+            return row;
+        }
+        data.layout_preview.forEach(function (area) {
+            var region = document.createElement('section');
+            region.style.cssText = 'margin-bottom:28px; min-width:640px;';
+            area.layouts.forEach(function (layout) {
+                var position = document.createElement(layout.active ? 'div' : 'details');
+                position.style.cssText = 'margin-bottom:20px; padding:20px; background:#f0f5f9; border:0; border-radius:10px;';
+                if (!layout.active) {
+                    var label = document.createElement('summary');
+                    label.style.cssText = 'margin-bottom:14px; line-height:1.5; cursor:pointer;';
+                    label.textContent = '다른 레이아웃 · ' + (layout.name || '이름 없음'); position.append(label);
+                }
+                position.append(grid(layout.nodes, area.width, true)); region.append(position);
+            });
+            canvas.append(region);
+        });
+        var remaining = data.choices.filter(function (choice) { return !panels[choice.key]; });
+        if (remaining.length) {
+            var extra = document.createElement('div'), extraTitle = document.createElement('strong');
+            extraTitle.textContent = '기타 배치'; extraTitle.style.cssText = 'display:block; margin:12px 0;';
+            extra.append(extraTitle, grid(remaining.map(function (choice) {
+                return {kind:'module',key:choice.key,id:choice.id,title:choice.title,type:choice.type,width:100,unit:'%',children:[]};
+            }), 1280)); canvas.append(extra);
+        }
+        layouts.hidden = false;
     }
     function request(mode, extra) {
         var body = new URLSearchParams({mode: mode, token: root.dataset.token, folder: file.value});
@@ -84,9 +233,12 @@
             document.getElementById('rb-tp-map-guide').hidden = updating || !data.choices.length;
             document.getElementById('rb-tp-shop-guide').hidden = updating || data.shop_enabled !== false;
             mappings.replaceChildren();
+            layouts.replaceChildren(); layouts.hidden = true;
             var labels = {board: '게시판', content: '내용 페이지', form: '폼', poll: '설문', category: '상품 분류', group: '게시판 그룹', item: '상품', event: '이벤트'};
             var currentArea = '';
-            data.choices.forEach(function (choice, index) {
+            var visual = !updating && moduleConnections && Array.isArray(data.layout_preview);
+            if (visual) renderLayoutPreview(data);
+            (visual ? [] : data.choices).forEach(function (choice, index) {
                 if (moduleConnections) {
                     if (currentArea !== choice.area) {
                         var areaRow = document.createElement('tr'), areaHeading = document.createElement('th');
@@ -142,10 +294,10 @@
         if (busy) return;
         var maps = moduleConnections ? {modules:{}} : {}, missing = false;
         if (moduleConnections) {
-            mappings.querySelectorAll('select[data-connection]').forEach(function (select) {
+            details.querySelectorAll('select[data-connection]').forEach(function (select) {
                 maps.modules[select.dataset.connection] = {target:select.value, category:''};
             });
-            mappings.querySelectorAll('select[data-category-for]').forEach(function (select) {
+            details.querySelectorAll('select[data-category-for]').forEach(function (select) {
                 maps.modules[select.dataset.categoryFor].category = select.value;
             });
         } else mappings.querySelectorAll('select').forEach(function (select) {

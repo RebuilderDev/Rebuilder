@@ -396,6 +396,81 @@ function rb_tp_module_connections($data)
     }
     return $out;
 }
+function rb_tp_layout_preview($data)
+{
+    // 설치 전에는 테마 PHP를 실행하지 않고 저장된 배치 정보로만 구성도를 만든다.
+    $data=rb_tp_main_data($data); $areas=array();
+    $config=isset($data['rb_config'][0])?$data['rb_config'][0]:array();
+    $types=array('latest'=>'최신글(단일)','tab'=>'최신글(탭)','poll'=>'설문','item'=>'상품(단일)',
+        'item_tab'=>'상품(탭)','widget'=>'위젯','banner'=>'배너');
+    foreach(array('rb_module'=>'일반 메인','rb_module_shop'=>'쇼핑몰 메인') as $table=>$title) {
+        $shop=$table==='rb_module_shop';
+        if($shop && !rb_tp_shop_enabled()) continue;
+        $sectionTable=$shop?'rb_section_shop':'rb_section'; $groups=array();
+        foreach(array($table=>'md',$sectionTable=>'sec') as $source=>$prefix) foreach($data[$source] as $row) {
+            $name=isset($row[$prefix.'_layout_name'])?(string)$row[$prefix.'_layout_name']:'';
+            $layout=(string)$row[$prefix.'_layout'];
+            $groups[$name][$layout][$prefix][]=$row;
+        }
+        $selected=isset($config[$shop?'co_layout_shop':'co_layout'])?(string)$config[$shop?'co_layout_shop':'co_layout']:'';
+        uksort($groups,function($a,$b) use($selected) {
+            if((string)$a===$selected) return (string)$b===$selected?0:-1;
+            if((string)$b===$selected) return 1;
+            return strnatcmp((string)$a,(string)$b);
+        });
+        $layouts=array();
+        foreach($groups as $name=>$positions) {
+            $owners=array();
+            foreach($positions as $layout=>$rows) foreach(isset($rows['md'])?$rows['md']:array() as $row)
+                $owners[$layout.'-'.$row['md_id']]=true;
+            $build=function($layout,$depth=0) use(&$build,$positions,$table,$types) {
+                if($depth>30 || !isset($positions[$layout])) return array();
+                $rows=$positions[$layout]; $items=array(); $sections=array(); $inside=array();
+                foreach(isset($rows['sec'])?$rows['sec']:array() as $row) {
+                    $uid=isset($row['sec_uid'])?(string)$row['sec_uid']:'';
+                    if($uid!=='') $sections[$uid]=true;
+                }
+                foreach(isset($rows['md'])?$rows['md']:array() as $row) {
+                    $type=isset($row['md_type'])?(string)$row['md_type']:'';
+                    $unit=isset($row['md_size']) && $row['md_size']==='px'?'px':'%';
+                    $width=isset($row['md_width']) && is_numeric($row['md_width']) && $row['md_width']>0?(float)$row['md_width']:100;
+                    $node=array('kind'=>'module','key'=>$table.':'.$row['md_id'],'id'=>(string)$row['md_id'],
+                        'title'=>isset($row['md_title'])?trim(strip_tags($row['md_title'])):'',
+                        'type'=>isset($types[$type])?$types[$type]:'모듈','module_type'=>$type,
+                        'order'=>isset($row['md_order_id'])?(int)$row['md_order_id']:0,
+                        'width'=>min($width,$unit==='px'?10000:100),'unit'=>$unit,
+                        'children'=>$build($layout.'-'.$row['md_id'],$depth+1));
+                    $uid=isset($row['md_sec_uid'])?(string)$row['md_sec_uid']:'';
+                    if($uid!=='' && isset($sections[$uid])) $inside[$uid][]=$node;
+                    else $items[]=$node;
+                }
+                $sort=function($a,$b) {
+                    return $a['order']===$b['order']?((int)$a['id']<=>(int)$b['id']):($a['order']<=>$b['order']);
+                };
+                foreach(isset($rows['sec'])?$rows['sec']:array() as $row) {
+                    $uid=isset($row['sec_uid'])?(string)$row['sec_uid']:'';
+                    // 같은 UID의 섹션이 남아 있어도 모듈 연결 입력은 한 번만 표시한다.
+                    $children=isset($inside[$uid])?$inside[$uid]:array(); unset($inside[$uid]); usort($children,$sort);
+                    $items[]=array('kind'=>'section','id'=>(string)$row['sec_id'],
+                        'title'=>isset($row['sec_title'])?trim(strip_tags($row['sec_title'])):'',
+                        'order'=>isset($row['sec_order_id'])?(int)$row['sec_order_id']:0,
+                        'width'=>100,'unit'=>'%','children'=>$children);
+                }
+                usort($items,$sort); return $items;
+            };
+            uksort($positions,'strnatcmp');
+            foreach($positions as $layout=>$unused) {
+                if(isset($owners[$layout])) continue;
+                $layouts[]=array('name'=>(string)$name,'position'=>(string)$layout,
+                    'active'=>(string)$name===$selected,'nodes'=>$build($layout));
+            }
+        }
+        if($layouts) $areas[]=array('title'=>$title,'shop'=>$shop,'layouts'=>$layouts,
+            'width'=>isset($config['co_main_width']) && is_numeric($config['co_main_width']) && $config['co_main_width']>0
+                ?max(320,min(4000,(float)$config['co_main_width'])):1280);
+    }
+    return $areas;
+}
 function rb_tp_module_mappings($data,$input)
 {
     if(!is_array($input)) throw new RuntimeException('모듈 연결 정보 형식이 올바르지 않습니다.');
