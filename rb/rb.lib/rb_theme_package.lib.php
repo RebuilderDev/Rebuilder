@@ -302,13 +302,23 @@ function rb_tp_tab_list($json)
 }
 function rb_tp_main_data($data)
 {
-    // 서브페이지 배치와 그 하위 중첩 배치는 같은 접두어를 사용한다.
-    // 메인의 숫자 배치 번호와 사용자 정의 메인 배치 이름은 그대로 유지한다.
-    foreach (array('rb_module'=>'md','rb_module_shop'=>'md','rb_section'=>'sec','rb_section_shop'=>'sec') as $table=>$prefix) {
-        $data[$table]=array_values(array_filter($data[$table],function($row) use($prefix) {
-            $layout=(string)$row[$prefix.'_layout'];
-            return !preg_match('~\A(?:rb_(?:bo|co|fr|ca|it|ev)_(?:top|btm)_|rb_gr_|rb_sidemenu(?:_shop)?(?:-|\z))~',$layout);
-        }));
+    // 메인·일반 페이지·그룹 본문만 포함한다. 공통 상하단/사이드와 끊어진 중첩 배치는 제외한다.
+    foreach (array('rb_module'=>'rb_section','rb_module_shop'=>'rb_section_shop') as $moduleTable=>$sectionTable) {
+        $parents=array();
+        foreach($data[$moduleTable] as $row) {
+            $name=isset($row['md_layout_name'])?(string)$row['md_layout_name']:'';
+            $parents[$name][$row['md_layout'].'-'.$row['md_id']]=(string)$row['md_layout'];
+        }
+        $allowed=function($layout,$name,$depth=0) use(&$allowed,$parents) {
+            if($depth>30 || preg_match('~\A(?:rb_(?:bo|co|fr|ca|it|ev)_(?:top|btm)(?:_|-|\z)|rb_content_(?:top|btm|bottom)(?:_|-|\z)|rb_(?:sidemenu(?:_shop)?|topvisual)(?:_|-|\z))~',$layout)) return false;
+            if(isset($parents[$name][$layout])) return $allowed($parents[$name][$layout],$name,$depth+1);
+            return !preg_match('~-[0-9]+\z~',$layout);
+        };
+        foreach(array($moduleTable=>'md',$sectionTable=>'sec') as $table=>$prefix) {
+            $data[$table]=array_values(array_filter($data[$table],function($row) use($prefix,$allowed) {
+                return $allowed((string)$row[$prefix.'_layout'],isset($row[$prefix.'_layout_name'])?(string)$row[$prefix.'_layout_name']:'');
+            }));
+        }
     }
     return $data;
 }
@@ -336,6 +346,7 @@ function rb_tp_refs($data)
                 $kind = array('bo'=>'board','co'=>'content','fr'=>'form','ca'=>'category','it'=>'item','ev'=>'event'); $refs[$kind[$m[1]]][$m[2]] = true;
             }
             if(preg_match('/^rb_gr_([A-Za-z0-9_]+)/',$layout,$m)) $refs['group'][$m[1]]=true;
+            if(preg_match('/^rb_co_(?!(?:top|btm)(?:_|-|$))([A-Za-z0-9_]+)/',$layout,$m)) $refs['content'][$m[1]]=true;
             if (!empty($r['md_bo_table'])) $refs['board'][$r['md_bo_table']] = true;
             if (!empty($r['md_poll_id'])) $refs['poll'][$r['md_poll_id']] = true;
             if (isset($r['md_type']) && $r['md_type']==='item' && !empty($r['md_sca'])) $refs['category'][$r['md_sca']] = true;
@@ -396,7 +407,7 @@ function rb_tp_module_connections($data)
     }
     return $out;
 }
-function rb_tp_layout_preview($data)
+function rb_tp_layout_preview($data,$referenceTitles=array())
 {
     // 설치 전에는 테마 PHP를 실행하지 않고 저장된 배치 정보로만 구성도를 만든다.
     $data=rb_tp_main_data($data); $areas=array();
@@ -461,8 +472,15 @@ function rb_tp_layout_preview($data)
             uksort($positions,'strnatcmp');
             foreach($positions as $layout=>$unused) {
                 if(isset($owners[$layout])) continue;
+                $label=($shop?'마켓':'일반').' (메인)';
+                if(preg_match('/^rb_(gr|co)_([A-Za-z0-9_]+)$/',$layout,$page)) {
+                    $kind=$page[1]==='gr'?'group':'content';
+                    $pageTitle=isset($referenceTitles[$kind][$page[2]]) && is_string($referenceTitles[$kind][$page[2]])
+                        ?trim(strip_tags($referenceTitles[$kind][$page[2]])):'';
+                    $label=($shop?'마켓':'일반').($kind==='group'?' (그룹)':' (페이지)').' · '.($pageTitle!==''?$pageTitle:$page[2]);
+                }
                 $layouts[]=array('name'=>(string)$name,'position'=>(string)$layout,
-                    'active'=>(string)$name===$selected,'nodes'=>$build($layout));
+                    'title'=>$label,'active'=>(string)$name===$selected,'nodes'=>$build($layout));
             }
         }
         if($layouts) $areas[]=array('title'=>$title,'shop'=>$shop,'layouts'=>$layouts,
@@ -689,6 +707,11 @@ function rb_tp_export_archive($theme, $name, $zipfile, $identity, $delivery)
         // 메인 최신글의 연결 안내에 쓸 이름만 보관한다. 게시판 설정은 배포하지 않는다.
         $referenceTitles['board'][$id]=$rows[0]['bo_subject'];
     }
+    // 페이지/그룹의 표시 이름만 보관한다. 본문·권한 등 운영 데이터는 복사하지 않는다.
+    foreach(array('content','group') as $kind) if($refs[$kind]) {
+        $catalog=rb_tp_catalog($kind);
+        foreach($refs[$kind] as $id=>$unused) $referenceTitles[$kind][$id]=isset($catalog[$id])?$catalog[$id]:(string)$id;
+    }
     $banners = array();
     foreach (array_merge($data['rb_module'],$data['rb_module_shop']) as $r) {
         if ($r['md_type'] !== 'banner' || empty($r['md_banner'])) continue;
@@ -909,7 +932,7 @@ function rb_tp_open($file,$updating=false)
         }
         if (isset($m['scope']) && $m['scope']==='main-design'
             && ($m['boards'] || !empty($m['topvisual']) || rb_tp_main_data($m['data'])!==$m['data']))
-            throw new RuntimeException('메인 디자인 자료에 게시판 설정 또는 서브페이지 배치가 포함되어 있습니다. 테마를 다시 내보내 주세요.');
+            throw new RuntimeException('디자인 자료에 게시판 설정, 제외된 서브 영역 또는 부모 모듈이 없는 배치가 포함되어 있습니다. 테마를 다시 내보내 주세요.');
         // 이전 메인 디자인 패키지에 남아 있는 서브 공통 설정도 설치 시 전달하지 않는다.
         if(isset($m['scope']) && $m['scope']==='main-design') $m['data']=rb_tp_main_settings($m['data']);
         // 이전 배포본의 스킨 프로필만 호환한다. 새 배포본은 이 정보를 저장하지 않는다.
@@ -931,6 +954,10 @@ function rb_tp_mappings($m, $input)
         $available = rb_tp_catalog($kind); $used = array(); $out[$kind] = array();
         foreach ($refs as $source=>$unused) {
             if(isset($input[$kind][$source]) && !is_string($input[$kind][$source])) throw new RuntimeException('연결 정보 형식이 올바르지 않습니다.');
+            // 페이지/그룹은 같은 ID의 본문 영역에 디자인만 연결하며 운영 항목을 생성/변경하지 않는다.
+            if($optional && in_array($kind,array('content','group'),true) && empty($input[$kind][$source])) {
+                $out[$kind][$source]=(string)$source; continue;
+            }
             $dest = isset($input[$kind][$source]) ? $input[$kind][$source] : ($optional?'':(string)$source);
             if($optional && $dest==='') { $out[$kind][$source]=''; continue; }
             if (!isset($available[$dest])) throw new RuntimeException('연결할 '.$kind.' 항목을 선택해 주세요: '.$source);
@@ -942,6 +969,10 @@ function rb_tp_mappings($m, $input)
 }
 function rb_tp_page_layout($layout, $maps, $shop=false)
 {
+    if(preg_match('/^rb_co_(?!(?:top|btm)(?:_|$))([A-Za-z0-9_]+)$/',$layout,$m)) {
+        if(!isset($maps['content'][$m[1]])) throw new RuntimeException('페이지 연결이 누락되었습니다.');
+        return 'rb_co_'.$maps['content'][$m[1]];
+    }
     if(preg_match('/^rb_gr_([A-Za-z0-9_]+)$/',$layout,$m)) {
         if(!isset($maps['group'][$m[1]])) throw new RuntimeException('그룹 연결이 누락되었습니다.');
         return 'rb_gr_'.$maps['group'][$m[1]];

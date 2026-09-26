@@ -12,7 +12,7 @@ catch (Throwable $e) { $rb_theme_publications=array(); $rb_theme_export_error=$e
 ?>
 <section class="rb_config_sec rb-theme-export" aria-labelledby="rb-theme-export-title">
     <h6 id="rb-theme-export-title" class="font-B">테마 내보내기</h6>
-    <p class="rb-theme-export-description">현재 테마 폴더내 모든 파일과 디자인 설정, 메인 모듈 · 섹션 · 위젯 · 이미지를 ZIP으로 저장합니다. 서브페이지의 모듈 · 배치 · 설정과 게시판 · 분류 · 설문 · 상품 등의 운영 설정은 제외합니다. 위젯은 /rb/rb.widget/<span class="font-B">테마명/</span>, 배너 스킨은 /rb/rb.mod/banner/skin/<span class="font-B">테마명/</span> 폴더에 저장합니다.</p>
+    <p class="rb-theme-export-description">현재 테마 폴더내 모든 파일과 디자인 설정, 메인 · 일반 페이지 · 게시판 그룹의 모듈 · 섹션 · 위젯 · 이미지를 ZIP으로 저장합니다. 게시판 상·하단과 서브 공통 영역의 모듈 · 배치 · 설정, 페이지 · 그룹 · 게시판 · 분류 · 설문 · 상품 등의 운영 설정은 제외합니다. 위젯은 /rb/rb.widget/<span class="font-B">테마명/</span>, 배너 스킨은 /rb/rb.mod/banner/skin/<span class="font-B">테마명/</span> 폴더에 저장합니다.</p>
     <div id="rb-theme-export-requirements" class="rb-theme-export-requirements">
         <p class="font-B">테마 내보내기를 사용할 수 <?php echo $rb_theme_export_available?'있습니다.':'없습니다.'; ?></p>
         <p>필요 확장모듈 :

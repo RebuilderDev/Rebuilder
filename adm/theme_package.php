@@ -78,7 +78,7 @@ try {
         $_SESSION['rb_theme_package_checked']=array('folder'=>$folder,'hash'=>hash_file('sha256',$path.'/rb-package/manifest.json'),'time'=>time());
         $out=array('ok'=>true,'name'=>$manifest['name'],'theme'=>$folder,'choices'=>$choices,'updating'=>$updating,'optional_connections'=>$optional,
             'module_connections'=>$optional,'board_categories'=>(object)$categories,'shop_enabled'=>rb_tp_shop_enabled(),
-            'layout_preview'=>!$updating && $optional?rb_tp_layout_preview($manifest['data']):array());
+            'layout_preview'=>!$updating && $optional?rb_tp_layout_preview($manifest['data'],isset($manifest['reference_titles'])?$manifest['reference_titles']:array()):array());
     } elseif($mode==='install') {
         $checked=isset($_SESSION['rb_theme_package_checked'])?$_SESSION['rb_theme_package_checked']:array();
         if(empty($checked['hash']) || $checked['folder']!==$folder || time()-$checked['time']>3600

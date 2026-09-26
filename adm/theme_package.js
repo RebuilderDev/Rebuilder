@@ -108,7 +108,7 @@
         var body = document.createElement('div'), canvas = document.createElement('div'), editor = document.createElement('aside');
         body.style.cssText = 'display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start;';
         canvas.style.cssText = 'flex:1 1 600px; min-width:0; overflow-x:auto;';
-        editor.style.cssText = 'flex:0 1 340px; min-width:0; max-width:100%; box-sizing:border-box; position:sticky; top:20px; padding:20px; border:1px solid #d6dce1; background:#fff;';
+        editor.style.cssText = 'flex:0 1 340px; min-width:0; max-width:100%; box-sizing:border-box; position:sticky; top:120px; padding:20px; border:1px solid #d6dce1; background:#fff;';
         editor.setAttribute('aria-label', '선택한 모듈 연결 설정');
         var empty = document.createElement('p'); empty.className = 'frm_info'; empty.style.cssText = 'margin:0; padding:0;';
         empty.textContent = data.choices.length ? '연결할 모듈 박스를 선택하세요.' : '지금 연결할 모듈이 없습니다. 바로 테마를 설치할 수 있습니다.';
@@ -186,6 +186,10 @@
             var region = document.createElement('section');
             region.style.cssText = 'margin-bottom:28px; min-width:640px;';
             area.layouts.forEach(function (layout) {
+                var heading = document.createElement('h3');
+                heading.style.cssText = 'margin:0 0 14px; padding:0; font-size:14px; font-weight:600; line-height:1.5; color:#344054;';
+                heading.textContent = layout.title || (area.shop ? '마켓 (메인)' : '일반 (메인)');
+                region.append(heading);
                 var position = document.createElement(layout.active ? 'div' : 'details');
                 position.style.cssText = 'margin-bottom:20px; padding:20px; background:#f0f5f9; border:0; border-radius:10px;';
                 if (!layout.active) {
@@ -219,7 +223,7 @@
     check.addEventListener('click', function () {
         if (root.dataset.installVersionError) { window.alert(root.dataset.installVersionError); return; }
         if (busy || !file.value) { if (!file.value) { status.hidden = false; status.textContent = 'FTP로 올린 테마 폴더를 선택해 주세요.'; } return; }
-        working(true); details.hidden = true; status.textContent = '테마 파일과 메인 모듈을 확인하고 있습니다…';
+        working(true); details.hidden = true; status.textContent = '테마 파일과 모듈을 확인하고 있습니다…';
         request('inspect').then(function (data) {
             document.getElementById('rb-tp-name').textContent = data.name;
             document.getElementById('rb-tp-theme').value = data.theme;
@@ -244,7 +248,7 @@
                         var areaRow = document.createElement('tr'), areaHeading = document.createElement('th');
                         areaHeading.colSpan = 2; areaHeading.scope = 'colgroup';
                         areaHeading.style.cssText = 'background:#f0f5f9; padding:16px;';
-                        areaHeading.textContent = choice.area + ' 모듈'; areaRow.append(areaHeading); mappings.append(areaRow);
+                        areaHeading.textContent = choice.area.replace('쇼핑몰', '마켓') + ' 모듈'; areaRow.append(areaHeading); mappings.append(areaRow);
                         currentArea = choice.area;
                     }
                     mappings.append(connectionRow(choice, index, data.board_categories || {})); return;
@@ -262,7 +266,7 @@
                     title.style.cssText = 'display:block; margin-bottom:6px;';
                     title.textContent = module.title || module.type + ' 모듈 ' + module.id;
                     location.className = 'frm_info'; location.style.cssText = 'display:block; padding:0;';
-                    location.textContent = module.area + ' · ' + module.type;
+                    location.textContent = module.area.replace('쇼핑몰', '마켓') + ' · ' + module.type;
                     var position = document.createElement('span'); position.style.cssText = 'display:block; margin-top:2px;';
                     position.textContent = '모듈 ' + module.id;
                     if (module.tabs && module.tabs.length) position.textContent += ' · 탭 ' + module.tabs.join(', ');
@@ -286,7 +290,7 @@
                 mappings.append(row);
             });
             details.hidden = false; status.textContent = updating ? '업로드 자료를 확인했습니다. 업데이트 반영을 눌러 주세요.'
-                : (data.choices.length ? (optionalConnections ? '필요한 메인 모듈만 연결하거나, 바로 테마 설치를 눌러 주세요.' : '이전 배포 자료의 연결 정보를 확인한 뒤 설치해 주세요.') : '테마 자료를 확인했습니다. 테마 설치를 눌러 주세요.');
+                : (data.choices.length ? (optionalConnections ? '필요한 모듈만 연결하거나, 바로 테마 설치를 눌러 주세요.' : '이전 배포 자료의 연결 정보를 확인한 뒤 설치해 주세요.') : '테마 자료를 확인했습니다. 테마 설치를 눌러 주세요.');
         }).catch(function (e) { status.textContent = e.message; }).finally(function () { working(false); });
     });
     install.addEventListener('click', function () {

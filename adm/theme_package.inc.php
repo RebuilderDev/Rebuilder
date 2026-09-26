@@ -50,11 +50,12 @@ foreach((array)$rb_tp_ftp_files as $rb_tp_f) {
                     <tr><th scope="row">테마명</th><td id="rb-tp-name"></td></tr>
                     <tr><th scope="row"><label for="rb-tp-theme">설치 폴더명</label></th><td><input id="rb-tp-theme" class="frm_input" readonly></td></tr>
                     <tr><th scope="row">설치 안내</th><td id="rb-tp-install-guide">현재 업로드된 폴더명을 기준으로 설치합니다. 폴더명을 바꾸셨다면 새로고침 후 다시 선택하세요. 이름 충돌은 설치 전에 자동 확인합니다.</td></tr>
-                    <tr id="rb-tp-map-guide"><th scope="row">메인 모듈 연결 (선택)</th><td>아래는 일반 메인·쇼핑몰 메인 모듈에서 표시할 데이터입니다.<br>
+                    <tr id="rb-tp-map-guide"><th scope="row">모듈 연결 (선택)</th><td>아래는 메인·일반 페이지·게시판 그룹의 모듈에서 표시할 데이터입니다.<br>
                         모듈 박스를 선택한 뒤 옆에서 연결할 항목을 선택하세요. 연결하지 않아도 설치할 수 있으며, 설치 후 모듈 설정에서 지정할 수 있습니다.<br>
                         상품 모듈은 분류 미지정 시 전체 상품을 표시합니다.<br>
-                        기존 게시판·분류·설문·상품 등의 운영 설정과 게시판 스킨 설정은 변경하지 않습니다.</td></tr>
-                    <tr id="rb-tp-shop-guide" hidden><th scope="row">쇼핑몰 미사용</th><td>이 사이트는 쇼핑몰을 사용하지 않아 쇼핑몰 메인·상품 모듈의 연결 항목을 표시하지 않습니다. 테마의 디자인 자료는 보관하며, 쇼핑몰 기능을 자동으로 활성화하지 않습니다.</td></tr>
+                        일반 페이지와 게시판 그룹은 같은 ID의 페이지에 배치를 연결합니다.<br>
+                        기존 페이지·그룹·게시판·분류·설문·상품 등의 운영 설정과 게시판 스킨 설정은 변경하지 않습니다.</td></tr>
+                    <tr id="rb-tp-shop-guide" hidden><th scope="row">마켓 미사용</th><td>이 사이트는 마켓을 사용하지 않아 마켓 메인·상품 모듈의 연결 항목을 표시하지 않습니다. 테마의 디자인 자료는 보관하며, 마켓 기능을 자동으로 활성화하지 않습니다.</td></tr>
                 </tbody>
                 <tbody id="rb-tp-maps"></tbody>
             </table>
