@@ -17,6 +17,11 @@ if(isset($is_shop) && $is_shop == 1) {
 }
 
 if($mod_type == 1) { //환경설정
+    header('Content-Type: application/json; charset=utf-8');
+    if ((isset($_POST['subtitle_code']) || isset($_POST['subtitle_hidden'])) && !$is_admin) {
+        echo json_encode(array('status'=>'error', 'message'=>'편집 권한이 없습니다.'));
+        exit;
+    }
     $co_theme = !empty($_POST['co_theme']) ? $_POST['co_theme'] : '';
     $co_color = !empty($_POST['co_color']) ? $_POST['co_color'] : 'AA20FF';
     $co_header = !empty($_POST['co_header']) ? $_POST['co_header'] : '0';
@@ -124,6 +129,23 @@ if($mod_type == "del_sec") { //섹션삭제
 <?php
 
             if($is_admin) {
+                // 환경설정 응답으로 새로고침되기 전에 같은 요청에서 노드별 타이틀 설정을 저장한다.
+                if (isset($_POST['subtitle_code']) || isset($_POST['subtitle_hidden'])) {
+                    $subtitle_csrf = isset($_POST['subtitle_csrf']) ? $_POST['subtitle_csrf'] : '';
+                    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !is_string($subtitle_csrf)
+                        || empty($_SESSION['rb_widget_csrf']) || !hash_equals($_SESSION['rb_widget_csrf'], $subtitle_csrf)) {
+                        echo json_encode(array('status'=>'error', 'message'=>'화면을 새로고침한 뒤 다시 시도해 주세요.'));
+                        exit;
+                    }
+                    include_once(G5_PATH.'/rb/rb.lib/rb_subtitle.lib.php');
+                    try {
+                        rb_subtitle_save(isset($_POST['subtitle_code']) && is_string($_POST['subtitle_code']) ? stripslashes($_POST['subtitle_code']) : null,
+                            isset($_POST['subtitle_hidden']) ? $_POST['subtitle_hidden'] : null);
+                    } catch (RuntimeException $e) {
+                        echo json_encode(array('status'=>'error', 'message'=>$e->getMessage()));
+                        exit;
+                    }
+                }
                 $rb_config_check = sql_fetch(" select co_theme from rb_config where co_theme = '{$co_theme}' ");
 
                 if ($rb_config_check) {

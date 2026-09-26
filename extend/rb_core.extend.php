@@ -396,6 +396,13 @@ if (isset($bo_table) && $bo_table) {
 }
 
 
+// 서브 타이틀은 테마별 상단영역 매핑 전의 실제 페이지 노드로 저장한다.
+include_once(G5_PATH.'/rb/rb.lib/rb_subtitle.lib.php');
+$rb_subtitle_node = $rb_page_urls;
+if (!(defined('G5_IS_ADMIN') && G5_IS_ADMIN) && rb_subtitle_hidden($rb_subtitle_node)) {
+    add_stylesheet('<style id="rb-subtitle-hidden-style">#container_title{display:none !important;}</style>', 100);
+}
+
 // 노드 신규등록
 $rb_package_state = rb_tp_state(isset($config['cf_theme']) ? $config['cf_theme'] : '');
 if (isset($rb_package_state['topvisual'][$rb_page_urls])) $rb_page_urls = $rb_package_state['topvisual'][$rb_page_urls];
@@ -1477,14 +1484,16 @@ function rb_widget_select($skin_gubun, $selected = '')
     foreach(array_keys($groups) as $group) { $group=(string)$group; if($group!=='' && $group!==$current) $order[]=$group; }
     foreach($order as $group) {
         if(empty($groups[$group])) continue;
-        $label=$group===''?'공용 위젯':($group===$current?'현재 테마 · ':'테마 · ').$group;
-        $str.='<optgroup label="'.htmlspecialchars($label,ENT_QUOTES,'UTF-8').'">';
+        if($group!=='') {
+            $label=($group===$current?'현재 테마 · ':'테마 · ').$group;
+            $str.='<optgroup label="'.htmlspecialchars($label,ENT_QUOTES,'UTF-8').'">';
+        }
         foreach($groups[$group] as $folder=>$name) {
             $value='rb.widget/'.$folder;
             $str.='<option value="'.htmlspecialchars($value,ENT_QUOTES,'UTF-8').'"'.($value===$selected?' selected':'').'>'
                 .htmlspecialchars($name,ENT_QUOTES,'UTF-8').'</option>';
         }
-        $str.='</optgroup>';
+        if($group!=='') $str.='</optgroup>';
     }
     return $str;
 }
@@ -1527,14 +1536,16 @@ function rb_banner_skin_select($skin_gubun, $selected = '')
     foreach(array_keys($groups) as $group) { $group=(string)$group; if($group!=='' && $group!==$current) $order[]=$group; }
     foreach($order as $group) {
         if(empty($groups[$group])) continue;
-        $label=$group===''?'공용 배너 스킨':($group===$current?'현재 테마 · ':'테마 · ').$group;
-        $str.='<optgroup label="'.htmlspecialchars($label,ENT_QUOTES,'UTF-8').'">';
+        if($group!=='') {
+            $label=($group===$current?'현재 테마 · ':'테마 · ').$group;
+            $str.='<optgroup label="'.htmlspecialchars($label,ENT_QUOTES,'UTF-8').'">';
+        }
         foreach($groups[$group] as $folder=>$name) {
             $value='rb.mod/banner/skin/'.$folder;
             $str.='<option value="'.htmlspecialchars($value,ENT_QUOTES,'UTF-8').'"'.($value===$selected?' selected':'').'>'
                 .htmlspecialchars($name,ENT_QUOTES,'UTF-8').'</option>';
         }
-        $str.='</optgroup>';
+        if($group!=='') $str.='</optgroup>';
     }
     return $str;
 }

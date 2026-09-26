@@ -822,6 +822,28 @@ foreach ($rb_side_panels as $rb_side_panel) {
 
 
                     <?php if (!defined("_INDEX_")) { ?>
+                    <?php
+                    include_once(G5_PATH.'/rb/rb.lib/rb_subtitle.lib.php');
+                    $rb_subtitle_node = isset($rb_subtitle_node) ? $rb_subtitle_node : $rb_page_urls;
+                    $rb_subtitle_is_hidden = rb_subtitle_hidden($rb_subtitle_node);
+                    ?>
+                    <ul class="rb_config_sec">
+                        <h6 class="font-B">서브 타이틀 숨김 설정</h6>
+                        <h6 class="font-R rb_config_sub_txt">현재 페이지의 서브 타이틀을 설정합니다. 현재 노드에만 적용됩니다.</h6>
+                        <div class="font-12 rb_sub_page_cr">
+                            <span>현재 노드 : <?php echo htmlspecialchars(cut_str($rb_subtitle_node, 40), ENT_QUOTES, 'UTF-8'); ?></span>
+                        </div>
+                        <div class="config_wrap">
+                            <ul class="rows_inp_lr mt-10">
+                                <li class="rows_inp_r mt-5">
+                                    <input type="hidden" id="rb-subtitle-code" value="<?php echo htmlspecialchars($rb_subtitle_node, ENT_QUOTES, 'UTF-8'); ?>">
+                                    <input type="radio" name="rb_subtitle_use" id="rb_subtitle_use_0" class="magic-radio" value="0"<?php echo !$rb_subtitle_is_hidden ? ' checked' : ''; ?>><label for="rb_subtitle_use_0">노출</label>
+                                    <input type="radio" name="rb_subtitle_use" id="rb_subtitle_use_1" class="magic-radio" value="1"<?php echo $rb_subtitle_is_hidden ? ' checked' : ''; ?>><label for="rb_subtitle_use_1">미노출</label>
+                                </li>
+                                <div class="cb"></div>
+                            </ul>
+                        </div>
+                    </ul>
                     <ul class="rb_config_sec" <?php if(defined('_SHOP_')) { // 영카트?>style="display:block !important;" <?php } else { ?>style="display:none !important;" <?php } ?>>
 
                         <h6 class="font-B">마켓 서브 사이드 영역 설정</h6>
@@ -4431,6 +4453,11 @@ foreach ($rb_side_panels as $rb_side_panel) {
             dataType: 'json',
             data: {
                 "co_theme": co_theme,
+                <?php if (!defined('_INDEX_')) { ?>
+                "subtitle_code": $('#rb-subtitle-code').val(),
+                "subtitle_hidden": $('input[name="rb_subtitle_use"]:checked').val(),
+                "subtitle_csrf": window.RB_WIDGET_CSRF || '',
+                <?php } ?>
                 "co_color": co_color,
                 "co_header": co_header,
                 "co_main_bg": co_main_bg,
@@ -4540,7 +4567,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
 
                     location.reload();
                 } else {
-                    console.log('문제가 발생 했습니다. 다시 시도해주세요.');
+                    alert(data.message || '문제가 발생 했습니다. 다시 시도해주세요.');
                 }
             },
             error: function(err) {
