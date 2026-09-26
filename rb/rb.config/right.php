@@ -829,7 +829,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
                     ?>
                     <ul class="rb_config_sec">
                         <h6 class="font-B">서브 타이틀 숨김 설정</h6>
-                        <h6 class="font-R rb_config_sub_txt">현재 페이지의 서브 타이틀을 설정합니다. 현재 노드에만 적용됩니다.</h6>
+                        <h6 class="font-R rb_config_sub_txt">현재 페이지의 서브 타이틀을 숨길 수 있습니다.<br>현재 노드에만 적용 됩니다.</h6>
                         <div class="font-12 rb_sub_page_cr">
                             <span>현재 노드 : <?php echo htmlspecialchars(cut_str($rb_subtitle_node, 40), ENT_QUOTES, 'UTF-8'); ?></span>
                         </div>
