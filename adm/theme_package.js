@@ -10,6 +10,8 @@
     var check = document.getElementById('rb-tp-check');
     var install = document.getElementById('rb-tp-install');
     var installActions = install.parentNode, installHome = installActions.parentNode;
+    installActions.classList.add('rb-tp-install-actions');
+    var previewSidebarObserver = null;
     var layoutReviews = [];
     var busy = false, optionalConnections = false, moduleConnections = false;
     function moduleTitle(module) {
@@ -27,11 +29,11 @@
         if (module.slots.some(function (slot) { return slot.tab; })) {
             tabs = document.createElement('div'); tabs.setAttribute('role', 'tablist');
             tabs.setAttribute('aria-label', '모듈 탭 연결');
-            tabs.style.cssText = 'display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;'; cell.append(tabs);
+            tabs.className = 'rb-tp-tabs'; cell.append(tabs);
         }
         module.slots.forEach(function (slot, slotIndex) {
             var block = document.createElement('div'), label = document.createElement('label'), select = document.createElement('select');
-            block.style.cssText = 'padding:16px; background:#f0f5f9;';
+            block.className = 'rb-tp-connection-block';
             if (tabs) {
                 var tab = document.createElement('button'); tab.type = 'button';
                 tab.id = 'rb-tp-tab-' + index + '-' + slotIndex;
@@ -41,7 +43,6 @@
                 function activate() {
                     tabPanels.forEach(function (panel, i) {
                         var active = i === slotIndex; panel.hidden = !active;
-                        tabButtons[i].className = active ? 'btn btn_03' : 'btn btn_02';
                         tabButtons[i].setAttribute('aria-selected', active ? 'true' : 'false');
                         tabButtons[i].tabIndex = active ? 0 : -1;
                     });
@@ -58,7 +59,7 @@
                 });
                 tabPanels.push(block); tabButtons.push(tab); tabs.append(tab);
                 block.hidden = slotIndex !== 0;
-                tab.className = slotIndex === 0 ? 'btn btn_03' : 'btn btn_02';
+                tab.className = 'btn rb-tp-tab';
                 tab.setAttribute('aria-selected', slotIndex === 0 ? 'true' : 'false'); tab.tabIndex = slotIndex === 0 ? 0 : -1;
             }
             select.id = 'rb-tp-module-' + index + '-' + slotIndex;
@@ -110,18 +111,24 @@
             help.append(document.createTextNode(line));
         });
         var body = document.createElement('div'), canvas = document.createElement('div'), sidebar = document.createElement('div'), editor = document.createElement('aside');
-        body.style.cssText = 'display:flex; flex-wrap:nowrap; gap:24px; align-items:flex-start;';
-        canvas.style.cssText = 'flex:1 1 640px; min-width:640px; max-width:1025px; padding:0; box-sizing:border-box; overflow-x:auto;';
-        sidebar.style.cssText = 'flex:0 0 340px; min-width:340px; position:sticky; top:120px;';
-        editor.style.cssText = 'box-sizing:border-box; padding:20px; border:1px solid #d6dce1; border-radius:10px; background:#fff;';
+        body.className = 'rb-tp-preview-body';
+        canvas.className = 'rb-tp-preview-canvas';
+        sidebar.className = 'rb-tp-preview-sidebar';
+        editor.className = 'rb-tp-editor';
         editor.setAttribute('aria-label', '선택한 모듈 연결 설정');
         var empty = document.createElement('p'); empty.className = 'frm_info'; empty.style.cssText = 'margin:0; padding:0;';
         empty.textContent = data.choices.length ? '연결할 모듈 박스를 선택하세요.' : '지금 연결할 모듈이 없습니다. 바로 테마를 설치할 수 있습니다.';
         installActions.style.marginTop = '10px';
         editor.append(empty); sidebar.append(editor, installActions); body.append(canvas, sidebar); layouts.append(help, body);
+        if (window.ResizeObserver) {
+            previewSidebarObserver = new ResizeObserver(function () {
+                body.style.setProperty('--rb-tp-editor-height', Math.ceil(sidebar.getBoundingClientRect().height) + 'px');
+            });
+            previewSidebarObserver.observe(sidebar);
+        }
         var layoutTabs = document.createElement('div'), regions = Object.create(null);
         layoutTabs.setAttribute('role', 'tablist'); layoutTabs.setAttribute('aria-label', '레이아웃 구분');
-        layoutTabs.style.cssText = 'display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;';
+        layoutTabs.className = 'rb-tp-tabs';
         canvas.append(layoutTabs);
         function activateLayout(index) {
             layoutReviews[index].visited = true;
@@ -129,8 +136,7 @@
                 var active = i === index;
                 review.panel.hidden = !active;
                 review.panel.style.display = active ? 'block' : 'none';
-                review.button.className = active ? 'btn btn_03' : 'btn btn_02';
-                review.button.style.cssText = active ? '' : 'background:#fff; color:#000; border:1px solid #d6dce1;';
+                // 선택 상태만 변경하고 관리자 UI가 추가한 클래스는 유지한다.
                 review.button.setAttribute('aria-selected', active ? 'true' : 'false');
                 review.button.tabIndex = active ? 0 : -1;
                 review.marker.style.display = review.visited ? 'none' : 'inline-block';
@@ -142,8 +148,9 @@
         function layoutRegion(key, title, connection) {
             if (regions[key]) return regions[key];
             var region = document.createElement('section'), tab = document.createElement('button'), marker = document.createElement('span'), index = layoutReviews.length;
-            region.style.cssText = 'margin-bottom:28px; min-width:640px;';
+            region.className = 'rb-tp-layout-region';
             tab.type = 'button'; tab.id = 'rb-tp-layout-tab-' + index; tab.textContent = title;
+            tab.className = 'btn rb-tp-tab';
             marker.setAttribute('aria-hidden', 'true');
             marker.style.cssText = 'display:inline-block; width:6px; height:6px; margin-left:6px; border-radius:50%; background:#ff4242; vertical-align:middle;';
             tab.append(marker);
@@ -174,7 +181,7 @@
             var kind = connection.kind, source = connection.source, key = kind + ':' + source;
             var options = (data.page_catalogs || {})[kind] || {};
             var block = document.createElement('div'), label = document.createElement('label'), select = document.createElement('select');
-            block.style.cssText = 'display:flex; align-items:center; gap:8px; flex-shrink:0;';
+            block.className = 'rb-tp-page-connection';
             select.id = 'rb-tp-page-' + pageFieldIndex++;
             select.dataset.pageKind = kind; select.dataset.pageSource = source;
             label.htmlFor = select.id;
@@ -204,16 +211,17 @@
             var width = node.unit === 'px' ? node.width / parentWidth * 100 : node.width;
             width = Math.max(0.1, Math.min(100, width));
             var wrap = document.createElement('div'), box = document.createElement('div');
-            wrap.style.cssText = 'flex:0 0 ' + width + '%; max-width:' + width + '%; min-width:0; padding:8px; box-sizing:border-box;';
+            wrap.className = 'rb-tp-module-wrap';
+            wrap.style.setProperty('--rb-tp-module-width', width + '%');
             box.style.cssText = 'height:100%; box-sizing:border-box; border:2px solid transparent; border-radius:10px; background:#fff; cursor:default;';
             wrap.dataset.moduleKey = node.key;
             var entry = choices[node.key], button = document.createElement(entry && !panels[node.key] ? 'button' : 'div');
-            button.style.cssText = 'display:flex; align-items:center; justify-content:center; width:100%; min-width:0; min-height:100px; box-sizing:border-box; padding:20px; border:0; border-radius:10px; background:#fff; color:#344054; text-align:center; font:inherit;';
+            button.className = 'rb-tp-module-label';
             var name = document.createElement('strong');
             name.style.cssText = 'display:block; min-width:0; line-height:1.5; color:inherit; word-break:keep-all; overflow-wrap:break-word;';
             name.textContent = moduleTitle(node); button.append(name);
             if (entry && !panels[node.key]) {
-                button.type = 'button'; button.style.cursor = 'pointer'; button.setAttribute('aria-pressed', 'false');
+                button.type = 'button'; button.classList.add('rb-tp-module-button'); button.setAttribute('aria-pressed', 'false');
                 var panel = document.createElement('div'); panel.hidden = true;
                 panel.id = 'rb-tp-editor-' + entry.index; button.setAttribute('aria-controls', panel.id);
                 var heading = document.createElement('div'); heading.style.marginBottom = '20px'; moduleLabel(heading, entry.module);
@@ -233,8 +241,6 @@
             } else {
                 // 중첩된 연결 가능 모듈은 흐려지지 않도록 이 영역의 표시만 반투명하게 한다.
                 box.style.background = 'rgba(255,255,255,0.45)';
-                button.style.background = 'transparent';
-                button.style.opacity = '0.45';
             }
             box.append(button);
             if (node.children && node.children.length) {
@@ -275,7 +281,7 @@
                 var region = layoutRegion((area.shop ? 'shop:' : 'general:') + layout.position,
                     layout.title || (area.shop ? '마켓 (메인)' : '일반 (메인)'), layout.connection);
                 var position = document.createElement(layout.active ? 'div' : 'details');
-                position.style.cssText = 'margin-bottom:20px; padding:20px 50px; background:#f0f5f9; border:0; border-radius:10px;';
+                position.className = 'rb-tp-layout-position';
                 if (!layout.active) {
                     var label = document.createElement('summary');
                     label.style.cssText = 'margin-bottom:14px; line-height:1.5; cursor:pointer;';
@@ -321,6 +327,7 @@
             document.getElementById('rb-tp-shop-guide').hidden = data.shop_enabled !== false;
             mappings.replaceChildren();
             layoutReviews = [];
+            if (previewSidebarObserver) { previewSidebarObserver.disconnect(); previewSidebarObserver = null; }
             // 확인을 반복하거나 이전 배포 자료로 바꿔도 동일한 설치 버튼과 이벤트를 유지한다.
             installHome.append(installActions); installActions.style.marginTop = '20px';
             layouts.replaceChildren(); layouts.hidden = true;
