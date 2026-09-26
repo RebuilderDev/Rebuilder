@@ -13,7 +13,7 @@ if (!function_exists('rb_layout_cache_paths')) {
 
         // 테마와 레이아웃 구성이 다른 캐시가 같은 파일을 공유하지 않도록 분리합니다.
         $package_state = function_exists('rb_tp_state') ? rb_tp_state((string)$theme_name) : array();
-        $connection_version = isset($package_state['scope']) && $package_state['scope']==='main-design' ? '|module-connections-v2' : '';
+        $connection_version = isset($package_state['scope']) && $package_state['scope']==='main-design' ? '|module-connections-v3-title-category' : '';
         $context = substr(sha1((string) $theme_name . '|' . (string) $layout_name . '|' . ($is_index ? 'index' : 'sub') . $connection_version), 0, 12);
         $prefix = $is_shop ? 'rb_layout_shop_' : 'rb_layout_';
         $base = G5_DATA_PATH . '/cache/' . $prefix . $context . '_' . $safe_layout;

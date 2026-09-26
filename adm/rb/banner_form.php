@@ -463,23 +463,6 @@ if (isset($w) && $w == "u") {
     ];
 }
 
-// 접속기기 필드 추가
-if (!sql_query("SELECT bn_device FROM rb_banner LIMIT 0, 1")) {
-    sql_query("ALTER TABLE `rb_banner` ADD `bn_device` varchar(10) NOT NULL DEFAULT '' AFTER `bn_url`", true);
-    sql_query("UPDATE rb_banner SET bn_device = 'pc'", true);
-}
-
-// // 디자인형 컬럼 추가(없으면 생성)
-if(!sql_query("SELECT bn_type FROM rb_banner LIMIT 0,1")) {
-    sql_query("ALTER TABLE rb_banner ADD bn_type varchar(10) NOT NULL DEFAULT 'image' AFTER bn_device");
-}
-if(!sql_query("SELECT bn_design_json FROM rb_banner LIMIT 0,1")) {
-    sql_query("ALTER TABLE rb_banner ADD bn_design_json LONGTEXT NOT NULL AFTER bn_type");
-}
-if(!sql_query("SELECT bn_stage_json FROM rb_banner LIMIT 0,1")) {
-    sql_query("ALTER TABLE rb_banner ADD bn_stage_json TEXT NOT NULL AFTER bn_design_json");
-}
-
 include_once(G5_ADMIN_PATH . '/admin.head.php');
 ?>
 

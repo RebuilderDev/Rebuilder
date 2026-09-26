@@ -1,6 +1,67 @@
 <?php
 if (!defined('_GNUBOARD_')) exit;
 
+// 프런트 내보내기는 그누보드 최고관리자 세션과 패널 토큰으로 인증한다.
+// 별도 관리자 UI의 로그인 상태에 의존하지 않으며 설치/적용 요청은 받지 않는다.
+function rb_tp_export_request()
+{
+    global $config, $is_admin;
+    header('Cache-Control: no-store');
+    $mode=isset($_POST['mode']) && is_string($_POST['mode'])?$_POST['mode']:'';
+    $downloadId=isset($_POST['download_id']) && is_string($_POST['download_id']) && preg_match('/\A[a-f0-9]{32}\z/',$_POST['download_id'])?$_POST['download_id']:'';
+    try {
+        if($is_admin!=='super' || $_SERVER['REQUEST_METHOD']!=='POST') throw new RuntimeException('최고관리자로 로그인한 뒤 이용해 주세요.');
+        if(!isset($_SESSION['rb_theme_package_token'],$_POST['token']) || !is_string($_POST['token'])
+            || !hash_equals($_SESSION['rb_theme_package_token'],$_POST['token'])) throw new RuntimeException('화면을 새로고침한 뒤 다시 시도해 주세요.');
+        if(!in_array($mode,array('export','publications'),true)) throw new RuntimeException('잘못된 요청입니다.');
+        $theme=isset($_POST['theme'])?$_POST['theme']:'';
+        if(!is_string($theme) || $theme!==$config['cf_theme']) throw new RuntimeException('현재 적용된 테마를 확인해 주세요.');
+        if($mode==='publications') {
+            $publications=rb_tp_publications($theme);
+            header('Content-Type: application/json; charset=utf-8');
+            echo rb_tp_json(array('ok'=>true,'publications'=>array_values($publications),'used_folders'=>rb_tp_used_publication_folders($theme,$publications)));
+            exit;
+        }
+        $name=isset($_POST['name']) && is_string($_POST['name'])?trim($_POST['name']):'';
+        if($name==='') throw new RuntimeException('배포할 테마 이름을 입력해 주세요.');
+        @set_time_limit(0);
+        if(session_status()===PHP_SESSION_ACTIVE) session_write_close();
+        $tmp=tempnam(sys_get_temp_dir(),'rb-theme-');
+        if(!$tmp) throw new RuntimeException('임시 저장 공간을 확인해 주세요.');
+        if(!rename($tmp,$tmp.'.zip')) { unlink($tmp); throw new RuntimeException('임시 저장 공간을 확인해 주세요.'); }
+        $tmp.='.zip';
+        try {
+            $publication=array('mode'=>isset($_POST['publication_mode']) && is_string($_POST['publication_mode'])?$_POST['publication_mode']:'new',
+                'id'=>isset($_POST['publication_id']) && is_string($_POST['publication_id'])?$_POST['publication_id']:'');
+            $package=rb_tp_export($theme,$name,$tmp,$publication);
+            if($downloadId!=='') setcookie('rb_theme_export_'.$downloadId,'ready',array('expires'=>time()+300,'path'=>'/',
+                'secure'=>!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off','httponly'=>false,'samesite'=>'Lax'));
+            header('Content-Type: application/zip');
+            header('Content-Disposition: attachment; filename="'.$package['package_folder'].'_'.date('Ymd_His').'.zip"');
+            header('Content-Length: '.filesize($tmp));
+            while(ob_get_level()) ob_end_clean();
+            readfile($tmp);
+        } finally { if(is_file($tmp)) unlink($tmp); }
+    } catch(Throwable $e) {
+        http_response_code(400);
+        if($mode==='export') {
+            header('Content-Type: text/html; charset=utf-8');
+            if($downloadId!=='') {
+                $message=json_encode(array('type'=>'rb-theme-export','id'=>$downloadId,'ok'=>false,'message'=>$e->getMessage()),
+                    JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE);
+                echo '<!doctype html><meta charset="utf-8"><script>window.parent.postMessage('.$message.',window.location.origin);</script>';
+            } else {
+                echo '<!doctype html><html lang="ko"><meta charset="utf-8"><title>테마 내보내기</title><body style="font-family:sans-serif;padding:32px"><h1>테마를 내보내지 못했습니다</h1><p>'
+                    .htmlspecialchars($e->getMessage(),ENT_QUOTES,'UTF-8').'</p><p>문제를 확인한 뒤 테마설정 패널에서 다시 시도해 주세요.</p></body></html>';
+            }
+        } else {
+            header('Content-Type: application/json; charset=utf-8');
+            echo rb_tp_json(array('ok'=>false,'message'=>$e->getMessage()));
+        }
+    }
+    exit;
+}
+
 // 이름/경로와 배포 계보를 분리한다. 식별정보는 제작자 인증이나 재배포 권한을 뜻하지 않는다.
 function rb_tp_identity_valid($value)
 {
@@ -51,7 +112,7 @@ function rb_tp_export($theme,$name,$zipfile,$publication=array())
         }
         $m=rb_tp_export_archive($theme,$name,$zipfile,$identity,$mode);
         $folders=isset($previous)?$previous['folders']:array(); $folders[]=$m['package_folder'];
-        $publications[$identity['id']]=array_merge($identity,array('name'=>$m['name'],'folders'=>array_values(array_unique($folders))));
+        $publications[$identity['id']]=array_merge($identity,array('name'=>$m['name'],'folders'=>array_values(array_unique($folders)),'warnings'=>$m['dependency_warnings']));
         $file=G5_DATA_PATH.'/rb.theme-publish/'.$theme.'.json';
         if (!is_dir(dirname($file)) && !mkdir(dirname($file),0755,true)) throw new RuntimeException('테마 배포 정보를 저장할 수 없습니다.');
         $tmp=tempnam(dirname($file),'.publish-');
@@ -110,10 +171,11 @@ function rb_tp_release_material($m,$theme,$state)
         foreach($m['deps'][$kind] as $old=>$key) {
             if(!rb_tp_dependency_valid($kind,$old) || !preg_match('/\A[a-f0-9]{16}\z/',$key)) throw new RuntimeException('의존 파일 경로 오류');
             $name=isset($m['dependency_names'][$kind][$key])?$m['dependency_names'][$kind][$key]:basename($old);
-            $dest=rb_tp_dependency_path($kind,$theme,$name);
+            $dest=rb_tp_original_dependencies($m)?$m['dependency_paths'][$kind][$key]:rb_tp_dependency_path($kind,$theme,$name);
+            if(!rb_tp_dependency_valid($kind,$dest)) throw new RuntimeException('위젯/배너 스킨 경로 오류');
             // 이전 설치본의 모듈은 평면 경로를 사용한다. 파일 업데이트에서 그 연결을 바꾸지 않는다.
             $legacyRoot=$kind==='widget'?'rb/rb.widget/':'rb/rb.mod/banner/skin/';
-            if(!isset($dependencies[$kind][$dest])) foreach(isset($dependencies[$kind])?$dependencies[$kind]:array() as $existing=>$info) {
+            if(!rb_tp_original_dependencies($m) && !isset($dependencies[$kind][$dest])) foreach(isset($dependencies[$kind])?$dependencies[$kind]:array() as $existing=>$info) {
                 if(isset($info['name']) && $info['name']===$name && rb_tp_dependency_valid($kind,$existing)
                     && strpos($existing,$legacyRoot.$theme.'_')===0) { $dest=$existing; break; }
             }
@@ -131,7 +193,8 @@ function rb_tp_release_material($m,$theme,$state)
         $replace[$m['source_data_url'].'/'.$rel]=G5_DATA_URL.'/'.$newrel;
         $replace[parse_url($m['source_data_url'],PHP_URL_PATH).'/'.$rel]=parse_url(G5_DATA_URL,PHP_URL_PATH).'/'.$newrel;
     }
-    foreach($targets as $entry=>$dest) rb_tp_release_path($dest,$theme);
+    foreach($m['files'] as $entry=>$info) if(strpos($entry,'user/')===0 && rb_tp_original_file($m,$entry)) $targets[$entry]=substr($entry,5);
+    foreach($targets as $entry=>$dest) if(!rb_tp_original_file($m,$entry)) rb_tp_release_path($dest,$theme);
     $replace[rtrim($m['source_url'],'/').'/']=rtrim(G5_URL,'/').'/';
     return array('targets'=>$targets,'replace'=>$replace,'dependencies'=>$dependencies);
 }
@@ -163,6 +226,8 @@ function rb_tp_update_files($folder)
         $material=rb_tp_release_material($m,$folder,$state);
         $maps=isset($state['source_maps'])?$state['source_maps']:array();
         foreach($material['targets'] as $entry=>$relative) {
+            if(isset($m['missing_files'][$entry])) continue;
+            if(rb_tp_original_file($m,$entry)) continue;
             $dest=rb_tp_release_path($relative,$folder);
             if(rb_tp_text_file($entry)) {
                 if($m['files'][$entry]['size']>8*1024*1024) throw new RuntimeException('편집 가능한 소스 파일은 8MB 이내여야 합니다.');

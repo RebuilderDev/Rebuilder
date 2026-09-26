@@ -37,6 +37,17 @@
 .rb_config #rb-theme-export-status:empty {display:none;}
 .rb_config #rb-theme-export-status[data-state="error"] {color:#b42318;}
 .rb_config #rb-theme-export-status[data-state="success"] {color:#247044;}
+.rb_config #rb-theme-export-dependency-notice {box-sizing:border-box; margin:16px 0 0; padding:16px; border:0; border-radius:10px; background:#f0f5f9; box-shadow:none; color:#707780; font-size:12px; line-height:1.6; word-break:keep-all; overflow-wrap:anywhere;}
+.rb_config #rb-theme-export-dependency-notice[hidden] {display:none;}
+.rb_config #rb-theme-export-dependency-notice p {margin:0; color:inherit; font-size:inherit; line-height:inherit;}
+.rb_config #rb-theme-export-dependency-notice #rb-theme-export-dependency-title {margin-bottom:6px; color:#454b53; font-size:13px;}
+.rb_config #rb-theme-export-dependency-notice details {margin-top:12px;}
+.rb_config #rb-theme-export-dependency-notice summary {color:#454b53; cursor:pointer; line-height:1.6;}
+.rb_config #rb-theme-export-dependency-notice ul {max-height:240px; overflow-y:auto; margin:12px 0 0; padding:0; list-style:none;}
+.rb_config #rb-theme-export-dependency-notice li {float:none; width:auto; margin:0; padding:0; list-style:none;}
+.rb_config #rb-theme-export-dependency-notice li + li {margin-top:14px;}
+.rb_config #rb-theme-export-dependency-notice li span {display:block; font-size:12px; line-height:1.6;}
+.rb_config #rb-theme-export-dependency-notice .rb-theme-export-dependency-file {margin-bottom:4px; color:#454b53; overflow-wrap:anywhere;}
 .rb_config .rb-theme-export-guide {box-sizing:border-box; margin-top:18px; padding:14px 16px; border:1px solid #eceef0; border-radius:10px; background:#f8f9fa; color:#707780; font-size:12px; line-height:1.65;}
 .rb_config .rb-theme-export-guide p {margin:0 0 8px; color:#454b53; font-size:12px;}
 .rb_config .rb-theme-export-guide ol {margin:0; padding:0 0 0 17px; list-style:decimal;}

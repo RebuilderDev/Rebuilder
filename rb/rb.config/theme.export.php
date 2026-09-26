@@ -5,6 +5,7 @@ if (empty($_SESSION['rb_theme_package_token'])) $_SESSION['rb_theme_package_toke
 $rb_theme_export_support=rb_tp_archive_support();
 $rb_theme_export_zip=$rb_theme_export_support['zip'];
 $rb_theme_export_phar=$rb_theme_export_support['phar'];
+$rb_theme_export_tokenizer=$rb_theme_export_support['tokenizer'];
 $rb_theme_export_available=$rb_theme_export_zip || $rb_theme_export_phar;
 $rb_theme_export_error='';
 try { $rb_theme_publications=rb_tp_publications($config['cf_theme']); }
@@ -12,12 +13,12 @@ catch (Throwable $e) { $rb_theme_publications=array(); $rb_theme_export_error=$e
 ?>
 <section class="rb_config_sec rb-theme-export" aria-labelledby="rb-theme-export-title">
     <h6 id="rb-theme-export-title" class="font-B">테마 내보내기</h6>
-    <p class="rb-theme-export-description">현재 테마 폴더내 모든 파일과 디자인 설정, 메인 · 일반 페이지 · 게시판 그룹의 모듈 · 섹션 · 위젯 · 이미지를 ZIP으로 저장합니다. 게시판 상·하단과 서브 공통 영역의 모듈 · 배치 · 설정, 페이지 · 그룹 · 게시판 · 분류 · 설문 · 상품 등의 운영 설정은 제외합니다. 위젯은 /rb/rb.widget/<span class="font-B">테마명/</span>, 배너 스킨은 /rb/rb.mod/banner/skin/<span class="font-B">테마명/</span> 폴더에 저장합니다.</p>
+    <p class="rb-theme-export-description">현재 테마 폴더내 모든 파일과, 모듈에 적용된 위젯 파일을 저장합니다.<br>환경설정, 모듈설정, 섹션설정, 캐러셀, 배너 설정 데이터 및 이미지 파일을 저장하고, 일반페이지, 그룹페이지의 모듈설정도 함께 저장 됩니다. 위젯에서 참조하는 extend 파일도 검사하여 저장하며 서브페이지의 특정 노드에 설정된 모듈이나 사이드, 상단영역 설정 데이터는 저장되지 않습니다.</p>
     <div id="rb-theme-export-requirements" class="rb-theme-export-requirements">
         <p class="font-B">테마 내보내기를 사용할 수 <?php echo $rb_theme_export_available?'있습니다.':'없습니다.'; ?></p>
-        <p>필요 확장모듈 :
-            <?php foreach (array('ZIP'=>$rb_theme_export_zip,'Phar'=>$rb_theme_export_phar) as $module_name=>$module_available) { ?>
-                <?php if ($module_name==='Phar') echo ' 또는 '; ?>
+        <p>
+            <?php foreach (array('ZIP'=>$rb_theme_export_zip,'Phar'=>$rb_theme_export_phar,'Tokenizer'=>$rb_theme_export_tokenizer) as $module_name=>$module_available) { ?>
+                <?php if ($module_name==='Phar') echo ' 또는 '; elseif ($module_name==='Tokenizer') echo '<br>자동 파일 수집 (선택) : '; ?>
                 <span class="rb-theme-export-module"><?php echo $module_name; ?>
                     <svg class="rb-theme-export-check <?php echo $module_available?'is-available':'is-unavailable'; ?>" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="<?php echo $module_available?'사용 가능':'사용 불가'; ?>">
                         <path d="<?php echo $module_available?'M3 8l3 3 7-7':'M4 4l8 8M12 4l-8 8'; ?>"></path>
@@ -49,6 +50,14 @@ catch (Throwable $e) { $rb_theme_publications=array(); $rb_theme_export_error=$e
         <p id="rb-theme-export-name-guide" class="rb-theme-export-description">테마폴더 내 readme.txt 파일의 저작 정보를 수정해주시고, screenshot.png 파일을 교체해주세요.</p>
         <input type="text" id="rb-theme-export-name" maxlength="40" placeholder="테마폴더명 (영문) 을 설정하세요." spellcheck="false" autocapitalize="none" autocomplete="off" aria-describedby="rb-theme-export-mode-guide rb-theme-export-name-guide">
         <button type="button" id="rb-theme-export" class="font-B" aria-describedby="rb-theme-export-requirements"<?php echo $rb_theme_export_available && $rb_theme_export_error===''?'':' disabled'; ?>>테마 ZIP 내보내기</button>
+        <div id="rb-theme-export-dependency-notice" role="status" aria-labelledby="rb-theme-export-dependency-title" hidden>
+            <p id="rb-theme-export-dependency-title" class="font-B">추가 파일 확인</p>
+            <p>자동으로 확인하지 못한 로컬 참조가 있습니다.<br>배포 전에 아래 파일을 확인해 주세요.</p>
+            <details>
+                <summary id="rb-theme-export-dependency-count"></summary>
+                <ul id="rb-theme-export-dependency-list"></ul>
+            </details>
+        </div>
         <p id="rb-theme-export-status" role="status" aria-live="polite"<?php echo $rb_theme_export_error!==''?' data-state="error"':''; ?>><?php echo htmlspecialchars($rb_theme_export_error,ENT_QUOTES,'UTF-8'); ?></p>
     </div>
 </section>
@@ -87,6 +96,7 @@ catch (Throwable $e) { $rb_theme_publications=array(); $rb_theme_export_error=$e
     var status = document.getElementById('rb-theme-export-status');
     var frame = document.getElementById('rb-theme-export-frame');
     var canExport = <?php echo $rb_theme_export_available && $rb_theme_export_error===''?'true':'false'; ?>;
+    var canScanDependencies = <?php echo $rb_theme_export_tokenizer?'true':'false'; ?>;
     var downloadId = '', cookieName = '', timer = null, started = 0, busy = false, confirming = false;
     function finish(ok, message) {
         if (!busy) return;
@@ -103,7 +113,7 @@ catch (Throwable $e) { $rb_theme_publications=array(); $rb_theme_export_error=$e
         status.textContent = message;
         if (ok) {
             var body = new URLSearchParams({mode:'publications', token:<?php echo json_encode($_SESSION['rb_theme_package_token']); ?>, theme:<?php echo json_encode($config['cf_theme']); ?>});
-            fetch(<?php echo json_encode(G5_ADMIN_URL.'/theme_package.php'); ?>,{method:'POST',credentials:'same-origin',body:body})
+            fetch(<?php echo json_encode(G5_URL.'/rb/rb.config/ajax.theme_export.php'); ?>,{method:'POST',credentials:'same-origin',body:body})
                 .then(function (response) { return response.json(); }).then(function (data) {
                     if (!data.ok) return;
                     var selected = series.value; series.replaceChildren(); usedFolders = data.used_folders;
@@ -112,6 +122,20 @@ catch (Throwable $e) { $rb_theme_publications=array(); $rb_theme_export_error=$e
                     if (selectedMode() === 'new' && data.publications.length) series.value = data.publications[data.publications.length - 1].id;
                     else if (selected && data.publications.some(function (item) { return item.id === selected; })) series.value = selected;
                     modeGuide();
+                    var exported = data.publications.find(function (item) { return item.folder === nameInput.value; });
+                    var warnings = exported && Array.isArray(exported.warnings) ? exported.warnings : [];
+                    var notice = document.getElementById('rb-theme-export-dependency-notice');
+                    var list = document.getElementById('rb-theme-export-dependency-list');
+                    list.replaceChildren();
+                    notice.hidden = !warnings.length;
+                    document.getElementById('rb-theme-export-dependency-count').textContent = '확인할 항목 ' + warnings.length + '개';
+                    warnings.forEach(function (warning) {
+                        var item = document.createElement('li'), file = document.createElement('span'), reason = document.createElement('span');
+                        var parts = String(warning).split(' · ');
+                        file.className = 'rb-theme-export-dependency-file'; file.textContent = parts.shift();
+                        reason.textContent = parts.join(' · ').replace(/실행 중 결정되는 경로: \*$/, '파일 경로를 코드에서 확인할 수 없습니다.');
+                        item.append(file, reason); list.append(item);
+                    });
                 }).catch(function () {});
         }
     }
@@ -164,7 +188,8 @@ catch (Throwable $e) { $rb_theme_publications=array(); $rb_theme_export_error=$e
         }
         var publicationMode = selectedMode(), publicationId = series.value;
         var message = (publicationMode === 'update' ? '기존 테마 업데이트로 내보냅니다.' : '새 테마로 내보냅니다.')
-            + ' (' + name + ')\n\n위젯 : /rb/rb.widget/' + name + '/\n배너 : /rb/rb.mod/banner/skin/' + name + '/\n폴더에 저장됩니다.\n\n테마를 내보내시겠습니까?';
+            + ' (' + name + ')\n테마를 내보내시겠습니까?';
+        if (!canScanDependencies) message = 'Tokenizer 확장이 서버에 없습니다.\n위젯 등에서 rb, theme 폴더외에 다른 폴더의 파일을 참조한다면 수동으로 파일을 추가해주세요.\n확인을 클릭하시면 내보내기가 시작됩니다.';
         confirming = true;
         var confirmation = typeof rb_confirm === 'function' ? rb_confirm(message) : Promise.resolve(window.confirm(message));
         confirmation.then(function (ok) {
@@ -175,6 +200,7 @@ catch (Throwable $e) { $rb_theme_publications=array(); $rb_theme_export_error=$e
         window.crypto.getRandomValues(random);
         downloadId = Array.prototype.map.call(random, function (value) { return ('0' + value.toString(16)).slice(-2); }).join('');
         cookieName = 'rb_theme_export_' + downloadId;
+        document.getElementById('rb-theme-export-dependency-notice').hidden = true;
         busy = true; started = Date.now();
         button.disabled = true; nameInput.readOnly = true;
         exportMode.disabled = true; series.disabled = true;
@@ -186,7 +212,7 @@ catch (Throwable $e) { $rb_theme_publications=array(); $rb_theme_export_error=$e
                 finish(false, '서버 응답이 지연되고 있습니다. 다운로드 목록과 서버 상태를 확인한 뒤 다시 시도해 주세요.');
         }, 500);
         var form = document.createElement('form');
-        form.method = 'post'; form.target = frame.name; form.action = <?php echo json_encode(G5_ADMIN_URL.'/theme_package.php'); ?>;
+        form.method = 'post'; form.target = frame.name; form.action = <?php echo json_encode(G5_URL.'/rb/rb.config/ajax.theme_export.php'); ?>;
         var values = {mode: 'export', publication_mode: publicationMode, publication_id: publicationId, download_id: downloadId, theme: <?php echo json_encode($config['cf_theme']); ?>, name: name, token: <?php echo json_encode($_SESSION['rb_theme_package_token']); ?>};
         Object.keys(values).forEach(function (key) { var input = document.createElement('input'); input.type='hidden'; input.name=key; input.value=values[key]; form.appendChild(input); });
         document.body.appendChild(form);

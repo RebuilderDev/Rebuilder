@@ -73,6 +73,7 @@ if($post_type == 'reset_data') {
     $reset_theme = sql_real_escape_string(trim($theme));
 
     if ($reset_theme === '') die('테마 정보가 없습니다.');
+    if (rb_tp_state($theme, true)) die('설치된 테마는 JSON으로 초기화할 수 없습니다.');
 
     $rb_json_io_tables_reset = array(
         array('table' => 'rb_module',         'col' => 'md_theme',  'pk' => 'md_id'),
@@ -136,6 +137,7 @@ if($post_type == 'reset_data') {
         foreach ($rows as $row) {
             if (!is_array($row) || empty($row)) continue;
             if ($pk !== '') unset($row[$pk]);
+            $row[$tcol] = $theme;
 
             $cols = array();
             $vals = array();
@@ -224,6 +226,8 @@ if($post_set_default_skin == 1 && !rb_tp_state($theme)) {
     }
 }
 
+// 설치된 패키지의 설정/모듈은 DB에 보관된다. 테마 재적용 시 구형 JSON을 불러오지 않는다.
+if (!rb_tp_state($theme, true)) {
 $rb_json_io_tables = array(
     array('table' => 'rb_module',         'col' => 'md_theme',  'pk' => 'md_id'),
     array('table' => 'rb_module_shop',    'col' => 'md_theme',  'pk' => 'md_id'),
@@ -299,6 +303,7 @@ if (!empty($rb_json_files)) {
                     foreach ($rows as $row) {
                         if (!is_array($row) || empty($row)) continue;
                         if ($pk !== '') unset($row[$pk]);
+                        $row[$tcol] = $rb_cf_theme;
 
                         $cols = array();
                         $vals = array();
@@ -321,6 +326,7 @@ if (!empty($rb_json_files)) {
                 foreach ($rows as $row) {
                     if (!is_array($row) || empty($row)) continue;
                     if ($pk !== '') unset($row[$pk]);
+                    $row[$tcol] = $rb_cf_theme;
 
                     $cols = array();
                     $vals = array();
@@ -340,6 +346,7 @@ if (!empty($rb_json_files)) {
     }
 }
 
+}
 run_event('adm_theme_update', $theme, $post_set_default_skin);
 
 die('');

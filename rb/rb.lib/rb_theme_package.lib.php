@@ -1,6 +1,7 @@
 <?php
 if (!defined('_GNUBOARD_')) exit;
 include_once(__DIR__.'/rb_theme_release.lib.php');
+include_once(__DIR__.'/rb_theme_dependencies.lib.php');
 
 /* 패키지 설치는 새 테마의 소스와 디자인 자료만 추가한다. 적용 시 스킨 설정 저장/복원은 별도로 처리한다. */
 function rb_tp_tables()
@@ -152,7 +153,8 @@ function rb_tp_archive_support()
 {
     $disabled=array_map('trim',explode(',',strtolower((string)ini_get('disable_classes'))));
     return array('zip'=>class_exists('ZipArchive') && !in_array('ziparchive',$disabled,true),
-        'phar'=>class_exists('PharData') && !in_array('phardata',$disabled,true));
+        'phar'=>class_exists('PharData') && !in_array('phardata',$disabled,true),
+        'tokenizer'=>function_exists('token_get_all'));
 }
 function rb_tp_slug($s)
 {
@@ -175,7 +177,7 @@ function rb_tp_under($file, $root)
 }
 function rb_tp_text_file($path)
 {
-    return preg_match('/\.(php|css|js|mjs|json|webmanifest|html?|txt|svg|xml)$/i', $path);
+    return preg_match('/\.(php|inc|css|js|mjs|json|webmanifest|html?|txt|svg|xml)$/i', $path);
 }
 function rb_tp_walk_values($value, $callback)
 {
@@ -196,7 +198,7 @@ function rb_tp_tree(&$files, $dir, $prefix, $exclude = array())
         if (!$file->isFile()) continue;
         if (preg_match('~(^|/)(\.git|node_modules|tests|\.env|rb-package)(/|$)~', $rel)) continue;
         if (!rb_tp_path($rel)) throw new RuntimeException('배포할 수 없는 파일 경로입니다: '.$rel);
-        if (!preg_match('/\.(php|css|scss|sass|less|js|mjs|json|webmanifest|html?|txt|md|svg|xml|png|jpe?g|gif|webp|ico|avif|woff2?|ttf|otf|eot|mp4|webm|mp3|wav|ogg|pdf|map)$/i', $rel)
+        if (!preg_match('/\.(php|inc|css|scss|sass|less|js|mjs|json|webmanifest|html?|txt|md|svg|xml|png|jpe?g|gif|webp|ico|avif|woff2?|ttf|otf|eot|mp4|webm|mp3|wav|ogg|pdf|map)$/i', $rel)
             && !preg_match('~(^|/)(LICENSE|COPYING|README|\.htaccess)$~i',$rel)) continue;
         if ($prefix === 'theme' && (preg_match('/^[^\/]+_\d{8}_\d{6}\.json$/', $rel) || $rel === 'rb-package.json')) continue;
         $files[$prefix.'/'.$rel] = $file->getPathname();
@@ -472,15 +474,16 @@ function rb_tp_layout_preview($data,$referenceTitles=array())
             uksort($positions,'strnatcmp');
             foreach($positions as $layout=>$unused) {
                 if(isset($owners[$layout])) continue;
-                $label=($shop?'마켓':'일반').' (메인)';
+                $label=($shop?'마켓':'일반').' (메인)'; $connection=null;
                 if(preg_match('/^rb_(gr|co)_([A-Za-z0-9_]+)$/',$layout,$page)) {
                     $kind=$page[1]==='gr'?'group':'content';
+                    $connection=array('kind'=>$kind,'source'=>(string)$page[2]);
                     $pageTitle=isset($referenceTitles[$kind][$page[2]]) && is_string($referenceTitles[$kind][$page[2]])
                         ?trim(strip_tags($referenceTitles[$kind][$page[2]])):'';
                     $label=($shop?'마켓':'일반').($kind==='group'?' (그룹)':' (페이지)').' · '.($pageTitle!==''?$pageTitle:$page[2]);
                 }
                 $layouts[]=array('name'=>(string)$name,'position'=>(string)$layout,
-                    'title'=>$label,'active'=>(string)$name===$selected,'nodes'=>$build($layout));
+                    'title'=>$label,'connection'=>$connection,'active'=>(string)$name===$selected,'nodes'=>$build($layout));
             }
         }
         if($layouts) $areas[]=array('title'=>$title,'shop'=>$shop,'layouts'=>$layouts,
@@ -752,6 +755,9 @@ function rb_tp_export_archive($theme, $name, $zipfile, $identity, $delivery)
         if((isset($contents[$entry])?strlen($contents[$entry]):filesize($p))>8*1024*1024) throw new RuntimeException('편집 가능한 소스 파일은 8MB 이내여야 합니다: '.$entry);
         $scanAssets(isset($contents[$entry])?$contents[$entry]:file_get_contents($p));
     }
+    $manifest['dependency_layout']='original';
+    $manifest['dependency_warnings']=$archiveSupport['tokenizer']?rb_tp_collect_user_files($files,$theme):array();
+    $manifest['dependency_scan']=$archiveSupport['tokenizer']?'tokenizer':'unavailable';
     $manifest['files'] = array(); $total = 0;
     foreach ($files as $entry=>$p) {
         $size = isset($contents[$entry])?strlen($contents[$entry]):filesize($p); $total += $size;
@@ -765,8 +771,8 @@ function rb_tp_export_archive($theme, $name, $zipfile, $identity, $delivery)
     $manifest['dependency_paths']=array('widget'=>array(),'banner'=>array());
     $manifest['dependency_names']=array('widget'=>array(),'banner'=>array());
     foreach($deps as $kind=>$items) foreach($items as $old=>$key) {
-        $original=rb_tp_dependency_name($kind,$old,$theme,$installed);
-        $path=rb_tp_dependency_path($kind,$folder,$original);
+        $original=basename($old);
+        $path=$old;
         $label=$kind==='widget'?'위젯':'배너 스킨';
         if (in_array(strtolower($path),array_map('strtolower',$manifest['dependency_paths'][$kind]),true))
             throw new RuntimeException('원래 이름이 같은 '.$label.'이 여러 폴더에서 사용 중입니다: '.$original);
@@ -776,6 +782,7 @@ function rb_tp_export_archive($theme, $name, $zipfile, $identity, $delivery)
     $prefix='theme/'.$folder.'/rb-package/';
     $archivePath=function($entry) use($folder,$prefix,$manifest) {
         if(strpos($entry,'theme/')===0) return 'theme/'.$folder.'/'.substr($entry,6);
+        if(strpos($entry,'user/')===0) return substr($entry,5);
         if(preg_match('~^deps/(widget|banner)/([a-f0-9]{16})/(.+)$~',$entry,$parts))
             return $manifest['dependency_paths'][$parts[1]][$parts[2]].'/'.$parts[3];
         return $prefix.$entry;
@@ -818,52 +825,39 @@ class RbThemePackageDirectory
         if(!is_file($manifest) || !rb_tp_under($manifest,$folder) || filesize($manifest)>8*1024*1024) throw new RuntimeException('테마 설치 정보가 없습니다.');
         $m=json_decode(file_get_contents($manifest),true);
         if(!is_array($m) || !isset($m['version']) || $m['version']!==2) throw new RuntimeException('이전 보관형 패키지입니다. 최신 내보내기로 다시 다운로드해 주세요.');
-        if($updating) {
-            if(!isset($m['files'],$m['dependency_paths']) || !is_array($m['files']) || count($m['files'])>20000) throw new RuntimeException('업데이트 자료 형식 오류');
-            $this->entries[]='manifest.json'; $this->paths['manifest.json']=$manifest; $this->bases['manifest.json']=$folder;
-            // FTP 덮어쓰기 후 남은 사용자 파일은 업데이트 목록과 별개로 유지한다.
-            foreach($m['files'] as $entry=>$info) {
-                if(!rb_tp_path($entry) || $entry==='manifest.json') throw new RuntimeException('업데이트 자료 경로 오류');
-                $base=$folder;
-                if(strpos($entry,'theme/')===0) $path=$folder.'/'.substr($entry,6);
-                elseif(preg_match('~^deps/(widget|banner)/([a-f0-9]{16})/(.+)$~',$entry,$parts)) {
-                    $dep=isset($m['dependency_paths'][$parts[1]][$parts[2]])?$m['dependency_paths'][$parts[1]][$parts[2]]:'';
-                    if(!rb_tp_dependency_valid($parts[1],$dep)) throw new RuntimeException('위젯/배너 스킨 경로 오류');
-                    $base=G5_PATH.'/'.$dep; $path=$base.'/'.$parts[3];
-                } else $path=$folder.'/rb-package/'.$entry;
-                $this->entries[]=$entry; $this->paths[$entry]=$path; $this->bases[$entry]=$base;
-            }
-            $this->numFiles=count($this->entries); return;
-        }
-        $this->scan($folder,'theme/',true);
-        if(!isset($m['dependency_paths']) || !is_array($m['dependency_paths'])) throw new RuntimeException('위젯/스킨 경로 정보가 없습니다.');
-        foreach(array('widget','banner') as $kind) {
-            if(!isset($m['dependency_paths'][$kind]) || !is_array($m['dependency_paths'][$kind])) throw new RuntimeException('위젯/스킨 경로 정보 오류');
-            foreach($m['dependency_paths'][$kind] as $key=>$path) {
-                if(!preg_match('/\A[a-f0-9]{16}\z/',$key) || !rb_tp_dependency_valid($kind,$path)) throw new RuntimeException('위젯/스킨 경로 오류');
-                $this->scan(G5_PATH.'/'.$path,'deps/'.$kind.'/'.$key.'/',false);
-            }
+        if(!isset($m['files'],$m['dependency_paths']) || !is_array($m['files']) || !is_array($m['dependency_paths']) || count($m['files'])>20000) throw new RuntimeException('설치 자료 형식 오류');
+        $this->entries[]='manifest.json'; $this->paths['manifest.json']=$manifest; $this->bases['manifest.json']=$folder;
+        // 새 설치와 업데이트 모두 선언된 경로를 기준으로 읽고, FTP에서 제외한 파일은 건너뛴다.
+        foreach($m['files'] as $entry=>$info) {
+            if(!rb_tp_path($entry) || $entry==='manifest.json') throw new RuntimeException('설치 자료 경로 오류');
+            $base=$folder;
+            if(strpos($entry,'theme/')===0) $path=$folder.'/'.substr($entry,6);
+            elseif(preg_match('~^deps/(widget|banner)/([a-f0-9]{16})/(.+)$~',$entry,$parts)) {
+                $dep=isset($m['dependency_paths'][$parts[1]][$parts[2]])?$m['dependency_paths'][$parts[1]][$parts[2]]:'';
+                if(!rb_tp_dependency_valid($parts[1],$dep)) throw new RuntimeException('위젯/배너 스킨 경로 오류');
+                $base=G5_PATH.'/'.$dep; $path=$base.'/'.$parts[3];
+            } elseif(strpos($entry,'user/')===0 && rb_tp_original_dependencies($m) && rb_tp_user_path(substr($entry,5))) {
+                $base=G5_PATH; $path=$base.'/'.substr($entry,5);
+            } else $path=$folder.'/rb-package/'.$entry;
+            $this->entries[]=$entry; $this->paths[$entry]=$path; $this->bases[$entry]=$base;
         }
         $this->numFiles=count($this->entries);
     }
-    private function scan($base,$prefix,$theme) {
-        if(!is_dir($base) || !rb_tp_under($base,G5_PATH)) throw new RuntimeException('필요한 폴더를 업로드해 주세요: '.basename($base));
-        foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::SELF_FIRST) as $f) {
-            if($f->isLink()) throw new RuntimeException('심볼릭 링크는 설치할 수 없습니다.');
-            if(!$f->isFile()) continue;
-            $relative=str_replace('\\','/',substr($f->getPathname(),strlen($base)+1));
-            if($theme && $relative==='rb-package/.htaccess') continue;
-            $entry=$theme && strpos($relative,'rb-package/')===0?substr($relative,11):$prefix.$relative;
-            if(isset($this->paths[$entry]) || count($this->entries)>=20001) throw new RuntimeException('중복 파일 또는 파일 개수 초과');
-            $this->entries[]=$entry; $this->paths[$entry]=$f->getPathname(); $this->bases[$entry]=$base;
-        }
-    }
+    public function getNameIndex($i) { return $this->entries[$i]; }
     public function statIndex($i) { return $this->statName($this->entries[$i]); }
     public function statName($name) {
         if(!rb_tp_path($name)) return false;
         if(!isset($this->paths[$name])) return false;
         $path=$this->path($name); $base=$this->bases[$name];
-        if(!rb_tp_under($path,$base) || !is_file($path)) return false;
+        $relative=rb_tp_user_absolute($path);
+        if($relative===false) throw new RuntimeException('사이트 밖의 파일 경로는 설치할 수 없습니다.');
+        $part=G5_PATH;
+        foreach(explode('/',$relative) as $piece) {
+            $part.='/'.$piece;
+            if(is_link($part)) throw new RuntimeException('심볼릭 링크는 설치할 수 없습니다.');
+        }
+        if(!file_exists($path)) return false;
+        if(!rb_tp_under($path,$base) || !is_file($path)) throw new RuntimeException('업로드 파일 경로를 확인해 주세요: '.$relative);
         return array('name'=>$name,'size'=>filesize($path));
     }
     private function path($name) { return $this->paths[$name]; }
@@ -881,14 +875,15 @@ function rb_tp_open($file,$updating=false)
         if ($zip->numFiles > 20001) throw new RuntimeException('패키지 파일 개수가 너무 많습니다.');
         $seen = array(); $total = 0;
         for ($i=0; $i<$zip->numFiles; $i++) {
+            $path = $zip->getNameIndex($i);
+            if (!rb_tp_path($path) || isset($seen[strtolower($path)])) throw new RuntimeException('중복되거나 안전하지 않은 압축 경로입니다.');
+            $seen[strtolower($path)] = true;
             $stat = $zip->statIndex($i);
-            if(!$stat) throw new RuntimeException('FTP 파일이 누락되었습니다. 업로드 완료 후 다시 확인해 주세요.');
-            $path = $stat['name'];
-            if (!rb_tp_path($path) || isset($seen[strtolower($path)]) || $stat['size']>512*1024*1024)
-                throw new RuntimeException('중복되거나 안전하지 않은 압축 경로입니다.');
+            if(!$stat) continue;
+            if ($stat['size']>512*1024*1024) throw new RuntimeException('파일 용량은 512MB 이내여야 합니다.');
             $opsys=0; $attr=0; $zip->getExternalAttributesIndex($i,$opsys,$attr);
             if (($attr>>16 & 0170000) === 0120000) throw new RuntimeException('심볼릭 링크는 설치할 수 없습니다.');
-            $seen[strtolower($path)] = true; $total += $stat['size'];
+            $total += $stat['size'];
             if ($total > 2*1024*1024*1024) throw new RuntimeException('패키지 용량은 2GB 이내여야 합니다.');
         }
         $stat = $zip->statName('manifest.json');
@@ -901,10 +896,17 @@ function rb_tp_open($file,$updating=false)
         if(isset($m['identity']) && !rb_tp_identity_valid($m['identity'])) throw new RuntimeException('테마 배포 식별정보가 올바르지 않습니다.');
         if(isset($m['delivery']) && !in_array($m['delivery'],array('new','update'),true)) throw new RuntimeException('배포 방식 정보 오류');
         if (count($m['files'])+1 !== $zip->numFiles) throw new RuntimeException('패키지 파일 목록이 일치하지 않습니다.');
+        $m['missing_files']=array();
         foreach ($m['files'] as $entry=>$info) {
-            if (!rb_tp_path($entry) || !preg_match('~^(theme|deps/(widget|banner)/[a-f0-9]{16}|assets/[a-f0-9]{16}|carousel|custom|topvisual|banner/[0-9]+)/~',$entry))
+            if (!rb_tp_path($entry) || (!preg_match('~^(theme|deps/(widget|banner)/[a-f0-9]{16}|assets/[a-f0-9]{16}|carousel|custom|topvisual|banner/[0-9]+)/~',$entry)
+                && !(rb_tp_original_dependencies($m) && strpos($entry,'user/')===0 && rb_tp_user_path(substr($entry,5)))))
                 throw new RuntimeException('허용하지 않는 패키지 경로입니다.');
             $s = $zip->statName($entry);
+            if(!$s) { $m['missing_files'][$entry]=true; continue; }
+            // 원래 경로의 공용 파일은 FTP에서 사용자가 선택한 내용을 그대로 사용한다.
+            if(rb_tp_original_file($m,$entry)) {
+                continue;
+            }
             if (!$s || !isset($info['size'],$info['sha256']) || $s['size']!==$info['size']
                 || !hash_equals($info['sha256'],$zip->checksum($entry))) throw new RuntimeException('파일이 손상되었거나 FTP 업로드가 끝나지 않았습니다: '.$entry);
         }
@@ -1075,7 +1077,8 @@ function rb_tp_install($zipfile, $requested, $input)
                 if (!isset($m['dependency_paths'][$kind][$key])) throw new RuntimeException('위젯/스킨 업로드 경로가 없습니다.');
                 $uploaded=$m['dependency_paths'][$kind][$key];
                 $original=isset($m['dependency_names'][$kind][$key])?$m['dependency_names'][$kind][$key]:basename($old);
-                $dest=rb_tp_dependency_path($kind,$theme,$original);
+                $dest=rb_tp_original_dependencies($m)?$uploaded:rb_tp_dependency_path($kind,$theme,$original);
+                if(!rb_tp_dependency_valid($kind,$dest)) throw new RuntimeException('위젯/배너 스킨 경로 오류');
                 $label=$kind==='widget'?'위젯':'배너 스킨';
                 if (in_array(strtolower($dest),array_map('strtolower',array_keys($dependencies[$kind])),true))
                     throw new RuntimeException('같은 이름의 '.$label.'이 중복 지정되었습니다: '.$original);
@@ -1091,6 +1094,8 @@ function rb_tp_install($zipfile, $requested, $input)
                 }
             }
         }
+        foreach($m['files'] as $entry=>$info) if(strpos($entry,'user/')===0 && rb_tp_original_file($m,$entry))
+            $targets[$entry]=G5_PATH.'/'.substr($entry,5);
         foreach($m['assets'] as $rel=>$entry) {
             if(!rb_tp_path($rel) || !isset($m['files'][$entry]) || strpos($entry,'assets/')!==0) throw new RuntimeException('이미지 정보 오류');
             $newrel=$theme.'/package/'.substr($entry,7);
@@ -1217,6 +1222,9 @@ function rb_tp_install($zipfile, $requested, $input)
         if(count($targets)!==count($m['files'])) throw new RuntimeException('연결되지 않은 패키지 파일이 있습니다.');
         // 업로드한 테마는 제자리에서 경로만 조정한다. 완료 표시는 모든 처리가 끝난 뒤 기록한다.
         foreach($targets as $entry=>$dest) {
+            if(isset($m['missing_files'][$entry])) continue;
+            // 공용 사용자 파일의 이름/내용은 설치 시 수정하지 않는다. FTP의 선택을 따른다.
+            if(rb_tp_original_file($m,$entry)) continue;
             if(!rb_tp_text_file($entry)) {
                 if(isset($inPlace[$entry])) {
                     if(!hash_equals($m['files'][$entry]['sha256'],$zip->checksum($entry))) throw new RuntimeException('FTP 파일이 설치 중 변경되었습니다.');

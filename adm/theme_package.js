@@ -9,7 +9,9 @@
     var layouts = document.getElementById('rb-tp-layouts');
     var check = document.getElementById('rb-tp-check');
     var install = document.getElementById('rb-tp-install');
-    var busy = false, updating = false, optionalConnections = false, moduleConnections = false;
+    var installActions = install.parentNode, installHome = installActions.parentNode;
+    var layoutReviews = [];
+    var busy = false, optionalConnections = false, moduleConnections = false;
     function moduleTitle(module) {
         var type = (module.type || '모듈').replace('(단일)', '').replace('(탭)', ' 탭');
         return module.title ? module.title + ' (' + type + ')' : type;
@@ -93,29 +95,105 @@
     }
     function renderLayoutPreview(data) {
         var choices = Object.create(null), panels = Object.create(null), buttons = Object.create(null);
+        var pageFields = Object.create(null), pageFieldIndex = 0;
         data.choices.forEach(function (choice, index) { choices[choice.key] = {module:choice, index:index}; });
-        var help = document.createElement('p'); help.className = 'frm_info';
+        var help = document.createElement('p'); help.id = 'rb-tp-layout-guide'; help.className = 'frm_info';
         help.style.cssText = 'display:block; margin:0 0 16px; padding:0; line-height:1.6;';
         [
             '적용될 테마의 레이아웃입니다.',
             '현재 운영 상황에 맞게 각 영역을 선택하여 연결할 게시판 또는 분류 등을 지정할 수 있습니다.',
+            '일반 페이지와 게시판 그룹은 각 레이아웃 위에서 연결할 대상을 선택할 수 있습니다.',
             '지금 연결하지 않아도 테마 설치 후 모듈 설정에서 연결할 수 있습니다.',
             '배너와 위젯은 영역만 표시하며, 실제 콘텐츠와 높이는 표시하지 않습니다.'
         ].forEach(function (line, index) {
             if (index) help.append(document.createElement('br'));
             help.append(document.createTextNode(line));
         });
-        var body = document.createElement('div'), canvas = document.createElement('div'), editor = document.createElement('aside');
-        body.style.cssText = 'display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start;';
-        canvas.style.cssText = 'flex:1 1 600px; min-width:0; overflow-x:auto;';
-        editor.style.cssText = 'flex:0 1 340px; min-width:0; max-width:100%; box-sizing:border-box; position:sticky; top:120px; padding:20px; border:1px solid #d6dce1; background:#fff;';
+        var body = document.createElement('div'), canvas = document.createElement('div'), sidebar = document.createElement('div'), editor = document.createElement('aside');
+        body.style.cssText = 'display:flex; flex-wrap:nowrap; gap:24px; align-items:flex-start;';
+        canvas.style.cssText = 'flex:1 1 640px; min-width:640px; max-width:1025px; padding:0; box-sizing:border-box; overflow-x:auto;';
+        sidebar.style.cssText = 'flex:0 0 340px; min-width:340px; position:sticky; top:120px;';
+        editor.style.cssText = 'box-sizing:border-box; padding:20px; border:1px solid #d6dce1; border-radius:10px; background:#fff;';
         editor.setAttribute('aria-label', '선택한 모듈 연결 설정');
         var empty = document.createElement('p'); empty.className = 'frm_info'; empty.style.cssText = 'margin:0; padding:0;';
         empty.textContent = data.choices.length ? '연결할 모듈 박스를 선택하세요.' : '지금 연결할 모듈이 없습니다. 바로 테마를 설치할 수 있습니다.';
-        editor.append(empty); body.append(canvas, editor); layouts.append(help, body);
+        installActions.style.marginTop = '10px';
+        editor.append(empty); sidebar.append(editor, installActions); body.append(canvas, sidebar); layouts.append(help, body);
+        var layoutTabs = document.createElement('div'), regions = Object.create(null);
+        layoutTabs.setAttribute('role', 'tablist'); layoutTabs.setAttribute('aria-label', '레이아웃 구분');
+        layoutTabs.style.cssText = 'display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;';
+        canvas.append(layoutTabs);
+        function activateLayout(index) {
+            layoutReviews[index].visited = true;
+            layoutReviews.forEach(function (review, i) {
+                var active = i === index;
+                review.panel.hidden = !active;
+                review.panel.style.display = active ? 'block' : 'none';
+                review.button.className = active ? 'btn btn_03' : 'btn btn_02';
+                review.button.style.cssText = active ? '' : 'background:#fff; color:#000; border:1px solid #d6dce1;';
+                review.button.setAttribute('aria-selected', active ? 'true' : 'false');
+                review.button.tabIndex = active ? 0 : -1;
+                review.marker.style.display = review.visited ? 'none' : 'inline-block';
+            });
+            empty.textContent = layoutReviews[index].panel.querySelector('[data-module-key] button[aria-controls]')
+                ? '연결할 모듈 박스를 선택하세요.' : '이 페이지에는 연결할 모듈이 없습니다.';
+            choose(null);
+        }
+        function layoutRegion(key, title, connection) {
+            if (regions[key]) return regions[key];
+            var region = document.createElement('section'), tab = document.createElement('button'), marker = document.createElement('span'), index = layoutReviews.length;
+            region.style.cssText = 'margin-bottom:28px; min-width:640px;';
+            tab.type = 'button'; tab.id = 'rb-tp-layout-tab-' + index; tab.textContent = title;
+            marker.setAttribute('aria-hidden', 'true');
+            marker.style.cssText = 'display:inline-block; width:6px; height:6px; margin-left:6px; border-radius:50%; background:#ff4242; vertical-align:middle;';
+            tab.append(marker);
+            tab.setAttribute('role', 'tab'); tab.setAttribute('aria-controls', tab.id + '-panel');
+            region.id = tab.id + '-panel'; region.hidden = true;
+            region.setAttribute('role', 'tabpanel'); region.setAttribute('aria-labelledby', tab.id);
+            layoutReviews.push({button:tab, panel:region, marker:marker, visited:false});
+            tab.addEventListener('click', function () { if (!busy) activateLayout(index); });
+            tab.addEventListener('keydown', function (event) {
+                if (busy) return;
+                var next = index;
+                if (event.key === 'ArrowRight') next = (index + 1) % layoutReviews.length;
+                else if (event.key === 'ArrowLeft') next = (index + layoutReviews.length - 1) % layoutReviews.length;
+                else if (event.key === 'Home') next = 0;
+                else if (event.key === 'End') next = layoutReviews.length - 1;
+                else return;
+                event.preventDefault(); activateLayout(next); layoutReviews[next].button.focus();
+            });
+            if (connection) {
+                var layoutHeader = document.createElement('div');
+                layoutHeader.style.cssText = 'display:flex; justify-content:flex-start; margin-bottom:14px;';
+                pageConnection(layoutHeader, connection); region.append(layoutHeader);
+            }
+            regions[key] = region; layoutTabs.append(tab); canvas.append(region); return region;
+        }
+        function pageConnection(region, connection) {
+            if (!connection || ['group', 'content'].indexOf(connection.kind) === -1) return;
+            var kind = connection.kind, source = connection.source, key = kind + ':' + source;
+            var options = (data.page_catalogs || {})[kind] || {};
+            var block = document.createElement('div'), label = document.createElement('label'), select = document.createElement('select');
+            block.style.cssText = 'display:flex; align-items:center; gap:8px; flex-shrink:0;';
+            select.id = 'rb-tp-page-' + pageFieldIndex++;
+            select.dataset.pageKind = kind; select.dataset.pageSource = source;
+            label.htmlFor = select.id;
+            label.style.cssText = 'font-weight:normal; white-space:nowrap;';
+            label.textContent = (kind === 'group' ? '연결할 그룹' : '연결할 일반 페이지') + ' (선택)';
+            select.setAttribute('aria-describedby', 'rb-tp-layout-guide');
+            select.add(new Option('선택 안 함 · 원본 ID 유지 (' + source + ')', ''));
+            Object.keys(options).forEach(function (id) { select.add(new Option(options[id] + ' (' + id + ')', id)); });
+            if (!pageFields[key]) pageFields[key] = [];
+            pageFields[key].push(select);
+            select.addEventListener('change', function () {
+                // 같은 원본 페이지의 다른 레이아웃과 마켓 배치도 동일한 대상에 연결한다.
+                pageFields[key].forEach(function (field) { field.value = select.value; });
+            });
+            block.append(label, select); region.append(block);
+        }
         function choose(key) {
             if (busy) return;
-            empty.hidden = true; empty.style.display = 'none';
+            empty.hidden = key !== null; empty.style.display = key === null ? '' : 'none';
             Object.keys(panels).forEach(function (id) {
                 var active = id === key; panels[id].hidden = !active;
                 buttons[id].setAttribute('aria-pressed', active ? 'true' : 'false');
@@ -127,12 +205,12 @@
             width = Math.max(0.1, Math.min(100, width));
             var wrap = document.createElement('div'), box = document.createElement('div');
             wrap.style.cssText = 'flex:0 0 ' + width + '%; max-width:' + width + '%; min-width:0; padding:8px; box-sizing:border-box;';
-            box.style.cssText = 'height:100%; box-sizing:border-box; border:2px solid transparent; border-radius:10px; background:#fff;';
+            box.style.cssText = 'height:100%; box-sizing:border-box; border:2px solid transparent; border-radius:10px; background:#fff; cursor:default;';
             wrap.dataset.moduleKey = node.key;
             var entry = choices[node.key], button = document.createElement(entry && !panels[node.key] ? 'button' : 'div');
-            button.style.cssText = 'display:flex; align-items:center; width:100%; min-width:0; min-height:100px; box-sizing:border-box; padding:20px; border:0; border-radius:10px; background:#fff; color:#344054; text-align:left; overflow-wrap:anywhere; font:inherit;';
+            button.style.cssText = 'display:flex; align-items:center; justify-content:center; width:100%; min-width:0; min-height:100px; box-sizing:border-box; padding:20px; border:0; border-radius:10px; background:#fff; color:#344054; text-align:center; font:inherit;';
             var name = document.createElement('strong');
-            name.style.cssText = 'display:block; line-height:1.5; color:inherit;';
+            name.style.cssText = 'display:block; min-width:0; line-height:1.5; color:inherit; word-break:keep-all; overflow-wrap:break-word;';
             name.textContent = moduleTitle(node); button.append(name);
             if (entry && !panels[node.key]) {
                 button.type = 'button'; button.style.cursor = 'pointer'; button.setAttribute('aria-pressed', 'false');
@@ -143,10 +221,20 @@
                 panels[node.key] = panel; buttons[node.key] = button; editor.append(panel);
                 function refresh() {
                     var count = Array.prototype.filter.call(panel.querySelectorAll('select[data-connection]'), function (select) { return !!select.value; }).length;
-                    name.style.color = count ? '#247044' : 'inherit';
+                    name.style.color = count ? '#3f72d4' : 'inherit';
                 }
                 panel.addEventListener('change', refresh); refresh();
-                button.addEventListener('click', function () { choose(node.key); });
+                box.style.cursor = 'pointer';
+                box.addEventListener('click', function (event) {
+                    // 박스의 빈 공간도 선택하되, 중첩된 다른 모듈의 클릭은 처리하지 않는다.
+                    if (event.target.closest('[data-module-key]') !== wrap) return;
+                    choose(node.key);
+                });
+            } else {
+                // 중첩된 연결 가능 모듈은 흐려지지 않도록 이 영역의 표시만 반투명하게 한다.
+                box.style.background = 'rgba(255,255,255,0.45)';
+                button.style.background = 'transparent';
+                button.style.opacity = '0.45';
             }
             box.append(button);
             if (node.children && node.children.length) {
@@ -183,15 +271,11 @@
             return row;
         }
         data.layout_preview.forEach(function (area) {
-            var region = document.createElement('section');
-            region.style.cssText = 'margin-bottom:28px; min-width:640px;';
             area.layouts.forEach(function (layout) {
-                var heading = document.createElement('h3');
-                heading.style.cssText = 'margin:0 0 14px; padding:0; font-size:14px; font-weight:600; line-height:1.5; color:#344054;';
-                heading.textContent = layout.title || (area.shop ? '마켓 (메인)' : '일반 (메인)');
-                region.append(heading);
+                var region = layoutRegion((area.shop ? 'shop:' : 'general:') + layout.position,
+                    layout.title || (area.shop ? '마켓 (메인)' : '일반 (메인)'), layout.connection);
                 var position = document.createElement(layout.active ? 'div' : 'details');
-                position.style.cssText = 'margin-bottom:20px; padding:20px; background:#f0f5f9; border:0; border-radius:10px;';
+                position.style.cssText = 'margin-bottom:20px; padding:20px 50px; background:#f0f5f9; border:0; border-radius:10px;';
                 if (!layout.active) {
                     var label = document.createElement('summary');
                     label.style.cssText = 'margin-bottom:14px; line-height:1.5; cursor:pointer;';
@@ -199,16 +283,15 @@
                 }
                 position.append(grid(layout.nodes, area.width, true)); region.append(position);
             });
-            canvas.append(region);
         });
         var remaining = data.choices.filter(function (choice) { return !panels[choice.key]; });
         if (remaining.length) {
-            var extra = document.createElement('div'), extraTitle = document.createElement('strong');
-            extraTitle.textContent = '기타 배치'; extraTitle.style.cssText = 'display:block; margin:12px 0;';
-            extra.append(extraTitle, grid(remaining.map(function (choice) {
+            var extra = layoutRegion('other', '기타 배치', null);
+            extra.append(grid(remaining.map(function (choice) {
                 return {kind:'module',key:choice.key,id:choice.id,title:choice.title,type:choice.type,width:100,unit:'%',children:[]};
-            }), 1280)); canvas.append(extra);
+            }), 1280));
         }
+        if (layoutReviews.length) activateLayout(0);
         layouts.hidden = false;
     }
     function request(mode, extra) {
@@ -219,28 +302,31 @@
             .then(function (data) { if (!data.ok) throw new Error(data.message || '처리에 실패했습니다.'); return data; });
     }
     function working(value) { busy = value; check.disabled = value; install.disabled = value; file.disabled = value; if (value) status.hidden = false; }
+    function showError(message) {
+        if (message.indexOf('빌더 DB 업데이트가 필요합니다') === 0) message = '빌더 DB 업데이트가 필요합니다.';
+        status.hidden = false; status.textContent = message; window.alert(message);
+    }
     file.addEventListener('change', function () { details.hidden = true; status.textContent = ''; status.hidden = true; });
     check.addEventListener('click', function () {
         if (root.dataset.installVersionError) { window.alert(root.dataset.installVersionError); return; }
-        if (busy || !file.value) { if (!file.value) { status.hidden = false; status.textContent = 'FTP로 올린 테마 폴더를 선택해 주세요.'; } return; }
+        if (busy || !file.value) { if (!file.value) showError('FTP로 올린 테마 폴더를 선택해 주세요.'); return; }
         working(true); details.hidden = true; status.textContent = '테마 파일과 모듈을 확인하고 있습니다…';
         request('inspect').then(function (data) {
             document.getElementById('rb-tp-name').textContent = data.name;
             document.getElementById('rb-tp-theme').value = data.theme;
-            updating = data.updating;
             optionalConnections = data.optional_connections === true;
             moduleConnections = data.module_connections === true;
-            install.textContent = updating ? '업데이트 반영' : '테마 설치';
-            document.getElementById('rb-tp-install-guide').textContent = updating
-                ? 'FTP로 올린 파일의 경로 연결을 반영합니다. 기존 모듈·섹션·스킨 선택·캐러셀·배너 설정과 개별 CSS는 유지합니다.'
-                : '현재 업로드된 폴더명을 기준으로 설치합니다. 폴더명을 바꾸셨다면 새로고침 후 다시 선택하세요.';
-            document.getElementById('rb-tp-map-guide').hidden = updating || !data.choices.length;
-            document.getElementById('rb-tp-shop-guide').hidden = updating || data.shop_enabled !== false;
+            document.getElementById('rb-tp-install-guide').textContent = '현재 업로드된 폴더명을 기준으로 설치합니다. 폴더명을 바꾸셨다면 새로고침 후 다시 선택하세요.';
+            var hasPageConnections = Object.keys(data.page_catalogs || {}).length > 0;
+            document.getElementById('rb-tp-shop-guide').hidden = data.shop_enabled !== false;
             mappings.replaceChildren();
+            layoutReviews = [];
+            // 확인을 반복하거나 이전 배포 자료로 바꿔도 동일한 설치 버튼과 이벤트를 유지한다.
+            installHome.append(installActions); installActions.style.marginTop = '20px';
             layouts.replaceChildren(); layouts.hidden = true;
             var labels = {board: '게시판', content: '내용 페이지', form: '폼', poll: '설문', category: '상품 분류', group: '게시판 그룹', item: '상품', event: '이벤트'};
             var currentArea = '';
-            var visual = !updating && moduleConnections && Array.isArray(data.layout_preview);
+            var visual = moduleConnections && Array.isArray(data.layout_preview);
             if (visual) renderLayoutPreview(data);
             (visual ? [] : data.choices).forEach(function (choice, index) {
                 if (moduleConnections) {
@@ -289,15 +375,23 @@
                 row.append(heading, cell);
                 mappings.append(row);
             });
-            details.hidden = false; status.textContent = updating ? '업로드 자료를 확인했습니다. 업데이트 반영을 눌러 주세요.'
-                : (data.choices.length ? (optionalConnections ? '필요한 모듈만 연결하거나, 바로 테마 설치를 눌러 주세요.' : '이전 배포 자료의 연결 정보를 확인한 뒤 설치해 주세요.') : '테마 자료를 확인했습니다. 테마 설치를 눌러 주세요.');
-        }).catch(function (e) { status.textContent = e.message; }).finally(function () { working(false); });
+            details.hidden = false; status.textContent = layoutReviews.length ? '각 페이지 탭을 확인한 뒤 테마 설치를 눌러 주세요. 연결 설정은 선택 사항입니다.'
+                : (data.choices.length || hasPageConnections ? (optionalConnections ? '필요한 배치·모듈만 연결하거나, 바로 테마 설치를 눌러 주세요.' : '이전 배포 자료의 연결 정보를 확인한 뒤 설치해 주세요.') : '테마 자료를 확인했습니다. 테마 설치를 눌러 주세요.');
+        }).catch(function (e) { showError(e.message); }).finally(function () { working(false); });
     });
-    install.addEventListener('click', function () {
+    install.addEventListener('click', async function () {
         if (root.dataset.installVersionError) { window.alert(root.dataset.installVersionError); return; }
         if (busy) return;
+        var unreviewed = layoutReviews.filter(function (review) { return !review.visited; });
+        if (unreviewed.length) {
+            showError('확인하지않은 페이지가 있습니다.\n각 페이지를 확인해주세요.'); unreviewed[0].button.focus(); return;
+        }
         var maps = moduleConnections ? {modules:{}} : {}, missing = false;
         if (moduleConnections) {
+            details.querySelectorAll('select[data-page-kind]').forEach(function (select) {
+                if (!maps[select.dataset.pageKind]) maps[select.dataset.pageKind] = Object.create(null);
+                maps[select.dataset.pageKind][select.dataset.pageSource] = select.value;
+            });
             details.querySelectorAll('select[data-connection]').forEach(function (select) {
                 maps.modules[select.dataset.connection] = {target:select.value, category:''};
             });
@@ -309,18 +403,17 @@
             if (!maps[select.dataset.kind]) maps[select.dataset.kind] = {};
             maps[select.dataset.kind][select.dataset.source] = select.value;
         });
-        if (missing) { status.textContent = '연결할 항목을 모두 선택해 주세요.'; return; }
-        working(true); status.textContent = updating ? '업데이트 파일의 경로 연결을 반영하고 있습니다…' : '테마를 설치하고 있습니다. 완료될 때까지 기다려 주세요…';
-        request('install', {theme: document.getElementById('rb-tp-theme').value, maps: JSON.stringify(maps)})
-            .then(function (data) {
-                if (data.updating) {
-                    details.hidden = true; status.textContent = '업데이트 반영 완료: ' + data.theme + '. 기존 설정을 유지했습니다.';
-                    file.remove(file.selectedIndex); file.value = '';
-                    if (file.options.length === 1) { root.before(status); root.remove(); }
-                }
-                else { status.textContent = '설치 완료: ' + data.theme + '. 아래 목록에서 테마적용을 눌러 주세요.'; window.location.href = './theme.php?installed=' + encodeURIComponent(data.theme); }
-            })
-            .catch(function (e) { status.textContent = e.message + ' 설치 목록을 확인한 뒤 다시 시도해 주세요.'; })
-            .finally(function () { working(false); });
+        if (missing) { showError('연결할 항목을 모두 선택해 주세요.'); return; }
+        working(true);
+        try {
+            if (!await window.rb_confirm('테마를 설치하시겠습니까?\n테마 설치후 모듈설정에서 추가 매핑(연결)이 가능합니다.')) return;
+            status.textContent = '테마를 설치하고 있습니다. 완료될 때까지 기다려 주세요…';
+            var data = await request('install', {theme: document.getElementById('rb-tp-theme').value, maps: JSON.stringify(maps)});
+            status.textContent = '설치 완료: ' + data.theme + '. 아래 목록에서 테마적용을 눌러 주세요.'; window.location.href = './theme.php?installed=' + encodeURIComponent(data.theme);
+        } catch (e) {
+            showError(e.message + ' 설치 목록을 확인한 뒤 다시 시도해 주세요.');
+        } finally {
+            working(false);
+        }
     });
 }());

@@ -19,7 +19,7 @@ if (!function_exists('rb_module_has_connection')) {
         if($kind!=='' && !isset($catalogs[$kind])) $catalogs[$kind]=rb_tp_catalog($kind);
         if ($type==='latest') return !empty($module['md_bo_table']) && isset($catalogs['board'][$module['md_bo_table']]);
         if ($type==='poll') return !empty($module['md_poll_id']) && isset($catalogs['poll'][$module['md_poll_id']]);
-        if ($type==='item' && !empty($module['md_sca'])) return isset($catalogs['category'][$module['md_sca']]);
+        if ($type==='item') return !empty($module['md_sca']) && isset($catalogs['category'][$module['md_sca']]);
         if ($type==='tab' || $type==='item_tab') {
             $field=$type==='tab'?'md_tab_list':'md_item_tab_list';
             $tabs=isset($module[$field])?json_decode($module[$field],true):null;
@@ -31,8 +31,30 @@ if (!function_exists('rb_module_has_connection')) {
             }
             return true;
         }
-        // 일반 상품 모듈은 분류 미지정 시 전체 상품을 표시하는 기존 동작을 유지한다.
         return true;
+    }
+}
+
+if (!function_exists('rb_module_unconnected_html')) {
+    function rb_module_unconnected_html(array $module, $is_admin = false)
+    {
+        // 연결 데이터가 없어도 저장된 제목과 제목 표시 설정은 유지한다.
+        ob_start();
+        if (isset($module['md_title']) && $module['md_title'] !== '') {
+            $font = !empty($module['md_title_font']) ? $module['md_title_font'] : 'font-B';
+            $color = !empty($module['md_title_color']) ? $module['md_title_color'] : '#25282b';
+            $size = isset($module['md_title_size']) && $module['md_title_size'] !== '' ? $module['md_title_size'] : '20';
+            ?>
+            <li class="bbs_main_wrap_tit" style="display:<?php echo isset($module['md_title_hide']) && $module['md_title_hide'] == '1' ? 'none' : 'block'; ?>;">
+                <div class="bbs_main_wrap_tit_l">
+                    <h2 class="<?php echo htmlspecialchars($font, ENT_QUOTES, 'UTF-8'); ?>" style="color:<?php echo htmlspecialchars($color, ENT_QUOTES, 'UTF-8'); ?>; font-size:<?php echo htmlspecialchars((string)$size, ENT_QUOTES, 'UTF-8'); ?>px;"><?php echo $module['md_title']; ?></h2>
+                </div>
+                <div class="cb"></div>
+            </li>
+            <?php
+        }
+        if ($is_admin) { ?><li class="no_data">모듈 설정에서 연결해 주세요.</li><?php }
+        return ob_get_clean();
     }
 }
 
