@@ -326,12 +326,8 @@ function rb_tp_main_data($data)
 }
 function rb_tp_main_settings($data)
 {
-    // 테마 공통 설정 중 서브페이지 전용 값은 배포하지 않는다.
-    foreach($data['rb_config'] as &$row) {
-        foreach(array_keys($row) as $key)
-            if(preg_match('~\Aco_(?:sub(?:_|$)|side(?:menu|_skin)(?:_|$)|padding_(?:top|btm)_sub(?:_|$)|topvisual(?:_|$))~',$key)) unset($row[$key]);
-    }
-    unset($row);
+    // rb_config는 테마별 공통 환경설정이다. 폭/여백/배경/사이드 기본값을 그대로 보존한다.
+    // 페이지별 상하단·사이드 모듈과 상단영역 설정은 별도 배치/데이터 필터에서 제외한다.
     // 메인 캐러셀 이미지/문구는 유지하되 서브페이지 공통 배경 지정은 제외한다.
     foreach($data['rb_theme_carousel'] as &$row) unset($row['is_sub']);
     unset($row);
@@ -935,7 +931,7 @@ function rb_tp_open($file,$updating=false)
         if (isset($m['scope']) && $m['scope']==='main-design'
             && ($m['boards'] || !empty($m['topvisual']) || rb_tp_main_data($m['data'])!==$m['data']))
             throw new RuntimeException('디자인 자료에 게시판 설정, 제외된 서브 영역 또는 부모 모듈이 없는 배치가 포함되어 있습니다. 테마를 다시 내보내 주세요.');
-        // 이전 메인 디자인 패키지에 남아 있는 서브 공통 설정도 설치 시 전달하지 않는다.
+        // 환경설정은 그대로 설치하고, 폐지된 캐러셀 서브 배경 지정만 제외한다.
         if(isset($m['scope']) && $m['scope']==='main-design') $m['data']=rb_tp_main_settings($m['data']);
         // 이전 배포본의 스킨 프로필만 호환한다. 새 배포본은 이 정보를 저장하지 않는다.
         foreach($m['boards'] as $id=>$profile) {

@@ -34,7 +34,7 @@ main {width: 100%; background-color: #fff; height:100%;}
 label {word-break: keep-all !important;}
 #header {background-color: rgba(255,255,255,0.5); border-bottom: 0px; padding-top: 20px; padding-bottom: 5px; position: fixed; top:0px; left: 0px; width: 100%; z-index: 98; box-shadow: 0px 0px 20px rgba(0,0,0,0.05);}
 .main_sec1 {margin-bottom: 50px; box-sizing: border-box;}
-.no_data {padding-top: 80px !important; padding-bottom: 110px !important; text-align: center; line-height: 140%; margin-top: 30px; border-bottom: 1px solid #eee; color:#999; border-top:0px !important;}
+.no_data {padding-top: 80px !important; padding-bottom: 110px !important; text-align: center; line-height: 140%; margin-top: 30px; border-bottom: 0px solid #eee; color:#999; border-top:0px !important;}
 /* } */
 
 /* { */

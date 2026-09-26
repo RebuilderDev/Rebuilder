@@ -115,7 +115,7 @@ if(defined('_INDEX_') || isset($_GET['gr_id']) && $_GET['gr_id'] || isset($co_id
 
         <?php
         add_stylesheet('<link rel="stylesheet" href="'.G5_THEME_URL.'/rb.theme/css/style.css?ver='.G5_SERVER_TIME.'">', 0);
-        add_javascript('<script src="'.G5_THEME_URL.'/rb.theme/js/rb.carousel.js?ver=3"></script>', 0);
+        add_javascript('<script src="'.G5_THEME_URL.'/rb.theme/js/rb.carousel.js?ver=4"></script>', 0);
         ?>
 
         <?php

@@ -35,6 +35,8 @@
             var rb_easing = rb_defaults.easing;
             var rb_canAnimate = 1;
             var rb_autoRollingInterval;
+            var rb_touch = null;
+            var rb_suppressClickUntil = 0;
 
             if (rb_transitionType == 'slide') {
                 rb_slides.eq(0).nextAll().css({
@@ -44,10 +46,10 @@
             }
 
             setTimeout(function() {
-                rb_slides.eq(0).addClass('on motion')
+                rb_slides.eq(rb_currentIndex).addClass('on motion')
             }, 100);
 
-            if (rb_slideCount == 1) {
+            if (rb_slideCount <= 1) {
                 rb_btnPrev.hide();
                 rb_btnNext.hide();
                 rb_btnWrapper.hide();
@@ -63,6 +65,7 @@
             rb_paginationBtns.eq(rb_currentIndex).addClass('on');
 
             rb_paginationBtns.bind('click', function() {
+                if (!rb_canAnimate) return;
                 var rb_clickedIndex = rb_paginationBtns.index($(this));
                 if (rb_clickedIndex > rb_currentIndex) {
                     rb_direction = "next"
@@ -77,30 +80,73 @@
             });
 
             rb_btnPrev.bind('click', function() {
-                if (rb_canAnimate) {
-                    rb_direction = "prev";
-                    rb_currentIndex--;
-                    if (rb_currentIndex < 0) {
-                        rb_currentIndex = rb_slideCount - 1
-                    };
-                    rb_userInteracted = 1;
-                    rb_canAnimate = 0;
-                    rb_changeSlide()
-                }
+                rb_moveSlide('prev', true)
             });
 
             rb_btnNext.bind('click', function() {
-                if (rb_canAnimate) {
-                    rb_direction = "next";
-                    rb_currentIndex++;
-                    if (rb_currentIndex > rb_slideCount - 1) {
-                        rb_currentIndex = 0
-                    };
-                    rb_userInteracted = 1;
-                    rb_canAnimate = 0;
-                    rb_changeSlide()
-                }
+                rb_moveSlide('next', true)
             });
+
+            function rb_moveSlide(direction, interacted) {
+                if (!rb_canAnimate) return;
+                rb_direction = direction;
+                rb_currentIndex = (rb_currentIndex + (direction === 'next' ? 1 : -1) + rb_slideCount) % rb_slideCount;
+                if (interacted) rb_userInteracted = 1;
+                rb_changeSlide()
+            }
+
+            // 세로 스크롤과 확대는 브라우저에 맡기고, 한 손가락의 좌우 이동만 처리한다.
+            var rb_touchArea = rb_imageWrapper[0];
+            rb_touchArea.style.touchAction = 'pan-y pinch-zoom';
+            function rb_findTouch(touches, id) {
+                for (var i = 0; i < touches.length; i++) {
+                    if (touches[i].identifier === id) return touches[i];
+                }
+                return null;
+            }
+            rb_touchArea.addEventListener('touchstart', function(event) {
+                rb_touch = null;
+                if (event.touches.length !== 1 || !rb_canAnimate) return;
+                var touch = event.touches[0];
+                rb_touch = {id: touch.identifier, x: touch.clientX, y: touch.clientY, axis: ''};
+                rb_suppressClickUntil = 0;
+                rb_userInteracted = 1;
+            }, {passive: true});
+            rb_touchArea.addEventListener('touchmove', function(event) {
+                if (!rb_touch) return;
+                if (event.touches.length !== 1) { rb_touch = null; return; }
+                var touch = rb_findTouch(event.touches, rb_touch.id);
+                if (!touch) { rb_touch = null; return; }
+                var dx = Math.abs(touch.clientX - rb_touch.x);
+                var dy = Math.abs(touch.clientY - rb_touch.y);
+                if (!rb_touch.axis && Math.max(dx, dy) >= 10) rb_touch.axis = dx > dy * 1.2 ? 'x' : 'y';
+                if (rb_touch.axis === 'x' && event.cancelable) event.preventDefault();
+            }, {passive: false});
+            rb_touchArea.addEventListener('touchend', function(event) {
+                if (!rb_touch) return;
+                var gesture = rb_touch;
+                rb_touch = null;
+                if (event.touches.length) return;
+                var touch = rb_findTouch(event.changedTouches, gesture.id);
+                if (!touch) return;
+                var dx = touch.clientX - gesture.x;
+                var dy = touch.clientY - gesture.y;
+                var horizontal = gesture.axis === 'x' || (!gesture.axis && Math.abs(dx) > Math.abs(dy) * 1.2 && Math.abs(dx) >= 10);
+                if (!horizontal) return;
+                // 스와이프가 끝난 뒤 합성되는 클릭으로 배너 링크가 열리는 것을 막는다.
+                rb_suppressClickUntil = Date.now() + 500;
+                var threshold = Math.max(40, Math.min(80, rb_touchArea.clientWidth * 0.08));
+                if (Math.abs(dx) >= threshold) rb_moveSlide(dx < 0 ? 'next' : 'prev', true);
+            }, {passive: true});
+            rb_touchArea.addEventListener('touchcancel', function() {
+                rb_touch = null;
+            }, {passive: true});
+            rb_touchArea.addEventListener('click', function(event) {
+                if (Date.now() < rb_suppressClickUntil && event.detail !== 0) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                }
+            }, true);
 
             $.easing.easeInOutExpo = function(rb_x, rb_t, rb_b, rb_c, rb_d) {
                 if (rb_t == 0) {
@@ -116,6 +162,7 @@
             };
 
             function rb_changeSlide() {
+                rb_canAnimate = 0;
                 var rb_currentSlide = rb_slides.eq(rb_currentIndex);
                 var rb_previousSlide = rb_slides.eq(rb_prevIndex);
 
@@ -142,9 +189,10 @@
                 } else if (rb_transitionType == "fade") {
                     rb_currentSlide.stop(true, true).fadeIn(rb_speed);
                     setTimeout(function() {
-                        rb_previousSlide.stop(true, true).fadeOut(rb_speed)
+                        rb_previousSlide.stop(true, true).fadeOut(rb_speed, function() {
+                            rb_canAnimate = 1
+                        })
                     }, 100);
-                    rb_canAnimate = 1
                 } else {
                     rb_canAnimate = 1
                 }
@@ -161,13 +209,9 @@
             };
 
             function rb_autoRolling() {
+                if (rb_touch || !rb_canAnimate) return;
                 if (rb_userInteracted == 0) {
-                    rb_direction = "next";
-                    rb_currentIndex++;
-                    if (rb_currentIndex >= rb_slideCount) {
-                        rb_currentIndex = 0
-                    };
-                    rb_changeSlide()
+                    rb_moveSlide('next', false)
                 };
                 rb_userInteracted = 0
             };
