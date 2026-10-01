@@ -27,6 +27,18 @@ foreach($check_keys as $key){
 
 if ($w == "u")
 {
+    // 5.6.12 등 답변 컬럼이 없는 코어는 권한·토큰 검증을 마친 저장 요청에서만 보완한다.
+    $reply_columns = array('is_reply_subject'=>"VARCHAR(255) NOT NULL DEFAULT ''",
+        'is_reply_content'=>'TEXT NOT NULL', 'is_reply_name'=>"VARCHAR(255) NOT NULL DEFAULT ''");
+    $reply_add = array();
+    foreach ($reply_columns as $column=>$definition) {
+        if (!rb_core_table_has_column($g5['g5_shop_item_use_table'], $column)) {
+            $reply_add[] = 'ADD COLUMN `'.$column.'` '.$definition;
+        }
+    }
+    if ($reply_add && !sql_query('ALTER TABLE `'.$g5['g5_shop_item_use_table'].'` '.implode(', ', $reply_add), false)) {
+        alert('사용후기 답변 저장에 필요한 DB 구조를 추가하지 못했습니다. DB 권한을 확인해 주세요.');
+    }
     $sql = "update {$g5['g5_shop_item_use_table']}
                set is_subject = '".$posts['is_subject']."',
                    is_content = '".$posts['is_content']."',

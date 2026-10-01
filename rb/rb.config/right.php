@@ -3368,7 +3368,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
 
             $(".rb_layout_box").on("mouseup", function() {});
 
-            // 저장(모듈 모드에서는 기존 로직 유지)
+            // 모듈과 섹션을 화면상의 공통 순서로 함께 저장한다.
             $("#saveOrderButton").off("click").on("click", function() {
                 <?php if($is_admin) { ?><?php } else { ?>
                 alert('편집 권한이 없습니다.');
@@ -3390,7 +3390,25 @@ foreach ($rb_side_panels as $rb_side_panel) {
                 }
 
                 var modStates = [];
+                var secOrder = [];
                 var idx = 1;
+
+                // 렌더링은 모듈과 섹션의 순번을 합쳐 정렬하므로 같은 기준을 사용한다.
+                $(".flex_box").each(function() {
+                    $(this).children(".rb_layout_box, .rb_section_box").each(function() {
+                        var $item = $(this);
+                        var id = parseInt($item.attr('data-id'), 10);
+                        if (!id) return;
+
+                        $item.attr('data-order-id', idx).data('order-id', idx);
+                        if ($item.hasClass('rb_section_box')) {
+                            secOrder.push({ id: id, order_id: idx });
+                            // 새 섹션 순번으로 UID를 먼저 갱신한 뒤 모듈 정보를 수집한다.
+                            propagateSectionAttrs($item);
+                        }
+                        idx++;
+                    });
+                });
 
                 $(".flex_box").each(function() {
                     $(this).children(".rb_layout_box").each(function() {
@@ -3420,12 +3438,11 @@ foreach ($rb_side_panels as $rb_side_panel) {
 
                         modStates.push({
                             id: modId,
-                            order_id: idx,
+                            order_id: parseInt($mod.attr('data-order-id'), 10),
                             layout: layout,
                             sec_key: secKey,
                             sec_uid: secUid
                         });
-                        idx++;
                     });
                 });
 
@@ -3443,6 +3460,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
                         dataType: 'json',
                         data: {
                             mods: JSON.stringify(modStates),
+                            sections: JSON.stringify(secOrder),
                             mod_type: "mod_sync_state",
                             <?php if (defined('_SHOP_')) { ?>
                             is_shop: "1"

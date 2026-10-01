@@ -20,10 +20,18 @@ function rb_tp_include_expression($tokens,$from)
     $depth=0; $out=array();
     for($i=$from;$i<count($tokens);$i++) {
         $t=$tokens[$i]; $s=$t['text'];
-        if($depth===0 && ($s===';' || $s===',' || $s===')' || $t['id']===T_CLOSE_TAG
+        if($s==='"' || $t['id']===T_START_HEREDOC) {
+            $heredoc=$t['id']===T_START_HEREDOC; $out[]=$t;
+            while(isset($tokens[++$i])) {
+                $out[]=$tokens[$i];
+                if($heredoc?$tokens[$i]['id']===T_END_HEREDOC:$tokens[$i]['text']==='"') break;
+            }
+            continue;
+        }
+        if($depth===0 && ($s===';' || $s===',' || $s===')' || $s===']' || $t['id']===T_CLOSE_TAG
             || in_array($t['id'],array(T_LOGICAL_OR,T_LOGICAL_AND),true))) break;
-        if($s==='(') $depth++;
-        if($s===')') $depth--;
+        if($s==='(' || $s==='[') $depth++;
+        if($s===')' || $s===']') $depth--;
         if($depth<0 || $s==='{') break;
         $out[]=$t;
     }
@@ -37,7 +45,9 @@ function rb_tp_include_value($tokens,$file,$theme,$variables,$pattern=false)
         'G5_PLUGIN_PATH'=>G5_PATH.'/plugin','G5_SHOP_PATH'=>G5_PATH.'/shop','G5_MOBILE_PATH'=>G5_PATH.'/mobile',
         'G5_EXTEND_PATH'=>G5_PATH.'/extend',
         'G5_THEME_MOBILE_PATH'=>G5_PATH.'/theme/'.$theme.'/mobile','DIRECTORY_SEPARATOR'=>'/',
-        'G5_URL'=>G5_URL,'G5_THEME_URL'=>G5_URL.'/theme/'.$theme,'G5_DATA_URL'=>G5_DATA_URL);
+        'G5_URL'=>G5_URL,'G5_THEME_URL'=>G5_URL.'/theme/'.$theme,'G5_DATA_URL'=>G5_DATA_URL,
+        'G5_PLUGIN_URL'=>G5_URL.'/plugin','G5_BBS_URL'=>G5_URL.'/bbs','G5_SHOP_URL'=>G5_URL.'/shop',
+        'G5_MOBILE_URL'=>G5_URL.'/mobile','G5_THEME_MOBILE_URL'=>G5_URL.'/theme/'.$theme.'/mobile');
     $atom=function()use(&$i,&$read,&$atom,$tokens,$file,$paths,$variables,$pattern) {
         if(!isset($tokens[$i])) return null;
         $t=$tokens[$i++]; $s=$t['text'];
@@ -52,8 +62,35 @@ function rb_tp_include_value($tokens,$file,$theme,$variables,$pattern=false)
         }
         if($t['id']===T_DIR) return str_replace('\\','/',dirname($file));
         if($t['id']===T_FILE) return str_replace('\\','/',$file);
-        if($t['id']===T_VARIABLE) return isset($variables[$s])?$variables[$s]:($pattern?'*':null);
+        if($t['id']===T_VARIABLE) {
+            $value=isset($variables[$s])?$variables[$s]:($pattern?'*':null);
+            while(isset($tokens[$i]) && $tokens[$i]['text']==='[') {
+                $level=0; $value=$pattern?'*':null;
+                do {
+                    $part=$tokens[$i++]['text'];
+                    if($part==='[') $level++; elseif($part===']') $level--;
+                } while(isset($tokens[$i]) && $level>0);
+                if($level!==0) return null;
+            }
+            return $value;
+        }
         if($t['id']===T_STRING && isset($paths[$s])) return $paths[$s];
+        if($t['id']===T_STRING && in_array(strtolower($s),array('htmlspecialchars','htmlentities','json_encode'),true)
+            && isset($tokens[$i]) && $tokens[$i]['text']==='(') {
+            // 출력용 인코딩 함수는 실행 없이 첫 문자열 인자만 해석한다.
+            $i++; $value=$read();
+            if(isset($tokens[$i]) && $tokens[$i]['text']===',') {
+                $depth=0;
+                while(isset($tokens[$i])) {
+                    $next=$tokens[$i]['text'];
+                    if($next===')' && $depth===0) break;
+                    if($next==='(') $depth++; elseif($next===')') $depth--;
+                    $i++;
+                }
+            }
+            if(!isset($tokens[$i]) || $tokens[$i++]['text']!==')' || $value===null) return null;
+            return strtolower($s)==='json_encode'?json_encode($value):$value;
+        }
         if($t['id']===T_STRING && strtolower($s)==='dirname' && isset($tokens[$i]) && $tokens[$i++]['text']==='(') {
             $value=$read(); $levels=1;
             if(isset($tokens[$i]) && $tokens[$i]['text']===',') {
@@ -63,12 +100,21 @@ function rb_tp_include_value($tokens,$file,$theme,$variables,$pattern=false)
             if($value===null || $levels<1 || $levels>30 || !isset($tokens[$i]) || $tokens[$i++]['text']!==')') return null;
             return str_replace('\\','/',dirname($value,$levels));
         }
-        if($pattern && $s==='"') {
+        if($pattern && ($s==='"' || $t['id']===T_START_HEREDOC)) {
             $value='';
-            while(isset($tokens[$i]) && $tokens[$i]['text']!=='"') {
+            $heredoc=$t['id']===T_START_HEREDOC;
+            while(isset($tokens[$i]) && ($heredoc?$tokens[$i]['id']!==T_END_HEREDOC:$tokens[$i]['text']!=='"')) {
                 $part=$tokens[$i++];
-                if($part['id']===T_ENCAPSED_AND_WHITESPACE) $value.=$part['text'];
-                elseif($part['id']===T_VARIABLE) $value.=isset($variables[$part['text']])?$variables[$part['text']]:'*';
+                if($part['id']===T_ENCAPSED_AND_WHITESPACE) $value.=stripcslashes($part['text']);
+                elseif($part['id']===T_VARIABLE) {
+                    $piece=isset($variables[$part['text']])?$variables[$part['text']]:'*';
+                    if(isset($tokens[$i]) && $tokens[$i]['text']==='[') {
+                        $piece='*'; $level=0;
+                        do { $next=$tokens[$i++]['text']; if($next==='[') $level++; elseif($next===']') $level--; }
+                        while(isset($tokens[$i]) && $level>0);
+                    }
+                    $value.=$piece;
+                }
             }
             if(!isset($tokens[$i])) return null;
             $i++; return $value;
@@ -103,12 +149,14 @@ function rb_tp_original_file($m,$entry)
 {
     return rb_tp_original_dependencies($m) && (strpos($entry,'deps/')===0 || strpos($entry,'user/')===0);
 }
-function rb_tp_user_path($path)
+function rb_tp_user_path($path,$image=false)
 {
     if(!rb_tp_path($path)) return false;
     // 인증/운영 데이터는 사용자 코드의 참조가 있어도 패키지에 포함하지 않는다.
     if(preg_match('~(?:^|/)(?:\.[^/]+|dbconfig\.php|config\.php|shop\.config\.php|rb-package(?:\.json)?|node_modules|tests|sessions?|cache|logs?|backups?)(?:/|$)~i',$path)) return false;
-    if(preg_match('~\A(?:data/(?:member|file|editor|qa|session|cache|rb\.backup|rb\.theme-publish)/|install/)~i',$path)) return false;
+    if(preg_match('~\A(?:data/(?:session|cache|rb\.backup|rb\.theme-publish)/|install/)~i',$path)) return false;
+    // 업로드 자료는 코드에서 정확한 파일을 지정한 이미지에 한해서만 포함한다.
+    if(preg_match('~\Adata/(?:member|file|editor|qa)/~i',$path) && !($image && rb_tp_image_reference($path))) return false;
     if(preg_match('~(?:^|/)(?:[^/]*(?:credential|secret|password)[^/]*|composer\.lock|package-lock\.json)$~i',$path)) return false;
     return (bool)preg_match('/\.(php|inc|css|scss|sass|less|js|mjs|json|html?|txt|md|svg|xml|png|jpe?g|gif|webp|ico|avif|woff2?|ttf|otf|eot|mp4|webm|mp3|wav|ogg|pdf|map)$/i',$path);
 }
@@ -300,8 +348,11 @@ function rb_tp_reference_path($value,$file)
         if($value[0]!=='/' || is_file($value)) return false;
         $urlBase=rtrim((string)parse_url(G5_URL,PHP_URL_PATH),'/');
         if($urlBase!=='' && strpos($value,$urlBase.'/')===0) $value=substr($value,strlen($urlBase));
-        return rb_tp_user_absolute(G5_PATH.$value);
+        return rb_tp_user_absolute(G5_PATH.rawurldecode($value));
     }
+    $relative=rb_tp_user_absolute(dirname($file).'/'.$value);
+    if($relative!==false && (is_file(G5_PATH.'/'.$relative) || strpos($relative,'*')!==false)) return $relative;
+    $value=rawurldecode($value);
     $relative=rb_tp_user_absolute(dirname($file).'/'.$value);
     if($relative!==false && (is_file(G5_PATH.'/'.$relative) || strpos($relative,'*')!==false)) return $relative;
     $rootRelative=rb_tp_user_absolute(G5_PATH.'/'.$value);
@@ -320,6 +371,120 @@ function rb_tp_external_reference($value)
     // 요청 본문/메모리/외부 스트림은 배포할 로컬 사용자 파일이 아니다.
     return (bool)preg_match('~\A(?:php|data|https?|ftp|ftps|s3|gs)://~i',$value) && !preg_match('~\Ahttps?://~i',$value);
 }
+function rb_tp_image_reference($value)
+{
+    return is_string($value) && (bool)preg_match('~\.(?:png|jpe?g|gif|webp|svg|ico|avif)(?:[?#].*)?\z~i',trim($value));
+}
+function rb_tp_data_references($text)
+{
+    $text=str_replace('\\/','/',$text);
+    $base=rtrim((string)parse_url(G5_DATA_URL,PHP_URL_PATH),'/').'/';
+    // 전체 URL을 먼저 읽어 외부 도메인에 붙은 /data 경로를 로컬 자료로 오인하지 않는다.
+    $pattern='~(?:https?:)?//[^\s"\'<>\\\\)]+|(?<![\w./:\\-])'.preg_quote($base,'~').'[^\s"\'<>\\\\)]+~iu';
+    preg_match_all($pattern,$text,$matches);
+    $out=array();
+    foreach($matches[0] as $url) {
+        if(rb_tp_external_reference($url)) continue;
+        $path=parse_url(html_entity_decode($url,ENT_QUOTES,'UTF-8'),PHP_URL_PATH);
+        if(is_string($path) && strpos($path,$base)===0) $out[]=rawurldecode(substr($path,strlen($base)));
+    }
+    return array_values(array_unique($out));
+}
+function rb_tp_resource_text($text,$emit)
+{
+    if(!is_string($text) || $text==='') return;
+    // HTML 속성은 따옴표 유무와 지연 로딩 속성을 함께 읽는다.
+    preg_match_all('~(?<![\w.-])(data-[\w:-]+|srcset|src|href|xlink:href|poster|background)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\'<>`=]+))~i',$text,$attributes,PREG_SET_ORDER);
+    foreach($attributes as $attr) {
+        $name=strtolower($attr[1]);
+        $value=html_entity_decode(isset($attr[4])?$attr[4]:((isset($attr[3]) && $attr[3]!=='')?$attr[3]:$attr[2]),ENT_QUOTES,'UTF-8');
+        if(strpos($name,'srcset')!==false) {
+            // URL을 먼저 읽고 w/x 설명자는 건너뛴다. data URL의 쉼표를 파일 경로로 해석하지 않는다.
+            preg_match_all('~(?:^|,)\s*(data:[^\s]+|[^\s,]+)(?:\s+[^,]*)?~i',$value,$candidates);
+            foreach($candidates[1] as $candidate) {
+                if(stripos($candidate,'data:')===0) continue;
+                $emit($candidate,true);
+            }
+        } elseif(strpos($name,'data-')!==0 || strpos($name,'src')!==false || rb_tp_image_reference($value))
+            $emit($value,rb_tp_image_reference($value) || (strpos($name,'src')!==false && strpos($value,'*')!==false));
+    }
+    preg_match_all('~\burl\(\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s\)]+))\s*\)|@import\s*["\']([^"\']+)|\b(?:from|import)\s*["\']([^"\']+)|\b(?:fetch|import)\(\s*["\']([^"\']+)~i',$text,$resources,PREG_SET_ORDER);
+    foreach($resources as $resource) {
+        foreach(array_slice($resource,1) as $value) if($value!=='') { $emit($value,rb_tp_image_reference($value)); break; }
+    }
+    // PHP/JS의 이미지 변수, 배열 값, JSON 값처럼 태그 밖에 놓인 고정 경로도 수집한다.
+    if(preg_match('~\A[^<>"\'\r\n]+\.(?:css|js|mjs|png|jpe?g|gif|webp|svg|ico|avif|woff2?)(?:[?#][^<>"\'\r\n]*)?\z~i',trim($text)))
+        $emit(trim($text),rb_tp_image_reference($text));
+}
+function rb_tp_script_resources($code,$emit)
+{
+    // JS를 실행하지 않고 문자열·템플릿 리터럴·단순 변수 연결만 읽는다.
+    $pattern='~//[^\r\n]*|/\*[\s\S]*?\*/|"(?:\\\\[\s\S]|[^"\\\\])*"|\'(?:\\\\[\s\S]|[^\'\\\\])*\'|`(?:\\\\[\s\S]|[^`\\\\])*`|[A-Za-z_$][\w$]*|\d+(?:\.\d+)?|[^\s]~';
+    preg_match_all($pattern,$code,$matches);
+    $tokens=array_values(array_filter($matches[0],function($t) { return substr($t,0,2)!=='//' && substr($t,0,2)!=='/*'; }));
+    $variables=array(); $count=count($tokens);
+    $decode=function($text) {
+        return preg_replace_callback('~\\\\(?:u([a-f0-9]{4})|x([a-f0-9]{2})|([\s\S]))~i',function($m) {
+            if(!empty($m[1])) { $decoded=json_decode('"\\u'.$m[1].'"'); return is_string($decoded)?$decoded:'*'; }
+            if(!empty($m[2])) return chr(hexdec($m[2]));
+            $escapes=array('n'=>"\n",'r'=>"\r",'t'=>"\t",'b'=>"\x08",'f'=>"\x0c");
+            return isset($escapes[$m[3]])?$escapes[$m[3]]:$m[3];
+        },$text);
+    };
+    $read=null;
+    $read=function(&$i,$depth=0)use(&$read,$tokens,$count,&$variables,$decode) {
+        if($depth>30 || $i>=$count) return null;
+        $value=''; $first=true;
+        do {
+            if(!$first) $i++; // +
+            $first=false;
+            if($i>=$count) return null;
+            $token=$tokens[$i++]; $part=null;
+            if(in_array(substr($token,0,1),array('"',"'",'`'),true)) {
+                $part=substr($token,1,-1);
+                if($token[0]==='`') $part=preg_replace_callback('~\$\{\s*([^}]+)\s*\}~',function($m)use(&$variables) {
+                    $key=trim($m[1]); return isset($variables[$key])?$variables[$key]:'*';
+                },$part);
+                $part=$decode($part);
+            } elseif($token==='(') {
+                $part=$read($i,$depth+1);
+                if(!isset($tokens[$i]) || $tokens[$i++]!==')') return null;
+            } elseif(preg_match('/\A[A-Za-z_$][\w$]*\z/',$token)) {
+                $part=isset($variables[$token])?$variables[$token]:'*';
+                // 함수나 속성의 내용은 실행하지 않고 미정 부분으로 남긴다.
+                while(isset($tokens[$i]) && in_array($tokens[$i],array('.','[','('),true)) {
+                    $part='*'; $op=$tokens[$i++];
+                    if($op==='.') { if($i<$count) $i++; continue; }
+                    $close=$op==='('?')':']'; $level=1;
+                    while($i<$count && $level) { $next=$tokens[$i++]; if($next===$op) $level++; elseif($next===$close) $level--; }
+                }
+            } elseif(is_numeric($token)) $part=$token;
+            if($part===null) return null;
+            $value.=$part;
+            if(strlen($value)>8*1024*1024) return null;
+        } while(isset($tokens[$i]) && $tokens[$i]==='+');
+        return $value;
+    };
+    for($i=0;$i<$count;$i++) {
+        $assignment=preg_match('/\A[A-Za-z_$][\w$]*\z/',$tokens[$i]) && isset($tokens[$i+1]) && $tokens[$i+1]==='=' && (!isset($tokens[$i+2]) || $tokens[$i+2]!=='=');
+        $quoted=in_array(substr($tokens[$i],0,1),array('"',"'",'`'),true);
+        $joined=preg_match('/\A[A-Za-z_$][\w$]*\z/',$tokens[$i]) && isset($tokens[$i+1]) && $tokens[$i+1]==='+';
+        if(!$assignment && !$quoted && !$joined) continue;
+        $start=$assignment?$i+2:$i;
+        // 연결된 문자열의 뒷부분만 로컬 URL로 잘못 해석하지 않는다.
+        if(!$assignment && isset($tokens[$i-1]) && $tokens[$i-1]==='+') continue;
+        $end=$start; $value=$read($end);
+        if($assignment) {
+            $previous=isset($variables[$tokens[$i]])?$variables[$tokens[$i]]:null;
+            $variables[$tokens[$i]]=$previous!==null && $previous!==$value
+                && !(rb_tp_external_reference($previous) && rb_tp_external_reference($value))?null:$value;
+            if($i>0 && $tokens[$i-1]==='.' && in_array(strtolower($tokens[$i]),array('src','poster','backgroundimage'),true)
+                && (!is_string($value) || strpos($value,'*')!==false)) $emit($value,true);
+        }
+        if(is_string($value)) rb_tp_resource_text($value,$emit);
+        $i=max($i,$end-1);
+    }
+}
 function rb_tp_collect_user_files(&$files,$theme)
 {
     $paths=array(); $queue=array(); $warnings=array(); $seen=array();
@@ -328,9 +493,9 @@ function rb_tp_collect_user_files(&$files,$theme)
         $paths[str_replace('\\','/',realpath($path))]=$entry;
         if(strpos($entry,'deps/')===0 && rb_tp_text_file($entry)) $queue[]=$entry;
     }
-    $add=function($relative,$context,$required)use(&$files,&$paths,&$queue,&$warnings) {
+    $add=function($relative,$context,$required,$image=false)use(&$files,&$paths,&$queue,&$warnings) {
         if(rb_tp_runtime_reference($relative)) return;
-        if(!rb_tp_user_path($relative)) {
+        if(!rb_tp_user_path($relative,$image)) {
             if($required) $warnings[]=$context.' · 자동 수집 제외: '.$relative;
             return;
         }
@@ -355,6 +520,10 @@ function rb_tp_collect_user_files(&$files,$theme)
             if($required) $warnings[]=$context.' · 실행 중 결정되는 경로: 외부 참조 파일을 직접 확인해 주세요.';
             return;
         }
+        if($value[0]==='*' || preg_match('~\A(?:https?:)?//[^/]*\*~i',$value)) {
+            if($required) $warnings[]=$context.' · 실행 중 결정되는 이미지/파일 경로: 직접 확인해 주세요.';
+            return;
+        }
         $relative=rb_tp_reference_path($value,$file);
         if($relative===false) {
             if($required) $warnings[]=$context.' · 사이트 밖 또는 확인할 수 없는 참조: '.$value;
@@ -364,7 +533,7 @@ function rb_tp_collect_user_files(&$files,$theme)
         if(strpos($relative,'*')!==false) {
             // 경로의 고정된 폴더가 명확할 때만 변수 부분에 해당하는 파일을 수집한다.
             $fixed=substr($relative,0,strpos($relative,'*'));
-            if(substr_count(trim($fixed,'/'),'/')<1 || !preg_match('/\.(php|inc|css|js|mjs|html?|png|jpe?g|gif|webp|svg)$/i',$relative)) {
+            if(strpos($fixed,'/')===false || !preg_match('/\.(php|inc|css|js|mjs|html?|png|jpe?g|gif|webp|svg|ico|avif)$/i',$relative)) {
                 if($required) $warnings[]=$context.' · 실행 중 결정되는 경로: '.$value;
                 return;
             }
@@ -376,25 +545,31 @@ function rb_tp_collect_user_files(&$files,$theme)
             if(!$matches && $required) $warnings[]=$context.' · 참조 파일을 찾지 못했습니다: '.$value;
             return;
         }
-        $add($relative,$context,$required);
+        $add($relative,$context,$required,rb_tp_image_reference($relative));
     };
     for($cursor=0;$cursor<count($queue);$cursor++) {
         $entry=$queue[$cursor]; if(isset($seen[$entry])) continue; $seen[$entry]=true;
         $file=$files[$entry]; if(filesize($file)>8*1024*1024) throw new RuntimeException('참조 소스는 8MB 이내여야 합니다: '.$entry);
         $code=file_get_contents($file); $relative=rb_tp_user_absolute($file); $scan=$code;
+        $emit=function($value,$required=false)use($follow,$file,$relative) { $follow($value,$file,$relative,$required); };
         if(preg_match('/\.(php|inc)$/i',$entry)) {
-            $tokens=rb_tp_php_names(rb_tp_include_tokens($code)); $variables=array(); $scan='';
+            $tokens=rb_tp_php_names(rb_tp_include_tokens($code)); $variables=array(); $scan=''; $resourceSkip=-1;
             $declarations=rb_tp_php_declarations($tokens);
             rb_tp_extend_references($tokens,$extendIndex,$relative,$add,$warnings);
             foreach($tokens as $i=>$token) {
                 $context=$relative.':'.$token['line'];
                 if(isset($declarations['parameters'][$i])) { $variables[$token['text']]='*'; continue; }
                 if($token['id']===T_VARIABLE && isset($tokens[$i+1]) && $tokens[$i+1]['text']==='=') {
-                    $value=rb_tp_include_value(rb_tp_include_expression($tokens,$i+2),$file,$theme,$variables);
-                    if($value===null) $value=rb_tp_include_value(rb_tp_include_expression($tokens,$i+2),$file,$theme,$variables,true);
+                    $expression=rb_tp_include_expression($tokens,$i+2);
+                    $value=rb_tp_include_value($expression,$file,$theme,$variables);
+                    if($value===null) $value=rb_tp_include_value($expression,$file,$theme,$variables,true);
                     if(array_key_exists($token['text'],$variables) && $variables[$token['text']]!==$value
                         && !(rb_tp_external_reference($variables[$token['text']]) && rb_tp_external_reference($value))) $value=null;
                     $variables[$token['text']]=$value;
+                    if(is_string($value)) {
+                        rb_tp_resource_text($value,$emit);
+                        $resourceSkip=max($resourceSkip,$i+1+count($expression));
+                    }
                 }
                 $include=in_array($token['id'],array(T_INCLUDE,T_INCLUDE_ONCE,T_REQUIRE,T_REQUIRE_ONCE),true);
                 $read=$token['id']===T_STRING && in_array(strtolower($token['text']),array('file_get_contents','readfile','fopen'),true)
@@ -405,18 +580,36 @@ function rb_tp_collect_user_files(&$files,$theme)
                     if($value===null) $value=rb_tp_include_value($expression,$file,$theme,$variables,true);
                     $follow($value,$file,$context,true);
                 }
-                if($token['id']===T_INLINE_HTML) $scan.=$token['text']."\n";
-                if($token['id']===T_CONSTANT_ENCAPSED_STRING) {
-                    $literal=rb_tp_include_value(array($token),$file,$theme,$variables);
-                    $scan.=$literal."\n";
-                    if(is_string($literal) && preg_match('~^[^\s<>"\']+\.(?:css|js|mjs|png|jpe?g|gif|webp|svg|woff2?)(?:[?#].*)?$~i',$literal))
-                        $follow($literal,$file,$context,false);
+                if($token['id']===T_INLINE_HTML) $scan.=$token['text'];
+                if(in_array($token['id'],array(T_ECHO,T_PRINT,T_OPEN_TAG_WITH_ECHO),true)) {
+                    $from=$i+1;
+                    do {
+                        $expression=rb_tp_include_expression($tokens,$from);
+                        $value=rb_tp_include_value($expression,$file,$theme,$variables,true);
+                        $scan.=is_string($value)?$value:'*';
+                        $resourceSkip=max($resourceSkip,$from+count($expression)-1);
+                        $from+=count($expression);
+                        if($token['id']!==T_ECHO || !isset($tokens[$from]) || $tokens[$from]['text']!==',') break;
+                        $from++;
+                    } while(true);
+                }
+                $pathExpression=$token['id']===T_CONSTANT_ENCAPSED_STRING
+                    || (in_array($token['id'],array(T_STRING,T_VARIABLE),true) && isset($tokens[$i+1]) && $tokens[$i+1]['text']==='.');
+                if($i>$resourceSkip && $pathExpression
+                    && (!isset($tokens[$i-1]) || $tokens[$i-1]['text']!=='.')) {
+                    $expression=isset($tokens[$i+1]) && $tokens[$i+1]['text']==='.'?rb_tp_include_expression($tokens,$i):array($token);
+                    $literal=rb_tp_include_value($expression,$file,$theme,$variables,true);
+                    rb_tp_resource_text($literal,$emit);
+                    $resourceSkip=$i+count($expression)-1;
                 }
             }
         }
-        // HTML 리소스, CSS url/import, JS import/fetch의 정적인 참조도 재귀 수집한다.
-        preg_match_all('~(?:\b(?:src|href|poster)\s*=\s*["\']|\burl\(\s*["\']?|@import\s*["\']|\b(?:from|import)\s*["\']|\b(?:fetch|import)\(\s*["\'])([^\s"\'<>\)]+)~i',$scan,$refs);
-        foreach(array_unique($refs[1]) as $value) $follow($value,$file,$relative,false);
+        rb_tp_resource_text($scan,$emit);
+        if(preg_match('/\.(js|mjs|json)$/i',$entry)) rb_tp_script_resources($scan,$emit);
+        else {
+            preg_match_all('~<script\b[^>]*>([\s\S]*?)</script\s*>~i',$scan,$scripts);
+            foreach($scripts[1] as $script) rb_tp_script_resources($script,$emit);
+        }
     }
     return array_values(array_unique($warnings));
 }

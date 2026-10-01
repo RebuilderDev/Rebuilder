@@ -574,7 +574,7 @@ function rb_shop_confirm_purchase($od_id, $buyer_id)
     $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
     $history = "\n완료|{$buyer_id}|{$now}|{$ip}|구매자 구매확정";
     $changed_item_ids = array();
-    $complete_time_sql = get_cart_complete_time_sql('완료');
+    $complete_time_assignment = rb_shop_complete_time_assignment('완료');
 
     foreach ($cart_rows as $cart) {
         $ct_id = (int) $cart['ct_id'];
@@ -609,7 +609,7 @@ function rb_shop_confirm_purchase($od_id, $buyer_id)
         }
 
         $updated = sql_query("UPDATE {$cart_table}
-                                 SET ct_complete_time=$complete_time_sql,
+                                 SET $complete_time_assignment
                                      ct_status='완료',
                                      ct_stock_use='{$stock_use}',
                                      ct_point_use='{$point_use}',

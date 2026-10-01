@@ -66,9 +66,9 @@ $mb_10          = isset($_POST['mb_10'])            ? trim($_POST['mb_10'])     
 
 $mb_name        = addslashes(clean_xss_tags(stripslashes($mb_name), 1, 1));
 $mb_email       = get_email_address($mb_email);
-$security_mail_url = g5_security_mail_base_url();
+$security_mail_url = rb_security_mail_base_url();
 if ($config['cf_use_email_certify'] && ($w == '' || $member['mb_email'] != $mb_email)) {
-    $security_mail_url = g5_require_security_mail_url();
+    $security_mail_url = rb_require_security_mail_url();
 }
 $mb_homepage    = addslashes(clean_xss_tags(stripslashes($mb_homepage), 1, 1));
 $mb_tel         = addslashes(clean_xss_tags(stripslashes($mb_tel), 1, 1));
@@ -94,10 +94,10 @@ $mb_thirdparty_agree_default = isset($_POST['mb_thirdparty_agree_default']) ? tr
 
 // 폼에 수신설정 섹션이 없는 경우 기존 DB 값 유지 (회원정보 수정 시)
 if ($w == 'u') {
-    if ($mb_marketing_agree_default === null) $mb_marketing_agree = $member['mb_marketing_agree'];
+    if ($mb_marketing_agree_default === null) $mb_marketing_agree = isset($member['mb_marketing_agree']) ? $member['mb_marketing_agree'] : '0';
     if ($mb_mailling_default === null)        $mb_mailling = $member['mb_mailling'];
     if ($mb_sms_default === null)             $mb_sms = $member['mb_sms'];
-    if ($mb_thirdparty_agree_default === null) $mb_thirdparty_agree = $member['mb_thirdparty_agree'];
+    if ($mb_thirdparty_agree_default === null) $mb_thirdparty_agree = isset($member['mb_thirdparty_agree']) ? $member['mb_thirdparty_agree'] : '0';
 }
 
 
@@ -276,9 +276,7 @@ if ($w == '') {
                      mb_7 = '{$mb_7}',
                      mb_8 = '{$mb_8}',
                      mb_9 = '{$mb_9}',
-                     mb_10 = '{$mb_10}',
-                     mb_marketing_agree = '{$mb_marketing_agree}',
-                     mb_thirdparty_agree = '{$mb_thirdparty_agree}'
+                     mb_10 = '{$mb_10}'
                      {$sql_certify} ";
 
     // 이메일 인증을 사용하지 않는다면 이메일 인증시간을 바로 넣는다
@@ -288,33 +286,35 @@ if ($w == '') {
     $agree_items = array();
     // 마케팅 목적의 개인정보 수집 및 이용
     if ($mb_marketing_agree == 1) {
-        $sql .=  " , mb_marketing_date = '".G5_TIME_YMDHIS."' ";
+        if (rb_core_table_has_column($g5['member_table'], 'mb_marketing_date')) $sql .=  " , mb_marketing_date = '".G5_TIME_YMDHIS."' ";
         $agree_items[] = "마케팅 목적의 개인정보 수집 및 이용(동의)";
     }
 
     // 광고성 이메일 수신
     if ($mb_mailling == 1) {
-        $sql .=  " , mb_mailling_date = '".G5_TIME_YMDHIS."' ";
+        if (rb_core_table_has_column($g5['member_table'], 'mb_mailling_date')) $sql .=  " , mb_mailling_date = '".G5_TIME_YMDHIS."' ";
         $agree_items[] = "광고성 이메일 수신(동의)";
     }
 
     // 광고성 SMS/카카오톡 수신
     if ($mb_sms == 1) {
-        $sql .=  " , mb_sms_date = '".G5_TIME_YMDHIS."' ";
+        if (rb_core_table_has_column($g5['member_table'], 'mb_sms_date')) $sql .=  " , mb_sms_date = '".G5_TIME_YMDHIS."' ";
         $agree_items[] = "광고성 SMS/카카오톡 수신(동의)";
     }
 
     // 개인정보 제3자 제공
     if ($mb_thirdparty_agree == 1) {
-        $sql .=  " , mb_thirdparty_date = '".G5_TIME_YMDHIS."' ";
+        if (rb_core_table_has_column($g5['member_table'], 'mb_thirdparty_date')) $sql .=  " , mb_thirdparty_date = '".G5_TIME_YMDHIS."' ";
         $agree_items[] = "개인정보 제3자 제공(동의)";
     }
 
+    $agree_log = '';
     // 동의 로그 추가
     if (!empty($agree_items)) {
         $agree_log = "[".G5_TIME_YMDHIS.", 회원가입] " . implode(' | ', $agree_items) . "\n";
-        $sql .= " , mb_agree_log = CONCAT('{$agree_log}', IFNULL(mb_agree_log, ''))";
+
     }
+    $sql .= rb_member_consent_sql($mb_marketing_agree, $mb_thirdparty_agree, $agree_log);
 
     sql_query($sql);
 
@@ -411,37 +411,38 @@ if ($w == '') {
     // 마케팅 목적의 개인정보 수집 및 이용
     $sql_marketing_date = "";
     if ($mb_marketing_agree_default !== null && $mb_marketing_agree_default !== $mb_marketing_agree) {
-        $sql_marketing_date .= " , mb_marketing_date = '".G5_TIME_YMDHIS."' ";
+        if (rb_core_table_has_column($g5['member_table'], 'mb_marketing_date')) $sql_marketing_date .= " , mb_marketing_date = '".G5_TIME_YMDHIS."' ";
         $agree_items[] = "마케팅 목적의 개인정보 수집 및 이용(" . ($mb_marketing_agree == 1 ? "동의" : "철회") . ")";
     }
 
     // 광고성 이메일 수신
     $sql_mailling_date = "";
     if ($mb_mailling_default !== null && $mb_mailling_default !== $mb_mailling) {
-        $sql_mailling_date .= " , mb_mailling_date = '".G5_TIME_YMDHIS."' ";
+        if (rb_core_table_has_column($g5['member_table'], 'mb_mailling_date')) $sql_mailling_date .= " , mb_mailling_date = '".G5_TIME_YMDHIS."' ";
         $agree_items[] = "광고성 이메일 수신(" . ($mb_mailling == 1 ? "동의" : "철회") . ")";
     }
 
     // 광고성 SMS/카카오톡 수신
     $sql_sms_date = "";
     if ($mb_sms_default !== null && $mb_sms_default !== $mb_sms) {
-        $sql_sms_date .= " , mb_sms_date = '".G5_TIME_YMDHIS."' ";
+        if (rb_core_table_has_column($g5['member_table'], 'mb_sms_date')) $sql_sms_date .= " , mb_sms_date = '".G5_TIME_YMDHIS."' ";
         $agree_items[] = "광고성 SMS/카카오톡 수신(" . ($mb_sms == 1 ? "동의" : "철회") . ")";
     }
 
     // 개인정보 제3자 제공
     $sql_thirdparty_date = "";
     if ($mb_thirdparty_agree_default !== null && $mb_thirdparty_agree_default !== $mb_thirdparty_agree) {
-        $sql_thirdparty_date .= " , mb_thirdparty_date = '".G5_TIME_YMDHIS."' ";
+        if (rb_core_table_has_column($g5['member_table'], 'mb_thirdparty_date')) $sql_thirdparty_date .= " , mb_thirdparty_date = '".G5_TIME_YMDHIS."' ";
         $agree_items[] = "개인정보 제3자 제공(" . ($mb_thirdparty_agree == 1 ? "동의" : "철회") . ")";
     }
 
     // 동의 로그 추가
-    $sql_agree_log = "";
+    $agree_log = '';
     if (!empty($agree_items)) {
         $agree_log = "[".G5_TIME_YMDHIS.", 회원 정보 수정] " . implode(' | ', $agree_items) . "\n";
-        $sql_agree_log .= " , mb_agree_log = CONCAT('{$agree_log}', IFNULL(mb_agree_log, ''))";
+
     }
+    $sql_agree_log = rb_member_consent_sql($mb_marketing_agree, $mb_thirdparty_agree, $agree_log);
 
     $sql = " update {$g5['member_table']}
                 set mb_nick = '{$mb_nick}',
@@ -468,9 +469,7 @@ if ($w == '') {
                     mb_7 = '{$mb_7}',
                     mb_8 = '{$mb_8}',
                     mb_9 = '{$mb_9}',
-                    mb_10 = '{$mb_10}',
-                    mb_marketing_agree = '{$mb_marketing_agree}',
-                    mb_thirdparty_agree = '{$mb_thirdparty_agree}'
+                    mb_10 = '{$mb_10}'
                     {$sql_password}
                     {$sql_nick_date}
                     {$sql_open_date}

@@ -66,7 +66,8 @@ if (in_array($_POST['ct_status'], $status_cancel)) {
                               where od_id = '".sql_escape_string($od_id)."' ");
         if ((int) $future['total_count'] > 0 && (int) $future['total_count'] === (int) $future['cancel_count']) {
             $pre_od = sql_fetch(" select * from {$g5['g5_shop_order_table']} where od_id = '".sql_escape_string($od_id)."' ");
-            if (!empty($pre_od['od_tno']) && $pre_od['od_pg'] === 'inicis') {
+            if (!empty($pre_od['od_tno']) && $pre_od['od_pg'] === 'inicis'
+                && is_file(G5_SHOP_PATH.'/inicis/pro/inicis_pro.lib.php')) {
                 include_once(G5_SHOP_PATH.'/inicis/pro/inicis_pro.lib.php');
                 $pro_tables = inicis_pro_audit_tables();
                 $pro_summary = sql_fetch(" select * from `{$pro_tables['summary']}`
@@ -339,12 +340,12 @@ for ($i=0; $i<$cnt; $i++)
     $now = G5_TIME_YMDHIS;
     $ct_history="\n$ct_status|{$member['mb_id']}|$now|$REMOTE_ADDR";
 
-    $complete_time_sql = get_cart_complete_time_sql($ct_status);
+    $complete_time_assignment = rb_shop_complete_time_assignment($ct_status);
     /* 20241018 리빌더 수정 { */
     if(isset($pa['pa_is']) && $pa['pa_is'] == 1) {
 
         $sql = " update {$g5['g5_shop_cart_table']}
-                    set ct_complete_time = $complete_time_sql,
+                    set $complete_time_assignment
                         ct_point_use  = '$point_use',
                         ct_stock_use  = '$stock_use',
                         ct_status     = '$ct_status',
@@ -358,7 +359,7 @@ for ($i=0; $i<$cnt; $i++)
 
     } else {
         $sql = " update {$g5['g5_shop_cart_table']}
-                    set ct_complete_time = $complete_time_sql,
+                    set $complete_time_assignment
                         ct_point_use  = '$point_use',
                         ct_stock_use  = '$stock_use',
                         ct_status     = '$ct_status',

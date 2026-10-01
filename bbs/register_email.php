@@ -19,7 +19,7 @@ if (substr($mb['mb_email_certify'],0,1)!=0) {
 }
 
 $ckey = isset($_GET['ckey']) ? trim($_GET['ckey']) : '';
-$key  = get_email_cert_key($mb_id, $mb['mb_datetime']);
+$key  = rb_email_cert_key($mb);
 
 if(!$ckey || $ckey !== $key)
     alert('올바른 방법으로 이용해 주십시오.', G5_URL);

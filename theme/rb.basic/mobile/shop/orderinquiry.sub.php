@@ -55,7 +55,7 @@ if (!defined('_ORDERINQUIRY_')) exit;
             if($row['od_delivery_company'] && $row['od_invoice'])
                 $od_invoice = '<span class="inv_inv"><i class="fa fa-truck" aria-hidden="true"></i> <strong>'.get_text($row['od_delivery_company']).'</strong> '.get_text($row['od_invoice']).'</span>';
 
-            $uid = function_exists('get_shop_uid') ? get_shop_uid('order', $row['od_id'], $row['od_time'], $row['od_ip']) : md5($row['od_id'].$row['od_time'].$row['od_ip']);
+            $uid = function_exists('get_shop_uid') ? rb_shop_uid('order', $row['od_id'], $row['od_time'], $row['od_ip']) : md5($row['od_id'].$row['od_time'].$row['od_ip']);
         ?>
         <li>
             <div class="inquiry_idtime">

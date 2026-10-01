@@ -738,17 +738,13 @@ function rb_tp_export_archive($theme, $name, $zipfile, $identity, $delivery)
         'builder_display'=>$display,'aos'=>$aos);
     // DB/HTML/CSS 안에서 사용하는 사이트 내부의 정적 파일만 수집한다.
     $scanAssets=function($scan) use(&$files,&$manifest) {
-    $scan = str_replace('\\/', '/', $scan);
-    preg_match_all('~(?:'.preg_quote(G5_DATA_URL,'~').'|'.preg_quote(parse_url(G5_DATA_URL,PHP_URL_PATH),'~').')/[^\s"\'<>\\\\)]+~u', $scan, $matches);
-    foreach (array_unique($matches[0]) as $url) {
-        $path = parse_url(html_entity_decode($url, ENT_QUOTES, 'UTF-8'), PHP_URL_PATH);
-        $rel = rawurldecode(substr($path, strlen(parse_url(G5_DATA_URL,PHP_URL_PATH))+1));
-        rb_tp_asset($files,$manifest,$rel);
-    }
+        foreach(rb_tp_data_references($scan) as $rel) rb_tp_asset($files,$manifest,$rel);
     };
     $scanAssets(rb_tp_json($manifest));
     foreach ($files as $entry=>$p) if (rb_tp_text_file($entry)) {
         if((isset($contents[$entry])?strlen($contents[$entry]):filesize($p))>8*1024*1024) throw new RuntimeException('편집 가능한 소스 파일은 8MB 이내여야 합니다: '.$entry);
+        // 위젯/배너 코드는 아래 의존 파일 검사에서 PHP/JS 연결식을 해석하고 원래 경로로 수집한다.
+        if(strpos($entry,'deps/')===0) continue;
         $scanAssets(isset($contents[$entry])?$contents[$entry]:file_get_contents($p));
     }
     $manifest['dependency_layout']='original';
@@ -832,7 +828,7 @@ class RbThemePackageDirectory
                 $dep=isset($m['dependency_paths'][$parts[1]][$parts[2]])?$m['dependency_paths'][$parts[1]][$parts[2]]:'';
                 if(!rb_tp_dependency_valid($parts[1],$dep)) throw new RuntimeException('위젯/배너 스킨 경로 오류');
                 $base=G5_PATH.'/'.$dep; $path=$base.'/'.$parts[3];
-            } elseif(strpos($entry,'user/')===0 && rb_tp_original_dependencies($m) && rb_tp_user_path(substr($entry,5))) {
+            } elseif(strpos($entry,'user/')===0 && rb_tp_original_dependencies($m) && rb_tp_user_path(substr($entry,5),true)) {
                 $base=G5_PATH; $path=$base.'/'.substr($entry,5);
             } else $path=$folder.'/rb-package/'.$entry;
             $this->entries[]=$entry; $this->paths[$entry]=$path; $this->bases[$entry]=$base;
@@ -895,7 +891,7 @@ function rb_tp_open($file,$updating=false)
         $m['missing_files']=array();
         foreach ($m['files'] as $entry=>$info) {
             if (!rb_tp_path($entry) || (!preg_match('~^(theme|deps/(widget|banner)/[a-f0-9]{16}|assets/[a-f0-9]{16}|carousel|custom|topvisual|banner/[0-9]+)/~',$entry)
-                && !(rb_tp_original_dependencies($m) && strpos($entry,'user/')===0 && rb_tp_user_path(substr($entry,5)))))
+                && !(rb_tp_original_dependencies($m) && strpos($entry,'user/')===0 && rb_tp_user_path(substr($entry,5),true))))
                 throw new RuntimeException('허용하지 않는 패키지 경로입니다.');
             $s = $zip->statName($entry);
             if(!$s) { $m['missing_files'][$entry]=true; continue; }

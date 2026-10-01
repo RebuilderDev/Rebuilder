@@ -407,10 +407,8 @@ if ($it_name == "")
 $it_skin = isset($_POST['it_skin']) ? trim(strip_tags(clean_xss_attributes(stripslashes($_POST['it_skin'])))) : '';
 $it_mobile_skin = isset($_POST['it_mobile_skin']) ? trim(strip_tags(clean_xss_attributes(stripslashes($_POST['it_mobile_skin'])))) : '';
 
-if (function_exists('check_shop_skin_dir')) {
-    check_shop_skin_dir($it_skin, 'PC용 스킨');
-    check_shop_skin_dir($it_mobile_skin, '모바일용 스킨', true);
-}
+rb_shop_check_skin_dir($it_skin, 'PC용 스킨');
+rb_shop_check_skin_dir($it_mobile_skin, '모바일용 스킨', true);
 
 $it_skin = addslashes($it_skin);
 $it_mobile_skin = addslashes($it_mobile_skin);

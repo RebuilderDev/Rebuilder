@@ -88,7 +88,7 @@ if ($mod_type === "mod_order") {
     echo "Invalid order data"; exit;
 }
 
-/* ===== mod_sync_state: update module order/layout/section in one pass ===== */
+/* ===== mod_sync_state: update modules and their shared order with sections ===== */
 if ($mod_type === "mod_sync_state") {
     $mods_json = isset($_POST['mods']) ? $_POST['mods'] : '';
     if (is_string($mods_json)) {
@@ -148,8 +148,63 @@ if ($mod_type === "mod_sync_state") {
         rb_json_exit(array('status' => 'error', 'message' => 'Unknown module id in request'));
     }
 
+    // 구버전 요청은 모듈만 저장하고, 새 요청은 섹션 순번도 같은 트랜잭션으로 저장한다.
+    $sections_json = isset($_POST['sections']) ? $_POST['sections'] : '[]';
+    $sections = is_string($sections_json) ? json_decode(stripslashes($sections_json), true) : null;
+    if (!is_array($sections)) {
+        rb_json_exit(array('status' => 'error', 'message' => 'Invalid sections'));
+    }
+
+    $sec_table = $is_shop ? 'rb_section_shop' : 'rb_section';
+    $section_orders = array();
+    foreach ($sections as $section) {
+        if (!is_array($section)) {
+            rb_json_exit(array('status' => 'error', 'message' => 'Invalid section state'));
+        }
+        $sec_id = isset($section['id']) ? to_int($section['id']) : 0;
+        $order_id = isset($section['order_id']) ? to_int($section['order_id']) : 0;
+        if ($sec_id <= 0 || $order_id <= 0 || isset($section_orders[$sec_id])) {
+            rb_json_exit(array('status' => 'error', 'message' => 'Invalid or duplicate section state'));
+        }
+        $section_orders[$sec_id] = $order_id;
+    }
+
+    $section_uids = array();
+    if (count($section_orders)) {
+        $section_ids = array_keys($section_orders);
+        $section_id_list = implode(',', array_map('intval', $section_ids));
+        $existing_section_ids = array();
+        $section_result = sql_query("SELECT sec_id, sec_key FROM {$sec_table} WHERE sec_id IN ({$section_id_list})", false);
+        if (!$section_result) {
+            rb_json_exit(array('status' => 'error', 'message' => 'Section validation query failed'));
+        }
+        while ($section = sql_fetch_array($section_result)) {
+            $sec_id = (int)$section['sec_id'];
+            $existing_section_ids[] = $sec_id;
+            $sec_key = (string)$section['sec_key'];
+            if ($sec_key !== '') {
+                $section_uids[esc($sec_key)] = esc($sec_key . '_' . $section_orders[$sec_id]);
+            }
+        }
+        sort($section_ids);
+        sort($existing_section_ids);
+        if ($section_ids !== $existing_section_ids) {
+            rb_json_exit(array('status' => 'error', 'message' => 'Unknown section id in request'));
+        }
+    }
+
     if (!sql_query('START TRANSACTION', false)) {
         rb_json_exit(array('status' => 'error', 'message' => 'Could not start module save transaction'));
+    }
+
+    foreach ($section_orders as $sec_id => $order_id) {
+        $res = sql_query("UPDATE {$sec_table}
+                         SET sec_order_id = {$order_id}, sec_uid = CONCAT(sec_key, '_', {$order_id})
+                         WHERE sec_id = {$sec_id}", false);
+        if (!$res) {
+            sql_query('ROLLBACK', false);
+            rb_json_exit(array('status' => 'error', 'message' => 'Section order update failed'));
+        }
     }
 
     $updated = array();
@@ -160,6 +215,9 @@ if ($mod_type === "mod_sync_state") {
         $layout = $mod['layout'];
         $sec_key = $mod['sec_key'];
         $sec_uid = $mod['sec_uid'];
+        if (isset($section_uids[$sec_key])) {
+            $sec_uid = $section_uids[$sec_key];
+        }
 
         $sql = "UPDATE {$table}
                 SET md_order_id = {$order_id},

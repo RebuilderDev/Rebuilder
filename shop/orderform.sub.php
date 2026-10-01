@@ -1,6 +1,6 @@
 <?php
 if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
-include_once(G5_LIB_PATH.'/shop_order_access.lib.php');
+rb_shop_native_order_security();
 
 require_once(G5_SHOP_PATH.'/settle_'.$default['de_pg_service'].'.inc.php');
 
@@ -54,9 +54,8 @@ $rb_deliveryless_order_only = !$rb_has_shipping_items;
         color: #3a8afd;
     }
 </style>
-<script src="<?php echo G5_JS_URL; ?>/shop.order-state.js"></script>
 <form name="forderform" id="forderform" method="post" action="<?php echo $order_action_url; ?>" autocomplete="off">
-<?php echo shop_order_checkout_fields((string)$od_id, false); ?>
+<?php echo rb_shop_checkout_fields((string)$od_id, false); ?>
 <div id="sod_frm" class="sod_frm_pc">
     <!-- 주문상품 확인 시작 { -->
     <div class="tbl_head03 tbl_wrap od_prd_list">
@@ -737,7 +736,7 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
                     $checked = '';
                 }
 
-                $easypay_prints = shop_easypay_buttons(false);
+                $easypay_prints = rb_shop_easypay_buttons(false);
                 if ($easypay_prints) {
                     $multi_settle += count($easypay_prints);
                     echo run_replace('shop_orderform_easypay_buttons', implode(PHP_EOL, $easypay_prints), $easypay_prints, $multi_settle);
@@ -1757,7 +1756,7 @@ function forderform_check(f)
         f.cardeasyPay.value = '';
         if(settle_method == "간편결제") {
             var provider = $("input[name=od_settle_case]:checked").attr("data-pay");
-            var providers = <?php echo json_encode(shop_order_toss_providers()); ?>;
+            var providers = <?php echo json_encode(rb_shop_toss_providers()); ?>;
             if (providers.indexOf(provider) === -1) {
                 alert('간편결제 수단을 다시 선택해 주세요.');
                 return false;
@@ -1787,7 +1786,7 @@ function forderform_check(f)
                 cache: false,
                 async: false,
                 success: function(data, textStatus, xhr) {
-                    save_result = data || g5_order_state_accept(xhr);
+                    save_result = data || rb_shop_order_state_accept(xhr);
                 }
             });
 
@@ -1829,7 +1828,7 @@ function forderform_check(f)
                 cache: false,
                 async: false,
                 success: function(data, textStatus, xhr) {
-                    save_result = data || g5_order_state_accept(xhr);
+                    save_result = data || rb_shop_order_state_accept(xhr);
                 }
             });
 
@@ -1875,7 +1874,7 @@ function forderform_check(f)
                 cache: false,
                 async: false,
                 success: function(data, textStatus, xhr) {
-                    save_result = data || g5_order_state_accept(xhr);
+                    save_result = data || rb_shop_order_state_accept(xhr);
                 }
             });
 

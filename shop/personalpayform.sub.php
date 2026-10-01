@@ -1,6 +1,6 @@
 <?php
 if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
-include_once(G5_LIB_PATH.'/shop_order_access.lib.php');
+rb_shop_native_order_security();
 
 require_once(G5_SHOP_PATH.'/settle_'.$default['de_pg_service'].'.inc.php');
 
@@ -8,9 +8,8 @@ require_once(G5_SHOP_PATH.'/settle_'.$default['de_pg_service'].'.inc.php');
 require_once(G5_SHOP_PATH.'/'.$default['de_pg_service'].'/orderform.1.php');
 ?>
 <div class="personal_pay_wrap">
-<script src="<?php echo G5_JS_URL; ?>/shop.order-state.js"></script>
 <form name="forderform" id="forderform" method="post" action="<?php echo $order_action_url; ?>" autocomplete="off">
-<?php echo shop_order_checkout_fields((string)$pp['pp_id'], true); ?>
+<?php echo rb_shop_checkout_fields((string)$pp['pp_id'], true); ?>
 <input type="hidden" name="pp_id" value="<?php echo $pp['pp_id']; ?>">
 
     <?php
@@ -389,7 +388,7 @@ function forderform_check(f)
             cache: false,
             async: false,
             success: function(data, textStatus, xhr) {
-                save_result = data || g5_order_state_accept(xhr);
+                save_result = data || rb_shop_order_state_accept(xhr);
             }
         });
 
@@ -421,7 +420,7 @@ function forderform_check(f)
             cache: false,
             async: false,
             success: function(data, textStatus, xhr) {
-                save_result = data || g5_order_state_accept(xhr);
+                save_result = data || rb_shop_order_state_accept(xhr);
             }
         });
 
@@ -464,7 +463,7 @@ function forderform_check(f)
             cache: false,
             async: false,
             success: function(data, textStatus, xhr) {
-                save_result = data || g5_order_state_accept(xhr);
+                save_result = data || rb_shop_order_state_accept(xhr);
             }
         });
 
