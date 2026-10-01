@@ -107,7 +107,10 @@ $adm_menu_cookie = array(
     'btn_gnb'   => '',
 );
 
-if(is_mobile()) {
+$rb_adm_responsive = (defined('RB_MASTER_SKIN_ENABLED') && RB_MASTER_SKIN_ENABLED)
+    || (defined('RB_MASTER') && RB_MASTER);
+
+if(is_mobile() && $rb_adm_responsive) {
     $adm_menu_cookie['container'] = 'container-small';
     $adm_menu_cookie['gnb'] = 'gnb_small';
     $adm_menu_cookie['btn_gnb'] = 'btn_gnb_open';
@@ -170,7 +173,7 @@ if ($weekday_num == 0) {
     <h1><?php echo $config['cf_title'] ?></h1>
     <div id="hd_top">
         <button type="button" id="btn_gnb" class="btn_gnb_close <?php echo $adm_menu_cookie['btn_gnb']; ?>">메뉴</button>
-        <div id="logo" <?php if(is_mobile()) { ?>style="padding-left:90px;"<?php } ?>>
+        <div id="logo" <?php if(is_mobile() && $rb_adm_responsive) { ?>style="padding-left:90px;"<?php } ?>>
         <a href="<?php echo correct_goto_url(G5_ADMIN_URL); ?>" title="<?php echo get_text($config['cf_title']); ?> 관리자모드"><strong>CMS</strong></a>
         </div>
 

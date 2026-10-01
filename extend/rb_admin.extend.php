@@ -87,9 +87,17 @@ if (!function_exists('rb_adm_meta_filter')) {
         ];
         $buffer = preg_replace($patterns, '', $buffer);
 
+        // 기본 adm은 PC 레이아웃을 기기 방향에 맞춰 축소하고 확대도 허용합니다.
+        // Rb 어드민은 기존 반응형 뷰포트 처리를 유지합니다.
+        $responsive_admin = (defined('RB_MASTER_SKIN_ENABLED') && RB_MASTER_SKIN_ENABLED)
+            || (defined('RB_MASTER') && RB_MASTER);
+        $viewport = $responsive_admin
+            ? 'width=device-width,initial-scale=0.9,minimum-scale=0,maximum-scale=10'
+            : 'width=1200,maximum-scale=10,user-scalable=yes';
+
         // 2) 원하는 3개 메타만 주입 (PC/모바일 공통)
         $inject = implode(PHP_EOL, [
-            '<meta name="viewport" id="meta_viewport" content="width=device-width,initial-scale=0.9,minimum-scale=0,maximum-scale=10">',
+            '<meta name="viewport" id="meta_viewport" content="'.$viewport.'">',
             '<meta name="HandheldFriendly" content="true">',
             '<meta name="format-detection" content="telephone=no">',
         ]) . PHP_EOL;
