@@ -1274,3 +1274,71 @@ footer .footer_gnb {background-color: #fff;}
     }
 }
 /* } */
+
+/* 2.2.7.7 - PC 헤더 서브메뉴 열 설정 { */
+/* N 아이콘: 기본 10px 글자에 14px 배경. 굵기는 font-R/font-B 클래스에서 결정한다. */
+.rb-header-new {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(1em + 4px);
+    height: calc(1em + 4px);
+    line-height: 1;
+    color: #fff !important;
+    margin-left: 4px;
+    vertical-align: middle;
+    flex-shrink: 0;
+    text-indent: 0;
+    padding: 0;
+}
+.rb-header-new-1 {border-radius: 50%;}
+.rb-header-new-2 {border-radius: 0;}
+.rb-header-new-3 {border-radius: 4px;}
+.rb_header_new_templates .rb-header-new {margin-left: 0;}
+.rb_config .rb_header_submenu_range.ui-slider {
+    width: 70%;
+    height: 4px;
+    position: relative;
+}
+.rb_config .rb_header_submenu_range.ui-slider .ui-slider-handle {
+    left: calc((100% - 34px) * var(--rb-submenu-slider-progress, 0)) !important;
+    top: -8px;
+    margin: 0;
+    width: 34px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 10px;
+    box-sizing: border-box;
+    transform: none;
+}
+.rb_config .rb_header_submenu_range.ui-slider .ui-slider-range {
+    max-width: 100%;
+}
+/* PC 롤오버의 2차 메뉴만 배치한다. 모바일 메뉴와 전체분류는 기존 레이아웃을 유지한다. */
+@media (min-width: 1025px) {
+    #header[data-rb-header-submenu-columns="2"] {--rb-header-submenu-columns: 2;}
+    #header[data-rb-header-submenu-columns="3"] {--rb-header-submenu-columns: 3;}
+
+    #header[data-rb-header-submenu-columns] #cbp-hrmenu > ul > li:not(.gnb_all_menu) > .cbp-hrsub {
+        transform: translateX(var(--rb-header-submenu-shift, 0px));
+    }
+
+    #header[data-rb-header-submenu-columns] #cbp-hrmenu > ul > li:not(.gnb_all_menu) > .cbp-hrsub > .cbp-hrsub-inner > div {
+        width: calc(var(--rb-header-submenu-columns, 1) * 140px + (var(--rb-header-submenu-columns, 1) - 1) * 20px);
+        float: none;
+    }
+    #header[data-rb-header-submenu-columns] #cbp-hrmenu > ul > li:not(.gnb_all_menu) > .cbp-hrsub > .cbp-hrsub-inner > div > ul {
+        display: grid;
+        grid-template-columns: repeat(var(--rb-header-submenu-columns, 1), minmax(0, 1fr));
+        column-gap: 20px;
+    }
+    /* 옆 열보다 위에 표시하여 3차 메뉴로 마우스를 이동할 수 있게 한다. */
+    #header[data-rb-header-submenu-columns] #cbp-hrmenu > ul > li:not(.gnb_all_menu) > .cbp-hrsub > .cbp-hrsub-inner > div > ul > li:hover {
+        z-index: 10;
+    }
+    #header[data-rb-header-submenu-columns] #cbp-hrmenu .cbp-hrsub-3.rb-header-submenu-left {
+        left: auto;
+        right: 100%;
+    }
+}
+/* } */

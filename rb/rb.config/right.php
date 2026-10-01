@@ -173,6 +173,115 @@ foreach ($rb_side_panels as $rb_side_panel) {
                         </div>
                     </ul>
 
+                    <?php
+                    // 마켓과 커뮤니티는 현재 페이지의 설정만 전송한다.
+                    $rb_submenu_field = defined('_SHOP_') ? 'co_header_submenu_cols_shop' : 'co_header_submenu_cols';
+                    $rb_submenu_cols = isset($rb_config[$rb_submenu_field]) ? max(1, min(3, (int)$rb_config[$rb_submenu_field])) : 1;
+                    $rb_submenu_column = sql_fetch("SHOW COLUMNS FROM `rb_config` WHERE Field = '{$rb_submenu_field}'", false);
+                    $rb_submenu_ready = !empty($rb_submenu_column['Field']);
+                    $rb_new_suffix = defined('_SHOP_') ? '_shop' : '';
+                    $rb_new_options = rb_hn_settings();
+                    $rb_new_fields = array();
+                    foreach (array('use','days','tpl','color','size','font') as $rb_new_key) $rb_new_fields[] = 'co_header_new_'.$rb_new_key.$rb_new_suffix;
+                    $rb_new_columns = sql_query("SHOW COLUMNS FROM rb_config WHERE Field IN ('".implode("','", $rb_new_fields)."')", false);
+                    $rb_new_ready = $rb_new_columns && sql_num_rows($rb_new_columns) === count($rb_new_fields);
+                    ?>
+                    <ul class="rb_config_sec">
+                        <h6 class="font-B"><?php echo defined('_SHOP_') ? '마켓 ' : ''; ?>헤더 서브메뉴 설정 (공용)</h6>
+                        <h6 class="font-R rb_config_sub_txt">서브메뉴의 가로열 변경 및<br>신규 게시물 N 아이콘을 표기할 수 있습니다.</h6>
+                        <div class="config_wrap">
+                            <ul class="rows_inp_lr mt-10">
+                                <li class="rows_inp_l rows_inp_l_span">
+                                    <span class="font-B">가로 열</span><br>1~3
+                                </li>
+                                <li class="rows_inp_r mt-15">
+                                    <div id="<?php echo $rb_submenu_field; ?>_range" class="rb_range_item rb_header_submenu_range"></div>
+                                    <input type="hidden" id="<?php echo $rb_submenu_field; ?>" class="co_range_send" name="<?php echo $rb_submenu_field; ?>" value="<?php echo $rb_submenu_cols; ?>">
+                                </li>
+                                <div class="cb"></div>
+                            </ul>
+                            <div class="rb_header_new_controls" id="rb_header_new_controls<?php echo $rb_new_suffix; ?>">
+                                <ul class="rows_inp_lr mt-15">
+                                    <li class="rows_inp_l rows_inp_l_span"><span class="font-B">새글표기</span></li>
+                                    <li class="rows_inp_r mt-5">
+                                        <input type="checkbox" class="magic-checkbox mod_send" name="co_header_new_use<?php echo $rb_new_suffix; ?>" id="co_header_new_use<?php echo $rb_new_suffix; ?>" value="1" <?php echo $rb_new_options['use'] ? 'checked' : ''; ?> <?php echo $rb_new_ready ? '' : 'disabled'; ?>><label for="co_header_new_use<?php echo $rb_new_suffix; ?>">아이콘 표시</label>
+                                    </li><div class="cb"></div>
+                                </ul>
+                                <ul class="rows_inp_lr mt-10">
+                                    <li class="rows_inp_l rows_inp_l_span"><span class="font-B">아이콘기간</span></li>
+                                    <li class="rows_inp_r mt-5">
+                                        <input type="number" class="input tiny_input mod_send" name="co_header_new_days<?php echo $rb_new_suffix; ?>" id="co_header_new_days<?php echo $rb_new_suffix; ?>" min="1" max="365" value="<?php echo $rb_new_options['days']; ?>" style="width:65px !important;" <?php echo $rb_new_ready ? '' : 'disabled'; ?>> 일
+                                    </li><div class="cb"></div>
+                                </ul>
+                                <div class="config_wrap_bg">
+                                    <label class="config_wrap_sub_tit">아이콘스타일</label><br>
+                                    <ul class="config_wrap_flex mt-15">
+                                        <div class="color_set_wrap square none_inp_cl" style="position:relative;">
+                                            <input type="text" class="coloris mod_co_color" name="co_header_new_color<?php echo $rb_new_suffix; ?>" id="co_header_new_color<?php echo $rb_new_suffix; ?>" value="<?php echo htmlspecialchars($rb_new_options['color'], ENT_QUOTES, 'UTF-8'); ?>" style="width:25px !important;" <?php echo $rb_new_ready ? '' : 'disabled'; ?>>
+                                        </div>컬러
+                                        <select class="select select_tiny mod_send" name="co_header_new_size<?php echo $rb_new_suffix; ?>" id="co_header_new_size<?php echo $rb_new_suffix; ?>" <?php echo $rb_new_ready ? '' : 'disabled'; ?>>
+                                            <?php foreach (array(8,9,10,11,12,14,16,18,20,22,24) as $rb_new_size) { ?><option value="<?php echo $rb_new_size; ?>" <?php echo $rb_new_options['size']===$rb_new_size ? 'selected' : ''; ?>><?php echo $rb_new_size; ?>px</option><?php } ?>
+                                        </select>
+                                        <select class="select select_tiny mod_send" name="co_header_new_font<?php echo $rb_new_suffix; ?>" id="co_header_new_font<?php echo $rb_new_suffix; ?>" <?php echo $rb_new_ready ? '' : 'disabled'; ?>>
+                                            <option value="font-R" <?php echo $rb_new_options['font']==='font-R' ? 'selected' : ''; ?>>Regular</option>
+                                            <option value="font-B" <?php echo $rb_new_options['font']==='font-B' ? 'selected' : ''; ?>>Bold</option>
+                                        </select>
+                                    </ul>
+                                    <ul class="config_wrap_flex rb_header_new_templates">
+                                        <li class="rows_inp_r mt-5">
+                                        <?php for ($rb_new_tpl=1; $rb_new_tpl<=3; $rb_new_tpl++) { $rb_new_preview=$rb_new_options; $rb_new_preview['tpl']=$rb_new_tpl; ?>
+                                            <input type="radio" class="magic-radio mod_send" name="co_header_new_tpl<?php echo $rb_new_suffix; ?>" id="co_header_new_tpl<?php echo $rb_new_suffix; ?>_<?php echo $rb_new_tpl; ?>" value="<?php echo $rb_new_tpl; ?>" <?php echo $rb_new_options['tpl']===$rb_new_tpl ? 'checked' : ''; ?> <?php echo $rb_new_ready ? '' : 'disabled'; ?>><label for="co_header_new_tpl<?php echo $rb_new_suffix; ?>_<?php echo $rb_new_tpl; ?>" title="템플릿<?php echo $rb_new_tpl; ?>"><?php echo rb_hn_badge($rb_new_preview); ?><span class="sound_only">템플릿<?php echo $rb_new_tpl; ?></span></label>
+                                        <?php } ?>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <script>
+                            document.getElementById('<?php echo $rb_submenu_field; ?>_range').style.setProperty('--rb-submenu-slider-progress', '<?php echo ($rb_submenu_cols - 1) / 2; ?>');
+                            $("#<?php echo $rb_submenu_field; ?>_range").slider({
+                                range: "min", min: 1, max: 3, step: 1,
+                                value: <?php echo $rb_submenu_cols; ?>,
+                                disabled: <?php echo $rb_submenu_ready ? 'false' : 'true'; ?>,
+                                slide: function(e, ui) {
+                                    this.style.setProperty('--rb-submenu-slider-progress', String((ui.value - 1) / 2));
+                                    $(this).find('.ui-slider-handle').html(ui.value);
+                                    $("#<?php echo $rb_submenu_field; ?>").val(ui.value);
+                                },
+                                change: function(e, ui) {
+                                    this.style.setProperty('--rb-submenu-slider-progress', String((ui.value - 1) / 2));
+                                }
+                            }).find('.ui-slider-handle').html(<?php echo $rb_submenu_cols; ?>);
+                            <?php if (!$rb_submenu_ready) { ?>
+                            // 비활성 슬라이더는 클릭을 차단하므로 부모 영역에서 먼저 안내한다.
+                            $("#<?php echo $rb_submenu_field; ?>_range").parent()[0].addEventListener('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                alert('관리자모드의 빌더설정에서 DB 업데이트 후 설정할 수 있습니다.');
+                            }, true);
+                            <?php } ?>
+                            (function() {
+                                var controls = document.getElementById('rb_header_new_controls<?php echo $rb_new_suffix; ?>');
+                                <?php if (!$rb_new_ready) { ?>
+                                controls.addEventListener('click', function(e) {
+                                    e.preventDefault(); e.stopPropagation();
+                                    alert('관리자모드의 빌더설정에서 DB 업데이트 후 설정할 수 있습니다.');
+                                }, true);
+                                <?php } else { ?>
+                                $(controls).on('input change', 'input,select', function() {
+                                    var color = $('#co_header_new_color<?php echo $rb_new_suffix; ?>').val();
+                                    var size = Math.max(8, Math.min(24, parseInt($('#co_header_new_size<?php echo $rb_new_suffix; ?>').val(), 10) || 10));
+                                    var font = $('#co_header_new_font<?php echo $rb_new_suffix; ?>').val();
+                                    $(controls).find('.rb-header-new').each(function() {
+                                        this.style.backgroundColor = color; this.style.fontSize = size + 'px';
+                                        $(this).removeClass('font-R font-B').addClass(font === 'font-R' ? 'font-R' : 'font-B');
+                                    });
+                                });
+                                <?php } ?>
+                            })();
+                        </script>
+                    </ul>
+
                     <?php if (!defined("_INDEX_")) { ?>
                     <ul class="rb_config_sec">
                         <h6 class="font-B">서브 배경컬러 설정</h6>
@@ -4324,6 +4433,8 @@ foreach ($rb_side_panels as $rb_side_panel) {
         var co_theme = '<?php echo $rb_core['theme']; ?>';
         var co_color = $('input[name="co_color"]').val();
         var co_header = $('input[name="co_header"]').val();
+        var co_header_submenu_cols = $('input[name="co_header_submenu_cols"]').val();
+        var co_header_submenu_cols_shop = $('input[name="co_header_submenu_cols_shop"]').val();
 
         var co_main_bg = $('input[name="co_main_bg"]').val();
         var co_sub_bg = $('input[name="co_sub_bg"]').val();
@@ -4478,6 +4589,14 @@ foreach ($rb_side_panels as $rb_side_panel) {
                 <?php } ?>
                 "co_color": co_color,
                 "co_header": co_header,
+                <?php if ($rb_new_ready) { foreach (array('use','days','tpl','color','size','font') as $rb_new_key) { $rb_new_post_field='co_header_new_'.$rb_new_key.$rb_new_suffix; ?>
+                "<?php echo $rb_new_post_field; ?>": <?php if ($rb_new_key==='use') { ?>$('#<?php echo $rb_new_post_field; ?>').is(':checked') ? 1 : 0<?php } elseif ($rb_new_key==='tpl') { ?>$('input[name="<?php echo $rb_new_post_field; ?>"]:checked').val()<?php } else { ?>$('#<?php echo $rb_new_post_field; ?>').val()<?php } ?>,
+                <?php } } ?>
+                <?php if (defined('_SHOP_')) { ?>
+                "co_header_submenu_cols_shop": co_header_submenu_cols_shop,
+                <?php } else { ?>
+                "co_header_submenu_cols": co_header_submenu_cols,
+                <?php } ?>
                 "co_main_bg": co_main_bg,
                 "co_sub_bg": co_sub_bg,
                 "co_font": co_font,

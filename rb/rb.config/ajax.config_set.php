@@ -129,7 +129,49 @@ if($mod_type == "del_sec") { //섹션삭제
 <?php
 
             if($is_admin) {
+                // 새 컬럼은 공식 API의 DB 업데이트로 생성한다. 없는 컬럼은 기본 1열로 동작한다.
+                $rb_submenu_assignments = array();
+                foreach (array('co_header_submenu_cols', 'co_header_submenu_cols_shop') as $rb_submenu_field) {
+                    if (!isset($_POST[$rb_submenu_field]) || $_POST[$rb_submenu_field] === '') continue;
+                    $rb_submenu_value = is_scalar($_POST[$rb_submenu_field]) ? max(1, min(3, (int)$_POST[$rb_submenu_field])) : 1;
+                    $rb_submenu_column = sql_fetch("SHOW COLUMNS FROM `rb_config` WHERE Field = '{$rb_submenu_field}'", false);
+                    if (empty($rb_submenu_column['Field'])) {
+                        if ($rb_submenu_value !== 1) {
+                            echo json_encode(array('status'=>'error', 'message'=>'관리자모드의 빌더설정에서 DB 업데이트 후 서브메뉴 열을 설정해 주세요.'));
+                            exit;
+                        }
+                        continue;
+                    }
+                    $rb_submenu_assignments[] = "`{$rb_submenu_field}` = '{$rb_submenu_value}'";
+                }
                 // 환경설정 응답으로 새로고침되기 전에 같은 요청에서 노드별 타이틀 설정을 저장한다.
+                foreach (array('', '_shop') as $rb_new_suffix) {
+                    foreach (array('use'=>0, 'days'=>1, 'tpl'=>1, 'color'=>'', 'size'=>10, 'font'=>'font-B') as $rb_new_key=>$rb_new_default) {
+                        $rb_new_field = 'co_header_new_'.$rb_new_key.$rb_new_suffix;
+                        if (!isset($_POST[$rb_new_field])) continue;
+                        if (!is_scalar($_POST[$rb_new_field])) {
+                            echo json_encode(array('status'=>'error', 'message'=>'새글 아이콘 설정값이 올바르지 않습니다.')); exit;
+                        }
+                        $rb_new_value = (string)$_POST[$rb_new_field];
+                        if ($rb_new_key === 'use') $rb_new_value = (int)$rb_new_value === 1 ? 1 : 0;
+                        elseif ($rb_new_key === 'days') $rb_new_value = max(1, min(365, (int)$rb_new_value));
+                        elseif ($rb_new_key === 'tpl') $rb_new_value = max(1, min(3, (int)$rb_new_value));
+                        elseif ($rb_new_key === 'size') $rb_new_value = max(8, min(24, (int)$rb_new_value));
+                        elseif ($rb_new_key === 'font') $rb_new_value = $rb_new_value === 'font-R' ? 'font-R' : 'font-B';
+                        elseif ($rb_new_value !== '' && !preg_match('/^#(?:[a-f0-9]{3}|[a-f0-9]{4}|[a-f0-9]{6}|[a-f0-9]{8})$/iD', $rb_new_value)) {
+                            echo json_encode(array('status'=>'error', 'message'=>'아이콘 배경컬러를 확인해 주세요.')); exit;
+                        }
+                        if ($rb_new_key === 'color' && strcasecmp($rb_new_value, $co_color) === 0) $rb_new_value = '';
+                        $rb_new_column = sql_fetch("SHOW COLUMNS FROM rb_config WHERE Field='{$rb_new_field}'", false);
+                        if (empty($rb_new_column['Field'])) {
+                            if ((string)$rb_new_value !== (string)$rb_new_default) {
+                                echo json_encode(array('status'=>'error', 'message'=>'관리자모드의 빌더설정에서 DB 업데이트 후 설정할 수 있습니다.')); exit;
+                            }
+                            continue;
+                        }
+                        $rb_submenu_assignments[] = "`{$rb_new_field}`='".sql_real_escape_string((string)$rb_new_value)."'";
+                    }
+                }
                 if (isset($_POST['subtitle_code']) || isset($_POST['subtitle_hidden'])) {
                     $subtitle_csrf = isset($_POST['subtitle_csrf']) ? $_POST['subtitle_csrf'] : '';
                     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !is_string($subtitle_csrf)
@@ -155,6 +197,14 @@ if($mod_type == "del_sec") { //섹션삭제
                     $sql = " insert into rb_config (co_theme, co_layout, co_layout_hd, co_layout_ft, co_layout_shop, co_layout_hd_shop, co_layout_ft_shop, co_color, co_header, co_main_bg, co_sub_bg, co_gap_mo, co_font, co_gap_pc, co_inner_padding_pc, co_sub_width, co_main_width, co_tb_width, co_padding_top, co_padding_top_sub, co_padding_top_shop, co_padding_top_sub_shop, co_padding_btm, co_padding_btm_sub, co_padding_btm_shop, co_padding_btm_sub_shop, co_menu_shop, co_sidemenu_padding, co_sidemenu_padding_shop, co_sidemenu_hide, co_sidemenu_hide_shop, co_side_skin, co_side_skin_shop, co_sidemenu, co_sidemenu_shop, co_sidemenu_width, co_sidemenu_width_shop, co_datetime, co_ip)
                     values ('{$co_theme}', '{$co_layout}', '{$co_layout_hd}', '{$co_layout_ft}', '{$co_layout_shop}', '{$co_layout_hd_shop}', '{$co_layout_ft_shop}', '{$co_color}', '{$co_header}', '{$co_main_bg}', '{$co_sub_bg}', '{$co_gap_mo}', '{$co_font}', '{$co_gap_pc}', '{$co_inner_padding_pc}', '{$co_sub_width}', '{$co_main_width}', '{$co_tb_width}', '{$co_padding_top}', '{$co_padding_top_sub}', '{$co_padding_top_shop}', '{$co_padding_top_sub_shop}', '{$co_padding_btm}', '{$co_padding_btm_sub}', '{$co_padding_btm_shop}', '{$co_padding_btm_sub_shop}', '{$co_menu_shop}', '{$co_sidemenu_padding}', '{$co_sidemenu_padding_shop}', '{$co_sidemenu_hide}', '{$co_sidemenu_hide_shop}', '{$co_side_skin}', '{$co_side_skin_shop}', '{$co_sidemenu}', '{$co_sidemenu_shop}', '{$co_sidemenu_width}', '{$co_sidemenu_width_shop}', '".G5_TIME_YMDHIS."', '{$_SERVER['REMOTE_ADDR']}') ";
                     sql_query($sql);
+                }
+            }
+
+            if ($is_admin && $rb_submenu_assignments) {
+                $rb_submenu_theme = sql_real_escape_string($co_theme);
+                if (!sql_query("UPDATE `rb_config` SET ".implode(', ', $rb_submenu_assignments)." WHERE co_theme = '{$rb_submenu_theme}'", false)) {
+                    echo json_encode(array('status'=>'error', 'message'=>'서브메뉴 설정을 저장하지 못했습니다. DB 업데이트 상태를 확인해 주세요.'));
+                    exit;
                 }
             }
 

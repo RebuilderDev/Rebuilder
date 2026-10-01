@@ -405,7 +405,7 @@ $admin = get_admin("super");
                                         sql_free_result($tmp_res3);
 
                                         echo '<li class="rb-btm-2d'.($has_3d ? ' rb-has-3d' : '').'">';
-                                        echo '<a href="'.shop_category_url($mshop_ca_row2['ca_id']).'">'.get_text($mshop_ca_row2['ca_name']).'</a>';
+                                        echo '<a href="'.shop_category_url($mshop_ca_row2['ca_id']).'">'.get_text($mshop_ca_row2['ca_name']).rb_header_new_icon(shop_category_url($mshop_ca_row2['ca_id'])).'</a>';
 
                                         // // 3차 있으면 버튼 + ul
                                         if ($has_3d) {
@@ -414,7 +414,7 @@ $admin = get_admin("super");
 
                                             $mshop_ca_res3 = sql_query(get_mshop_category($mshop_ca_row2['ca_id'], 6));
                                             while($mshop_ca_row3 = sql_fetch_array($mshop_ca_res3)) {
-                                                echo '<li><a href="'.shop_category_url($mshop_ca_row3['ca_id']).'">'.get_text($mshop_ca_row3['ca_name']).'</a></li>'.PHP_EOL;
+                                                echo '<li><a href="'.shop_category_url($mshop_ca_row3['ca_id']).'">'.get_text($mshop_ca_row3['ca_name']).rb_header_new_icon(shop_category_url($mshop_ca_row3['ca_id'])).'</a></li>'.PHP_EOL;
                                             }
                                             sql_free_result($mshop_ca_res3);
 
@@ -491,7 +491,7 @@ $admin = get_admin("super");
                                         $has_3d = (!empty($row2['sub']) && is_array($row2['sub']) && count($row2['sub']) > 0);
 
                                         echo '<li class="rb-btm-2d'.($has_3d ? ' rb-has-3d' : '').'">';
-                                        echo '<a href="'.$row2['me_link'].'" target="_'.$row2['me_target'].'">'.$row2['me_name'].'</a>';
+                                        echo '<a href="'.$row2['me_link'].'" target="_'.$row2['me_target'].'">'.rb_header_menu_name($row2).'</a>';
 
                                         if ($has_3d) {
                                             echo '<button type="button" class="rb-btm-3d-toggle" aria-label="3차 메뉴 열기"></button>';
@@ -509,7 +509,7 @@ $admin = get_admin("super");
                                                     }
                                                 }
 
-                                                echo '<li><a href="'.$row3['me_link'].'" target="_'.$row3['me_target'].'">'.$row3['me_name'].'</a></li>' . PHP_EOL;
+                                                echo '<li><a href="'.$row3['me_link'].'" target="_'.$row3['me_target'].'">'.rb_header_menu_name($row3).'</a></li>' . PHP_EOL;
                                             }
 
                                             echo '</ul>' . PHP_EOL;
@@ -575,7 +575,7 @@ $admin = get_admin("super");
 
 
 
-<script src="<?php echo G5_THEME_URL ?>/rb.js/cbpHorizontalMenu.min.js"></script>
+<script src="<?php echo G5_THEME_URL ?>/rb.js/cbpHorizontalMenu.min.js?ver=<?php echo filemtime(G5_THEME_PATH.'/rb.js/cbpHorizontalMenu.min.js'); ?>"></script>
 <script>
     $(function() {
         cbpHorizontalMenu.init();

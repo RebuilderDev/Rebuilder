@@ -745,6 +745,33 @@ function rb_license_apply_seed($seeds, &$changed)
     return '';
 }
 
+// 선택 조회 인덱스: 설치된 코어 테이블에만 추가하며 테이블/코어 컬럼을 생성하지 않는다.
+function rb_license_apply_query_indexes($tables, &$changed)
+{
+    global $g5;
+    if (!$tables) return '';
+    if (!is_array($tables)) return '조회 인덱스 응답이 올바르지 않습니다.';
+    $allowed = array();
+    foreach (array('board_new_table','qa_content_table','g5_shop_item_table') as $key) if (!empty($g5[$key])) $allowed[] = $g5[$key];
+    foreach ($tables as $table=>$indexes) {
+        if (!in_array($table, $allowed, true) || !rb_license_valid_identifier($table)) continue;
+        $exists = sql_fetch("SELECT COUNT(*) AS cnt FROM information_schema.TABLES WHERE TABLE_SCHEMA='".sql_real_escape_string(G5_MYSQL_DB)."' AND TABLE_NAME='".sql_real_escape_string($table)."'", false);
+        if (empty($exists['cnt'])) continue;
+        $error = ''; $safe = rb_license_schema_indexes($table, array('indexes'=>$indexes), $error);
+        if ($error !== '') return $error;
+        foreach ($safe as $name=>$columns) {
+            $found = sql_fetch("SHOW INDEX FROM `{$table}` WHERE Key_name='".sql_real_escape_string($name)."'", false);
+            if ($found) continue;
+            foreach ($indexes[$name] as $column) {
+                if (!sql_fetch("SHOW COLUMNS FROM `{$table}` WHERE Field='".sql_real_escape_string($column)."'", false)) return '['.$table.'] 조회 인덱스 컬럼을 확인할 수 없습니다.';
+            }
+            if (!sql_query('ALTER TABLE `'.$table.'` ADD INDEX `'.$name.'` ('.implode(',', $columns).')', false)) return '['.$table.'] 조회 인덱스 생성에 실패했습니다.';
+            $changed = true;
+        }
+    }
+    if (function_exists('rb_hn_invalidate')) rb_hn_invalidate('indexes');
+    return '';
+}
 function rb_license_apply_remote_schema($data)
 {
     if (!is_array($data) || empty($data['schema_version'])) {
@@ -754,6 +781,9 @@ function rb_license_apply_remote_schema($data)
     $error = rb_license_apply_bootstrap_sql(isset($data['bootstrap_sql']) ? $data['bootstrap_sql'] : array(), $changed);
     if ($error === '') {
         $error = rb_license_apply_schema_tables(isset($data['schema']) ? $data['schema'] : array(), $changed);
+    }
+    if ($error === '') {
+        $error = rb_license_apply_query_indexes(isset($data['query_indexes']) ? $data['query_indexes'] : array(), $changed);
     }
     if ($error === '') {
         $error = rb_license_apply_seed(isset($data['bootstrap_seed']) ? $data['bootstrap_seed'] : array(), $changed);

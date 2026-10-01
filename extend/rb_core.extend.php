@@ -1,6 +1,7 @@
 <?php
 if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
 include_once(G5_PATH.'/rb/rb.lib/rb_theme_package.lib.php');
+include_once(G5_PATH.'/rb/rb.lib/rb_header_new.lib.php');
 
 // 500 에러가 나오시는 경우 아래 코드를 주석해제하셔서
 // 보이는 에러구문을 알려주세요.

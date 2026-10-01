@@ -21,7 +21,7 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
     -->
 
     <!-- 헤더 { -->
-    <header id="header">
+    <header id="header" data-rb-header-submenu-columns="<?php echo isset($rb_config['co_header_submenu_cols']) ? max(1, min(3, (int)$rb_config['co_header_submenu_cols'])) : 1; ?>">
 
         <!-- GNB { -->
         <div class="gnb_wrap">
@@ -116,7 +116,7 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
                                 // // 2차 출력 시작
                                 echo '<li>';
 
-                                echo '<a href="'.$row2['me_link'].'" target="_'.$row2['me_target'].'">'.$row2['me_name'].'</a>';
+                                echo '<a href="'.$row2['me_link'].'" target="_'.$row2['me_target'].'">'.rb_header_menu_name($row2).'</a>';
 
                                 // // 3차가 있으면 하위 ul 추가
                                 $j = 0;
@@ -138,7 +138,7 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
                                             echo '<i><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></i><dl class="cbp-hrsub-3">'.PHP_EOL;
                                         }
 
-                                        echo '<dd><a href="'.$row3['me_link'].'" target="_'.$row3['me_target'].'">'.$row3['me_name'].'</a></dd>'.PHP_EOL;
+                                        echo '<dd><a href="'.$row3['me_link'].'" target="_'.$row3['me_target'].'">'.rb_header_menu_name($row3).'</a></dd>'.PHP_EOL;
 
                                         $j++;
                                     }

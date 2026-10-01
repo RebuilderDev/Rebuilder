@@ -425,7 +425,7 @@ if(G5_COMMUNITY_USE === false) {
                 // // 2차 li 시작
                 echo '<li class="rb-btm-2d">';
 
-                echo '<a href="'.$row2['me_link'].'" target="_'.$row2['me_target'].'">'.$row2['me_name'].'</a>';
+                echo '<a href="'.$row2['me_link'].'" target="_'.$row2['me_target'].'">'.rb_header_menu_name($row2).'</a>';
 
                 // // 3차 출력(있으면)
                 $j = 0;
@@ -448,7 +448,7 @@ if(G5_COMMUNITY_USE === false) {
                             echo '<ul class="cbp-hrsub-3">' . PHP_EOL;
                         }
 
-                        echo '<li><a href="'.$row3['me_link'].'" target="_'.$row3['me_target'].'">'.$row3['me_name'].'</a></li>' . PHP_EOL;
+                        echo '<li><a href="'.$row3['me_link'].'" target="_'.$row3['me_target'].'">'.rb_header_menu_name($row3).'</a></li>' . PHP_EOL;
                         $j++;
                     }
 
@@ -517,7 +517,7 @@ if(G5_COMMUNITY_USE === false) {
 <!-- } -->
 
 
-<script src="<?php echo G5_THEME_URL ?>/rb.js/cbpHorizontalMenu.min.js"></script>
+<script src="<?php echo G5_THEME_URL ?>/rb.js/cbpHorizontalMenu.min.js?ver=<?php echo filemtime(G5_THEME_PATH.'/rb.js/cbpHorizontalMenu.min.js'); ?>"></script>
 <script>
     $(function() {
         cbpHorizontalMenu.init();
