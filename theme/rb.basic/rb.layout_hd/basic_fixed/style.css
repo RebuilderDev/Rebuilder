@@ -77,6 +77,14 @@
 .gnb_wrap .rows_gnb_wrap .cbp-hrmenu > ul > li {padding-right: 0px;}
 .gnb_wrap .rows_gnb_wrap nav {width: 100%;}
 .gnb_wrap .rows_gnb_wrap nav .swiper-slide-gnb {width: auto !important;}
+/* Swiper 초기화 전에도 동일한 메뉴 간격을 적용합니다. */
+.gnb_wrap .rows_gnb_wrap nav:not(.swiper-container-initialized) > .swiper-wrapper-gnb > .swiper-slide-gnb {margin-right: 20px;}
+@media (min-width: 768px) {
+    .gnb_wrap .rows_gnb_wrap nav:not(.swiper-container-initialized) > .swiper-wrapper-gnb > .swiper-slide-gnb {margin-right: 25px;}
+}
+@media (min-width: 1024px) {
+    .gnb_wrap .rows_gnb_wrap nav:not(.swiper-container-initialized) > .swiper-wrapper-gnb > .swiper-slide-gnb {margin-right: 30px;}
+}
 .swiper-container-gnb {overflow: inherit !important;}
 .gnb_wrap .snb_q_wrap {display: flex; align-items: center; gap:25px; flex: 0 0 auto;}
 .gnb_wrap .snb_q_wrap a {opacity: 0.6}
