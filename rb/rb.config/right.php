@@ -184,7 +184,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
                     $rb_new_fields = array();
                     foreach (array('use','days','tpl','color','size','font') as $rb_new_key) $rb_new_fields[] = 'co_header_new_'.$rb_new_key.$rb_new_suffix;
                     $rb_new_columns = sql_query("SHOW COLUMNS FROM rb_config WHERE Field IN ('".implode("','", $rb_new_fields)."')", false);
-                    $rb_new_ready = $rb_new_columns && sql_num_rows($rb_new_columns) === count($rb_new_fields);
+                    $rb_new_ready = $rb_new_columns && sql_num_rows($rb_new_columns) === count($rb_new_fields) && rb_hn_ready();
                     ?>
                     <ul class="rb_config_sec">
                         <h6 class="font-B"><?php echo defined('_SHOP_') ? '마켓 ' : ''; ?>헤더 서브메뉴 설정 (공용)</h6>
@@ -202,13 +202,13 @@ foreach ($rb_side_panels as $rb_side_panel) {
                             </ul>
                             <div class="rb_header_new_controls" id="rb_header_new_controls<?php echo $rb_new_suffix; ?>">
                                 <ul class="rows_inp_lr mt-15">
-                                    <li class="rows_inp_l rows_inp_l_span"><span class="font-B">새글표기</span></li>
+                                    <li class="rows_inp_l rows_inp_l_span"><span class="font-B">N 아이콘</span><br>새글/새상품</li>
                                     <li class="rows_inp_r mt-5">
                                         <input type="checkbox" class="magic-checkbox mod_send" name="co_header_new_use<?php echo $rb_new_suffix; ?>" id="co_header_new_use<?php echo $rb_new_suffix; ?>" value="1" <?php echo $rb_new_options['use'] ? 'checked' : ''; ?> <?php echo $rb_new_ready ? '' : 'disabled'; ?>><label for="co_header_new_use<?php echo $rb_new_suffix; ?>">아이콘 표시</label>
                                     </li><div class="cb"></div>
                                 </ul>
                                 <ul class="rows_inp_lr mt-10">
-                                    <li class="rows_inp_l rows_inp_l_span"><span class="font-B">아이콘기간</span></li>
+                                    <li class="rows_inp_l rows_inp_l_span"><span class="font-B">N 아이콘 기간</span><br>노출일수</li>
                                     <li class="rows_inp_r mt-5">
                                         <input type="number" class="input tiny_input mod_send" name="co_header_new_days<?php echo $rb_new_suffix; ?>" id="co_header_new_days<?php echo $rb_new_suffix; ?>" min="1" max="365" value="<?php echo $rb_new_options['days']; ?>" style="width:65px !important;" <?php echo $rb_new_ready ? '' : 'disabled'; ?>> 일
                                     </li><div class="cb"></div>

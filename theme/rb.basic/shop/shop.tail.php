@@ -405,7 +405,7 @@ $admin = get_admin("super");
                                         sql_free_result($tmp_res3);
 
                                         echo '<li class="rb-btm-2d'.($has_3d ? ' rb-has-3d' : '').'">';
-                                        echo '<a href="'.shop_category_url($mshop_ca_row2['ca_id']).'">'.get_text($mshop_ca_row2['ca_name']).rb_header_new_icon(shop_category_url($mshop_ca_row2['ca_id'])).'</a>';
+                                        echo '<a href="'.shop_category_url($mshop_ca_row2['ca_id']).'">'.rb_header_category_name($mshop_ca_row2).'</a>';
 
                                         // // 3차 있으면 버튼 + ul
                                         if ($has_3d) {
@@ -414,7 +414,7 @@ $admin = get_admin("super");
 
                                             $mshop_ca_res3 = sql_query(get_mshop_category($mshop_ca_row2['ca_id'], 6));
                                             while($mshop_ca_row3 = sql_fetch_array($mshop_ca_res3)) {
-                                                echo '<li><a href="'.shop_category_url($mshop_ca_row3['ca_id']).'">'.get_text($mshop_ca_row3['ca_name']).rb_header_new_icon(shop_category_url($mshop_ca_row3['ca_id'])).'</a></li>'.PHP_EOL;
+                                                echo '<li><a href="'.shop_category_url($mshop_ca_row3['ca_id']).'">'.rb_header_category_name($mshop_ca_row3).'</a></li>'.PHP_EOL;
                                             }
                                             sql_free_result($mshop_ca_res3);
 

@@ -597,7 +597,7 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
 
                                         echo '<li>';
 
-                                        echo '<a href="'.shop_category_url($mshop_ca_row2['ca_id']).'">'.get_text($mshop_ca_row2['ca_name']).rb_header_new_icon(shop_category_url($mshop_ca_row2['ca_id'])).'</a>';
+                                        echo '<a href="'.shop_category_url($mshop_ca_row2['ca_id']).'">'.rb_header_category_name($mshop_ca_row2).'</a>';
 
                                         // // 3차 카테고리
                                         $mshop_ca_res3 = sql_query(get_mshop_category($mshop_ca_row2['ca_id'], 6));
@@ -608,7 +608,7 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
                                                 echo '<i><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></i><dl class="cbp-hrsub-3">'.PHP_EOL;
                                             }
 
-                                            echo '<dd><a href="'.shop_category_url($mshop_ca_row3['ca_id']).'">'.get_text($mshop_ca_row3['ca_name']).rb_header_new_icon(shop_category_url($mshop_ca_row3['ca_id'])).'</a></dd>'.PHP_EOL;
+                                            echo '<dd><a href="'.shop_category_url($mshop_ca_row3['ca_id']).'">'.rb_header_category_name($mshop_ca_row3).'</a></dd>'.PHP_EOL;
 
                                             $s++;
                                         }
@@ -754,7 +754,7 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
                                                     echo '<ul>'.PHP_EOL;
                                             ?>
                                                 <li>
-                                                    <a href="<?php echo $mshop_ca_row2['url']; ?>" class="<?php if($ca_id == $mshop_ca_row2['ca_id']) { ?>dp2_active<?php } ?>"><?php echo get_text($mshop_ca_row2['ca_name']).rb_header_new_icon(shop_category_url($mshop_ca_row2['ca_id'])); ?></a>
+                                                    <a href="<?php echo $mshop_ca_row2['url']; ?>" class="<?php if($ca_id == $mshop_ca_row2['ca_id']) { ?>dp2_active<?php } ?>"><?php echo rb_header_category_name($mshop_ca_row2); ?></a>
                                                     <?php
                                                     $s=0;
                                                     foreach($cate2 as $key=>$cate3){
@@ -764,7 +764,7 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
                                                         if($s == 0)
                                                             echo '<dl>'.PHP_EOL;
                                                     ?>
-                                                        <dd><a href="<?php echo $mshop_ca_row3['url']; ?>" class="font-R <?php if($ca_id == $mshop_ca_row3['ca_id']) { ?>dp3_active<?php } ?>"><?php echo get_text($mshop_ca_row3['ca_name']).rb_header_new_icon(shop_category_url($mshop_ca_row3['ca_id'])); ?></a></dd>
+                                                        <dd><a href="<?php echo $mshop_ca_row3['url']; ?>" class="font-R <?php if($ca_id == $mshop_ca_row3['ca_id']) { ?>dp3_active<?php } ?>"><?php echo rb_header_category_name($mshop_ca_row3); ?></a></dd>
                                                     <?php
                                                         $s++;
                                                     }

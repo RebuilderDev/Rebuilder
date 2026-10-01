@@ -1277,6 +1277,14 @@ footer .footer_gnb {background-color: #fff;}
 
 /* 2.2.7.7 - PC 헤더 서브메뉴 열 설정 { */
 /* N 아이콘: 기본 10px 글자에 14px 배경. 굵기는 font-R/font-B 클래스에서 결정한다. */
+.rb-header-menu-label {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    vertical-align: baseline;
+    text-indent: 0;
+}
+.rb-header-menu-text {min-width: 0;}
 .rb-header-new {
     display: inline-flex;
     align-items: center;

@@ -169,6 +169,9 @@ if($mod_type == "del_sec") { //섹션삭제
                             }
                             continue;
                         }
+                        if ($rb_new_key === 'use' && $rb_new_value === 1 && !rb_hn_ready($rb_new_suffix === '_shop')) {
+                            echo json_encode(array('status'=>'error', 'message'=>'관리자모드의 빌더설정에서 DB 업데이트 후 설정할 수 있습니다.')); exit;
+                        }
                         $rb_submenu_assignments[] = "`{$rb_new_field}`='".sql_real_escape_string((string)$rb_new_value)."'";
                     }
                 }
