@@ -243,11 +243,18 @@ if (isset($_FILES['file']) && count($_FILES['file']['name']) > 0) {
         }
 
         // // 저장
-        $unique       = abs(ip2long($_SERVER['REMOTE_ADDR'])) . '_' . uniqid();
-        $new_filename = $unique . '_' . $safe_name;
-        $dest_file    = G5_DATA_PATH . "/file/{$bo_table}/{$new_filename}";
+        $new_filename = rb_store_attachment($tmp_file, $safe_name, G5_DATA_PATH . "/file/{$bo_table}");
+        if ($new_filename === false) {
+            $return['res'] = 'false';
+            $return['msg'] = '파일을 안전하게 저장할 수 없습니다. 서버의 난수 소스와 저장 경로를 확인해 주십시오.';
+            // 앞서 성공한 업로드 정보도 반환하여 파일 참조를 보존합니다.
+            $return['list'] = $list;
+            echo json_encode($return, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        $dest_file = G5_DATA_PATH . "/file/{$bo_table}/{$new_filename}";
 
-        if (move_uploaded_file($tmp_file, $dest_file)) {
+        if ($new_filename !== false) {
             chmod($dest_file, G5_FILE_PERMISSION);
 
             $f = [

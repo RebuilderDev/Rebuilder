@@ -1631,6 +1631,8 @@ function pay_approval()
 
         <?php if ($default['de_pg_service'] == 'inicis' && !empty($inicis_pro_use)) { ?>
         return inicis_pro_pay("<?php echo $od_id; ?>", "MOBILE");
+        <?php } else if ($default['de_pg_service'] == 'inicis' && is_file(G5_MSHOP_PATH.'/inicis/makesignature.php')) { ?>
+        if (typeof inicis_mobile_signature !== 'function' || !inicis_mobile_signature(f)) return false;
         <?php } ?>
 
         <?php if ($default['de_pg_service'] == 'nicepay') { ?>
