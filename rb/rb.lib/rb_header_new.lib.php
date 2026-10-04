@@ -43,14 +43,19 @@ function rb_hn_cached($key, $tag, $loader, $ttl = 60) {
     }
     try {
         $value = call_user_func($loader);
-        $payload = json_encode(array('until'=>$now+$ttl, 'generation'=>$generation, 'value'=>$value));
-        $tmp = @tempnam(dirname($path), 'rb_hn_');
-        if ($tmp !== false) {
-            if (@file_put_contents($tmp, "<?php exit; ?>\n".$payload) !== false) @rename($tmp, $path);
-            if (is_file($tmp)) @unlink($tmp);
-        }
     } catch (Exception $e) {
         $value = null;
+    } catch (Throwable $e) {
+        // PHP 7 이상에서 DB 처리의 Error도 페이지 전체를 중단하지 않도록 한다.
+        error_log('[Rebuilder header N] '.get_class($e).': '.$e->getMessage());
+        $value = null;
+    }
+    // 오류로 생략한 결과도 캐시하여 같은 조회가 요청마다 반복되지 않도록 한다.
+    $payload = json_encode(array('until'=>$now+$ttl, 'generation'=>$generation, 'value'=>$value));
+    $tmp = @tempnam(dirname($path), 'rb_hn_');
+    if ($tmp !== false) {
+        if (@file_put_contents($tmp, "<?php exit; ?>\n".$payload) !== false) @rename($tmp, $path);
+        if (is_file($tmp)) @unlink($tmp);
     }
     if ($lock) { flock($lock, LOCK_UN); fclose($lock); }
     return $memory[$memory_key] = $value;
@@ -83,6 +88,47 @@ function rb_hn_boards() {
         if ($result) while ($row = sql_fetch_array($result)) $rows[$row['bo_table']] = $row;
         return $rows;
     });
+}
+// 2.2.7.8: 실제 그룹과 소속 게시판을 공유 캐시에 보관한다. 빈 그룹도 이름 중복 검사에 포함한다.
+function rb_hn_groups() {
+    global $g5;
+    return (array)rb_hn_cached('groups-v1', 'boards', function() use ($g5) {
+        $groups = rb_hn_table($g5['group_table']);
+        $boards = rb_hn_table($g5['board_table']);
+        if (!$groups || !$boards) return array();
+        $result = sql_query("SELECT g.gr_id, g.gr_subject, g.gr_use_access, g.gr_admin, b.bo_table, b.bo_list_level, b.bo_read_level, b.bo_admin FROM {$groups} g LEFT JOIN {$boards} b ON b.gr_id=g.gr_id", false);
+        $rows = array();
+        if ($result) while ($row = sql_fetch_array($result)) {
+            $id = $row['gr_id'];
+            if (!isset($rows[$id])) $rows[$id] = array('subject'=>$row['gr_subject'], 'boards'=>array());
+            if ($row['bo_table'] !== null) $rows[$id]['boards'][$row['bo_table']] = $row;
+        }
+        return $rows;
+    });
+}
+function rb_hn_group_resolve($path, $query, $root, $bbs) {
+    $id = ''; $pretty = false;
+    if (isset($query['gr_id']) && $query['gr_id'] !== '') $id = (string)$query['gr_id'];
+    else {
+        foreach (array_unique(array($bbs.'/group/', $root.'/group/')) as $prefix) {
+            if (strpos($path, $prefix) !== 0) continue;
+            $part = substr($path, strlen($prefix));
+            if (preg_match('~^([^/]+)/?$~uD', $part, $match)) { $id = $match[1]; $pretty = true; }
+            break;
+        }
+    }
+    if ($id === '') return null;
+    $groups = rb_hn_groups();
+    if (isset($groups[$id])) return array('kind'=>'group','id'=>$id,'category'=>'');
+    // 짧은 한글 경로는 실제 그룹명이 유일하게 일치할 때만 허용한다. gr_id 파라미터는 ID로만 판단한다.
+    if (!$pretty) return null;
+    $found = null;
+    foreach ($groups as $group_id => $group) {
+        if ($group['subject'] !== $id) continue;
+        if ($found !== null) return null;
+        $found = (string)$group_id;
+    }
+    return $found === null ? null : array('kind'=>'group','id'=>$found,'category'=>'');
 }
 function rb_hn_settings($shop = null) {
     global $rb_config;
@@ -121,13 +167,19 @@ function rb_hn_resolve($link) {
     if ($root !== '' && strpos($path, $root.'/') !== 0) return null;
     $relative = substr($path, strlen($root));
     $query = array(); if (isset($url['query'])) parse_str($url['query'], $query);
-    foreach (array('bo_table','onetable','sca','ca_id','wr_id','wr_seo_title','stx','sfl','it_id','it_seo_title','type','q','qname','qexplan','qid','qbasic','qcaid','qfrom','qto','qa_id') as $key) {
+    foreach (array('bo_table','gr_id','onetable','sca','ca_id','wr_id','wr_seo_title','stx','sfl','it_id','it_seo_title','type','q','qname','qexplan','qid','qbasic','qcaid','qfrom','qto','qa_id') as $key) {
         if (isset($query[$key]) && !is_scalar($query[$key])) return null;
     }
     $bbs = rawurldecode(parse_url(G5_BBS_URL, PHP_URL_PATH));
     $category = isset($query['sca']) ? (string)$query['sca'] : '';
     // 파일 경로 전체를 확인한다. /qalist 게시판과 /bbs/qalist.php 문의는 다른 대상이다.
     if (in_array($path, array($bbs.'/qalist.php',$bbs.'/qaview.php',$bbs.'/qawrite.php'), true)) return array('kind'=>'qa','id'=>'qa','category'=>$category);
+    // 명시적인 게시판 링크는 기존 판정을 유지한다. 그룹 경로는 게시판의 SEO 경로로 오인하지 않는다.
+    $has_board_id = isset($query['bo_table']) && $query['bo_table'] !== '';
+    if (!$has_board_id && ($path === $bbs.'/group.php'
+        || strpos($path, $bbs.'/group/') === 0 || strpos($path, $root.'/group/') === 0)) {
+        return rb_hn_group_resolve($path, $query, $root, $bbs);
+    }
     $shop_target = rb_hn_shop_resolve($path, $query, $root);
     if ($shop_target) return $shop_target;
     // 명시적인 bo_table은 커스텀 페이지에서도 실제 게시판 목록과 대조한다.
@@ -141,6 +193,7 @@ function rb_hn_resolve($link) {
         $boards = rb_hn_boards();
         if (isset($boards[$id])) return array('kind'=>'board','id'=>$id,'category'=>$category,'board'=>$boards[$id]);
     }
+    if (!$has_board_id && isset($query['gr_id'])) return rb_hn_group_resolve($path, $query, $root, $bbs);
     return null;
 }
 function rb_hn_shop_resolve($path, $query, $root) {
@@ -245,6 +298,41 @@ function rb_hn_board_allowed($board) {
     }
     return !empty($groups[$board['gr_id']]);
 }
+function rb_hn_group_latest($id, $days, $cutoff, $end) {
+    global $g5;
+    $groups = rb_hn_groups();
+    if (!isset($groups[$id])) return null;
+    $boards = array();
+    foreach ($groups[$id]['boards'] as $board_id => $board) {
+        if (rb_hn_board_allowed($board)) $boards[] = (string)$board_id;
+    }
+    if (!$boards) return null;
+    sort($boards, SORT_STRING);
+    // 접근 가능한 게시판 목록이 같은 사용자끼리만 캐시를 공유한다.
+    $key = 'latest-group-v3|'.json_encode(array($id, $days, $boards));
+    return rb_hn_cached($key, 'group|'.$id, function() use ($g5, $boards, $cutoff, $end) {
+        $name = $g5['board_new_table'];
+        if (!rb_hn_indexed($name, 'rb_header_new_board')) return null;
+        $table = rb_hn_table($name);
+        if (!$table) return null;
+        // 긴 SQL은 그누보드 보안 정규식의 backtrack 한도를 넘을 수 있으므로 4개씩 조회한다.
+        // 기간 내 원글이 하나라도 있으면 즉시 종료하며 결과는 그룹 공유 캐시에 저장한다.
+        foreach (array_chunk($boards, 4) as $batch) {
+            $parts = array();
+            foreach ($batch as $board_id) {
+                $board_id = sql_real_escape_string($board_id);
+                // 게시판별 기존 인덱스 범위에서 최신 원글 1건만 선택한다.
+                $parts[] = "(SELECT n.bn_datetime AS dt FROM {$table} n FORCE INDEX (rb_header_new_board) WHERE n.bo_table='{$board_id}' AND n.wr_id=n.wr_parent AND n.bn_datetime>='{$cutoff}' AND n.bn_datetime<='{$end}' ORDER BY n.bn_datetime DESC LIMIT 1)";
+            }
+            $values = array();
+            foreach ($parts as $part) $values[] = 'COALESCE('.$part.", '')";
+            $sql = count($parts) === 1 ? substr($parts[0], 1, -1) : 'SELECT GREATEST('.implode(', ', $values).') AS dt';
+            $row = sql_fetch($sql, false);
+            if (isset($row['dt']) && $row['dt'] >= $cutoff && $row['dt'] <= $end) return $row['dt'];
+        }
+        return null;
+    });
+}
 function rb_header_new_icon($link) {
     global $g5, $member, $is_admin;
     $options = rb_hn_settings();
@@ -255,6 +343,11 @@ function rb_header_new_icon($link) {
     if ($target['kind'] === 'qa' && empty($is_admin)) return '';
     $now = defined('G5_SERVER_TIME') ? G5_SERVER_TIME : time();
     $cutoff = date('Y-m-d H:i:s', $now - $options['days'] * 86400);
+    if ($target['kind'] === 'group') {
+        $end = date('Y-m-d H:i:s', $now);
+        $latest = rb_hn_group_latest($target['id'], $options['days'], $cutoff, $end);
+        return $latest && $latest >= $cutoff && $latest <= $end ? rb_hn_badge($options) : '';
+    }
     $key = 'latest-v2|'.json_encode(array($target['kind'],$target['id'],$target['category'],$options['days'],$target['kind']==='qa' ? 'admin' : '',isset($target['filters']) ? $target['filters'] : array()));
     $tag = $target['kind'] === 'board' ? 'board|'.$target['id'] : ($target['kind'] === 'qa' ? 'qa' : 'shop');
     $latest = rb_hn_cached($key, $tag, function() use ($target, $g5, $cutoff, $now) {
@@ -297,7 +390,16 @@ function rb_hn_menu_label($name, $link) {
 function rb_header_category_name($row) {
     return rb_hn_menu_label(get_text($row['ca_name']), shop_category_url($row['ca_id']));
 }
-function rb_hn_board_written($board) { if (!empty($board['bo_table'])) rb_hn_invalidate('board|'.$board['bo_table']); }
+function rb_hn_board_written($board) {
+    if (!isset($board['bo_table']) || $board['bo_table'] === '') return;
+    rb_hn_invalidate('board|'.$board['bo_table']);
+    if (!isset($board['gr_id'])) {
+        $boards = rb_hn_boards();
+        $board = isset($boards[$board['bo_table']]) ? $boards[$board['bo_table']] : $board;
+    }
+    if (isset($board['gr_id']) && $board['gr_id'] !== '') rb_hn_invalidate('group|'.$board['gr_id']);
+}
+function rb_hn_boards_changed() { rb_hn_invalidate('boards'); }
 function rb_hn_board_deleted($write, $board) { rb_hn_board_written($board); }
 function rb_hn_qa_written() { rb_hn_invalidate('qa'); }
 function rb_hn_item_written() { rb_hn_invalidate('shop'); }
@@ -305,6 +407,8 @@ if (function_exists('add_event')) {
     add_event('write_update_after','rb_hn_board_written',20,1);
     add_event('bbs_delete','rb_hn_board_deleted',20,2);
     add_event('bbs_delete_all','rb_hn_board_deleted',20,2);
+    add_event('admin_board_form_update','rb_hn_boards_changed',20,0);
+    add_event('admin_boardgroup_form_update','rb_hn_boards_changed',20,0);
     add_event('qawrite_update','rb_hn_qa_written',20,0);
     add_event('qa_delete','rb_hn_qa_written',20,0);
     add_event('shop_admin_itemformupdate','rb_hn_item_written',20,0);
