@@ -7,6 +7,7 @@ $is_ajax = isset($_POST['ajax']) && (string) $_POST['ajax'] === '1';
 $rb_license_ajax_ob_level = ob_get_level();
 if ($is_ajax) {
     ob_start();
+    rb_license_ajax_guard('인증 토큰 등록', $rb_license_ajax_ob_level);
 }
 
 function rb_license_register_response($success, $message, $data = array())
@@ -27,7 +28,7 @@ function rb_license_register_response($success, $message, $data = array())
         'success' => (bool) $success,
         'message' => (string) $message,
         'data' => is_array($data) ? $data : array(),
-    ), JSON_UNESCAPED_UNICODE);
+    ), JSON_UNESCAPED_UNICODE | (defined('JSON_INVALID_UTF8_SUBSTITUTE') ? JSON_INVALID_UTF8_SUBSTITUTE : 0));
     exit;
 }
 
@@ -45,14 +46,19 @@ if ($is_ajax) {
     set_session('ss_admin_token', '');
     $request_token = isset($_POST['token']) ? (string) $_POST['token'] : '';
     if (!$session_token || !$request_token || !hash_equals((string) $session_token, $request_token)) {
-        rb_license_register_response(false, '올바른 방법으로 이용해 주십시오.');
+        rb_license_register_response(false, '관리자 요청 인증이 만료되었거나 일치하지 않아 토큰 등록이 거절되었습니다. [admin_token_mismatch]');
     }
 } else {
     check_admin_token();
 }
 
 $install_token = isset($_POST['install_token']) ? trim((string) $_POST['install_token']) : '';
-$result = rb_license_register_token($install_token);
+$registration_mode = isset($_POST['registration_mode']) && $_POST['registration_mode'] === 'move' ? 'move' : 'clone';
+try {
+    $result = rb_license_register_token($install_token, $registration_mode);
+} catch (Throwable $error) {
+    $result = rb_license_exception_result($error, '인증 토큰 등록');
+}
 if (empty($result['success'])) {
     if ($is_ajax) {
         rb_license_register_response(false, isset($result['message']) ? $result['message'] : '인증 토큰을 등록하지 못했습니다.');

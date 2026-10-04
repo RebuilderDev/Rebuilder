@@ -31,9 +31,12 @@ function rb_license_client_table_install()
 function rb_license_client_get()
 {
     if (!rb_license_client_table_install()) {
-        return array();
+        return array('error' => rb_license_db_failure_message('설치 인증 테이블 생성 실패'));
     }
     $row = sql_fetch("SELECT * FROM rb_license_client WHERE client_id=1 LIMIT 1", false);
+    if (mysqli_errno($GLOBALS['g5']['connect_db'])) {
+        return array('error' => rb_license_db_failure_message('설치 인증정보 조회 실패'));
+    }
     return is_array($row) ? $row : array();
 }
 
@@ -110,6 +113,7 @@ function rb_license_create_clone_identity($client, $install_token)
 function rb_license_prepare_identity()
 {
     $client = rb_license_client_get();
+    if (isset($client['error'])) return $client;
     if (!empty($client['installation_uuid']) && !empty($client['installation_secret'])) {
         return $client;
     }
@@ -132,7 +136,7 @@ function rb_license_prepare_identity()
             installation_secret=IF(installation_secret='', VALUES(installation_secret), installation_secret),
             updated_at=VALUES(updated_at)", false);
     if (!$saved) {
-        return array('error' => '설치 인증정보를 저장하지 못했습니다. DB 권한을 확인해 주세요.');
+        return array('error' => rb_license_db_failure_message('설치 인증정보 저장 실패'));
     }
     return rb_license_client_get();
 }
@@ -173,101 +177,279 @@ function rb_license_api_payload($client)
     );
 }
 
+function rb_license_db_reason($errno)
+{
+    $reasons = array(1044 => 'DB 접근 권한이 없습니다', 1045 => 'DB 계정 인증이 거절되었습니다',
+        1054 => '필요한 DB 컬럼이 없습니다', 1061 => '같은 이름의 인덱스가 이미 있습니다',
+        1062 => '중복된 DB 값입니다', 1064 => 'DB가 SQL 구문을 처리하지 못했습니다',
+        1142 => 'DB 작업 권한이 없습니다', 1146 => '필요한 DB 테이블이 없습니다',
+        1205 => 'DB 잠금 대기 시간이 초과되었습니다', 1213 => 'DB 작업 간 잠금 충돌이 발생했습니다',
+        2002 => 'DB 서버에 연결하지 못했습니다', 2006 => 'DB 연결이 끊어졌습니다',
+        2013 => 'DB 처리 중 연결이 끊어졌습니다');
+    return isset($reasons[$errno]) ? $reasons[$errno] : 'DB가 요청을 처리하지 못했습니다';
+}
+
+function rb_license_db_failure_message($context)
+{
+    $errno = mysqli_errno($GLOBALS['g5']['connect_db']);
+    return $context.': '.rb_license_db_reason($errno).' (DB '.$errno.').';
+}
+
+function rb_license_exception_result($error, $context)
+{
+    $type = get_class($error);
+    $location = basename($error->getFile()).':'.$error->getLine();
+    $code = 'php_exception';
+    $reason = $type.' 오류';
+    if (preg_match('/Call to undefined function ([A-Za-z0-9_\\\\]+)\(/', $error->getMessage(), $match)) {
+        $reason = 'PHP 함수 '.$match[1].'()를 사용할 수 없습니다';
+    }
+    if ($error instanceof mysqli_sql_exception) {
+        $code = 'database_error';
+        $reason = rb_license_db_reason((int) $error->getCode()).' (DB '.(int) $error->getCode().')';
+    }
+    // 토큰·설치 비밀키·SQL 전문은 예외 응답이나 로그에 넣지 않습니다.
+    error_log('[rb-license] '.$context.' '.$type.' at '.$location);
+    return array('success' => false, 'code' => $code,
+        'message' => $context.' 처리 실패: '.$reason.'. ('.$location.') ['.$code.']');
+}
+
+function rb_license_ajax_guard($context, $output_level)
+{
+    ini_set('display_errors', '0');
+    $reserve = str_repeat(' ', 65536);
+    register_shutdown_function(function() use ($context, $output_level, &$reserve) {
+        $reserve = null;
+        $error = error_get_last();
+        if (!$error || !in_array($error['type'], array(E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR), true)) return;
+        $reason = 'PHP 실행이 중단되었습니다';
+        if (strpos($error['message'], 'Allowed memory size') !== false) $reason = 'PHP 메모리 한도를 초과했습니다';
+        elseif (strpos($error['message'], 'Maximum execution time') !== false) $reason = 'PHP 실행시간 한도를 초과했습니다';
+        $message = $context.' 실패: '.$reason.'. ('.basename($error['file']).':'.$error['line'].') [php_fatal]';
+        set_session('ss_rb_db_update_result', array('success' => false, 'message' => $message));
+        while (ob_get_level() > $output_level) ob_end_clean();
+        if (!headers_sent()) {
+            http_response_code(200);
+            header('Content-Type: application/json; charset=utf-8');
+        }
+        echo json_encode(array('success' => false, 'message' => $message), JSON_UNESCAPED_UNICODE);
+    });
+}
+
+function rb_license_curl_failure($errno)
+{
+    $reasons = array(5 => '인증 서버 통신에 사용하는 프록시 주소를 찾지 못했습니다',
+        6 => '공식 인증 서버의 주소를 DNS에서 찾지 못했습니다',
+        7 => '공식 인증 서버에 연결하지 못했습니다',
+        28 => '공식 인증 서버 통신의 제한 시간이 초과되었습니다',
+        35 => '공식 인증 서버와 TLS 암호화 연결을 맺지 못했습니다',
+        52 => '공식 인증 서버가 응답 없이 연결을 종료했습니다',
+        55 => '공식 인증 서버로 요청을 보내는 중 연결이 끊어졌습니다',
+        56 => '공식 인증 서버의 응답을 받는 중 연결이 끊어졌습니다',
+        60 => 'PHP가 공식 인증 서버의 SSL 인증서를 신뢰하지 못했습니다',
+        77 => 'PHP가 SSL 검증용 CA 인증서 파일을 읽지 못했습니다');
+    return isset($reasons[$errno]) ? $reasons[$errno] : '공식 인증 서버 통신에 실패했습니다';
+}
+
+function rb_license_prefers_https_stream($data_path = null)
+{
+    if ($data_path === null) $data_path = G5_DATA_PATH;
+    return is_file($data_path.'/rb_license_https_stream.txt');
+}
+
+function rb_license_stream_failure($message)
+{
+    if (stripos($message, 'certificate verify failed') !== false) return 'PHP가 공식 인증 서버의 SSL 인증서를 신뢰하지 못했습니다';
+    if (stripos($message, 'getaddrinfo') !== false || stripos($message, 'php_network_getaddresses') !== false) return '공식 인증 서버의 주소를 DNS에서 찾지 못했습니다';
+    if (stripos($message, 'timed out') !== false) return '공식 인증 서버 통신의 제한 시간이 초과되었습니다';
+    if (stripos($message, 'Connection refused') !== false) return '공식 인증 서버가 연결을 거절했습니다';
+    if (stripos($message, 'Failed to enable crypto') !== false || stripos($message, 'SSL operation failed') !== false) return '공식 인증 서버와 TLS 암호화 연결을 맺지 못했습니다';
+    return 'PHP HTTPS 통신이 정상적인 응답을 받지 못했습니다';
+}
+
 function rb_license_http_post($path, $payload)
 {
     $url = RB_LICENSE_API_BASE.'/'.ltrim($path, '/');
     $body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     if (!is_string($body)) {
-        return array('success' => false, 'message' => '전송할 인증정보를 만들지 못했습니다.');
+        return array('success' => false, 'code' => 'request_encode_failed',
+            'message' => '인증 요청의 JSON 생성 실패: '.json_last_error_msg().' [request_encode_failed]');
     }
 
     $response = false;
+    $http_status = 0;
     $connection_error = '';
-    if (function_exists('curl_init')) {
-        $ch = curl_init($url);
-        $curl_options = array(
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $body,
-            CURLOPT_HTTPHEADER => array('Content-Type: application/json', 'Accept: application/json'),
-            CURLOPT_USERAGENT => 'Rebuilder/'.(defined('RB_VER') ? RB_VER : '2.2.7'),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_FOLLOWLOCATION => false,
-            CURLOPT_ENCODING => '',
-        );
-        $ca_candidates = array(
-            ini_get('curl.cainfo'),
-            ini_get('openssl.cafile'),
-            dirname(PHP_BINARY).'/curl-ca-bundle.crt',
-            dirname(PHP_BINARY).'/extras/ssl/cacert.pem',
-        );
-        foreach ($ca_candidates as $ca_file) {
-            // open_basedir 제한형 호스팅에서는 PHP 실행파일 기준의 시스템 경로를
-            // 조회하는 것만으로도 경고가 출력될 수 있으므로 접근 불가 경로는 조용히 건너뜁니다.
-            if ($ca_file && @is_readable($ca_file)) {
-                $curl_options[CURLOPT_CAINFO] = $ca_file;
-                break;
+    $connection_code = 'connection_failed';
+    // 별도 우회 파일을 설치한 환경에서만 PHP HTTPS 스트림으로 바로 통신합니다.
+    // 네이티브 cURL 실행 중 PHP가 종료되면 예외 처리와 대체 통신도 실행되지 않습니다.
+    // 일반 배포본은 기존 cURL 경로를 유지합니다. 명시적으로 우회한 환경에서는
+    // HTTPS 지원이 없더라도 cURL을 재실행하지 않고 해당 설정 오류를 알려줍니다.
+    $use_stream_only = rb_license_prefers_https_stream();
+    if ($use_stream_only) {
+        if (!(bool) ini_get('allow_url_fopen')) {
+            return array('success' => false, 'code' => 'https_stream_disabled',
+                'message' => 'HTTPS 인증 통신을 사용할 수 없습니다: PHP 설정 allow_url_fopen이 꺼져 있습니다. [https_stream_disabled]');
+        }
+        if (!function_exists('file_get_contents') || !function_exists('stream_get_wrappers') || !in_array('https', stream_get_wrappers(), true)) {
+            return array('success' => false, 'code' => 'https_stream_unavailable',
+                'message' => 'HTTPS 인증 통신을 사용할 수 없습니다: PHP의 HTTPS 스트림 지원이 없습니다. [https_stream_unavailable]');
+        }
+        $connection_code = 'https_stream_failed';
+    }
+    if (!$use_stream_only && function_exists('curl_init')) {
+        $ch = false;
+        try {
+            $ch = curl_init($url);
+            if ($ch === false) {
+                $connection_code = 'curl_init_failed';
+                $connection_error = 'cURL 통신 초기화에 실패했습니다.';
+            } else {
+                $curl_options = array(
+                    CURLOPT_POST => true,
+                    CURLOPT_POSTFIELDS => $body,
+                    CURLOPT_HTTPHEADER => array('Content-Type: application/json', 'Accept: application/json'),
+                    CURLOPT_USERAGENT => 'Rebuilder/'.(defined('RB_VER') ? RB_VER : '2.2.7'),
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_CONNECTTIMEOUT => 10,
+                    CURLOPT_TIMEOUT => 30,
+                    CURLOPT_SSL_VERIFYHOST => 2,
+                    CURLOPT_SSL_VERIFYPEER => true,
+                    CURLOPT_FOLLOWLOCATION => false,
+                    CURLOPT_ENCODING => '',
+                );
+                $ca_candidates = array(
+                    ini_get('curl.cainfo'),
+                    ini_get('openssl.cafile'),
+                    dirname(PHP_BINARY).'/curl-ca-bundle.crt',
+                    dirname(PHP_BINARY).'/extras/ssl/cacert.pem',
+                );
+                foreach ($ca_candidates as $ca_file) {
+                    // open_basedir 제한형 호스팅에서는 PHP 실행파일 기준의 시스템 경로를
+                    // 조회하는 것만으로도 경고가 출력될 수 있으므로 접근 불가 경로는 조용히 건너뜁니다.
+                    if ($ca_file && @is_readable($ca_file)) {
+                        $curl_options[CURLOPT_CAINFO] = $ca_file;
+                        break;
+                    }
+                }
+                if (!curl_setopt_array($ch, $curl_options)) {
+                    $connection_code = 'curl_setup_failed';
+                    $connection_error = 'cURL 통신 설정에 실패했습니다.';
+                } else {
+                    $response = curl_exec($ch);
+                    $http_status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    if ($response === false) {
+                        $errno = curl_errno($ch);
+                        $connection_code = 'curl_'.$errno;
+                        $connection_error = rb_license_curl_failure($errno).' (cURL '.$errno.': '.curl_error($ch).')';
+                    }
+                }
+            }
+        } catch (Throwable $error) {
+            $failure = rb_license_exception_result($error, '인증 서버 cURL 통신');
+            $response = false;
+            $connection_code = 'curl_exception';
+            $connection_error = $failure['message'];
+        } finally {
+            if ($ch !== false && $ch !== null) {
+                if (PHP_VERSION_ID < 80000) curl_close($ch);
+                $ch = null;
             }
         }
-        curl_setopt_array($ch, $curl_options);
-        $response = curl_exec($ch);
-        if ($response === false) {
-            $connection_error = curl_error($ch);
-        }
-        curl_close($ch);
     }
 
     // 일부 로컬 PHP는 cURL과 OpenSSL의 CA 설정이 서로 다르므로 검증을 유지한 대체 통신을 시도합니다.
     if ($response === false && function_exists('file_get_contents')) {
-        $context = stream_context_create(array(
-            'http' => array(
-                'method' => 'POST',
-                'header' => "Content-Type: application/json\r\nAccept: application/json\r\n",
-                'content' => $body,
-                'timeout' => 30,
-                'ignore_errors' => true,
-            ),
-            'ssl' => array(
-                'verify_peer' => true,
-                'verify_peer_name' => true,
-                'allow_self_signed' => false,
-            ),
-        ));
-        $response = @file_get_contents($url, false, $context);
-        if ($response === false) {
-            $last_error = error_get_last();
-            $stream_error = isset($last_error['message']) ? $last_error['message'] : '';
-            if ($stream_error !== '') {
-                $connection_error .= ($connection_error !== '' ? ' / ' : '').$stream_error;
+        try {
+            $context = stream_context_create(array(
+                'http' => array(
+                    'method' => 'POST',
+                    'header' => "Content-Type: application/json\r\nAccept: application/json\r\n",
+                    'content' => $body,
+                    'timeout' => 30,
+                    'ignore_errors' => true,
+                    'follow_location' => 0,
+                ),
+                'ssl' => array(
+                    'verify_peer' => true,
+                    'verify_peer_name' => true,
+                    'allow_self_signed' => false,
+                ),
+            ));
+            $http_response_header = array();
+            if (function_exists('error_clear_last')) error_clear_last();
+            $stream_warnings = array();
+            if ($use_stream_only) {
+                set_error_handler(function($severity, $message) use (&$stream_warnings) {
+                    if (count($stream_warnings) < 8) $stream_warnings[] = (string) $message;
+                    return true;
+                }, E_WARNING | E_USER_WARNING);
             }
+            try {
+                $response = @file_get_contents($url, false, $context);
+            } finally {
+                if ($use_stream_only) restore_error_handler();
+            }
+            $http_status = 0;
+            foreach ($http_response_header as $response_header) {
+                if (preg_match('~^HTTP/\S+\s+(\d{3})\b~i', $response_header, $status_match)) {
+                    $http_status = (int) $status_match[1];
+                }
+            }
+            if ($response === false) {
+                $last_error = error_get_last();
+                $stream_error = implode(' / ', array_unique($stream_warnings));
+                if ($stream_error === '' && isset($last_error['message'])) $stream_error = $last_error['message'];
+                if ($use_stream_only) $connection_error = rb_license_stream_failure($stream_error);
+                if ($stream_error !== '') {
+                    $connection_error .= ($connection_error !== '' ? ' / ' : '').$stream_error;
+                }
+            }
+        } catch (Throwable $error) {
+            $failure = rb_license_exception_result($error, '인증 서버 대체 통신');
+            $response = false;
+            if ($use_stream_only) $connection_code = 'https_stream_exception';
+            $connection_error .= ($connection_error !== '' ? ' / ' : '').$failure['message'];
         }
     }
 
-    if ($response === false || $response === '') {
+    if ($response === '') {
+        return array('success' => false, 'code' => 'empty_response',
+            'message' => '공식 인증 서버가 처리 결과 없이 빈 응답을 반환했습니다. (HTTP '.$http_status.') [empty_response]');
+    }
+    if ($response === false) {
         $detail = $connection_error !== '' ? ' ('.$connection_error.')' : '';
         return array(
             'success' => false,
-            'message' => '인증 서버에 연결할 수 없습니다. 외부 HTTPS 통신과 서버의 CA 인증서 설정을 확인해 주세요.'.$detail,
+            'code' => $http_status >= 400 ? 'http_error' : $connection_code,
+            'message' => $http_status >= 400
+                ? '공식 인증 서버가 빈 오류 응답을 반환했습니다. (HTTP '.$http_status.')'
+                : '공식 인증 서버 통신 실패'.$detail.' ['.$connection_code.']',
         );
     }
     if (strlen($response) > 5 * 1024 * 1024) {
-        return array('success' => false, 'message' => '인증 서버의 응답 크기가 올바르지 않습니다.');
+        return array('success' => false, 'code' => 'response_too_large',
+            'message' => '공식 인증 서버 응답이 크기 제한 5MB를 초과했습니다. ('.strlen($response).'바이트) [response_too_large]');
     }
 
     $decoded = json_decode(trim($response), true);
-    if (!is_array($decoded) || !array_key_exists('success', $decoded)) {
-        return array('success' => false, 'message' => '인증 서버의 응답 형식을 확인할 수 없습니다.');
+    if (!is_array($decoded) || !isset($decoded['success']) || !is_bool($decoded['success'])) {
+        return array('success' => false, 'code' => 'invalid_response',
+            'message' => '공식 인증 서버가 올바른 JSON 인증 응답을 반환하지 않았습니다. (HTTP '.$http_status.')');
     }
-    if (empty($decoded['success'])) {
-        $message = isset($decoded['error']['message']) ? trim((string) $decoded['error']['message']) : '요청을 처리하지 못했습니다.';
+    if ($decoded['success'] === false) {
+        $message = isset($decoded['error']['message']) && is_string($decoded['error']['message'])
+            ? trim($decoded['error']['message']) : '요청을 처리하지 못했습니다.';
+        $error_code = isset($decoded['error']['code']) && is_string($decoded['error']['code']) ? $decoded['error']['code'] : '';
+        if ($error_code !== '' && strpos($message, '['.$error_code.']') === false) $message .= ' ['.$error_code.']';
         return array(
             'success' => false,
-            'code' => isset($decoded['error']['code']) ? (string) $decoded['error']['code'] : '',
+            'code' => $error_code,
             'message' => $message,
         );
+    }
+    if ($http_status < 200 || $http_status >= 300) {
+        return array('success' => false, 'code' => 'http_error',
+            'message' => '공식 인증 서버 요청이 실패했습니다. (HTTP '.$http_status.')');
     }
     return array('success' => true, 'data' => isset($decoded['data']) && is_array($decoded['data']) ? $decoded['data'] : array());
 }
@@ -316,13 +498,14 @@ function rb_license_save_replacement_identity($identity, $data)
                        WHERE client_id=1", false) ? true : false;
 }
 
-function rb_license_register_token($install_token)
+function rb_license_register_token($install_token, $registration_mode = 'clone')
 {
-    $install_token = strtoupper(preg_replace('/[^A-Z0-9]/', '', (string) $install_token));
+    $install_token = preg_replace('/[^A-Z0-9]/', '', strtoupper((string) $install_token));
     if (!preg_match('/^RBI[A-F0-9]{32}$/', $install_token)) {
         return array('success' => false, 'message' => '인증 토큰 형식을 확인해 주세요.');
     }
     $client = rb_license_client_get();
+    if (isset($client['error'])) return array('success' => false, 'message' => $client['error']);
     $is_clone_registration = !empty($client['registered_at'])
         && isset($client['registration_status'])
         && $client['registration_status'] === 'clone_pending';
@@ -349,6 +532,7 @@ function rb_license_register_token($install_token)
     if ($is_clone_registration) {
         $payload['source_installation_uuid'] = $client['installation_uuid'];
         $payload['source_installation_secret'] = $client['installation_secret'];
+        $payload['registration_mode'] = $registration_mode === 'move' ? 'move' : 'clone';
     }
     $response = rb_license_http_post('register.php', $payload);
     if (empty($response['success'])) {
@@ -358,7 +542,7 @@ function rb_license_register_token($install_token)
         ? rb_license_save_replacement_identity($identity, $response['data'])
         : rb_license_save_status($response['data'], true);
     if (!$saved) {
-        return array('success' => false, 'message' => '새 설치 인증정보를 저장하지 못했습니다. DB 권한을 확인해 주세요.');
+        return array('success' => false, 'message' => rb_license_db_failure_message('등록된 설치 인증정보 저장 실패'));
     }
     return array('success' => true, 'data' => $response['data']);
 }
@@ -406,12 +590,15 @@ function rb_license_handle_remote_auth_failure($response)
 function rb_license_check_remote()
 {
     $client = rb_license_client_get();
+    if (isset($client['error'])) return array('success' => false, 'message' => $client['error']);
     if (empty($client['installation_uuid']) || empty($client['installation_secret']) || empty($client['registered_at'])) {
         return array('success' => false, 'code' => 'token_required', 'message' => '인증 토큰을 먼저 등록해 주세요.');
     }
     $response = rb_license_http_post('check.php', rb_license_api_payload($client));
     if (!empty($response['success'])) {
-        rb_license_save_status($response['data'], false);
+        if (!rb_license_save_status($response['data'], false)) {
+            return array('success' => false, 'message' => rb_license_db_failure_message('설치 인증상태 저장 실패'));
+        }
     } else {
         $failure_state = rb_license_handle_remote_auth_failure($response);
         if ($failure_state === 'token_required') {
@@ -428,6 +615,7 @@ function rb_license_check_remote()
 function rb_license_fetch_schema()
 {
     $client = rb_license_client_get();
+    if (isset($client['error'])) return array('success' => false, 'message' => $client['error']);
     if (empty($client['installation_uuid']) || empty($client['installation_secret']) || empty($client['registered_at'])) {
         return array('success' => false, 'code' => 'token_required', 'message' => '인증 토큰을 먼저 등록해 주세요.');
     }
@@ -468,7 +656,7 @@ function rb_license_apply_bootstrap_sql($statements, &$changed)
                               WHERE TABLE_SCHEMA='".sql_real_escape_string(G5_MYSQL_DB)."'
                                 AND TABLE_NAME='".sql_real_escape_string($table)."'", false);
         if (!sql_query($sql, false)) {
-            return '빌더 기본 테이블을 생성하지 못했습니다: '.mysqli_error($GLOBALS['g5']['connect_db']);
+            return rb_license_db_failure_message('['.$table.'] 기본 테이블 생성 실패');
         }
         if (empty($before['cnt'])) {
             $changed = true;
@@ -620,7 +808,7 @@ function rb_license_apply_schema_tables($schema, &$changed)
                 $definitions[] = 'KEY `'.$index_name.'` ('.implode(', ', $index_columns).')';
             }
             if (!sql_query('CREATE TABLE `'.$table.'` ('.implode(', ', $definitions).')'.$table_options, false)) {
-                return '['.$table.'] 테이블 생성 실패: '.mysqli_error($GLOBALS['g5']['connect_db']);
+                return rb_license_db_failure_message('['.$table.'] 테이블 생성 실패');
             }
             $changed = true;
             continue;
@@ -635,9 +823,9 @@ function rb_license_apply_schema_tables($schema, &$changed)
                 || strpos($definition, '/*') !== false) {
                 return '['.$table.'] 컬럼 구조를 확인할 수 없습니다.';
             }
-            $column_result = sql_query("SHOW COLUMNS FROM `{$table}` LIKE '".sql_real_escape_string($column)."'", false);
+            $column_result = sql_query("SHOW COLUMNS FROM `{$table}` WHERE Field='".sql_real_escape_string($column)."'", false);
             if (!$column_result) {
-                return '['.$table.'] ['.$column.'] 컬럼을 확인하지 못했습니다.';
+                return rb_license_db_failure_message('['.$table.'] ['.$column.'] 컬럼 조회 실패');
             }
             if (mysqli_num_rows($column_result) === 0) {
                 $add_columns[] = 'ADD `'.$column.'` '.$definition;
@@ -645,7 +833,7 @@ function rb_license_apply_schema_tables($schema, &$changed)
             }
         }
         if ($add_columns && !sql_query('ALTER TABLE `'.$table.'` '.implode(', ', $add_columns), false)) {
-            return '['.$table.'] 컬럼 업데이트 실패: '.mysqli_error($GLOBALS['g5']['connect_db']);
+            return rb_license_db_failure_message('['.$table.'] 컬럼 업데이트 실패');
         }
         if ($add_columns) {
             $changed = true;
@@ -666,7 +854,7 @@ function rb_license_apply_schema_tables($schema, &$changed)
                     return '['.$table.'] 컬럼 승계 정보를 확인할 수 없습니다.';
                 }
                 if (!sql_query('UPDATE `'.$table.'` SET `'.$target_column.'`=`'.$source_column.'`', false)) {
-                    return '['.$table.'] ['.$target_column.'] 기존값 승계 실패: '.mysqli_error($GLOBALS['g5']['connect_db']);
+                    return rb_license_db_failure_message('['.$table.'] ['.$target_column.'] 기존값 승계 실패');
                 }
             }
         }
@@ -680,14 +868,14 @@ function rb_license_apply_schema_tables($schema, &$changed)
             $wanted_engine = isset($info['options']['engine']) ? strtolower((string) $info['options']['engine']) : '';
             if ($wanted_engine !== '' && strtolower((string) $current['ENGINE']) !== $wanted_engine) {
                 if (!sql_query('ALTER TABLE `'.$table.'` ENGINE='.$info['options']['engine'], false)) {
-                    return '['.$table.'] 테이블 엔진 업데이트 실패: '.mysqli_error($GLOBALS['g5']['connect_db']);
+                    return rb_license_db_failure_message('['.$table.'] 테이블 엔진 업데이트 실패');
                 }
                 $changed = true;
             }
             if (preg_match('/DEFAULT CHARACTER SET ([a-z0-9_]+) COLLATE ([a-z0-9_]+)/i', $table_options, $option_match)
                 && strtolower((string) $current['TABLE_COLLATION']) !== strtolower($option_match[2])) {
                 if (!sql_query('ALTER TABLE `'.$table.'` CONVERT TO CHARACTER SET '.$option_match[1].' COLLATE '.$option_match[2], false)) {
-                    return '['.$table.'] 문자셋 업데이트 실패: '.mysqli_error($GLOBALS['g5']['connect_db']);
+                    return rb_license_db_failure_message('['.$table.'] 문자셋 업데이트 실패');
                 }
                 $changed = true;
             }
@@ -701,7 +889,7 @@ function rb_license_apply_schema_tables($schema, &$changed)
                                    AND INDEX_NAME='".sql_real_escape_string($index_name)."'", false);
             if (empty($index['cnt'])) {
                 if (!sql_query('ALTER TABLE `'.$table.'` ADD KEY `'.$index_name.'` ('.implode(', ', $index_columns).')', false)) {
-                    return '['.$table.'] 인덱스 업데이트 실패: '.mysqli_error($GLOBALS['g5']['connect_db']);
+                    return rb_license_db_failure_message('['.$table.'] 인덱스 업데이트 실패');
                 }
                 $changed = true;
             }
@@ -738,7 +926,7 @@ function rb_license_apply_seed($seeds, &$changed)
             $values[] = "'".sql_real_escape_string($value)."'";
         }
         if (!sql_query('INSERT INTO `'.$table.'` ('.implode(',', $columns).') VALUES ('.implode(',', $values).')', false)) {
-            return '['.$table.'] 기본 설정값을 저장하지 못했습니다.';
+            return rb_license_db_failure_message('['.$table.'] 기본 설정값 저장 실패');
         }
         $changed = true;
     }
@@ -763,9 +951,9 @@ function rb_license_apply_query_indexes($tables, &$changed)
             $found = sql_fetch("SHOW INDEX FROM `{$table}` WHERE Key_name='".sql_real_escape_string($name)."'", false);
             if ($found) continue;
             foreach ($indexes[$name] as $column) {
-                if (!sql_fetch("SHOW COLUMNS FROM `{$table}` WHERE Field='".sql_real_escape_string($column)."'", false)) return '['.$table.'] 조회 인덱스 컬럼을 확인할 수 없습니다.';
+                if (!sql_fetch("SHOW COLUMNS FROM `{$table}` WHERE Field='".sql_real_escape_string($column)."'", false)) return '['.$table.'] ['.$name.'] 조회 인덱스에 필요한 ['.$column.'] 컬럼이 없습니다.';
             }
-            if (!sql_query('ALTER TABLE `'.$table.'` ADD INDEX `'.$name.'` ('.implode(',', $columns).')', false)) return '['.$table.'] 조회 인덱스 생성에 실패했습니다.';
+            if (!sql_query('ALTER TABLE `'.$table.'` ADD INDEX `'.$name.'` ('.implode(',', $columns).')', false)) return rb_license_db_failure_message('['.$table.'] ['.$name.'] 조회 인덱스 생성 실패');
             $changed = true;
         }
     }

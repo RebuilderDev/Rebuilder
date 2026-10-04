@@ -837,21 +837,50 @@ if (!function_exists('sendPushNotificationAsync')) {
     function sendPushNotificationAsync($tokens, $title, $body, $json_key_file_path, $force = false)
     {
         $tokens = rb_notification_filter_push_tokens($tokens, $force);
-        if (!$tokens || !function_exists('curl_init')) return;
+        if (!$tokens) return array('ok' => false, 'code' => 'NO_ELIGIBLE_TOKENS');
+        // 앱 관리가 업데이트된 설치본은 내부 HTTP 호출 없이 응답 종료 후 발송합니다.
+        // 관리자 앱 관리의 수동 발송은 rb_app_send_push()로 Google 응답을 직접 확인합니다.
+        if (function_exists('rb_app_queue_push')) {
+            return rb_app_queue_push($tokens, $title, $body, $json_key_file_path);
+        }
+        if (!function_exists('curl_init')) {
+            error_log('[RB APP PUSH] TRANSPORT CURL_NOT_AVAILABLE');
+            return array('ok' => false, 'code' => 'CURL_NOT_AVAILABLE');
+        }
         $post_data = json_encode(array(
             'tokens' => array_values($tokens),
             'title' => (string) $title,
             'body' => (string) $body,
             'jsonKeyFilePath' => (string) $json_key_file_path,
         ));
+        if ($post_data === false) {
+            error_log('[RB APP PUSH] INPUT INVALID_MESSAGE_ENCODING');
+            return array('ok' => false, 'code' => 'INVALID_MESSAGE_ENCODING');
+        }
         $ch = curl_init(G5_URL.'/rb/rb.lib/curl.send_push.php');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
-        curl_setopt($ch, CURLOPT_TIMEOUT_MS, 100);
-        curl_exec($ch);
+        // 이전 앱 관리 부가기능도 유지합니다. 100ms 중단과 HTTP→HTTPS 전환 실패를 방지합니다.
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
+        curl_setopt($ch, CURLOPT_POSTREDIR, CURL_REDIR_POST_ALL);
+        $raw = curl_exec($ch);
+        $errno = curl_errno($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+        $response = is_string($raw) ? json_decode($raw, true) : null;
+        if (!$errno && is_array($response) && isset($response['ok'], $response['errors'])) return $response;
+        if ($errno || $status < 200 || $status >= 300 || trim((string) $raw) !== '') {
+            $code = $errno ? 'CURL_'.$errno : ($status >= 200 && $status < 300 ? 'LEGACY_FCM_ERROR' : 'HTTP_'.$status);
+            error_log('[RB APP PUSH] TRANSPORT '.$code.' HTTP '.$status);
+            return array('ok' => false, 'code' => $code, 'http_status' => $status);
+        }
+        // 구버전 발송기는 성공 시 본문을 반환하지 않으므로 요청 접수까지만 확인할 수 있습니다.
+        return array('ok' => true, 'queued' => true, 'legacy' => true);
     }
 }
 

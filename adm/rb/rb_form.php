@@ -85,12 +85,19 @@ $pg_anchor = '<ul class="anchor">
                         <td colspan="3">
                             <?php if (empty($rb_license_client['registered_at']) || $rb_license_is_clone) { ?>
                                 <?php if ($rb_license_is_clone) { ?>
-                                    <?php echo help('복제된 설치환경입니다.<br>복제본에서 사용할 용도의 새 인증 토큰을 등록해 주세요.') ?>
+                                    <?php echo help('서버 또는 설치 경로가 변경되었습니다.<br>같은 회원 계정에서 새 인증 토큰을 발급받고, 이전인지 추가 설치인지 선택해 주세요.') ?>
                                 <?php } else { ?>
                                     <?php echo help('빌더 2.2.7 최초 설치 또는 업데이트에 인증 토큰이 필요합니다.<br>발급받은 토큰을 입력한 뒤 등록해 주세요.') ?>
                                 <?php } ?>
                                 <form action="./rb_license_register.php" method="post" class="rb-license-token-form rb-license-register-form" data-install-mode="update">
                                     <input type="hidden" name="token" value="<?php echo get_admin_token(); ?>">
+                                    <?php if ($rb_license_is_clone) { ?>
+                                    <select name="registration_mode" class="frm_input" aria-label="설치 방식">
+                                        <option value="clone">추가 설치 (기존 사이트 유지)</option>
+                                        <option value="move">사이트 이전 (기존 라이선스 이동)</option>
+                                    </select>
+                                    <div class="local_desc01">사이트 이전을 선택하면 기존 설치의 라이선스를 이 사이트로 옮기며, 이전 설치의 사용은 종료됩니다.</div>
+                                    <?php } ?>
                                     <input type="text" name="install_token" value="" class="frm_input" maxlength="80" autocomplete="off" placeholder="인증 토큰 입력" required>
                                     <button type="submit" class="btn_submit btn rb-license-register-submit">
                                         <span class="rb-license-action-label">인증 토큰 등록</span>
@@ -950,6 +957,15 @@ $(function() {
         $button.find('.rb-license-action-spinner').show();
     }
 
+    function redirectActionError(xhr, textStatus, stage) {
+        // PHP 응답이 없는 502도 등록 단계와 DB 단계가 구분되도록 전달합니다.
+        var status = xhr && xhr.status ? Number(xhr.status) : 0;
+        var reason = textStatus === 'timeout' ? 'timeout'
+            : textStatus === 'parsererror' ? 'invalid_response' : 'http';
+        window.location.href = './rb_db_update.php?result=ajax_error&stage=' + stage
+            + '&status=' + status + '&reason=' + reason;
+    }
+
     $('.rb-db-update-link, .rb-license-register-submit').each(function() {
         rememberActionLabel($(this));
     });
@@ -1008,11 +1024,11 @@ $(function() {
                     }
 
                     window.location.href = './rb_db_update.php?result=1';
-                }).fail(function() {
-                    window.location.href = './rb_db_update.php?result=ajax_error';
+                }).fail(function(xhr, textStatus) {
+                    redirectActionError(xhr, textStatus, 'update');
                 });
-            }).fail(function() {
-                window.location.href = './rb_db_update.php?result=ajax_error';
+            }).fail(function(xhr, textStatus) {
+                redirectActionError(xhr, textStatus, 'registration');
             });
         };
 
@@ -1044,8 +1060,8 @@ $(function() {
             timeout: 300000
         }).done(function() {
             window.location.href = './rb_db_update.php?result=1';
-        }).fail(function() {
-            window.location.href = './rb_db_update.php?result=ajax_error';
+        }).fail(function(xhr, textStatus) {
+            redirectActionError(xhr, textStatus, 'update');
         });
     });
 });
