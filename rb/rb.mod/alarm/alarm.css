@@ -379,7 +379,7 @@ button.close {
     #alarm_layer.wrapper-notification.side {
         box-sizing: border-box;
         width: calc(100vw - 20px);
-        max-width: 250px;
+        max-width: 300px;
     }
 
     #alarm_layer.wrapper-notification.side > .notification,
