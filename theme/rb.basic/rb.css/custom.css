@@ -1276,28 +1276,27 @@ footer .footer_gnb {background-color: #fff;}
 /* } */
 
 /* 2.2.7.7 - PC 헤더 서브메뉴 열 설정 { */
-/* N 아이콘: 기본 10px 글자에 14px 배경. 굵기는 font-R/font-B 클래스에서 결정한다. */
+/* 2.2.7.8 - N 아이콘을 메뉴명의 마지막 줄에 배치하고 미리보기와 실제 아이콘의 여백을 함께 늘린다. */
+/* 기본 10px 글자에 18px 배경. 굵기는 font-R/font-B 클래스에서 결정한다. */
 .rb-header-menu-label {
-    display: inline-flex;
-    align-items: center;
-    max-width: 100%;
+    display: inline;
     vertical-align: baseline;
     text-indent: 0;
 }
-.rb-header-menu-text {min-width: 0;}
+.rb-header-menu-text {display: inline;}
 .rb-header-new {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: calc(1em + 4px);
-    height: calc(1em + 4px);
+    box-sizing: border-box;
+    width: calc(1em + 8px);
+    height: calc(1em + 8px);
     line-height: 1;
     color: #fff !important;
     margin-left: 4px;
     vertical-align: middle;
-    flex-shrink: 0;
     text-indent: 0;
-    padding: 0;
+    padding: 4px;
 }
 .rb-header-new-1 {border-radius: 50%;}
 .rb-header-new-2 {border-radius: 0;}

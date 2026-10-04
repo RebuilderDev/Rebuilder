@@ -187,7 +187,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
                     $rb_new_ready = $rb_new_columns && sql_num_rows($rb_new_columns) === count($rb_new_fields) && rb_hn_ready();
                     ?>
                     <ul class="rb_config_sec">
-                        <h6 class="font-B"><?php echo defined('_SHOP_') ? '마켓 ' : ''; ?>헤더 서브메뉴 설정 (공용)</h6>
+                        <h6 class="font-B"><?php echo defined('_SHOP_') ? '마켓 ' : ''; ?>헤더 서브메뉴 설정</h6>
                         <h6 class="font-R rb_config_sub_txt">서브메뉴의 가로열 변경 및<br>신규 게시물 N 아이콘을 표기할 수 있습니다.</h6>
                         <div class="config_wrap">
                             <ul class="rows_inp_lr mt-10">
