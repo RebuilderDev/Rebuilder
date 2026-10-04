@@ -1349,3 +1349,68 @@ footer .footer_gnb {background-color: #fff;}
     }
 }
 /* } */
+
+/* 2.2.7.8 - 내장 Swiper로 전환한 메인 캐러셀 { */
+.rb_carousel.rb-carousel-swiper {
+    touch-action: pan-y pinch-zoom;
+}
+.rb_carousel.rb-carousel-swiper > .rb_carousel_img {
+    display: flex;
+    overflow: visible;
+    height: 100%;
+    z-index: 1;
+    box-sizing: content-box;
+    transform: translate3d(0, 0, 0);
+    transition-property: transform;
+}
+.rb_carousel.rb-carousel-swiper > .rb_carousel_img > .rb-carousel-slide {
+    display: block;
+    position: relative;
+    flex-shrink: 0;
+    height: 100%;
+    box-sizing: border-box;
+    transition-property: transform;
+}
+.rb_carousel.rb-carousel-vertical > .rb_carousel_img {
+    flex-direction: column;
+}
+.rb_carousel.rb-carousel-fade > .rb_carousel_img > .rb-carousel-slide {
+    pointer-events: none;
+    transition-property: opacity;
+}
+.rb_carousel.rb-carousel-fade > .rb_carousel_img > .rb-carousel-slide-active {
+    pointer-events: auto;
+}
+.rb_carousel > .rb_carousel_img > .rb-carousel-slide-blank {
+    visibility: hidden;
+}
+.rb_carousel > .rb-carousel-button-disabled {
+    opacity: 0.35;
+    pointer-events: none;
+}
+.rb_carousel > .rb-carousel-button-hidden,
+.rb_carousel > .rb_carousel_btn.rb-carousel-pagination-hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+.rb_carousel > .rb-carousel-button-lock,
+.rb_carousel > .rb_carousel_btn.rb-carousel-pagination-lock {
+    display: none;
+}
+.rb_carousel > .rb-carousel-notification {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    opacity: 0;
+    z-index: -1000;
+}
+.rb_carousel.rb_carousel_main > .rb_carousel_btn {
+    bottom: 50px;
+}
+@media all and (max-width:1024px) {
+    .rb_carousel.rb_carousel_main > .rb_carousel_btn {
+        bottom: 20px;
+    }
+}
+/* } */

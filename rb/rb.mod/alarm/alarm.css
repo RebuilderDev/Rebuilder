@@ -234,8 +234,15 @@
 	fill: #09244B;
 }
 
+/* Rebuilder 2.2.7.8: 알림 제목은 한 줄로 유지하고 날짜 영역만 줄바꿈을 허용한다. */
+.notification-msg .notification-heading > .font-B {
+	white-space: nowrap;
+	flex: 0 0 auto;
+}
+
 .notification-msg .notification-heading .al_date {
 	margin-left: 2px;
+	min-width: 0;
 }
 
 .wrapper-notification.main .notification-heading,
