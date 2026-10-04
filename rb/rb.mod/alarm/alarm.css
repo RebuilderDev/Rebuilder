@@ -360,13 +360,26 @@ button.close {
 	-webkit-appearance: none
 }
 
-
-
+/* Rebuilder 2.2.7.8: 모바일 카드가 레이어를 넘어서 우측·중앙 정렬을 밀지 않도록 합니다. */
 @media all and (max-width:1024px) {
     .wrapper-alert.right,
     .wrapper-notification.right {
         max-width:250px;
         left: 10px;
         bottom:10px;
+    }
+
+    #alarm_layer.wrapper-notification.side {
+        box-sizing: border-box;
+        width: calc(100vw - 20px);
+        max-width: 250px;
+    }
+
+    #alarm_layer.wrapper-notification.side > .notification,
+    #alarm_layer.wrapper-notification.side > .notification-custom {
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
     }
 }
