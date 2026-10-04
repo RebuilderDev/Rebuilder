@@ -191,6 +191,7 @@ if (!function_exists('rb_mypage_get_type_order_title')) {
 
         <ul id="smb_private">
 
+	        <?php if (!empty($config['cf_use_point'])) { ?>
 	    	<li>
 	            <a href="<?php echo G5_BBS_URL ?>/point.php" target="_blank" class="win_point">
 
@@ -209,6 +210,7 @@ if (!function_exists('rb_mypage_get_type_order_title')) {
 					<strong><?php echo number_format($member['mb_point']); ?>P</strong>
 	            </a>
 	        </li>
+	        <?php } ?>
 	        <li>
 	        	<a href="<?php echo G5_SHOP_URL ?>/coupon.php" target="_blank" class="win_coupon">
 

@@ -347,7 +347,7 @@ if(G5_COMMUNITY_USE === false) {
     <div class="user_prof_bg">
         <?php if($is_member) { ?>
         <li class="user_prof_bg_info font-B"><?php echo $member['mb_nick'] ?></li>
-        <li class="user_prof_bg_info font-B"><span><?php echo $member['mb_level'] ?> Lv</span> <a href="<?php echo G5_BBS_URL; ?>/point.php" target="_blank" class="win_point font-B"><span><?php echo number_format($member['mb_point']); ?> P</span></a></li>
+        <li class="user_prof_bg_info font-B"><span><?php echo $member['mb_level'] ?> Lv</span><?php if (!empty($config['cf_use_point'])) { ?> <a href="<?php echo G5_BBS_URL; ?>/point.php" target="_blank" class="win_point font-B"><span><?php echo number_format($member['mb_point']); ?> P</span></a><?php } ?></li>
         <?php } else { ?>
         <li class="user_prof_bg_info font-B">Guest</li>
         <?php } ?>

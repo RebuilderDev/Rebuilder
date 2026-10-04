@@ -4,44 +4,35 @@
 <?php // ========== 홈 탭 ========== ?>
 <?php if ($ca == '') { ?>
 
+<?php
+// 표시할 항목만 모은 뒤 두 개씩 배치한다. 항목이 빠져도 중간에 빈칸을 남기지 않는다.
+$rb_home_info = array(
+    array('label' => '닉네임', 'value' => $mb['mb_nick']),
+    array('label' => '회원레벨', 'value' => $mb['mb_level'].'레벨')
+);
+if (!empty($config['cf_use_point'])) {
+    $rb_home_point = number_format($mb['mb_point']).'P';
+    if ($member['mb_id'] == $mb['mb_id']) {
+        $rb_home_point = '<a href="'.G5_BBS_URL.'/point.php" target="_blank" class="win_point">'.$rb_home_point.'</a>';
+    }
+    $rb_home_info[] = array('label' => '포인트', 'value' => $rb_home_point);
+}
+$rb_home_info[] = array('label' => '가입일', 'value' => ($member['mb_level'] >= $mb['mb_level']) ? substr($mb['mb_datetime'], 0, 10).' (+'.number_format($mb_reg_after).'일)' : '알 수 없음');
+$rb_home_info[] = array('label' => '운영채널', 'value' => $mb_homepage ? '<a href="'.$mb_homepage.'" target="_blank">'.$mb_homepage.'</a>' : '-');
+$rb_home_info[] = array('label' => '최종접속', 'value' => ($member['mb_level'] >= $mb['mb_level']) ? $mb['mb_today_login'] : '알 수 없음');
+?>
 <div>
+    <?php foreach (array_chunk($rb_home_info, 2) as $rb_home_row) { ?>
     <ul class="cont_info_wrap">
-        <li class="cont_info_wrap_l">
-            <dd>닉네임</dd>
-            <dd><?php echo $mb['mb_nick']; ?></dd>
+        <?php foreach ($rb_home_row as $rb_home_index => $rb_home_item) { ?>
+        <li class="<?php echo $rb_home_index === 0 ? 'cont_info_wrap_l' : 'cont_info_wrap_r'; ?>">
+            <dd><?php echo $rb_home_item['label']; ?></dd>
+            <dd><?php echo $rb_home_item['value']; ?></dd>
         </li>
-        <li class="cont_info_wrap_r">
-            <dd>회원레벨</dd>
-            <dd><?php echo $mb['mb_level']; ?>레벨</dd>
-        </li>
+        <?php } ?>
         <div class="cb"></div>
     </ul>
-    <ul class="cont_info_wrap">
-        <li class="cont_info_wrap_l">
-            <dd>포인트</dd>
-            <dd>
-               <?php if($member['mb_id'] == $mb['mb_id']) { ?><a href="<?php echo G5_BBS_URL ?>/point.php" target="_blank" class="win_point"><?php } ?>
-                    <?php echo number_format($mb['mb_point']) ?>P
-                <?php if($member['mb_id'] == $mb['mb_id']) { ?></a><?php } ?>
-            </dd>
-        </li>
-        <li class="cont_info_wrap_r">
-            <dd>가입일</dd>
-            <dd><?php echo ($member['mb_level'] >= $mb['mb_level']) ? substr($mb['mb_datetime'], 0, 10) . ' (+' . number_format($mb_reg_after) . '일)' : '알 수 없음'; ?></dd>
-        </li>
-        <div class="cb"></div>
-    </ul>
-    <ul class="cont_info_wrap">
-        <li class="cont_info_wrap_l">
-            <dd>운영채널</dd>
-            <dd><?php if ($mb_homepage) { ?><a href="<?php echo $mb_homepage; ?>" target="_blank"><?php echo $mb_homepage; ?></a><?php } else { ?>-<?php } ?></dd>
-        </li>
-        <li class="cont_info_wrap_r">
-            <dd>최종접속</dd>
-            <dd><?php echo ($member['mb_level'] >= $mb['mb_level']) ? $mb['mb_today_login'] : '알 수 없음'; ?></dd>
-        </li>
-        <div class="cb"></div>
-    </ul>
+    <?php } ?>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -216,7 +207,7 @@ while ($row = sql_fetch_array($res)) {
 </script>
 <?php } ?>
 
-<?php if(isset($rb_builder['bu_mini_use2']) && $rb_builder['bu_mini_use2'] == 1) { ?>
+<?php if (!empty($config['cf_use_point']) && isset($rb_builder['bu_mini_use2']) && $rb_builder['bu_mini_use2'] == 1) { ?>
 <?php
 // 최근 7일 포인트 획득 집계
 $pt_dates = [];

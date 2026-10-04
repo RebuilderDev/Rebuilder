@@ -471,8 +471,8 @@ if ($is_member && function_exists('rb_notification_table_ready') && rb_notificat
 
                     <li class="member_info_wrap">
                         <?php if($is_member) { ?>
-                        <?php if(isset($config['cf_use_point']) && $config['cf_use_point'] == 1) { ?>
-                        <a href="<?php echo G5_BBS_URL ?>/member_confirm.php?url=<?php echo G5_BBS_URL ?>/register_form.php" class="font-B notranslate"><?php echo $member['mb_nick'] ?></a>　<a href="<?php echo G5_BBS_URL; ?>/point.php" target="_blank" class="win_point"><span class="font-H"><?php echo number_format($member['mb_point']); ?> P</span></a>
+                        <a href="<?php echo G5_BBS_URL ?>/member_confirm.php?url=<?php echo G5_BBS_URL ?>/register_form.php" class="font-B notranslate"><?php echo $member['mb_nick'] ?></a>
+                        <?php if (!empty($config['cf_use_point'])) { ?>　<a href="<?php echo G5_BBS_URL; ?>/point.php" target="_blank" class="win_point"><span class="font-H"><?php echo number_format($member['mb_point']); ?> P</span></a>
                         <?php } ?>
                         <?php } ?>
                     </li>
