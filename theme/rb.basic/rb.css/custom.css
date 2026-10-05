@@ -1276,14 +1276,26 @@ footer .footer_gnb {background-color: #fff;}
 /* } */
 
 /* 2.2.7.7 - PC 헤더 서브메뉴 열 설정 { */
-/* 2.2.7.8 - N 아이콘을 메뉴명의 마지막 줄에 배치하고 미리보기와 실제 아이콘의 여백을 3px로 맞춘다. */
+/* 2.2.7.8 - 헤더의 PC 서브메뉴 링크 오른쪽 여백을 제거한다. */
+#header #cbp-hrmenu .cbp-hrsub-inner > div a {padding-right: 0;}
+/* 2.2.7.8 - 메뉴명과 N 아이콘 영역을 분리하여 여러 줄 메뉴에서도 우측·세로 중앙에 정렬한다. */
 /* 기본 10px 글자에 16px 배경. 굵기는 font-R/font-B 클래스에서 결정한다. */
 .rb-header-menu-label {
-    display: inline;
-    vertical-align: baseline;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
     text-indent: 0;
 }
-.rb-header-menu-text {display: inline;}
+.rb-header-menu-text {
+    flex: 1 1 0;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
+}
 .rb-header-new {
     display: inline-flex;
     align-items: center;
@@ -1297,6 +1309,16 @@ footer .footer_gnb {background-color: #fff;}
     vertical-align: middle;
     text-indent: 0;
     padding: 3px;
+}
+.rb-header-menu-label > .rb-header-new {
+    flex: 0 0 auto;
+    margin-left: 0;
+    white-space: nowrap;
+}
+#cbp-hrmenu-btm .rb-header-menu-label {
+    box-sizing: border-box;
+    padding-left: 20px;
+    padding-right: 50px;
 }
 .rb-header-new-1 {border-radius: 50%;}
 .rb-header-new-2 {border-radius: 0;}
