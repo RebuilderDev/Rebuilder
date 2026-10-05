@@ -190,15 +190,18 @@ function rb_tp_walk_values($value, $callback)
 function rb_tp_tree(&$files, $dir, $prefix, $exclude = array())
 {
     if (!is_dir($dir)) throw new RuntimeException('필요한 폴더가 없습니다: '.$prefix);
+    // 2.2.7.8: 테마에 배치되는 파일은 사용자 정의 확장자와 확장자 없는 파일도 수집한다.
+    $themeFiles = $prefix === 'theme' || strpos($prefix, 'theme/') === 0;
     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS));
     foreach ($iterator as $file) {
         $rel = str_replace('\\', '/', substr($file->getPathname(), strlen($dir)+1));
         foreach ($exclude as $excluded) if ($rel===$excluded || strpos($rel,$excluded.'/')===0) continue 2;
         if ($file->isLink()) throw new RuntimeException('심볼릭 링크는 테마 패키지에 포함할 수 없습니다.');
         if (!$file->isFile()) continue;
-        if (preg_match('~(^|/)(\.git|node_modules|tests|\.env|rb-package)(/|$)~', $rel)) continue;
+        if (preg_match('~(^|/)rb-package(/|$)~', $rel)
+            || (!$themeFiles && preg_match('~(^|/)(\.git|node_modules|tests|\.env)(/|$)~', $rel))) continue;
         if (!rb_tp_path($rel)) throw new RuntimeException('배포할 수 없는 파일 경로입니다: '.$rel);
-        if (!preg_match('/\.(php|inc|css|scss|sass|less|js|mjs|json|webmanifest|html?|txt|md|svg|xml|png|jpe?g|gif|webp|ico|avif|woff2?|ttf|otf|eot|mp4|webm|mp3|wav|ogg|pdf|map)$/i', $rel)
+        if (!$themeFiles && !preg_match('/\.(php|inc|css|scss|sass|less|js|mjs|json|webmanifest|html?|txt|md|svg|xml|png|jpe?g|gif|webp|ico|avif|woff2?|ttf|otf|eot|mp4|webm|mp3|wav|ogg|pdf|map)$/i', $rel)
             && !preg_match('~(^|/)(LICENSE|COPYING|README|\.htaccess)$~i',$rel)) continue;
         if ($prefix === 'theme' && (preg_match('/^[^\/]+_\d{8}_\d{6}\.json$/', $rel) || $rel === 'rb-package.json')) continue;
         $files[$prefix.'/'.$rel] = $file->getPathname();
@@ -270,6 +273,19 @@ function rb_tp_skin(&$files, $theme, $kind, $skin, $mobile = false, &$paths = nu
     } else {
         $rel = $skin;
         $dir = G5_PATH.'/'.$base.'skin/'.$kind.'/'.$skin;
+        $originalPath=$base.'skin/'.$kind.'/'.$skin.'/';
+        $exportBase=$base.'skin/'.$kind.'/';
+        // 사용 중인 공용 스킨은 원본 테마의 동명 폴더를 덮지 않고 별도 경로로 보관한다.
+        if (is_array($paths) && isset($paths[$originalPath])) {
+            $rel=substr(rtrim($paths[$originalPath],'/'),strlen($exportBase));
+        } elseif (file_exists(G5_PATH.'/theme/'.$theme.'/'.$exportBase.$rel)
+            || (is_array($sources) && isset($sources['theme/'.$exportBase.$rel]))) {
+            $stem=$rel.'__common'; $rel=$stem; $suffix=2;
+            while (file_exists(G5_PATH.'/theme/'.$theme.'/'.$exportBase.$rel)
+                || (is_array($sources) && isset($sources['theme/'.$exportBase.$rel]))) {
+                $rel=$stem.'_'.$suffix++;
+            }
+        }
     }
     if (!is_dir($dir)) {
         throw new RuntimeException('사용 중인 '.$label.' 폴더가 없습니다: /'.substr($dir,strlen(G5_PATH)+1).' (설정: '.$skin.')');
@@ -616,7 +632,7 @@ function rb_tp_export_archive($theme, $name, $zipfile, $identity, $delivery)
     $files = array(); $deps = array('widget'=>array(), 'banner'=>array()); $data = array(); $css = array(); $skinPaths=array(); $skinSources=array();
     $installed=rb_tp_state($theme);
     $devices=rb_tp_skin_devices();
-    rb_tp_tree($files, G5_PATH.'/theme/'.$theme, 'theme', $devices['mobile']?array():array('mobile/skin'));
+    rb_tp_tree($files, G5_PATH.'/theme/'.$theme, 'theme');
     // 원본 테마는 변경하지 않고 ZIP 안의 표시 이름만 배포할 이름으로 만든다.
     $readme=isset($files['theme/readme.txt'])?$files['theme/readme.txt']:'';
     if ($readme!=='' && filesize($readme)>8*1024*1024) throw new RuntimeException('테마 설명 파일은 8MB 이내여야 합니다.');
