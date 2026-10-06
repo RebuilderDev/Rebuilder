@@ -63,12 +63,7 @@ try {
             if(json_last_error()!==JSON_ERROR_NONE) $maps=json_decode(stripslashes($_POST['maps']),true);
         }
         if(!is_array($maps)) throw new RuntimeException('연결 정보를 확인해 주세요.');
-        if($action==='legacy') {
-            $choice=isset($_POST['legacy_action']) && is_string($_POST['legacy_action'])?$_POST['legacy_action']:'';
-            if(!in_array($choice,array('update','reinstall'),true)) throw new RuntimeException('기존 설정 유지 또는 새로 설치를 선택해 주세요.');
-            $action=$choice;
-        }
-        if($action==='update') $out=rb_tp_update_files($folder,$checked['action']==='legacy',$checked['action']);
+        if($action==='update') $out=rb_tp_update_files($folder,false,$checked['action']);
         else $out=rb_tp_install($path,$folder,$maps,true,$checked['action']);
         $out['action']=$action; $out['ok']=true;
         unset($_SESSION['rb_theme_package_checked']);

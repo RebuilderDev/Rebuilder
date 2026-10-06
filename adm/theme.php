@@ -1,16 +1,17 @@
 <?php
 $sub_menu = "100280";
 include_once('./_common.php');
+include_once(G5_PATH.'/rb/rb.lib/rb_theme_package.lib.php');
 
 if ($is_admin != 'super')
     alert('최고관리자만 접근 가능합니다.');
 
 // 테마 필드 추가
 
-$theme = get_theme_dir();
-$theme = array_values(array_filter($theme, function ($name) use ($config) {
+$theme_dirs = get_theme_dir();
+$theme = array_values(array_filter($theme_dirs, function ($name) {
     $path = G5_PATH.'/theme/'.$name;
-    return $name===$config['cf_theme'] || !is_file($path.'/rb-package/manifest.json') || is_file($path.'/rb-package.json');
+    return !is_file($path.'/rb-package/manifest.json') || (bool)rb_tp_state($name,true);
 }));
 if($config['cf_theme'] && in_array($config['cf_theme'], $theme))
     array_unshift($theme, $config['cf_theme']);
@@ -18,7 +19,7 @@ $theme = array_values(array_unique($theme));
 $total_count = count($theme);
 
 // 설정된 테마가 존재하지 않는다면 cf_theme 초기화
-if($config['cf_theme'] && !in_array($config['cf_theme'], $theme))
+if($config['cf_theme'] && !in_array($config['cf_theme'], $theme_dirs))
     sql_query(" update {$g5['config_table']} set cf_theme = '' ");
 
 $g5['title'] = "테마설정";

@@ -119,7 +119,7 @@ foreach((array)$rb_tp_ftp_files as $rb_tp_f) {
 </style>
 <section class="local_desc01 local_desc" id="rb-theme-install" style="background:#fff; border:0; padding:0; margin-top:0; margin-bottom:20px;" data-token="<?php echo htmlspecialchars($_SESSION['rb_theme_package_token'],ENT_QUOTES,'UTF-8'); ?>" data-install-version-error="<?php echo htmlspecialchars(rb_tp_install_version_message(),ENT_QUOTES,'UTF-8'); ?>">
     <h2 style="margin-top:0;">업로드된 테마 설치 / 업데이트</h2>
-    <p style="margin-bottom:20px;">테마 폴더를 선택하고 <strong>내용 확인</strong>을 클릭하세요.<br>새 테마는 설치하고, 이미 설치된 같은 폴더의 테마는 기존 설정을 유지하며 파일을 업데이트합니다. 테마 폴더를 삭제한 뒤 다시 업로드한 경우에는 새로 설치합니다.</p>
+    <p style="margin-bottom:20px;">테마 폴더를 선택하고 <strong>내용 확인</strong>을 클릭하세요.<br>설치 기록이 있는 테마는 기존 설정을 유지하며 파일을 업데이트합니다. 설치 기록이 없으면 새로 설치하며, 남아 있는 해당 테마의 기존 설정과 자료는 먼저 백업합니다.</p>
     <div class="tbl_frm01 tbl_wrap">
         <table>
             <caption>설치할 테마 선택</caption>
@@ -148,11 +148,6 @@ foreach((array)$rb_tp_ftp_files as $rb_tp_f) {
                     <tr><th scope="row">테마명</th><td id="rb-tp-name"></td></tr>
                     <tr><th scope="row"><label for="rb-tp-theme">설치 폴더명</label></th><td><input id="rb-tp-theme" class="frm_input" readonly></td></tr>
                     <tr><th scope="row">설치 안내</th><td id="rb-tp-install-guide">현재 업로드된 폴더명을 기준으로 설치합니다. 폴더명을 바꾸셨다면 새로고침 후 다시 선택하세요. 이름 충돌은 설치 전에 자동 확인합니다.</td></tr>
-                    <tr id="rb-tp-legacy-choice" hidden><th scope="row">기존 테마 확인</th><td>
-                        <p>이전 버전에서 사용한 테마는 설치 기록이 없어 처음 한 번 확인이 필요합니다.</p>
-                        <input type="radio" name="rb_tp_legacy_action" id="rb-tp-keep" value="update" checked><label for="rb-tp-keep">기존 설정 유지 (파일 업데이트)</label>
-                        <input type="radio" name="rb_tp_legacy_action" id="rb-tp-reset" value="reinstall"><label for="rb-tp-reset">새로 설치 (기존 테마 설정 백업 후 초기화)</label>
-                    </td></tr>
                     <tr id="rb-tp-shop-guide" hidden><th scope="row">마켓 미사용</th><td>이 사이트는 마켓을 사용하지 않아 마켓 메인·상품 모듈의 연결 항목을 표시하지 않습니다. 테마의 디자인 자료는 보관하며, 마켓 기능을 자동으로 활성화하지 않습니다.</td></tr>
                 </tbody>
                 <tbody id="rb-tp-maps"></tbody>
@@ -164,6 +159,6 @@ foreach((array)$rb_tp_ftp_files as $rb_tp_f) {
     <template id="rb-tp-empty-help"><?php echo help('지금 연결할 항목이 없어도 설치할 수 있습니다.'); ?></template>
     <template id="rb-tp-legacy-help"><?php echo help('이전 배포 자료입니다. 제작 사이트에서 테마를 다시 내보내면 연결 없이 설치할 수 있습니다.'); ?></template>
 </section>
-<script src="<?php echo G5_ADMIN_URL; ?>/theme_package.js?v=2278-auto-install-update"></script>
+<script src="<?php echo G5_ADMIN_URL; ?>/theme_package.js?v=2278-install-record"></script>
 <?php } ?>
 <?php unset($rb_tp_dir,$rb_tp_ftp_files,$rb_tp_f,$rb_tp_n,$rb_tp_meta,$rb_tp_label,$rb_tp_pending); ?>

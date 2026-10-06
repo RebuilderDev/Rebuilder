@@ -33,12 +33,8 @@ function rb_tp_receive_action($theme)
 {
     if(!rb_tp_theme_has_settings($theme)) return 'new';
     if(rb_tp_state($theme,true)) return 'update';
-    $known=G5_DATA_PATH.'/rb.theme-installed/'.$theme.'.json';
-    if(is_file($known) && rb_tp_under($known,G5_DATA_PATH)) {
-        $record=json_decode(file_get_contents($known),true);
-        if(is_array($record) && isset($record['theme']) && $record['theme']===$theme) return 'reinstall';
-    }
-    return 'legacy';
+    // 테마 폴더 안의 완료 기록이 없으면 새 설치한다. 남은 DB 설정은 백업한다.
+    return 'reinstall';
 }
 function rb_tp_data_directory($relative)
 {
