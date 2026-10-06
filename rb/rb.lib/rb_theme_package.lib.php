@@ -424,6 +424,22 @@ function rb_tp_main_data($data)
     }
     return $data;
 }
+function rb_tp_current_layout_data($data)
+{
+    // 현재 선택된 일반/마켓 레이아웃의 배치만 배포한다. 테마 파일 수집 범위는 바꾸지 않는다.
+    $config=isset($data['rb_config'][0])?$data['rb_config'][0]:array();
+    foreach(array('rb_module'=>'rb_section','rb_module_shop'=>'rb_section_shop') as $moduleTable=>$sectionTable) {
+        $key=$moduleTable==='rb_module_shop'?'co_layout_shop':'co_layout';
+        $selected=isset($config[$key])?(string)$config[$key]:'';
+        foreach(array($moduleTable=>'md',$sectionTable=>'sec') as $table=>$prefix) {
+            $data[$table]=array_values(array_filter($data[$table],function($row) use($prefix,$selected) {
+                $name=isset($row[$prefix.'_layout_name'])?(string)$row[$prefix.'_layout_name']:'';
+                return $name===$selected;
+            }));
+        }
+    }
+    return rb_tp_main_data($data);
+}
 function rb_tp_main_settings($data)
 {
     // rb_config는 테마별 공통 환경설정이다. 폭/여백/배경/사이드 기본값을 그대로 보존한다.
@@ -724,7 +740,7 @@ function rb_tp_export_archive($theme, $name, $zipfile, $identity, $delivery)
     $files['theme/readme.txt']=$readme;
     foreach (rb_tp_tables() as $table=>$def) $data[$table] = !rb_tp_shop_enabled() && in_array($table,array('rb_module_shop','rb_section_shop'),true)
         ? array() : rb_tp_rows("SELECT * FROM `$table` WHERE `{$def[0]}` = ".rb_tp_q($theme));
-    $data=rb_tp_main_settings(rb_tp_main_data($data));
+    $data=rb_tp_main_settings(rb_tp_current_layout_data($data));
     foreach (array('rb_module','rb_module_shop','rb_section','rb_section_shop') as $table) {
         $module = strpos($table, 'rb_module') === 0; $prefix = $module ? 'md' : 'sec';
         foreach ($data[$table] as &$row) {

@@ -32,11 +32,11 @@ foreach((array)$rb_tp_ftp_files as $rb_tp_f) {
 /* 테마 설치 UI에만 적용하며, 관리자 확장의 버튼 테마보다 우선한다. */
 #container #rb-theme-install #rb-tp-layouts {margin-top:24px; min-width:0; max-width:100%; container:rb-tp-layouts / inline-size;}
 #container #rb-theme-install .rb-tp-preview-body {display:flex; flex-wrap:nowrap; gap:24px; align-items:flex-start;}
-#container #rb-theme-install .rb-tp-preview-canvas {flex:1 1 640px; min-width:640px; max-width:1025px; padding:0; box-sizing:border-box; overflow-x:auto;}
-#container #rb-theme-install .rb-tp-preview-sidebar {flex:0 0 340px; min-width:340px; position:sticky; top:120px;}
+#container #rb-theme-install .rb-tp-preview-canvas {flex:1 1 640px; min-width:0; max-width:1025px; padding:0; box-sizing:border-box; overflow-x:auto;}
+#container #rb-theme-install .rb-tp-preview-sidebar {flex:0 0 300px; min-width:300px; position:sticky; top:120px; margin-top:52px;}
 #container #rb-theme-install .rb-tp-editor {box-sizing:border-box; min-width:0; padding:20px; border:1px solid #d6dce1; border-radius:10px; background:#fff;}
-#container #rb-theme-install .rb-tp-layout-region {margin-bottom:28px; min-width:640px;}
-#container #rb-theme-install .rb-tp-layout-position {margin-bottom:20px; padding:20px 50px; background:#f0f5f9; border:0; border-radius:10px;}
+#container #rb-theme-install .rb-tp-layout-region {margin-bottom:28px; min-width:0;}
+#container #rb-theme-install .rb-tp-layout-position {margin-bottom:20px; min-width:0; max-width:100%; box-sizing:border-box; padding:20px; background:#f0f5f9; border:0; border-radius:10px;}
 #container #rb-theme-install .rb-tp-module-wrap {flex:0 0 var(--rb-tp-module-width); max-width:var(--rb-tp-module-width); min-width:0; padding:8px; box-sizing:border-box;}
 #container #rb-theme-install .rb-tp-page-connection {display:flex; flex-wrap:wrap; align-items:center; gap:8px; min-width:0;}
 #container #rb-theme-install #rb-tp-layouts select,
@@ -74,12 +74,10 @@ foreach((array)$rb_tp_ftp_files as $rb_tp_f) {
     display:flex; align-items:center; justify-content:center; width:100%; height:50px;
     box-sizing:border-box; text-align:center; background:#000 !important; color:#fff !important;
 }
-/* Rb어드민 메뉴 폭을 제외한 실제 미리보기 영역의 너비를 기준으로 배치한다. */
+/* 2.2.7.8: PC는 본문이 좁아져도 편집기를 오른쪽에 유지한다. */
 @container rb-tp-layouts (max-width:1040px) {
-    #container #rb-theme-install .rb-tp-preview-body {display:block;}
-    #container #rb-theme-install .rb-tp-preview-canvas {width:100%; min-width:0; max-width:100%;}
-    #container #rb-theme-install .rb-tp-preview-sidebar {position:static; width:100%; min-width:0; margin-top:20px;}
-    #container #rb-theme-install .rb-tp-layout-region {min-width:0;}
+    #container #rb-theme-install .rb-tp-preview-body {gap:16px;}
+    #container #rb-theme-install .rb-tp-preview-sidebar {flex-basis:280px; min-width:280px;}
     #container #rb-theme-install .rb-tp-layout-position {padding:20px;}
 }
 @container rb-tp-layouts (max-width:600px) {
@@ -90,10 +88,8 @@ foreach((array)$rb_tp_ftp_files as $rb_tp_f) {
 /* 컨테이너 쿼리를 지원하지 않는 브라우저에서도 모바일에서 가로 넘침을 방지한다. */
 @supports not (container-type:inline-size) {
     @media (max-width:1280px) {
-        #container #rb-theme-install .rb-tp-preview-body {display:block;}
-        #container #rb-theme-install .rb-tp-preview-canvas {width:100%; min-width:0; max-width:100%;}
-        #container #rb-theme-install .rb-tp-preview-sidebar {position:static; width:100%; min-width:0; margin-top:20px;}
-        #container #rb-theme-install .rb-tp-layout-region {min-width:0;}
+        #container #rb-theme-install .rb-tp-preview-body {gap:16px;}
+        #container #rb-theme-install .rb-tp-preview-sidebar {flex-basis:280px; min-width:280px;}
         #container #rb-theme-install .rb-tp-layout-position {padding:20px;}
     }
     @media (max-width:600px) {
