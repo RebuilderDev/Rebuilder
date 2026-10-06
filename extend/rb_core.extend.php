@@ -10,7 +10,7 @@ include_once(G5_PATH.'/rb/rb.lib/rb_header_new.lib.php');
 //ini_set('display_startup_errors', 1);
 //error_reporting(E_ALL);
 
-define('RB_VER',  '2.2.7.7'); // 버전
+define('RB_VER',  '2.2.7.8'); // 버전
 define('RB_TABLE_PREFIX', 'rb_'); // 리빌더 접두사
 
 // 헤더 배경색을 실제 표시색으로 합성한 뒤 검정/흰색 중 대비가 높은 색을 선택한다.

@@ -1,5 +1,6 @@
 <?php
 if (!defined('_GNUBOARD_')) exit;
+require_once G5_PATH.'/rb/rb.lib/rb_push_click.lib.php';
 
 /**
  * 자동 시스템 알림은 그누보드 쪽지와 분리합니다.
@@ -757,13 +758,15 @@ function rb_notification_send($category, $title, $content, $link_url, $recv_id, 
     $labels = rb_notification_categories();
     $push_title = isset($labels[$category]) ? $labels[$category] : '기타';
 
+    $push_link = rb_push_click_url('notification', $noti_id, $recv_id);
+    if ($push_link === '') $push_link = $link_url;
     if ($pwa_push && function_exists('send_pwa_if_needed')) {
-        send_pwa_if_needed($recv_id, $send_id, $push_title, $link_url, $title);
+        send_pwa_if_needed($recv_id, $send_id, $push_title, $push_link, $title);
     }
     if ($app_push
         && isset($app['ap_title'], $app['ap_key'], $app['ap_pid'])
         && $app['ap_title'] && $app['ap_key'] && $app['ap_pid']) {
-        rb_notification_send_app_push($recv_id, $push_title, $title, $app['ap_key'], $preference_force);
+        rb_notification_send_app_push($recv_id, $push_title, $title, $app['ap_key'], $preference_force, $push_link);
     }
     return $noti_id;
 }
@@ -834,14 +837,14 @@ if (!function_exists('get_user_tokens')) {
 }
 
 if (!function_exists('sendPushNotificationAsync')) {
-    function sendPushNotificationAsync($tokens, $title, $body, $json_key_file_path, $force = false)
+    function sendPushNotificationAsync($tokens, $title, $body, $json_key_file_path, $force = false, $click_url = '')
     {
         $tokens = rb_notification_filter_push_tokens($tokens, $force);
         if (!$tokens) return array('ok' => false, 'code' => 'NO_ELIGIBLE_TOKENS');
         // 앱 관리가 업데이트된 설치본은 내부 HTTP 호출 없이 응답 종료 후 발송합니다.
         // 관리자 앱 관리의 수동 발송은 rb_app_send_push()로 Google 응답을 직접 확인합니다.
         if (function_exists('rb_app_queue_push')) {
-            return rb_app_queue_push($tokens, $title, $body, $json_key_file_path);
+            return rb_app_queue_push($tokens, $title, $body, $json_key_file_path, $click_url);
         }
         if (!function_exists('curl_init')) {
             error_log('[RB APP PUSH] TRANSPORT CURL_NOT_AVAILABLE');
@@ -852,6 +855,7 @@ if (!function_exists('sendPushNotificationAsync')) {
             'title' => (string) $title,
             'body' => (string) $body,
             'jsonKeyFilePath' => (string) $json_key_file_path,
+            'clickUrl' => (string) $click_url,
         ));
         if ($post_data === false) {
             error_log('[RB APP PUSH] INPUT INVALID_MESSAGE_ENCODING');
@@ -926,7 +930,7 @@ if (!function_exists('send_push_if_needed')) {
     }
 }
 
-function rb_notification_send_app_push($recv_id, $push_title, $body, $api_key, $force = false)
+function rb_notification_send_app_push($recv_id, $push_title, $body, $api_key, $force = false, $click_url = '')
 {
     global $app, $config;
     if ($recv_id === '') {
@@ -938,7 +942,7 @@ function rb_notification_send_app_push($recv_id, $push_title, $body, $api_key, $
     if (!$tokens) {
         return;
     }
-    sendPushNotificationAsync($tokens, $push_title, $body, G5_DATA_PATH.'/push/'.basename((string) $api_key), $force);
+    sendPushNotificationAsync($tokens, $push_title, $body, G5_DATA_PATH.'/push/'.basename((string) $api_key), $force, $click_url);
 }
 
 /*
