@@ -1,6 +1,7 @@
 <?php
 $sub_menu = '000300';
 include_once('./_common.php');
+include_once(G5_PATH.'/rb/rb.lib/rb_banner_theme.lib.php');
 
 check_demo();
 
@@ -10,6 +11,17 @@ if ($w == 'd') auth_check_menu($auth, $sub_menu, "d");
 else auth_check_menu($auth, $sub_menu, "w");
 
 check_admin_token();
+
+$bn_theme=null;
+if(isset($_POST['bn_theme'])) {
+    $bn_theme=is_string($_POST['bn_theme'])?$_POST['bn_theme']:'';
+    $bn_themes=get_theme_dir();
+    $bn_owners=rb_banner_theme_registry();
+    $bn_old_id=isset($_POST['bn_id'])?(int)$_POST['bn_id']:0;
+    $bn_old_theme=isset($bn_owners['owners'][$bn_old_id])?$bn_owners['owners'][$bn_old_id]:'';
+    if($bn_theme!=='*' && !in_array($bn_theme,$bn_themes,true) && $bn_theme!==$bn_old_theme) alert('사용 테마를 확인해 주세요.');
+    if($bn_theme==='') alert('사용 테마를 확인해 주세요.');
+}
 
 function rb_sql_escape($s) {
     if (function_exists('sql_real_escape_string')) return sql_real_escape_string($s);
@@ -138,6 +150,18 @@ if ($w == "") {
 
     $sql = "DELETE FROM rb_banner WHERE bn_id = " . (int)$bn_id;
     sql_query($sql);
+}
+
+// 구버전 폼은 기존 소속을 유지한다. 새 등록은 현재 적용 중인 테마에 연결한다.
+try {
+    if($w==='d') rb_banner_theme_save(array($bn_id=>null));
+    elseif($bn_theme!==null || $w==='') {
+        if($bn_theme===null) $bn_theme=!empty($rb_core['theme'])?$rb_core['theme']:'*';
+        rb_banner_theme_save(array($bn_id=>$bn_theme));
+    }
+} catch(Throwable $e) {
+    if($w==='') sql_query('DELETE FROM rb_banner WHERE bn_id = '.(int)$bn_id,false);
+    alert($e->getMessage());
 }
 
 // 이미지 업로드 처리

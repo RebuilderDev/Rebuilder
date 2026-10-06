@@ -2,6 +2,7 @@
 if (!defined('_GNUBOARD_')) exit;
 include_once(__DIR__.'/rb_theme_release.lib.php');
 include_once(__DIR__.'/rb_theme_dependencies.lib.php');
+include_once(__DIR__.'/rb_banner_theme.lib.php');
 
 /* 패키지 설치는 새 테마의 소스와 디자인 자료만 추가한다. 적용 시 스킨 설정 저장/복원은 별도로 처리한다. */
 function rb_tp_tables()
@@ -28,6 +29,24 @@ function rb_tp_theme_has_settings($theme)
     foreach(rb_tp_tables() as $table=>$def)
         if(rb_tp_rows("SELECT `{$def[0]}` FROM `$table` WHERE `{$def[0]}`=".rb_tp_q($theme).' LIMIT 1')) return true;
     return false;
+}
+function rb_tp_package_pending($theme,$manifest,$manifestBytes)
+{
+    $state=rb_tp_state($theme,true);
+    if(!$state) return true;
+    if(isset($state['installed_theme']) && $state['installed_theme']!==$theme) return true;
+    if(!rb_tp_theme_has_settings($theme)) return true;
+    if(isset($state['package_manifest_sha256']) && is_string($state['package_manifest_sha256'])
+        && preg_match('/\A[a-f0-9]{64}\z/',$state['package_manifest_sha256'])) {
+        return !is_string($manifestBytes) || !hash_equals($state['package_manifest_sha256'],hash('sha256',$manifestBytes));
+    }
+    // 이전 설치 기록에는 완료 해시가 없다. 배포 식별정보가 같으면 이미 처리한 패키지다.
+    if(isset($state['identity'],$manifest['identity']) && rb_tp_identity_valid($state['identity']) && rb_tp_identity_valid($manifest['identity'])) {
+        foreach(array('id','release','revision') as $key)
+            if($state['identity'][$key]!==$manifest['identity'][$key]) return true;
+        return false;
+    }
+    return true;
 }
 function rb_tp_receive_action($theme)
 {
@@ -463,7 +482,7 @@ function rb_tp_refs($data)
             if(preg_match('/^rb_co_(?!(?:top|btm)(?:_|-|$))([A-Za-z0-9_]+)/',$layout,$m)) $refs['content'][$m[1]]=true;
             if (!empty($r['md_bo_table'])) $refs['board'][$r['md_bo_table']] = true;
             if (!empty($r['md_poll_id'])) $refs['poll'][$r['md_poll_id']] = true;
-            if (isset($r['md_type']) && $r['md_type']==='item' && !empty($r['md_sca'])) $refs['category'][$r['md_sca']] = true;
+            if (isset($r['md_type']) && $r['md_type']==='item' && !empty($r['md_sca']) && $r['md_sca']!=='__rb_unconnected__') $refs['category'][$r['md_sca']] = true;
             foreach (array('md_tab_list'=>'board','md_item_tab_list'=>'category') as $field=>$kind) {
                 if (empty($r[$field])) continue;
                 $tabs = rb_tp_tab_list($r[$field]);
@@ -618,17 +637,19 @@ function rb_tp_module_mappings($data,$input)
                 throw new RuntimeException('모듈 연결 정보 형식이 올바르지 않습니다.');
             $target=isset($selection['target'])?$selection['target']:''; $category=isset($selection['category'])?$selection['category']:'';
             if(!$module['available'] && ($target!=='' || $category!=='')) throw new RuntimeException('쇼핑몰 미사용 사이트에서는 쇼핑몰 모듈을 연결할 수 없습니다.');
-            if($target!=='') {
+            $allCategories=$slot['kind']==='category' && $target==='__rb_all_categories__';
+            if($target!=='' && !$allCategories) {
                 if(!isset($catalogs[$slot['kind']])) $catalogs[$slot['kind']]=rb_tp_catalog($slot['kind']);
                 if(!isset($catalogs[$slot['kind']][$target])) throw new RuntimeException('모듈에 연결할 항목이 없거나 변경되었습니다. 설치 내용을 다시 확인해 주세요.');
             }
             if($category!=='' && ($slot['kind']!=='board' || $target==='' || !isset($categories[$target]) || !in_array($category,$categories[$target],true)))
                 throw new RuntimeException('선택한 게시판의 카테고리를 확인해 주세요.');
             if($type==='tab' || $type==='item_tab') {
-                if($target!=='') $tabs[]=$target.($category!==''?'||'.$category:'');
+                if($allCategories) $tabs[]='';
+                elseif($target!=='') $tabs[]=$target.($category!==''?'||'.$category:'');
             } elseif($type==='latest') { $row['md_bo_table']=$target; $row['md_sca']=$category; }
             elseif($type==='poll') $row['md_poll_id']=$target!==''?$target:'0';
-            else $row['md_sca']=$target;
+            else $row['md_sca']=$allCategories?'':($target!==''?$target:'__rb_unconnected__');
         }
         if($type==='tab' || $type==='item_tab') $row[$type==='tab'?'md_tab_list':'md_item_tab_list']=rb_tp_json($tabs);
         $out[$module['table']][$module['id']]=$row;
@@ -831,7 +852,7 @@ function rb_tp_export_archive($theme, $name, $zipfile, $identity, $delivery)
     foreach (array_merge($data['rb_module'],$data['rb_module_shop']) as $r) {
         if ($r['md_type'] !== 'banner' || empty($r['md_banner'])) continue;
         $where = $r['md_banner'] === '개별출력' ? 'bn_id='.rb_tp_q($r['md_banner_id']) : 'bn_position='.rb_tp_q($r['md_banner']);
-        $bannerRows=rb_tp_rows('SELECT * FROM rb_banner WHERE '.$where);
+        $bannerRows=rb_tp_rows('SELECT * FROM rb_banner WHERE '.$where.rb_banner_theme_sql($theme,true));
         if($r['md_banner']==='개별출력' && !$bannerRows) throw new RuntimeException('사용 중인 개별 배너가 없습니다.');
         foreach ($bannerRows as $b) {
             $id = $b['bn_id']; $b['bn_hit'] = '0'; $banners[$id] = $b;
@@ -996,9 +1017,11 @@ function rb_tp_open($file,$updating=false)
         }
         $stat = $zip->statName('manifest.json');
         if (!$stat || $stat['size']>8*1024*1024) throw new RuntimeException('리빌더 테마 패키지가 아닙니다.');
-        $m = json_decode($zip->getFromName('manifest.json'),true);
+        $manifestBytes=$zip->getFromName('manifest.json');
+        $m = json_decode($manifestBytes,true);
         if (!is_array($m) || !isset($m['format'],$m['version'],$m['source_theme'],$m['source_url'],$m['source_data_url'])
             || $m['format']!=='rebuilder-theme' || $m['version']!==2 || !rb_tp_slug($m['source_theme'])) throw new RuntimeException('지원하지 않는 패키지 형식입니다.');
+        $m['_received_manifest_sha256']=hash('sha256',$manifestBytes);
         foreach (array('files','data','refs','deps','boards','banners','css','assets','skins') as $key)
             if (!isset($m[$key]) || !is_array($m[$key])) throw new RuntimeException('패키지 정보가 불완전합니다.');
         if(isset($m['identity']) && !rb_tp_identity_valid($m['identity'])) throw new RuntimeException('테마 배포 식별정보가 올바르지 않습니다.');
@@ -1227,15 +1250,12 @@ function rb_tp_install($zipfile, $requested, $input, $reinstall=false, $expected
                 return $a[1].$a[2].'='.(isset($maps[$kind][$a[3]]) && $maps[$kind][$a[3]]!==''?$maps[$kind][$a[3]]:$a[3]);
             },$v);
         };
-        $bannerIds=array(); $groups=array();
-        foreach(array_merge($m['data']['rb_module'],$m['data']['rb_module_shop']) as $module)
-            if($module['md_type']==='banner' && !empty($module['md_banner']) && $module['md_banner']!=='개별출력')
-                $groups[$module['md_banner']]='tp_'.substr(hash('sha256',$theme.'|'.$module['md_banner']),0,24);
+        $bannerIds=array();
         foreach($m['banners'] as $row) {
             if(!isset($row['bn_id'],$row['bn_position']) || !ctype_digit((string)$row['bn_id'])) throw new RuntimeException('배너 정보 오류');
-            $old=(string)$row['bn_id']; $group=$row['bn_position'];
-            if($group!=='개별출력') { $groups[$group]='tp_'.substr(hash('sha256',$theme.'|'.$group),0,24); $row['bn_position']=$groups[$group]; }
-            $row=rb_tp_walk_values($row,$convert); $row['bn_hit']='0';
+            $old=(string)$row['bn_id'];
+            $position=$row['bn_position'];
+            $row=rb_tp_walk_values($row,$convert); $row['bn_position']=$position; $row['bn_hit']='0';
             $new=rb_tp_insert('rb_banner',$row,'bn_id',$journal); $bannerIds[$old]=$new;
             foreach($m['files'] as $entry=>$info) {
                 $prefix='banner/'.$old.'/'; if(strpos($entry,$prefix)!==0) continue;
@@ -1274,7 +1294,7 @@ function rb_tp_install($zipfile, $requested, $input, $reinstall=false, $expected
                     $row[$field]=$map[$st][$r[$field]];
                 }
                 if($module) {
-                    if($r['md_type']==='item' && !empty($r['md_sca'])) $row['md_sca']=$maps['category'][$r['md_sca']];
+                    if($r['md_type']==='item' && !empty($r['md_sca']) && $r['md_sca']!=='__rb_unconnected__') $row['md_sca']=$maps['category'][$r['md_sca']];
                     if(!empty($r['md_bo_table'])) $row['md_bo_table']=$maps['board'][$r['md_bo_table']];
                     if(!empty($r['md_poll_id'])) $row['md_poll_id']=$maps['poll'][$r['md_poll_id']];
                     if($r['md_type']==='latest' && empty($row['md_bo_table'])) $row['md_sca']='';
@@ -1283,6 +1303,7 @@ function rb_tp_install($zipfile, $requested, $input, $reinstall=false, $expected
                         $tabs=array();
                         foreach(rb_tp_tab_list($r[$field]) as $tab) {
                             $parts=explode('||',$tab,2);
+                            if($field==='md_item_tab_list' && $parts[0]==='') { $tabs[]=''; continue; }
                             if(!isset($maps[$kind][$parts[0]])) throw new RuntimeException('탭 항목의 연결 정보가 없습니다.');
                             if($maps[$kind][$parts[0]]==='') continue;
                             $tabs[]=$maps[$kind][$parts[0]].(isset($parts[1])?'||'.$parts[1]:'');
@@ -1295,7 +1316,7 @@ function rb_tp_install($zipfile, $requested, $input, $reinstall=false, $expected
                             if($r['md_banner']==='개별출력' && !isset($bannerIds[$r['md_banner_id']])) throw new RuntimeException('배너 연결 누락');
                             $row['md_banner_id']=isset($bannerIds[$r['md_banner_id']])?$bannerIds[$r['md_banner_id']]:'0';
                         }
-                        if(isset($groups[$r['md_banner']])) $row['md_banner']=$groups[$r['md_banner']];
+                        $row['md_banner']=$r['md_banner'];
                     }
                 }
                 unset($row[$p.'_id']); $sets=array();
@@ -1359,10 +1380,16 @@ function rb_tp_install($zipfile, $requested, $input, $reinstall=false, $expected
             else rb_tp_write($dest,$bytes,$written,$dirs);
         }
         if(isset($m['identity'])) $state['identity']=$m['identity'];
+        $state['installed_theme']=$theme;
+        $state['package_manifest_sha256']=$m['_received_manifest_sha256'];
         $state['source_maps']=$maps;
+        $state['banner_ids']=$bannerIds;
         rb_tp_write(G5_PATH.'/theme/'.$theme.'/rb-package.json',rb_tp_json($state),$written,$dirs);
         rb_tp_save_known_theme($theme);
         rb_tp_state($theme,true);
+        $bannerOwners=array();
+        foreach($bannerIds as $id) $bannerOwners[$id]=$theme;
+        rb_banner_theme_save($bannerOwners,$theme);
         return array('theme'=>$theme,'name'=>$m['name']);
     } catch(Throwable $e) {
         // MyISAM도 지원한다. 이번 설치가 새로 만든 행/파일만 보상 삭제한다.

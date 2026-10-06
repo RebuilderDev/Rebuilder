@@ -1,6 +1,7 @@
 <?php
 $sub_menu = '000300';
 include_once('./_common.php');
+include_once(G5_PATH.'/rb/rb.lib/rb_banner_theme.lib.php');
 
 auth_check_menu($auth, $sub_menu, "w");
 
@@ -2560,7 +2561,7 @@ function rbEsc(s){
 				<option value="" <?php echo get_selected(isset($bn['bn_position']) ? $bn['bn_position'] : '', ''); ?>>미출력</option>
 			</select> <input type="text" name="bn_position_use" id="bn_position_use" class="frm_input" placeholder="그룹명 입력" hidden disabled style="display:none;">
 			<br><br>
-			<?php echo help("개별출력의 경우 그룹화 되지 않습니다. 새 그룹은 출력그룹에서 그룹추가를 선택한 뒤 그룹명을 입력하면 생성됩니다.<br>생성되는 배너는 모두 모듈설정 패널에서 사용하실 수 있습니다."); ?>
+			<?php echo help("개별출력의 경우 그룹화 되지 않습니다. 새 그룹은 출력그룹에서 그룹추가를 선택한 뒤 그룹명을 입력하면 생성됩니다.<br>모듈설정 패널에는 현재 테마의 배너와 공용 배너가 표시됩니다."); ?>
 
 			<?php echo htmlspecialchars("그룹별 출력 : <?php echo rb_banners('그룹명'); ?>"); ?><br>
 			<?php echo htmlspecialchars("개별출력 : <?php echo rb_banners('개별출력', '배너ID'); ?>"); ?><br>
@@ -2570,6 +2571,24 @@ function rbEsc(s){
     </tr>
 
 
+    <tr>
+        <th scope="row"><label for="bn_theme">사용 테마</label></th>
+        <td>
+            <?php
+            $bn_owners=rb_banner_theme_registry();
+            $bn_theme=isset($w) && $w==='u' ? (isset($bn_owners['owners'][(int)$bn['bn_id']])?$bn_owners['owners'][(int)$bn['bn_id']]:'*') : (!empty($rb_core['theme'])?$rb_core['theme']:'*');
+            $bn_theme_dirs=get_theme_dir();
+            if($bn_theme!=='' && $bn_theme!=='*' && !in_array($bn_theme,$bn_theme_dirs,true)) $bn_theme_dirs[]=$bn_theme;
+            ?>
+            <select name="bn_theme" id="bn_theme">
+                <option value="*" <?php echo get_selected($bn_theme,'*'); ?>>공용 (모든 테마)</option>
+                <?php foreach($bn_theme_dirs as $bn_theme_dir) { ?>
+                <option value="<?php echo htmlspecialchars($bn_theme_dir,ENT_QUOTES,'UTF-8'); ?>" <?php echo get_selected($bn_theme,$bn_theme_dir); ?>><?php echo htmlspecialchars($bn_theme_dir,ENT_QUOTES,'UTF-8'); ?></option>
+                <?php } ?>
+            </select>
+            <?php echo help('선택한 테마에서만 선택·출력됩니다. 여러 테마에서 함께 사용할 배너는 공용으로 지정하세요.'); ?>
+        </td>
+    </tr>
     <tr>
         <th scope="row"><label for="bn_device">출력기기</label></th>
         <td>

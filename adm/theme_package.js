@@ -88,6 +88,7 @@
             block.append(label);
             if (!Object.keys(slot.options).length) block.append(document.getElementById('rb-tp-empty-help').content.cloneNode(true));
             select.add(new Option('설치 후 모듈에서 설정', ''));
+            if (slot.kind === 'category') select.add(new Option('전체 카테고리', '__rb_all_categories__'));
             Object.keys(slot.options).forEach(function (id) { select.add(new Option(slot.options[id] + ' (' + id + ')', id)); });
             block.append(select);
             if (slot.kind === 'board') {

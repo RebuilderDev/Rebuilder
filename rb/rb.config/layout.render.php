@@ -14,12 +14,17 @@ if (!function_exists('rb_module_has_connection')) {
         if (!isset($state['scope']) || $state['scope']!=='main-design') return true;
         $type=isset($module['md_type'])?$module['md_type']:'';
         if (($type==='item' || $type==='item_tab') && (!defined('G5_USE_SHOP') || !G5_USE_SHOP)) return false;
+        if ($type==='item' && (!isset($module['md_sca']) || (string)$module['md_sca']==='')) return true;
+        if ($type==='item' && $module['md_sca']==='__rb_unconnected__') return false;
         static $catalogs=array();
         $kind=($type==='latest' || $type==='tab')?'board':($type==='poll'?'poll':(($type==='item' || $type==='item_tab')?'category':''));
         if($kind!=='' && !isset($catalogs[$kind])) $catalogs[$kind]=rb_tp_catalog($kind);
         if ($type==='latest') return !empty($module['md_bo_table']) && isset($catalogs['board'][$module['md_bo_table']]);
         if ($type==='poll') return !empty($module['md_poll_id']) && isset($catalogs['poll'][$module['md_poll_id']]);
-        if ($type==='item') return !empty($module['md_sca']) && isset($catalogs['category'][$module['md_sca']]);
+        if ($type==='item') {
+            $category=isset($module['md_sca'])?(string)$module['md_sca']:'';
+            return $category==='' || isset($catalogs['category'][$category]);
+        }
         if ($type==='tab' || $type==='item_tab') {
             $field=$type==='tab'?'md_tab_list':'md_item_tab_list';
             $tabs=isset($module[$field])?json_decode($module[$field],true):null;
@@ -27,6 +32,7 @@ if (!function_exists('rb_module_has_connection')) {
             foreach($tabs as $tab) {
                 if(!is_string($tab) && !is_int($tab)) return false;
                 $parts=explode('||',(string)$tab,2);
+                if($type==='item_tab' && $parts[0]==='') continue; // 전체 카테고리 탭
                 if($parts[0]==='' || !isset($catalogs[$kind][$parts[0]])) return false;
             }
             return true;

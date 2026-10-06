@@ -1,6 +1,7 @@
 <?php
 $sub_menu = '000300';
 include_once('./_common.php');
+include_once(G5_PATH.'/rb/rb.lib/rb_banner_theme.lib.php');
 
 auth_check_menu($auth, $sub_menu, "r");
 
@@ -30,7 +31,39 @@ if(!sql_query(" DESCRIBE rb_banner ", false)) {
 $g5['title'] = '배너관리';
 include_once (G5_ADMIN_PATH.'/admin.head.php');
 
+// 새 배너는 소속 기록을, 이전 공용 배너는 모듈의 사용 테마를 확인한다.
+$rb_banner_themes = rb_banner_theme_usage(true);
+$rb_banner_registry = rb_banner_theme_registry();
+$rb_banner_theme_names = array();
+foreach($rb_banner_themes as $rb_banner_usage_themes)
+    foreach($rb_banner_usage_themes as $rb_banner_usage_theme=>$unused) $rb_banner_theme_names[$rb_banner_usage_theme]=$rb_banner_usage_theme;
+$rb_banner_theme_dirs = function_exists('get_theme_dir') ? get_theme_dir() : array();
+foreach ($rb_banner_theme_names as $rb_banner_theme_key => $rb_banner_theme_label) {
+    if (function_exists('get_theme_info') && in_array((string)$rb_banner_theme_key, $rb_banner_theme_dirs, true)) {
+        $rb_banner_theme_info = get_theme_info($rb_banner_theme_key);
+        if (!empty($rb_banner_theme_info['theme_name'])) {
+            $rb_banner_theme_name = trim(strip_tags($rb_banner_theme_info['theme_name']));
+            if ($rb_banner_theme_name !== '' && $rb_banner_theme_name !== (string)$rb_banner_theme_key)
+                $rb_banner_theme_names[$rb_banner_theme_key] = $rb_banner_theme_name.' · '.$rb_banner_theme_key;
+        }
+    }
+}
+natcasesort($rb_banner_theme_names);
+$rb_banner_theme_filter = isset($_GET['theme_filter']) && is_string($_GET['theme_filter']) ? $_GET['theme_filter'] : '';
+if ($rb_banner_theme_filter !== '__rb_unlinked__' && !isset($rb_banner_theme_names[$rb_banner_theme_filter])) $rb_banner_theme_filter = '';
 $sql_common = " from rb_banner ";
+if ($rb_banner_theme_filter !== '') {
+    $rb_banner_filter_ids = array();
+    foreach ($rb_banner_themes as $rb_banner_usage_id => $rb_banner_usage_themes) {
+        if ($rb_banner_theme_filter === '__rb_unlinked__' || isset($rb_banner_usage_themes[$rb_banner_theme_filter]))
+            $rb_banner_filter_ids[] = (int)$rb_banner_usage_id;
+    }
+    if ($rb_banner_filter_ids) {
+        $sql_common .= ' where bn_id '.($rb_banner_theme_filter === '__rb_unlinked__' ? 'NOT IN' : 'IN').' ('.implode(',', $rb_banner_filter_ids).') ';
+    } elseif ($rb_banner_theme_filter !== '__rb_unlinked__') {
+        $sql_common .= ' where 1 = 0 ';
+    }
+}
 
 // 테이블의 전체 레코드수만 얻음
 $sql = " select count(*) as cnt " . $sql_common;
@@ -50,6 +83,18 @@ $from_record = ($page - 1) * $rows; // 시작 열을 구함
 <div class="btn_fixed_top">
     <a href="./banner_form.php" class="btn_01 btn">배너추가</a>
 </div>
+
+<form method="get" class="local_sch01 local_sch">
+    <label for="rb_banner_theme_filter" class="sound_only">사용 테마</label>
+    <select name="theme_filter" id="rb_banner_theme_filter" onchange="this.form.submit();">
+        <option value="">전체 테마</option>
+        <?php foreach ($rb_banner_theme_names as $rb_banner_theme_key => $rb_banner_theme_label) { ?>
+        <option value="<?php echo htmlspecialchars((string)$rb_banner_theme_key, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $rb_banner_theme_filter === (string)$rb_banner_theme_key ? ' selected' : ''; ?>><?php echo htmlspecialchars($rb_banner_theme_label, ENT_QUOTES, 'UTF-8'); ?></option>
+        <?php } ?>
+        <option value="__rb_unlinked__"<?php echo $rb_banner_theme_filter === '__rb_unlinked__' ? ' selected' : ''; ?>>공용 / 미연결</option>
+    </select>
+    <noscript><input type="submit" value="조회" class="btn_submit"></noscript>
+</form>
 
 <div class="tbl_head01 tbl_wrap">
     <table>
@@ -71,7 +116,7 @@ $from_record = ($page - 1) * $rows; // 시작 열을 구함
     </thead>
     <tbody>
     <?php
-    $sql = " select * from rb_banner
+    $sql = " select * {$sql_common}
           order by bn_id desc
           limit $from_record, $rows  ";
     $result = sql_query($sql);
@@ -83,17 +128,14 @@ $from_record = ($page - 1) * $rows; // 시작 열을 구함
         // 새창 띄우기인지
         $bn_new_win = ($row['bn_new_win']) ? 'target="_blank"' : '';
 
-        $bimg = G5_DATA_PATH.'/banners/'.$row['bn_id'];
-        if(file_exists($bimg)) {
-            $size = @getimagesize($bimg);
-            if($size[0] && $size[0] > 800)
-                $width = 800;
-            else
-                $width = $size[0];
-
-            $bn_img = "";
-
-            $bn_img .= G5_DATA_URL."/banners/".$row['bn_id'];
+        // 실제 배너 출력과 같은 순서로 확인한다. 행마다 초기화해 이전 URL이 남지 않게 한다.
+        $bn_img = '';
+        $bn_image_id = (int)$row['bn_id'];
+        foreach (array('rb_display', 'banners') as $bn_image_folder) {
+            if ($bn_image_id > 0 && is_file(G5_DATA_PATH.'/'.$bn_image_folder.'/'.$bn_image_id)) {
+                $bn_img = G5_URL.'/rb/rb.mod/display/displayimg.php?did='.$bn_image_id;
+                break;
+            }
         }
 
         switch($row['bn_device']) {
@@ -117,12 +159,25 @@ $from_record = ($page - 1) * $rows; // 시작 열을 구함
     <tr class="<?php echo $bg; ?>">
         <td headers="th_id" class="td_num"><?php echo $row['bn_id']; ?></td>
         <td headers="th_dvc"><a href="<?php echo !empty($bn_img) ? $bn_img : '#'; ?>" target="_blank"><?php echo !empty($bn_img) ? $bn_img : '이미지 없음'; ?></a></td>
-		<td headers="th_loc"><?php echo !empty($row['bn_alt']) ? $row['bn_alt'] : '-'; ?></td>
+        <td headers="th_inf">
+            <?php echo !empty($row['bn_alt']) ? $row['bn_alt'] : '-'; ?><br>
+            사용 테마:
+            <?php
+            $rb_banner_row_themes = isset($rb_banner_themes[(int)$row['bn_id']]) ? $rb_banner_themes[(int)$row['bn_id']] : array();
+            if (!$rb_banner_row_themes) echo isset($rb_banner_registry['owners'][(int)$row['bn_id']]) && $rb_banner_registry['owners'][(int)$row['bn_id']]==='*'?'공용 (모든 테마)':'미연결';
+            else {
+                $rb_banner_row_labels = array();
+                foreach ($rb_banner_theme_names as $rb_banner_theme_key => $rb_banner_theme_label)
+                    if (isset($rb_banner_row_themes[$rb_banner_theme_key])) $rb_banner_row_labels[] = htmlspecialchars($rb_banner_theme_label, ENT_QUOTES, 'UTF-8');
+                echo implode('<br>', $rb_banner_row_labels);
+            }
+            ?>
+        </td>
         <td headers="th_loc">
 		<?php if($row['bn_position'] == "") {
 			echo "-";
 		} else {
-			echo $row['bn_position'];
+			echo htmlspecialchars($row['bn_position'],ENT_QUOTES,'UTF-8');
 		}
 		?>
 		</td>
@@ -150,7 +205,10 @@ $from_record = ($page - 1) * $rows; // 시작 열을 구함
 
 </div>
 
-<?php echo get_paging(G5_IS_MOBILE ? $config['cf_mobile_pages'] : $config['cf_write_pages'], $page, $total_page, "{$_SERVER['SCRIPT_NAME']}?$qstr&amp;page="); ?>
+<?php
+$rb_banner_page_query = $rb_banner_theme_filter !== '' ? 'theme_filter='.rawurlencode($rb_banner_theme_filter).'&amp;' : '';
+echo get_paging(G5_IS_MOBILE ? $config['cf_mobile_pages'] : $config['cf_write_pages'], $page, $total_page, $_SERVER['SCRIPT_NAME'].'?'.$rb_banner_page_query.'page=');
+?>
 
 
 <div class="local_desc01 local_desc">

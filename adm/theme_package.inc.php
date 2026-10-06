@@ -5,8 +5,9 @@ $rb_tp_ftp_files=glob(G5_PATH.'/theme/*/rb-package/manifest.json');
 $rb_tp_pending=array();
 foreach((array)$rb_tp_ftp_files as $rb_tp_f) {
     $rb_tp_dir=dirname(dirname($rb_tp_f)); if(is_link($rb_tp_dir)) continue; $rb_tp_n=basename($rb_tp_dir);
-    // 같은 폴더의 업데이트 자료도 확인할 수 있도록 설치 여부로 제외하지 않는다.
-    $rb_tp_meta=filesize($rb_tp_f)<8*1024*1024?json_decode(file_get_contents($rb_tp_f),true):array();
+    $rb_tp_bytes=filesize($rb_tp_f)<8*1024*1024?file_get_contents($rb_tp_f):false;
+    $rb_tp_meta=is_string($rb_tp_bytes)?json_decode($rb_tp_bytes,true):array();
+    if(!rb_tp_package_pending($rb_tp_n,$rb_tp_meta,$rb_tp_bytes)) continue;
     $rb_tp_label=isset($rb_tp_meta['name']) && is_string($rb_tp_meta['name'])?trim($rb_tp_meta['name']):'';
     $rb_tp_pending[$rb_tp_n]=$rb_tp_label!=='' && strcasecmp($rb_tp_label,$rb_tp_n)!==0?$rb_tp_label.' · '.$rb_tp_n:$rb_tp_n;
 }
@@ -155,6 +156,6 @@ foreach((array)$rb_tp_ftp_files as $rb_tp_f) {
     <template id="rb-tp-empty-help"><?php echo help('지금 연결할 항목이 없어도 설치할 수 있습니다.'); ?></template>
     <template id="rb-tp-legacy-help"><?php echo help('이전 배포 자료입니다. 제작 사이트에서 테마를 다시 내보내면 연결 없이 설치할 수 있습니다.'); ?></template>
 </section>
-<script src="<?php echo G5_ADMIN_URL; ?>/theme_package.js?v=2278-install-record"></script>
+<script src="<?php echo G5_ADMIN_URL; ?>/theme_package.js?v=2278-all-categories"></script>
 <?php } ?>
-<?php unset($rb_tp_dir,$rb_tp_ftp_files,$rb_tp_f,$rb_tp_n,$rb_tp_meta,$rb_tp_label,$rb_tp_pending); ?>
+<?php unset($rb_tp_dir,$rb_tp_ftp_files,$rb_tp_f,$rb_tp_n,$rb_tp_bytes,$rb_tp_meta,$rb_tp_label,$rb_tp_pending); ?>

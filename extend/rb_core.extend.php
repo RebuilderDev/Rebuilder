@@ -1183,47 +1183,49 @@ function rb_poll_list($poll_id) {
 
 // 생성된 배너그룹 목록조회
 function rb_banner_group_list($bn_position) {
-    $sql = " select bn_position from rb_banner where bn_position NOT IN ('개별출력', '미출력') group by bn_position order by bn_position asc ";
+    $sql = " select bn_position from rb_banner where bn_position NOT IN ('', '개별출력', '미출력') group by bn_position order by bn_position asc ";
     $result = sql_query($sql);
 
     $str = ""; // 초기화
 
     for ($i=0; $row=sql_fetch_array($result); $i++)
     {
+        $label=htmlspecialchars($row['bn_position'],ENT_QUOTES,'UTF-8');
         if($bn_position == $row['bn_position']) {
-            $str .= "<option value='$row[bn_position]' selected";
+            $str .= "<option value='$label' selected";
         } else {
-            $str .= "<option value='$row[bn_position]'";
+            $str .= "<option value='$label'";
         }
 
-        $str .= ">$row[bn_position]</option>";
+        $str .= ">$label</option>";
     }
     return $str;
 }
 
 // 생성된 배너 목록조회
-function rb_banner_list($bn_position) {
-    $sql = " select bn_id, bn_position, bn_alt from rb_banner where bn_position NOT IN ('미출력') group by bn_position order by bn_id asc";
+function rb_banner_list($bn_position, $theme=null) {
+    $sql = " select bn_position, MIN(bn_id) as bn_id from rb_banner where bn_position NOT IN ('', '미출력')".rb_banner_theme_sql($theme)." group by bn_position order by bn_id asc";
     $result = sql_query($sql);
 
     $str = ""; // 초기화
 
     for ($i=0; $row=sql_fetch_array($result); $i++)
     {
+        $label=htmlspecialchars($row['bn_position'],ENT_QUOTES,'UTF-8');
         if($bn_position == $row['bn_position']) {
-            $str .= "<option value='$row[bn_position]' selected";
+            $str .= "<option value='$label' selected";
         } else {
-            $str .= "<option value='$row[bn_position]'";
+            $str .= "<option value='$label'";
         }
 
-        $str .= ">$row[bn_position]</option>";
+        $str .= ">$label</option>";
     }
     return $str;
 }
 
 // 생성된 개별출력 배너 목록조회
-function rb_banner_id_list($bn_id) {
-    $sql = " select bn_id, bn_position, bn_alt from rb_banner where bn_position = '개별출력' order by bn_id asc";
+function rb_banner_id_list($bn_id, $theme=null) {
+    $sql = " select bn_id, bn_position, bn_alt from rb_banner where bn_position = '개별출력'".rb_banner_theme_sql($theme)." order by bn_id asc";
     $result = sql_query($sql);
 
     $str = ""; // 초기화
@@ -1236,7 +1238,7 @@ function rb_banner_id_list($bn_id) {
             $str .= "<option value='$row[bn_id]'";
         }
 
-        $str .= ">$row[bn_alt] ($row[bn_id]) </option>";
+        $str .= ">".htmlspecialchars($row['bn_alt'],ENT_QUOTES,'UTF-8')." ($row[bn_id]) </option>";
     }
     return $str;
 }
@@ -1847,9 +1849,13 @@ function rb_upload_files($srcfile, $destfile, $dir)
 }
 
 // 배너출력
-function rb_banners($position, $bnid='', $skin='', $order='')
+function rb_banners($position, $bnid='', $skin='', $order='', $theme=null)
 {
     global $g5, $rb_core;
+    if($theme===null) $theme=isset($rb_core['theme'])?$rb_core['theme']:'';
+    $banner_scope=rb_banner_theme_sql($theme,true);
+    $position=sql_real_escape_string((string)$position);
+    $bnid=(int)$bnid;
 
     if($skin == "") {
         $skin_path = G5_PATH.'/rb/rb.mod/banner/skin/rb.banner/banner.skin.php';
@@ -1861,32 +1867,12 @@ function rb_banners($position, $bnid='', $skin='', $order='')
     if(file_exists($skin_path)) {
 
 
-        // 배너 출력
-
-        if($position == "개별출력") {
-            if(IS_MOBILE()) {
-                $sql = " select * from rb_banner where '".G5_TIME_YMDHIS."' between bn_begin_time and bn_end_time and bn_position = '$position' and bn_device IN ('mobile', 'both') and bn_id = '$bnid' order by bn_order, bn_id desc ";
-            } else {
-                $sql = " select * from rb_banner where '".G5_TIME_YMDHIS."' between bn_begin_time and bn_end_time and bn_position = '$position' and bn_device IN ('pc', 'both') and bn_id = '$bnid' order by bn_order, bn_id desc ";
-            }
-            $result = sql_query($sql);
-        } else {
-            if($order == "rand()") {
-                if(IS_MOBILE()) {
-                    $sql = " select * from rb_banner where '".G5_TIME_YMDHIS."' between bn_begin_time and bn_end_time and bn_position = '$position' and bn_device IN ('mobile', 'both') order by rand() ";
-                } else {
-                    $sql = " select * from rb_banner where '".G5_TIME_YMDHIS."' between bn_begin_time and bn_end_time and bn_position = '$position' and bn_device IN ('pc', 'both') order by rand() ";
-                }
-                $result = sql_query($sql);
-            } else {
-                if(IS_MOBILE()) {
-                    $sql = " select * from rb_banner where '".G5_TIME_YMDHIS."' between bn_begin_time and bn_end_time and bn_position = '$position' and bn_device IN ('mobile', 'both') order by bn_order, bn_id desc ";
-                } else {
-                    $sql = " select * from rb_banner where '".G5_TIME_YMDHIS."' between bn_begin_time and bn_end_time and bn_position = '$position' and bn_device IN ('pc', 'both') order by bn_order, bn_id desc ";
-                }
-                $result = sql_query($sql);
-            }
-        }
+        $device=IS_MOBILE()?'mobile':'pc';
+        $sort=$position!=='개별출력' && $order==='rand()'?'rand()':'bn_order, bn_id desc';
+        $sql=" select * from rb_banner where '".G5_TIME_YMDHIS."' between bn_begin_time and bn_end_time
+            and bn_position = '$position' and bn_device IN ('$device', 'both')".$banner_scope;
+        if($position==='개별출력') $sql.=" and bn_id = '$bnid'";
+        $result=sql_query($sql.' order by '.$sort);
 
 
         include $skin_path;

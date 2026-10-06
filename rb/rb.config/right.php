@@ -5272,7 +5272,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
             return false;
         } else if (md_type == "item_tab" && md_item_tab_list == "" || md_type == "item_tab" && md_item_tab_list == "[]") {
             alert('상품탭의 분류는 최소 2개이상 선택해주세요.');
-            $('select[name="md_sca_shop"]').focus();
+            $('#md_sca_shop').focus();
             return false;
         } else if (md_type == "tab" && md_tab_skin == "") {
             alert('최신글 탭 스킨을 선택해주세요.');
@@ -6901,8 +6901,8 @@ foreach ($rb_side_panels as $rb_side_panel) {
         // 상태 재구성 + 태그는 addItemTag로 (항상 분류명 표기)
         itemSelectedData = [];
         list.forEach(function(v) {
+            if (typeof v !== 'string' && typeof v !== 'number') return;
             var key = String(v).trim();
-            if (!key) return;
             itemSelectedData.push(key);
 
             // 분류명 확보 후 넘김 (옵션 없으면 addItemTag가 value로 임시표기)

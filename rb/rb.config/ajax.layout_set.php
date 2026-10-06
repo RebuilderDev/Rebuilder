@@ -297,7 +297,7 @@ foreach ($layouts as $layout_no) {
                            <?php echo '<?php echo $md_padding_style_device; ?>'; ?>
 
                            ">
-                            <?php echo '<?php echo rb_banners("' . $row_mod['md_banner'] . '", "' . $row_mod['md_banner_id'] . '", "' . $row_mod['md_banner_skin'] . '", "' . $row_mod['md_order_banner'] . '"); ?>'; ?>
+                            <?php echo rb_banner_module_code($row_mod); ?>
                         </div>
                     <?php } ?>
 
@@ -430,7 +430,7 @@ foreach ($layouts as $layout_no) {
                 <ul class="rb_tab_nav swiper-wrapper rb_tab_nav_<?php echo $row_mod['md_id']; ?>">
                     <?php foreach ($tab_list as $idx => $sca) { ?>
                         <li class="swiper-slide <?php echo $idx==0?'on':'';?>" data-tab="tab_<?php echo $sca; ?>">
-                            <a href="javascript:void(0);"><?php echo get_category_name($sca); ?></a>
+                            <a href="javascript:void(0);"><?php echo (string)$sca === '' ? '전체 카테고리' : get_category_name($sca); ?></a>
                         </li>
                     <?php } ?>
                 </ul>
@@ -465,7 +465,7 @@ foreach ($layouts as $layout_no) {
                     $code .= "if(isset(\$row_mod['md_module']) && \$row_mod['md_module'] > 0) {\n";
                     $code .= "    \$item_where .= \" and it_type\".\$row_mod['md_module'].\" = '1' \";\n";
                     $code .= "}\n";
-                    $code .= "\$item_where .= \" AND (
+                    if ((string)$tab_sca !== '') $code .= "\$item_where .= \" AND (
                         ca_id = '{$tab_sca}' OR ca_id LIKE '{$tab_sca}%'
                         OR ca_id2 = '{$tab_sca}' OR ca_id2 LIKE '{$tab_sca}%'
                         OR ca_id3 = '{$tab_sca}' OR ca_id3 LIKE '{$tab_sca}%'

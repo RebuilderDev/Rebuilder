@@ -665,14 +665,14 @@ if($mod_type == "del_sec") { //섹션삭제
         <ul class="mt-5 selected_banner selected_select">
             <select class="select w100" name="md_banner" id="md_banner">
                 <option value="">출력할 배너그룹을 선택하세요.</option>
-                <?php echo rb_banner_list($md_banner); ?>
+                <?php echo rb_banner_list($md_banner, $theme_name); ?>
             </select>
         </ul>
 
         <ul class="mt-5 selected_banner2">
             <select class="select w100" name="md_banner_id">
                 <option value="">출력할 배너를 선택하세요.</option>
-                <?php echo rb_banner_id_list($md_banner_id); ?>
+                <?php echo rb_banner_id_list($md_banner_id, $theme_name); ?>
             </select>
         </ul>
 
@@ -888,7 +888,8 @@ if($mod_type == "del_sec") { //섹션삭제
 
         <ul class="mt-5 selected_item selected_select">
             <select class="select w100" name="md_sca" id="md_sca_shop">
-                <option value="">전체 카테고리</option>
+                <option value="__rb_select_category__" disabled>분류를 선택하세요.</option>
+                <option value="" <?php echo !isset($md_sca) || $md_sca === '' ? 'selected' : ''; ?>>전체 카테고리</option>
                 <?php echo conv_selected_option($category_select, $md_sca); ?>
             </select>
         </ul>
@@ -899,6 +900,7 @@ if($mod_type == "del_sec") { //섹션삭제
         <script>
             $(function() {
                 let itemSelectedData = [];
+                $('#md_type').off('change.rb.itemCategories').on('change.rb.itemCategories', function() { itemSelectedData = []; });
 
                 // --- 초기 복원 ---
                 const savedList = $('#md_item_tab_list').val();
@@ -907,6 +909,8 @@ if($mod_type == "del_sec") { //섹션삭제
                         const parsed = JSON.parse(savedList);
                         if (Array.isArray(parsed)) {
                             parsed.forEach((item, idx) => {
+                                if (typeof item !== 'string' && typeof item !== 'number') return;
+                                item = String(item);
                                 if (!itemSelectedData.includes(item)) {
                                     itemSelectedData.push(item);
                                     addItemTag(item);
@@ -922,6 +926,10 @@ if($mod_type == "del_sec") { //섹션삭제
                     }
                 }
 
+                if ($('#md_type').val() === 'item_tab' && !itemSelectedData.length) {
+                    $('#md_sca_shop').val('__rb_select_category__');
+                }
+
                 // --- 선택 시 ---
                 $('#md_sca_shop').on('change', function() {
                     // // 상품(탭) 타입이 아닐 때는 태그를 만들지 않는다
@@ -932,7 +940,10 @@ if($mod_type == "del_sec") { //섹션삭제
                     const value = $(this).val();
                     const text = $(this).find('option:selected').text().trim();
 
-                    if (!value) return;
+                    if (value === null || value === '__rb_select_category__') return;
+                    itemSelectedData = $('#item_tab_selects .item-tag').map(function() {
+                        return String($(this).data('key'));
+                    }).get();
                     if (itemSelectedData.includes(value)) return;
 
                     itemSelectedData.push(value);
@@ -962,7 +973,7 @@ if($mod_type == "del_sec") { //섹션삭제
                     if (itemSelectedData.length) {
                         $('#md_sca_shop').val(itemSelectedData[itemSelectedData.length - 1]);
                     } else {
-                        $('#md_sca_shop').val('');
+                        $('#md_sca_shop').val('__rb_select_category__');
                     }
 
                     // hidden 갱신
@@ -975,14 +986,14 @@ if($mod_type == "del_sec") { //섹션삭제
                     update: function() {
                         let newOrder = [];
                         $('#item_tab_selects .item-tag').each(function() {
-                            newOrder.push($(this).data('key'));
+                            newOrder.push(String($(this).data('key')));
                         });
                         itemSelectedData = newOrder;
                         // select는 마지막 값으로 설정
                         if (itemSelectedData.length) {
                             $('#md_sca_shop').val(itemSelectedData[itemSelectedData.length - 1]);
                         } else {
-                            $('#md_sca_shop').val('');
+                            $('#md_sca_shop').val('__rb_select_category__');
                         }
                         updateItemHiddenField();
                     }
@@ -1237,6 +1248,7 @@ if($mod_type == "del_sec") { //섹션삭제
 
                     $("#md_item_tab_list").val('');
                     $('#item_tab_selects .item-tag').remove();
+                    if (selectedValue === 'item_tab') $('#md_sca_shop').val('__rb_select_category__');
 
 
                     $('.selected_select').hide();

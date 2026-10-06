@@ -258,6 +258,8 @@ function rb_tp_update_files($folder,$registerLegacy=false,$expectedAction=null)
             rb_tp_replace_file($dest,$stream,$hash);
         }
         if(isset($m['identity'])) $state['identity']=$m['identity'];
+        $state['installed_theme']=$folder;
+        $state['package_manifest_sha256']=$m['_received_manifest_sha256'];
         $state['name']=$m['name']; $state['dependencies']=$material['dependencies'];
         $bytes=rb_tp_json($state); $stream=fopen('php://temp','w+b'); fwrite($stream,$bytes); rewind($stream);
         rb_tp_replace_file(G5_PATH.'/theme/'.$folder.'/rb-package.json',$stream,hash('sha256',$bytes));
