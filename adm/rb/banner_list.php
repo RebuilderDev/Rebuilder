@@ -37,17 +37,6 @@ $rb_banner_registry = rb_banner_theme_registry();
 $rb_banner_theme_names = array();
 foreach($rb_banner_themes as $rb_banner_usage_themes)
     foreach($rb_banner_usage_themes as $rb_banner_usage_theme=>$unused) $rb_banner_theme_names[$rb_banner_usage_theme]=$rb_banner_usage_theme;
-$rb_banner_theme_dirs = function_exists('get_theme_dir') ? get_theme_dir() : array();
-foreach ($rb_banner_theme_names as $rb_banner_theme_key => $rb_banner_theme_label) {
-    if (function_exists('get_theme_info') && in_array((string)$rb_banner_theme_key, $rb_banner_theme_dirs, true)) {
-        $rb_banner_theme_info = get_theme_info($rb_banner_theme_key);
-        if (!empty($rb_banner_theme_info['theme_name'])) {
-            $rb_banner_theme_name = trim(strip_tags($rb_banner_theme_info['theme_name']));
-            if ($rb_banner_theme_name !== '' && $rb_banner_theme_name !== (string)$rb_banner_theme_key)
-                $rb_banner_theme_names[$rb_banner_theme_key] = $rb_banner_theme_name.' · '.$rb_banner_theme_key;
-        }
-    }
-}
 natcasesort($rb_banner_theme_names);
 $rb_banner_theme_filter = isset($_GET['theme_filter']) && is_string($_GET['theme_filter']) ? $_GET['theme_filter'] : '';
 if ($rb_banner_theme_filter !== '__rb_unlinked__' && !isset($rb_banner_theme_names[$rb_banner_theme_filter])) $rb_banner_theme_filter = '';
@@ -104,6 +93,7 @@ $from_record = ($page - 1) * $rows; // 시작 열을 구함
         <th scope="col" id="th_id">ID</th>
         <th scope="col" id="th_dvc">배너 Url</th>
 		<th scope="col" id="th_inf">배너설명</th>
+        <th scope="col" id="th_theme">사용테마</th>
         <th scope="col" id="th_loc">출력그룹</th>
         <th scope="col" id="th_dev">출력기기</th>
         <th scope="col" id="th_st">시작일시</th>
@@ -160,8 +150,9 @@ $from_record = ($page - 1) * $rows; // 시작 열을 구함
         <td headers="th_id" class="td_num"><?php echo $row['bn_id']; ?></td>
         <td headers="th_dvc"><a href="<?php echo !empty($bn_img) ? $bn_img : '#'; ?>" target="_blank"><?php echo !empty($bn_img) ? $bn_img : '이미지 없음'; ?></a></td>
         <td headers="th_inf">
-            <?php echo !empty($row['bn_alt']) ? $row['bn_alt'] : '-'; ?><br>
-            사용 테마:
+            <?php echo !empty($row['bn_alt']) ? $row['bn_alt'] : '-'; ?>
+        </td>
+        <td headers="th_theme">
             <?php
             $rb_banner_row_themes = isset($rb_banner_themes[(int)$row['bn_id']]) ? $rb_banner_themes[(int)$row['bn_id']] : array();
             if (!$rb_banner_row_themes) echo isset($rb_banner_registry['owners'][(int)$row['bn_id']]) && $rb_banner_registry['owners'][(int)$row['bn_id']]==='*'?'공용 (모든 테마)':'미연결';
@@ -197,7 +188,7 @@ $from_record = ($page - 1) * $rows; // 시작 열을 구함
     <?php
     }
     if ($i == 0) {
-    echo '<tr><td colspan="10" class="empty_table">자료가 없습니다.</td></tr>';
+    echo '<tr><td colspan="11" class="empty_table">자료가 없습니다.</td></tr>';
     }
     ?>
     </tbody>
