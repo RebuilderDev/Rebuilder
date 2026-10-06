@@ -143,7 +143,7 @@ function rb_tp_used_publication_folders($theme,$publications)
     foreach((array)glob(G5_PATH.'/theme/*',GLOB_ONLYDIR) as $dir) $used[]=basename($dir);
     return array_values(array_unique(array_map('strtolower',$used)));
 }
-function rb_tp_release_path($relative,$theme)
+function rb_tp_release_path($relative,$theme,$bannerIds=array())
 {
     if (!rb_tp_path($relative)) throw new RuntimeException('테마 업데이트 파일 경로 오류');
     $allowed=strpos($relative,'theme/'.$theme.'/')===0 || strpos($relative,'data/'.$theme.'/package/')===0;
@@ -151,6 +151,8 @@ function rb_tp_release_path($relative,$theme)
         $root=$kind==='widget'?'rb/rb.widget/':'rb/rb.mod/banner/skin/';
         if (strpos($relative,$root.$theme.'_')===0 || strpos($relative,$root.$theme.'/')===0) $allowed=true;
     }
+    if(preg_match('~^data/(rb_display|banners|rb_display_design)/([1-9][0-9]*)(?:/(.+))?$~',$relative,$banner)
+        && isset($bannerIds[(int)$banner[2]]) && (!isset($banner[3]) || $banner[1]==='rb_display_design')) $allowed=true;
     if (!$allowed || preg_match('~^theme/[^/]+/(?:rb-package/|rb-package\.json$)~',$relative))
         throw new RuntimeException('다른 테마 또는 설치 정보는 업데이트할 수 없습니다.');
     $dest=strpos($relative,'data/')===0?G5_DATA_PATH.'/'.substr($relative,5):G5_PATH.'/'.$relative;
@@ -206,9 +208,26 @@ function rb_tp_release_material($m,$theme,$state)
         $replace[parse_url($m['source_data_url'],PHP_URL_PATH).'/'.$rel]=parse_url(G5_DATA_URL,PHP_URL_PATH).'/'.$newrel;
     }
     foreach($m['files'] as $entry=>$info) if(strpos($entry,'user/')===0 && rb_tp_original_file($m,$entry)) $targets[$entry]=substr($entry,5);
-    foreach($targets as $entry=>$dest) if(!rb_tp_original_file($m,$entry)) rb_tp_release_path($dest,$theme);
+    // 동일 배포의 기존 배너 ID만 복구한다. 다른 테마의 배너나 DB 설정은 바꾸지 않는다.
+    $bannerIds=array(); $bannerOwners=rb_banner_theme_registry();
+    $sameSource=isset($state['source_theme']) && $state['source_theme']===$m['source_theme'];
+    $sameRelease=!isset($state['identity'],$m['identity'])
+        || (rb_tp_identity_valid($state['identity']) && rb_tp_identity_valid($m['identity']) && $state['identity']['id']===$m['identity']['id']);
+    if($sameSource && $sameRelease && !empty($state['banner_ids'])) foreach($m['files'] as $entry=>$info) {
+        if(!preg_match('~^banner/([1-9][0-9]*)/(.+)$~',$entry,$banner) || !isset($state['banner_ids'][$banner[1]])) continue;
+        $id=(string)$state['banner_ids'][$banner[1]];
+        if(!ctype_digit($id) || (int)$id<1 || !isset($bannerOwners['owners'][$id]) || $bannerOwners['owners'][$id]!==$theme) continue;
+        $tail=$banner[2];
+        if(in_array($tail,array('rb_display.bin','banners.bin','design_image.bin'),true)) $tail=substr($tail,0,-4);
+        if($tail==='rb_display' || $tail==='banners') $targets[$entry]='data/'.$tail.'/'.$id;
+        elseif($tail==='design_image') $targets[$entry]='data/rb_display_design/'.$id;
+        elseif(strpos($tail,'design/')===0) $targets[$entry]='data/rb_display_design/'.$id.'/'.substr($tail,7);
+        else continue;
+        $bannerIds[(int)$id]=true;
+    }
+    foreach($targets as $entry=>$dest) if(!rb_tp_original_file($m,$entry)) rb_tp_release_path($dest,$theme,$bannerIds);
     $replace[rtrim($m['source_url'],'/').'/']=rtrim(G5_URL,'/').'/';
-    return array('targets'=>$targets,'replace'=>$replace,'dependencies'=>$dependencies);
+    return array('targets'=>$targets,'replace'=>$replace,'dependencies'=>$dependencies,'banner_ids'=>$bannerIds);
 }
 function rb_tp_release_bytes($zip,$m,$entry,$material,$maps)
 {
@@ -247,7 +266,7 @@ function rb_tp_update_files($folder,$registerLegacy=false,$expectedAction=null)
         foreach($material['targets'] as $entry=>$relative) {
             if(isset($m['missing_files'][$entry])) continue;
             if(rb_tp_original_file($m,$entry)) continue;
-            $dest=rb_tp_release_path($relative,$folder);
+            $dest=rb_tp_release_path($relative,$folder,$material['banner_ids']);
             if(rb_tp_text_file($entry)) {
                 if($m['files'][$entry]['size']>8*1024*1024) throw new RuntimeException('편집 가능한 소스 파일은 8MB 이내여야 합니다.');
                 $bytes=rb_tp_release_bytes($zip,$m,$entry,$material,$maps);

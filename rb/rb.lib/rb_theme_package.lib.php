@@ -857,9 +857,10 @@ function rb_tp_export_archive($theme, $name, $zipfile, $identity, $delivery)
         foreach ($bannerRows as $b) {
             $id = $b['bn_id']; $b['bn_hit'] = '0'; $banners[$id] = $b;
             foreach (array('rb_display','banners') as $folder) {
-                if (is_file(G5_DATA_PATH.'/'.$folder.'/'.$id)) $files['banner/'.$id.'/'.$folder] = G5_DATA_PATH.'/'.$folder.'/'.$id;
+                // 확장자 없는 이미지는 FTP 자동 모드에서 텍스트로 변환될 수 있다.
+                if (is_file(G5_DATA_PATH.'/'.$folder.'/'.$id)) $files['banner/'.$id.'/'.$folder.'.bin'] = G5_DATA_PATH.'/'.$folder.'/'.$id;
             }
-            if (is_file(G5_DATA_PATH.'/rb_display_design/'.$id)) $files['banner/'.$id.'/design_image']=G5_DATA_PATH.'/rb_display_design/'.$id;
+            if (is_file(G5_DATA_PATH.'/rb_display_design/'.$id)) $files['banner/'.$id.'/design_image.bin']=G5_DATA_PATH.'/rb_display_design/'.$id;
             elseif (is_dir(G5_DATA_PATH.'/rb_display_design/'.$id)) rb_tp_tree($files,G5_DATA_PATH.'/rb_display_design/'.$id,'banner/'.$id.'/design');
         }
     }
@@ -1260,6 +1261,7 @@ function rb_tp_install($zipfile, $requested, $input, $reinstall=false, $expected
             foreach($m['files'] as $entry=>$info) {
                 $prefix='banner/'.$old.'/'; if(strpos($entry,$prefix)!==0) continue;
                 $tail=substr($entry,strlen($prefix));
+                if(in_array($tail,array('rb_display.bin','banners.bin','design_image.bin'),true)) $tail=substr($tail,0,-4);
                 if($tail==='rb_display' || $tail==='banners') $targets[$entry]=G5_DATA_PATH.'/'.$tail.'/'.$new;
                 elseif($tail==='design_image') $targets[$entry]=G5_DATA_PATH.'/rb_display_design/'.$new;
                 elseif(strpos($tail,'design/')===0) $targets[$entry]=G5_DATA_PATH.'/rb_display_design/'.$new.'/'.substr($tail,7);
