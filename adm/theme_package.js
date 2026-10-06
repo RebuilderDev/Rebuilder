@@ -14,6 +14,33 @@
     var previewSidebarObserver = null;
     var layoutReviews = [];
     var busy = false, optionalConnections = false, moduleConnections = false;
+    var receiveAction = 'new', hasLayouts = false, freshStatus = '';
+    function selectedAction() {
+        if (receiveAction !== 'legacy') return receiveAction;
+        return document.getElementById('rb-tp-reset').checked ? 'reinstall' : 'update';
+    }
+    function applyAction() {
+        var action = selectedAction(), updating = action === 'update';
+        mappings.hidden = updating;
+        layouts.hidden = updating || !hasLayouts;
+        document.getElementById('rb-tp-legacy-choice').hidden = receiveAction !== 'legacy';
+        document.getElementById('rb-tp-install-guide').textContent = updating
+            ? '같은 폴더의 기존 테마입니다. 파일 경로 연결만 반영하고 현재 테마 설정은 유지합니다.'
+            : action === 'reinstall'
+                ? '이 테마의 기존 설정과 자료를 백업한 뒤 새로 설치합니다. 다른 테마와 게시판 자료는 유지됩니다.'
+                : '현재 업로드된 폴더명으로 새 테마를 설치합니다. 설치 후 테마적용을 눌러 주세요.';
+        install.textContent = updating ? '파일 업데이트' : '테마 설치';
+        if (updating) installHome.append(installActions);
+        else {
+            var sidebar = layouts.querySelector('.rb-tp-preview-sidebar');
+            if (sidebar && hasLayouts) sidebar.append(installActions);
+            else installHome.append(installActions);
+        }
+        status.textContent = updating ? '기존 설정을 유지하며 업데이트할 수 있습니다.' : freshStatus;
+    }
+    document.querySelectorAll('input[name="rb_tp_legacy_action"]').forEach(function (radio) {
+        radio.addEventListener('change', function () { if (!busy) applyAction(); });
+    });
     function moduleTitle(module) {
         var type = (module.type || '모듈').replace('(단일)', '').replace('(탭)', ' 탭');
         return module.title ? module.title + ' (' + type + ')' : type;
@@ -307,7 +334,11 @@
             .then(function (response) { return response.json(); })
             .then(function (data) { if (!data.ok) throw new Error(data.message || '처리에 실패했습니다.'); return data; });
     }
-    function working(value) { busy = value; check.disabled = value; install.disabled = value; file.disabled = value; if (value) status.hidden = false; }
+    function working(value) {
+        busy = value; check.disabled = value; install.disabled = value; file.disabled = value;
+        document.querySelectorAll('input[name="rb_tp_legacy_action"]').forEach(function (radio) { radio.disabled = value; });
+        if (value) status.hidden = false;
+    }
     function showError(message) {
         if (message.indexOf('빌더 DB 업데이트가 필요합니다') === 0) message = '빌더 DB 업데이트가 필요합니다.';
         status.hidden = false; status.textContent = message; window.alert(message);
@@ -320,6 +351,8 @@
         request('inspect').then(function (data) {
             document.getElementById('rb-tp-name').textContent = data.name;
             document.getElementById('rb-tp-theme').value = data.theme;
+            receiveAction = data.action || 'new';
+            document.getElementById('rb-tp-keep').checked = true;
             optionalConnections = data.optional_connections === true;
             moduleConnections = data.module_connections === true;
             document.getElementById('rb-tp-install-guide').textContent = '현재 업로드된 폴더명을 기준으로 설치합니다. 폴더명을 바꾸셨다면 새로고침 후 다시 선택하세요.';
@@ -333,7 +366,7 @@
             layouts.replaceChildren(); layouts.hidden = true;
             var labels = {board: '게시판', content: '내용 페이지', form: '폼', poll: '설문', category: '상품 분류', group: '게시판 그룹', item: '상품', event: '이벤트'};
             var currentArea = '';
-            var visual = moduleConnections && Array.isArray(data.layout_preview);
+            var visual = receiveAction !== 'update' && moduleConnections && Array.isArray(data.layout_preview) && data.layout_preview.length > 0;
             if (visual) renderLayoutPreview(data);
             (visual ? [] : data.choices).forEach(function (choice, index) {
                 if (moduleConnections) {
@@ -382,19 +415,23 @@
                 row.append(heading, cell);
                 mappings.append(row);
             });
-            details.hidden = false; status.textContent = layoutReviews.length ? '각 페이지 탭을 확인한 뒤 테마 설치를 눌러 주세요. 연결 설정은 선택 사항입니다.'
+            hasLayouts = !layouts.hidden;
+            details.hidden = false; freshStatus = layoutReviews.length ? '각 페이지 탭을 확인한 뒤 테마 설치를 눌러 주세요. 연결 설정은 선택 사항입니다.'
                 : (data.choices.length || hasPageConnections ? (optionalConnections ? '필요한 배치·모듈만 연결하거나, 바로 테마 설치를 눌러 주세요.' : '이전 배포 자료의 연결 정보를 확인한 뒤 설치해 주세요.') : '테마 자료를 확인했습니다. 테마 설치를 눌러 주세요.');
+            applyAction();
         }).catch(function (e) { showError(e.message); }).finally(function () { working(false); });
     });
     install.addEventListener('click', async function () {
         if (root.dataset.installVersionError) { window.alert(root.dataset.installVersionError); return; }
         if (busy) return;
-        var unreviewed = layoutReviews.filter(function (review) { return !review.visited; });
+        var action = selectedAction();
+        var unreviewed = action === 'update' ? [] : layoutReviews.filter(function (review) { return !review.visited; });
         if (unreviewed.length) {
             showError('확인하지않은 페이지가 있습니다.\n각 페이지를 확인해주세요.'); unreviewed[0].button.focus(); return;
         }
         var maps = moduleConnections ? {modules:{}} : {}, missing = false;
-        if (moduleConnections) {
+        if (action === 'update') maps = {};
+        else if (moduleConnections) {
             details.querySelectorAll('select[data-page-kind]').forEach(function (select) {
                 if (!maps[select.dataset.pageKind]) maps[select.dataset.pageKind] = Object.create(null);
                 maps[select.dataset.pageKind][select.dataset.pageSource] = select.value;
@@ -413,10 +450,15 @@
         if (missing) { showError('연결할 항목을 모두 선택해 주세요.'); return; }
         working(true);
         try {
-            if (!await window.rb_confirm('테마를 설치하시겠습니까?\n테마 설치후 모듈설정에서 추가 매핑(연결)이 가능합니다.')) return;
-            status.textContent = '테마를 설치하고 있습니다. 완료될 때까지 기다려 주세요…';
-            var data = await request('install', {theme: document.getElementById('rb-tp-theme').value, maps: JSON.stringify(maps)});
-            status.textContent = '설치 완료: ' + data.theme + '. 아래 목록에서 테마적용을 눌러 주세요.'; window.location.href = './theme.php?installed=' + encodeURIComponent(data.theme);
+            var message = action === 'update' ? '기존 테마 설정을 유지하며 파일을 업데이트하시겠습니까?'
+                : action === 'reinstall' ? '이 테마의 기존 설정과 자료를 백업한 뒤 새로 설치하시겠습니까?\n이 테마의 모듈·환경설정은 새 배포 자료로 초기화됩니다.'
+                : '테마를 설치하시겠습니까?\n테마 설치후 모듈설정에서 추가 매핑(연결)이 가능합니다.';
+            var confirmed = typeof window.rb_confirm === 'function' ? await window.rb_confirm(message) : window.confirm(message);
+            if (!confirmed) return;
+            status.textContent = action === 'update' ? '테마 파일을 업데이트하고 있습니다…' : '테마를 설치하고 있습니다. 완료될 때까지 기다려 주세요…';
+            var data = await request('install', {theme: document.getElementById('rb-tp-theme').value, maps: JSON.stringify(maps), legacy_action: action});
+            status.textContent = '완료: ' + data.theme;
+            window.location.href = './theme.php?' + (data.action === 'update' ? 'updated=' : 'installed=') + encodeURIComponent(data.theme);
         } catch (e) {
             showError(e.message + ' 설치 목록을 확인한 뒤 다시 시도해 주세요.');
         } finally {

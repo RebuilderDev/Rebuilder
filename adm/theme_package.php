@@ -17,14 +17,14 @@ try {
     if(!rb_tp_slug($folder)) throw new RuntimeException('FTP로 올린 테마 폴더를 선택해 주세요.');
     $path=G5_PATH.'/theme/'.$folder;
     if(!is_dir($path) || !rb_tp_under($path,G5_PATH.'/theme')) throw new RuntimeException('테마 폴더가 없습니다. FTP 업로드 완료 후 새로고침해 주세요.');
-    if(is_file($path.'/rb-package.json')) throw new RuntimeException('이미 설치된 테마입니다. 다시 설치할 필요가 없습니다.');
+    $action=rb_tp_receive_action($folder);
     if($mode==='inspect') {
-        rb_tp_check_theme_name($folder);
         list($package,$manifest)=rb_tp_open($path); $package->close();
         $choices=array(); $optional=isset($manifest['scope']) && $manifest['scope']==='main-design';
+        $updating=$action==='update';
         $moduleUses=$optional?array():rb_tp_reference_modules($manifest['data']);
         $categories=array(); $pageCatalogs=array();
-        if($optional) {
+        if($optional && !$updating) {
             $catalogs=array(); $categories=rb_tp_board_categories();
             foreach(array('group','content') as $kind)
                 if(!empty($manifest['refs'][$kind])) $pageCatalogs[$kind]=(object)rb_tp_catalog($kind);
@@ -37,7 +37,7 @@ try {
                 unset($slot); $choices[]=$module;
             }
         }
-        foreach($optional?array():$manifest['refs'] as $kind=>$refs) {
+        foreach($optional || $updating?array():$manifest['refs'] as $kind=>$refs) {
             if(!$refs) continue;
             $catalog=rb_tp_catalog($kind);
             foreach($refs as $source=>$unused) $choices[]=array('kind'=>$kind,'source'=>(string)$source,
@@ -46,13 +46,13 @@ try {
                 'options'=>(object)$catalog,'selected'=>!$optional && isset($catalog[$source])?(string)$source:'',
                 'modules'=>isset($moduleUses[$kind][$source])?$moduleUses[$kind][$source]:array());
         }
-        $_SESSION['rb_theme_package_checked']=array('folder'=>$folder,'hash'=>hash_file('sha256',$path.'/rb-package/manifest.json'),'time'=>time());
-        $out=array('ok'=>true,'name'=>$manifest['name'],'theme'=>$folder,'choices'=>$choices,'optional_connections'=>$optional,
+        $_SESSION['rb_theme_package_checked']=array('folder'=>$folder,'hash'=>hash_file('sha256',$path.'/rb-package/manifest.json'),'action'=>$action,'time'=>time());
+        $out=array('ok'=>true,'name'=>$manifest['name'],'theme'=>$folder,'action'=>$action,'choices'=>$choices,'optional_connections'=>$optional,
             'module_connections'=>$optional,'board_categories'=>(object)$categories,'page_catalogs'=>(object)$pageCatalogs,'shop_enabled'=>rb_tp_shop_enabled(),
-            'layout_preview'=>$optional?rb_tp_layout_preview($manifest['data'],isset($manifest['reference_titles'])?$manifest['reference_titles']:array()):array());
+            'layout_preview'=>$optional && !$updating?rb_tp_layout_preview($manifest['data'],isset($manifest['reference_titles'])?$manifest['reference_titles']:array()):array());
     } elseif($mode==='install') {
         $checked=isset($_SESSION['rb_theme_package_checked'])?$_SESSION['rb_theme_package_checked']:array();
-        if(empty($checked['hash']) || $checked['folder']!==$folder || time()-$checked['time']>3600
+        if(empty($checked['hash']) || !isset($checked['action']) || $checked['action']!==$action || $checked['folder']!==$folder || time()-$checked['time']>3600
             || !hash_equals($checked['hash'],hash_file('sha256',$path.'/rb-package/manifest.json'))) throw new RuntimeException('설치 정보가 변경되었습니다. 다시 확인해 주세요.');
         $maps=array();
         if(isset($_POST['maps'])) {
@@ -63,7 +63,14 @@ try {
             if(json_last_error()!==JSON_ERROR_NONE) $maps=json_decode(stripslashes($_POST['maps']),true);
         }
         if(!is_array($maps)) throw new RuntimeException('연결 정보를 확인해 주세요.');
-        $out=rb_tp_install($path,$folder,$maps); $out['ok']=true;
+        if($action==='legacy') {
+            $choice=isset($_POST['legacy_action']) && is_string($_POST['legacy_action'])?$_POST['legacy_action']:'';
+            if(!in_array($choice,array('update','reinstall'),true)) throw new RuntimeException('기존 설정 유지 또는 새로 설치를 선택해 주세요.');
+            $action=$choice;
+        }
+        if($action==='update') $out=rb_tp_update_files($folder,$checked['action']==='legacy',$checked['action']);
+        else $out=rb_tp_install($path,$folder,$maps,true,$checked['action']);
+        $out['action']=$action; $out['ok']=true;
         unset($_SESSION['rb_theme_package_checked']);
     } else throw new RuntimeException('잘못된 요청입니다.');
     header('Content-Type: application/json; charset=utf-8');

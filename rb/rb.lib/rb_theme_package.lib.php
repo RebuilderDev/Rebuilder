@@ -21,6 +21,94 @@ function rb_tp_state($theme,$refresh=false)
     }
     return $cache[$theme];
 }
+
+function rb_tp_theme_has_settings($theme)
+{
+    if(!rb_tp_slug($theme)) throw new RuntimeException('테마 폴더명을 확인해 주세요.');
+    foreach(rb_tp_tables() as $table=>$def)
+        if(rb_tp_rows("SELECT `{$def[0]}` FROM `$table` WHERE `{$def[0]}`=".rb_tp_q($theme).' LIMIT 1')) return true;
+    return false;
+}
+function rb_tp_receive_action($theme)
+{
+    if(!rb_tp_theme_has_settings($theme)) return 'new';
+    if(rb_tp_state($theme,true)) return 'update';
+    $known=G5_DATA_PATH.'/rb.theme-installed/'.$theme.'.json';
+    if(is_file($known) && rb_tp_under($known,G5_DATA_PATH)) {
+        $record=json_decode(file_get_contents($known),true);
+        if(is_array($record) && isset($record['theme']) && $record['theme']===$theme) return 'reinstall';
+    }
+    return 'legacy';
+}
+function rb_tp_data_directory($relative)
+{
+    if(!rb_tp_path($relative)) throw new RuntimeException('설치 기록 경로 오류');
+    $path=G5_DATA_PATH;
+    foreach(explode('/',$relative) as $part) {
+        $path.='/'.$part;
+        if(is_link($path)) throw new RuntimeException('설치 기록 경로에 링크가 있습니다.');
+        if(!is_dir($path) && !mkdir($path,0755)) throw new RuntimeException('data 폴더의 쓰기 권한을 확인해 주세요.');
+        if(!rb_tp_under($path,G5_DATA_PATH)) throw new RuntimeException('설치 기록 경로 오류');
+    }
+    return $path;
+}
+function rb_tp_save_known_theme($theme)
+{
+    if(!rb_tp_slug($theme)) throw new RuntimeException('테마 폴더명을 확인해 주세요.');
+    $dir=rb_tp_data_directory('rb.theme-installed');
+    $bytes=rb_tp_json(array('theme'=>$theme,'version'=>1));
+    $stream=fopen('php://temp','w+b'); fwrite($stream,$bytes); rewind($stream);
+    rb_tp_replace_file($dir.'/'.$theme.'.json',$stream,hash('sha256',$bytes));
+}
+function rb_tp_reinstall_restore($theme,$reset)
+{
+    foreach(rb_tp_tables() as $table=>$def) {
+        rb_tp_query("DELETE FROM `$table` WHERE `{$def[0]}`=".rb_tp_q($theme));
+        foreach($reset['rows'][$table] as $row) {
+            $sets=array(); foreach($row as $key=>$value) {
+                if(!preg_match('/\A[a-z][a-z0-9_]*\z/',$key)) throw new RuntimeException('백업 필드 오류');
+                $sets[]='`'.$key.'`='.rb_tp_q($value);
+            }
+            rb_tp_query("INSERT INTO `$table` SET ".implode(',',$sets));
+        }
+    }
+    if(is_dir($reset['backup'].'/data') && !rename($reset['backup'].'/data',G5_DATA_PATH.'/'.$theme))
+        throw new RuntimeException('테마 자료 복구에 실패했습니다. 백업: '.$reset['backup']);
+    if($reset['state']!==false && file_put_contents(G5_PATH.'/theme/'.$theme.'/rb-package.json',$reset['state'])!==strlen($reset['state']))
+        throw new RuntimeException('테마 설치 기록 복구에 실패했습니다.');
+    rb_tp_state($theme,true);
+}
+function rb_tp_reinstall_begin($theme)
+{
+    if(in_array(strtolower($theme),array('session','cache','file','editor','member','qa','rb.backup','rb.theme-publish','rb.theme-installed'),true))
+        throw new RuntimeException('공용 data 폴더와 겹치는 테마명입니다. 테마 폴더명을 변경해 주세요.');
+    $rows=array(); foreach(rb_tp_tables() as $table=>$def)
+        $rows[$table]=rb_tp_rows("SELECT * FROM `$table` WHERE `{$def[0]}`=".rb_tp_q($theme));
+    $statePath=G5_PATH.'/theme/'.$theme.'/rb-package.json';
+    if(is_link($statePath)) throw new RuntimeException('설치 기록에 링크가 있습니다.');
+    $state=is_file($statePath)?file_get_contents($statePath):false;
+    $known=G5_DATA_PATH.'/rb.theme-installed/'.$theme.'.json';
+    $record=is_file($known) && rb_tp_under($known,G5_DATA_PATH)?json_decode(file_get_contents($known),true):null;
+    if(file_exists(G5_DATA_PATH.'/'.$theme) && !array_filter($rows) && $state===false
+        && !(is_array($record) && isset($record['theme']) && $record['theme']===$theme))
+        throw new RuntimeException('같은 이름의 data 폴더가 있어 새 테마로 설치할 수 없습니다. 테마 폴더명을 변경해 주세요.');
+    if(!array_filter($rows) && $state===false && !file_exists(G5_DATA_PATH.'/'.$theme)) return null;
+    $backup=rb_tp_data_directory('rb.backup/theme-reinstall/'.$theme.'-'.date('Ymd-His').'-'.bin2hex(random_bytes(6)));
+    $reset=array('backup'=>$backup,'rows'=>$rows,'state'=>$state);
+    // 웹으로 DB 백업 내용을 열 수 없도록 PHP 종료 구문 뒤에 기록합니다.
+    $bytes="<?php exit; ?>\n".rb_tp_json($reset);
+    if(file_put_contents($backup.'/settings.php',$bytes)!==strlen($bytes)) throw new RuntimeException('기존 테마 설정을 백업하지 못했습니다.');
+    try {
+        $data=G5_DATA_PATH.'/'.$theme;
+        if(file_exists($data)) {
+            if(is_link($data) || !is_dir($data) || !rb_tp_under($data,G5_DATA_PATH)) throw new RuntimeException('테마 자료 경로를 확인해 주세요.');
+            if(!rename($data,$backup.'/data')) throw new RuntimeException('기존 테마 자료를 백업하지 못했습니다.');
+        }
+        if(is_file($statePath) && !unlink($statePath)) throw new RuntimeException('기존 설치 기록을 정리하지 못했습니다.');
+        foreach(rb_tp_tables() as $table=>$def) rb_tp_query("DELETE FROM `$table` WHERE `{$def[0]}`=".rb_tp_q($theme));
+    } catch(Throwable $e) { rb_tp_reinstall_restore($theme,$reset); throw $e; }
+    return $reset;
+}
 function rb_tp_save_aos($theme,$type,$settings)
 {
     if(!rb_tp_state($theme)) return false;
@@ -906,6 +994,7 @@ function rb_tp_open($file,$updating=false)
         if (count($m['files'])+1 !== $zip->numFiles) throw new RuntimeException('패키지 파일 목록이 일치하지 않습니다.');
         $m['missing_files']=array();
         foreach ($m['files'] as $entry=>$info) {
+            if(!is_array($info)) throw new RuntimeException('패키지 파일 정보 형식 오류');
             if (!rb_tp_path($entry) || (!preg_match('~^(theme|deps/(widget|banner)/[a-f0-9]{16}|assets/[a-f0-9]{16}|carousel|custom|topvisual|banner/[0-9]+)/~',$entry)
                 && !(rb_tp_original_dependencies($m) && strpos($entry,'user/')===0 && rb_tp_user_path(substr($entry,5),true))))
                 throw new RuntimeException('허용하지 않는 패키지 경로입니다.');
@@ -915,8 +1004,10 @@ function rb_tp_open($file,$updating=false)
             if(rb_tp_original_file($m,$entry)) {
                 continue;
             }
-            if (!$s || !isset($info['size'],$info['sha256']) || $s['size']!==$info['size']
-                || !hash_equals($info['sha256'],$zip->checksum($entry))) throw new RuntimeException('파일이 손상되었거나 FTP 업로드가 끝나지 않았습니다: '.$entry);
+            // ZIP 생성 뒤의 수정·동봉을 허용합니다. 원본 내용과 비교하지 않습니다.
+            // 아래 값은 현재 업로드 자료를 저장할 때의 쓰기 완료 확인에만 사용합니다.
+            $m['files'][$entry]['size']=$s['size'];
+            $m['files'][$entry]['sha256']=$zip->checksum($entry);
         }
         if (!isset($m['files']['theme/theme.config.php'],$m['files']['theme/head.php'],$m['files']['theme/tail.php'])) throw new RuntimeException('테마 필수 파일이 없습니다.');
         foreach (rb_tp_tables() as $table=>$def) {
@@ -1045,22 +1136,25 @@ function rb_tp_write($file, $bytes, &$files, &$dirs, $expectedSize=null)
     fclose($h);
     if ($written!==$expectedSize) throw new RuntimeException('파일 저장 공간을 확인해 주세요.');
 }
-function rb_tp_install($zipfile, $requested, $input)
+function rb_tp_install($zipfile, $requested, $input, $reinstall=false, $expectedAction=null)
 {
     if (!rb_tp_slug($requested)) throw new RuntimeException('테마 폴더명은 영문·숫자·점·밑줄·하이픈으로 40자 이내로 입력해 주세요.');
     if($requested!==basename($zipfile) || !rb_tp_under($zipfile,G5_PATH.'/theme')) throw new RuntimeException('현재 업로드된 테마 폴더를 선택해 주세요.');
-    if(is_file($zipfile.'/rb-package.json')) throw new RuntimeException('이미 설치된 테마입니다.');
+    if(is_file($zipfile.'/rb-package.json') && !$reinstall) throw new RuntimeException('이미 설치된 테마입니다.');
     list($zip,$m) = rb_tp_open($zipfile);
     $maps=rb_tp_mappings($m,$input);
     $moduleMaps=isset($m['scope']) && $m['scope']==='main-design' && array_key_exists('modules',$input)
         ? rb_tp_module_mappings($m['data'],$input['modules']):array();
-    $journal=array(); $written=array(); $dirs=array(); $backups=array(); $locked=false;
+    $journal=array(); $written=array(); $dirs=array(); $backups=array(); $locked=false; $reset=null;
     $lock='rb-theme-'.substr(hash('sha256',G5_PATH),0,30);
     try {
         $lockrow=rb_tp_rows('SELECT GET_LOCK('.rb_tp_q($lock).',10) AS ok');
         if (!$lockrow || (int)$lockrow[0]['ok']!==1) throw new RuntimeException('다른 테마 설치가 진행 중입니다. 잠시 후 다시 시도해 주세요.');
         $locked=true; $theme=$requested;
-        rb_tp_check_theme_name($theme);
+        if($expectedAction!==null && rb_tp_receive_action($theme)!==$expectedAction)
+            throw new RuntimeException('테마 설치 상태가 변경되었습니다. 내용을 다시 확인해 주세요.');
+        if($reinstall) $reset=rb_tp_reinstall_begin($theme);
+        rb_tp_check_theme_name($theme,$reinstall);
         $source=$m['source_theme']; $replace=array();
         $sourcePath=parse_url($m['source_url'],PHP_URL_PATH); $sourcePath=rtrim((string)$sourcePath,'/');
         $replace[$m['source_url'].'/theme/'.$source.'/']=G5_URL.'/theme/'.$theme.'/';
@@ -1226,7 +1320,7 @@ function rb_tp_install($zipfile, $requested, $input)
             foreach(array('jpg','txt') as $ext) if(isset($m['files']['topvisual/'.$old.'.'.$ext]))
                 $targets['topvisual/'.$old.'.'.$ext]=G5_DATA_PATH.'/topvisual/'.$new.'.'.$ext;
         }
-        // ZIP 내부의 선언되지 않은 파일도 설치하지 않는다.
+        // 선언된 경로의 연결만 처리한다. 테마 폴더에 추가 동봉한 파일은 그대로 둔다.
         if(count($targets)!==count($m['files'])) throw new RuntimeException('연결되지 않은 패키지 파일이 있습니다.');
         // 업로드한 테마는 제자리에서 경로만 조정한다. 완료 표시는 모든 처리가 끝난 뒤 기록한다.
         foreach($targets as $entry=>$dest) {
@@ -1255,6 +1349,7 @@ function rb_tp_install($zipfile, $requested, $input)
         if(isset($m['identity'])) $state['identity']=$m['identity'];
         $state['source_maps']=$maps;
         rb_tp_write(G5_PATH.'/theme/'.$theme.'/rb-package.json',rb_tp_json($state),$written,$dirs);
+        rb_tp_save_known_theme($theme);
         rb_tp_state($theme,true);
         return array('theme'=>$theme,'name'=>$m['name']);
     } catch(Throwable $e) {
@@ -1263,6 +1358,7 @@ function rb_tp_install($zipfile, $requested, $input)
         foreach(array_reverse($written) as $p) if(is_file($p)) @unlink($p);
         foreach(array_reverse($dirs) as $p) if(is_dir($p)) @rmdir($p);
         foreach($backups as $file=>$backup) if(!copy($backup,$file)) throw new RuntimeException('설치 오류 후 테마 파일 복구에 실패했습니다: '.basename($file),0,$e);
+        if($reset!==null) rb_tp_reinstall_restore($theme,$reset);
         throw $e;
     } finally {
         foreach($backups as $backup) if(is_file($backup)) unlink($backup);
@@ -1271,11 +1367,11 @@ function rb_tp_install($zipfile, $requested, $input)
     }
 }
 
-function rb_tp_check_theme_name($theme)
+function rb_tp_check_theme_name($theme,$allowSelected=false)
 {
     global $config;
     if(!rb_tp_slug($theme)) throw new RuntimeException('테마 폴더명을 확인해 주세요.');
-    $exists=isset($config['cf_theme']) && $config['cf_theme']===$theme;
+    $exists=!$allowSelected && isset($config['cf_theme']) && $config['cf_theme']===$theme;
     if(is_dir(G5_DATA_PATH.'/'.$theme)) $exists=true;
     foreach(rb_tp_tables() as $table=>$def)
         if(rb_tp_rows("SELECT `{$def[0]}` FROM `$table` WHERE `{$def[0]}`=".rb_tp_q($theme).' LIMIT 1')) $exists=true;

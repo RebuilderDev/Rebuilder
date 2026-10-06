@@ -154,7 +154,7 @@ function rb_tp_user_path($path,$image=false)
     if(!rb_tp_path($path)) return false;
     // 인증/운영 데이터는 사용자 코드의 참조가 있어도 패키지에 포함하지 않는다.
     if(preg_match('~(?:^|/)(?:\.[^/]+|dbconfig\.php|config\.php|shop\.config\.php|rb-package(?:\.json)?|node_modules|tests|sessions?|cache|logs?|backups?)(?:/|$)~i',$path)) return false;
-    if(preg_match('~\A(?:data/(?:session|cache|rb\.backup|rb\.theme-publish)/|install/)~i',$path)) return false;
+    if(preg_match('~\A(?:data/(?:session|cache|rb\.backup|rb\.theme-publish|rb\.theme-installed)/|install/)~i',$path)) return false;
     // 업로드 자료는 코드에서 정확한 파일을 지정한 이미지에 한해서만 포함한다.
     if(preg_match('~\Adata/(?:member|file|editor|qa)/~i',$path) && !($image && rb_tp_image_reference($path))) return false;
     if(preg_match('~(?:^|/)(?:[^/]*(?:credential|secret|password)[^/]*|composer\.lock|package-lock\.json)$~i',$path)) return false;
@@ -165,6 +165,8 @@ function rb_tp_runtime_reference($path)
     // 그누보드의 초기화 코드/기본 라이브러리는 받는 사이트에 설치된 코드를 사용한다.
     if(preg_match('~\A(?:common|_common|config|shop\.config|head\.sub|tail\.sub)\.php\z~i',$path)) return true;
     if(preg_match('~\A(?:bbs|adm|shop|mobile|mobile/shop)/(?:_common|_head|_tail|head|tail|shop\.head|shop\.tail)\.php\z~i',$path)) return true;
+    // 배너 클릭 처리와 모듈 초기화는 받는 사이트의 빌더 공용 파일을 사용한다.
+    if(in_array(strtolower($path),array('rb/rb.mod/display/displayhit.php','rb/rb.mod/_common.php'),true)) return true;
     // 빌더/그누보드 기본 확장은 설치 대상의 런타임을 사용한다. 사용자 확장은 이름으로 추측하지 않는다.
     if(strpos($path,'extend/')===0 && in_array(substr($path,7),array(
         'rb_admin.extend.php','rb_asset_version.extend.php','rb_bbs.extend.php','rb_business_console.extend.php',
@@ -490,6 +492,10 @@ function rb_tp_collect_user_files(&$files,$theme)
     $paths=array(); $queue=array(); $warnings=array(); $seen=array();
     $extendIndex=rb_tp_extend_index();
     foreach($files as $entry=>$path) if(is_file($path)) {
+        $relative=rb_tp_user_absolute($path);
+        if(strpos($entry,'theme/')!==0 && $relative!==false && rb_tp_runtime_reference($relative)) {
+            unset($files[$entry]); continue;
+        }
         $paths[str_replace('\\','/',realpath($path))]=$entry;
         if(strpos($entry,'deps/')===0 && rb_tp_text_file($entry)) $queue[]=$entry;
     }
@@ -551,6 +557,7 @@ function rb_tp_collect_user_files(&$files,$theme)
         $entry=$queue[$cursor]; if(isset($seen[$entry])) continue; $seen[$entry]=true;
         $file=$files[$entry]; if(filesize($file)>8*1024*1024) throw new RuntimeException('참조 소스는 8MB 이내여야 합니다: '.$entry);
         $code=file_get_contents($file); $relative=rb_tp_user_absolute($file); $scan=$code;
+        if($relative!==false && rb_tp_runtime_reference($relative)) continue;
         $emit=function($value,$required=false)use($follow,$file,$relative) { $follow($value,$file,$relative,$required); };
         if(preg_match('/\.(php|inc)$/i',$entry)) {
             $tokens=rb_tp_php_names(rb_tp_include_tokens($code)); $variables=array(); $scan=''; $resourceSkip=-1;

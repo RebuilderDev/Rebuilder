@@ -83,35 +83,47 @@ function rb_tp_publications($theme)
     $installed=rb_tp_state($theme,true);
     if (isset($installed['identity']) && rb_tp_identity_valid($installed['identity'])) {
         $identity=$installed['identity']; $id=$identity['id'];
-        if (!isset($out[$id])) $out[$id]=array_merge($identity,array('name'=>$installed['name'],'folders'=>array($theme)));
+        if (!isset($out[$id])) $out=array($id=>array_merge($identity,array('name'=>$installed['name'],'folders'=>array($theme))))+$out;
         elseif ($identity['revision']>$out[$id]['revision']) $out[$id]['revision']=$identity['revision'];
     }
     return $out;
 }
+function rb_tp_last_export_name($theme)
+{
+    if(!rb_tp_slug($theme)) throw new RuntimeException('테마 폴더명을 확인해 주세요.');
+    $file=G5_DATA_PATH.'/rb.theme-publish/'.$theme.'.json';
+    if(!is_file($file)) return $theme;
+    $rows=json_decode(file_get_contents($file),true);
+    if(!is_array($rows)) throw new RuntimeException('보관된 테마 배포 정보를 읽을 수 없습니다.');
+    if(!$rows) return $theme;
+    $last=end($rows);
+    if(!rb_tp_identity_valid($last)) throw new RuntimeException('보관된 테마 배포 정보를 확인해 주세요.');
+    return $last['folder'];
+}
 function rb_tp_export($theme,$name,$zipfile,$publication=array())
 {
     if (!rb_tp_slug($theme) || !is_dir(G5_PATH.'/theme/'.$theme)) throw new RuntimeException('테마를 찾을 수 없습니다.');
-    $mode=isset($publication['mode'])?$publication['mode']:'new';
-    if (!in_array($mode,array('new','update'),true)) throw new RuntimeException('배포 방식을 선택해 주세요.');
+    $name=is_string($name)?trim($name):'';
+    if(!rb_tp_slug($name)) throw new RuntimeException('배포할 테마 폴더명을 확인해 주세요.');
     $lock='rb-publish-'.substr(hash('sha256',G5_PATH.'|'.$theme),0,30);
     $locked=rb_tp_rows('SELECT GET_LOCK('.rb_tp_q($lock).',10) AS ok');
     if (empty($locked[0]['ok'])) throw new RuntimeException('테마 내보내기가 진행 중입니다. 잠시 후 다시 시도해 주세요.');
     try {
         $publications=rb_tp_publications($theme);
-        if ($mode==='update') {
-            $id=isset($publication['id'])?$publication['id']:'';
-            if (!is_string($id) || !isset($publications[$id])) throw new RuntimeException('업데이트할 기존 배포를 선택해 주세요.');
-            $previous=$publications[$id];
+        $previous=null;
+        foreach($publications as $row) if(strcasecmp($row['folder'],$name)===0) { $previous=$row; break; }
+        $mode=$previous?'update':'new';
+        if ($previous) {
+            $id=$previous['id'];
             $name=$previous['folder'];
             $identity=array('id'=>$id,'release'=>bin2hex(random_bytes(16)),'revision'=>$previous['revision']+1,'folder'=>$name);
         } else {
-            $name=is_string($name)?trim($name):'';
-            if(in_array(strtolower($name),rb_tp_used_publication_folders($theme,$publications),true))
-                throw new RuntimeException('새 테마는 현재 테마 또는 기존 배포와 다른 폴더명을 입력해 주세요. 같은 테마를 수정해 배포할 때는 업데이트를 선택하세요.');
             $identity=array('id'=>bin2hex(random_bytes(16)),'release'=>bin2hex(random_bytes(16)),'revision'=>1,'folder'=>$name);
         }
         $m=rb_tp_export_archive($theme,$name,$zipfile,$identity,$mode);
-        $folders=isset($previous)?$previous['folders']:array(); $folders[]=$m['package_folder'];
+        $folders=$previous?$previous['folders']:array(); $folders[]=$m['package_folder'];
+        // 마지막 성공한 내보내기를 끝에 저장하여 다음 패널의 기본 이름으로 사용한다.
+        unset($publications[$identity['id']]);
         $publications[$identity['id']]=array_merge($identity,array('name'=>$m['name'],'folders'=>array_values(array_unique($folders)),'warnings'=>$m['dependency_warnings']));
         $file=G5_DATA_PATH.'/rb.theme-publish/'.$theme.'.json';
         if (!is_dir(dirname($file)) && !mkdir(dirname($file),0755,true)) throw new RuntimeException('테마 배포 정보를 저장할 수 없습니다.');
@@ -212,7 +224,7 @@ function rb_tp_release_bytes($zip,$m,$entry,$material,$maps)
     return $entry==='theme/readme.txt'?rb_tp_theme_readme($bytes,$m['name']):$bytes;
 }
 // FTP 덮어쓰기는 사용자가 결정한다. 여기서는 설치된 테마의 경로 연결만 다시 반영한다.
-function rb_tp_update_files($folder)
+function rb_tp_update_files($folder,$registerLegacy=false,$expectedAction=null)
 {
     if(!rb_tp_slug($folder)) throw new RuntimeException('테마 폴더명을 확인해 주세요.');
     $lock='rb-theme-'.substr(hash('sha256',G5_PATH),0,30);
@@ -220,9 +232,16 @@ function rb_tp_update_files($folder)
     if(empty($locked[0]['ok'])) throw new RuntimeException('다른 테마 설치가 진행 중입니다.');
     $zip=null;
     try {
+        if($expectedAction!==null && rb_tp_receive_action($folder)!==$expectedAction)
+            throw new RuntimeException('테마 설치 상태가 변경되었습니다. 내용을 다시 확인해 주세요.');
         list($zip,$m)=rb_tp_open(G5_PATH.'/theme/'.$folder,true);
         $state=rb_tp_state($folder,true);
-        rb_tp_check_update_identity($m,$state);
+        if(!$state) {
+            if(!$registerLegacy) throw new RuntimeException('기존 설치 상태를 다시 확인해 주세요.');
+            $state=array('format'=>'rebuilder-installed','version'=>1,'name'=>$m['name'],'source_theme'=>$folder,
+                'boards'=>array(),'skins'=>array('config'=>array(),'shop'=>array(),'qa'=>array()),
+                'builder_display'=>array(),'aos'=>array(),'dependencies'=>array(),'source_maps'=>array());
+        }
         $material=rb_tp_release_material($m,$folder,$state);
         $maps=isset($state['source_maps'])?$state['source_maps']:array();
         foreach($material['targets'] as $entry=>$relative) {
@@ -238,9 +257,11 @@ function rb_tp_update_files($folder)
             if(is_file($dest) && hash_equals($hash,hash_file('sha256',$dest))) { if(is_resource($stream)) fclose($stream); continue; }
             rb_tp_replace_file($dest,$stream,$hash);
         }
-        $state['identity']=$m['identity']; $state['name']=$m['name']; $state['dependencies']=$material['dependencies'];
+        if(isset($m['identity'])) $state['identity']=$m['identity'];
+        $state['name']=$m['name']; $state['dependencies']=$material['dependencies'];
         $bytes=rb_tp_json($state); $stream=fopen('php://temp','w+b'); fwrite($stream,$bytes); rewind($stream);
         rb_tp_replace_file(G5_PATH.'/theme/'.$folder.'/rb-package.json',$stream,hash('sha256',$bytes));
+        rb_tp_save_known_theme($folder);
         rb_tp_state($folder,true);
         return array('theme'=>$folder,'name'=>$m['name']);
     } finally { if($zip) $zip->close(); sql_query('SELECT RELEASE_LOCK('.rb_tp_q($lock).')',false); }
