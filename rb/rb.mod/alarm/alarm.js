@@ -10,7 +10,7 @@ function rb_alarm_escape(value) {
 }
 
 function rb_alarm_url(value) {
-    value = String(value || '').trim();
+    value = String(value || '').replace(/&amp;/gi, '&').trim();
     if (!value) return '';
     try {
         var parsed = new URL(value, window.location.origin);
@@ -79,7 +79,7 @@ function rb_alarm_card_html(data) {
     html += '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>';
     html += eventType === 'memo'
         ? '<a href="#" onclick="return open_recv_memo(' + id + ')">'
-        : '<a href="#" onclick="return open_recv_notification(' + id + ')">';
+        : '<a href="' + rb_alarm_escape(rb_alarm_url(data.url) || '#') + '" onclick="return open_recv_notification(' + id + ', this.getAttribute(\'href\'), event)">';
     html += '<div class="notification-heading">' + headingIcon + '<span class="font-B">' + headingTitle + '</span><span class="al_date">' + createdAt + '</span></div>';
     html += '<div class="notification-content cursor">' + body + '</div></a></div>';
     return html;
@@ -156,13 +156,22 @@ function hide_alarm_item(eventType, eventId) {
     rb_alarm_finish_current(true);
 }
 
-function open_recv_notification(notification_id) {
-    if (typeof rb_notification_open_view === 'function') {
-        rb_notification_open_view(notification_id);
-        hide_alarm_item('notification', notification_id);
-        return false;
+function open_recv_notification(notification_id, notification_url, event) {
+    notification_id = parseInt(notification_id, 10) || 0;
+    if (!notification_id) return false;
+
+    // 내부 알림 본문은 읽음 처리 후 원래 링크로 이동합니다.
+    if (typeof notification_url !== 'string') {
+        notification_url = $('#rb_alarm_notification_' + notification_id + ' > a').attr('href') || '';
     }
-    set_recv_notification(notification_id);
+    var target = notification_url && notification_url !== '#' ? rb_alarm_url(notification_url) : '';
+    if (event && (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button)) {
+        set_recv_notification(notification_id);
+        return true;
+    }
+    set_recv_notification(notification_id, function (result) {
+        if (result.msg === 'SUCCESS' && target) window.location.href = target;
+    });
     return false;
 }
 
@@ -183,7 +192,7 @@ function open_recv_memo(memo_id) {
     return false;
 }
 
-function set_recv_notification(notification_id) {
+function set_recv_notification(notification_id, on_read) {
     $.ajax({
         type: 'POST',
         data: {act: 'read_notification', notification_id: notification_id},
@@ -192,6 +201,7 @@ function set_recv_notification(notification_id) {
         cache: false,
         success: function (result) {
             if (typeof rb_notification_update_badge === 'function') rb_notification_update_badge(result.unread_count);
+            if (typeof on_read === 'function') on_read(result);
         },
         complete: function () { hide_alarm_item('notification', notification_id); }
     });
