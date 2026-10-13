@@ -35,7 +35,7 @@ foreach((array)$rb_tp_ftp_files as $rb_tp_f) {
 #container #rb-theme-install .rb-tp-preview-body {display:flex; flex-wrap:nowrap; gap:24px; align-items:flex-start;}
 #container #rb-theme-install .rb-tp-preview-canvas {flex:1 1 640px; min-width:0; max-width:1025px; padding:0; box-sizing:border-box; overflow-x:auto;}
 #container #rb-theme-install .rb-tp-preview-sidebar {flex:0 0 300px; min-width:300px; position:sticky; top:120px; margin-top:52px;}
-#container #rb-theme-install .rb-tp-editor {box-sizing:border-box; min-width:0; padding:20px; border:1px solid #d6dce1; border-radius:10px; background:#fff;}
+#container #rb-theme-install .rb-tp-editor {box-sizing:border-box; min-width:0; padding:20px; border:1px solid rgba(214,220,225,0.3); border-radius:10px; background:transparent;}
 #container #rb-theme-install .rb-tp-layout-region {margin-bottom:28px; min-width:0;}
 #container #rb-theme-install .rb-tp-layout-position {margin-bottom:20px; min-width:0; max-width:100%; box-sizing:border-box; padding:20px; background:#f0f5f9; border:0; border-radius:10px;}
 #container #rb-theme-install .rb-tp-module-wrap {flex:0 0 var(--rb-tp-module-width); max-width:var(--rb-tp-module-width); min-width:0; padding:8px; box-sizing:border-box;}
@@ -57,7 +57,7 @@ foreach((array)$rb_tp_ftp_files as $rb_tp_f) {
     background:#000 !important; color:#fff !important; border:0 !important;
 }
 #container #rb-theme-install .rb-tp-tab:focus-visible {outline:2px solid #3f72d4; outline-offset:2px;}
-#container #rb-theme-install .rb-tp-connection-block {padding:16px; background:#fff; border:1px solid #d6dce1; border-radius:6px;}
+#container #rb-theme-install .rb-tp-connection-block {padding:16px; background:transparent; border:1px solid rgba(214,220,225,0.3); border-radius:6px;}
 #container #rb-theme-install .rb-tp-module-label {
     display:flex; align-items:center; justify-content:center; width:100%; min-width:0;
     height:auto; min-height:100px; box-sizing:border-box; margin:0; padding:20px;
@@ -114,7 +114,7 @@ foreach((array)$rb_tp_ftp_files as $rb_tp_f) {
     #container #rb-theme-install .rb-tp-preview-sidebar > .rb-tp-install-actions {flex:0 0 auto; margin:10px 0 0 !important;}
 }
 </style>
-<section class="local_desc01 local_desc" id="rb-theme-install" style="background:#fff; border:0; padding:0; margin-top:0; margin-bottom:20px;" data-token="<?php echo htmlspecialchars($_SESSION['rb_theme_package_token'],ENT_QUOTES,'UTF-8'); ?>" data-install-version-error="<?php echo htmlspecialchars(rb_tp_install_version_message(),ENT_QUOTES,'UTF-8'); ?>">
+<section class="local_desc01 local_desc" id="rb-theme-install" style="background:transparent; border:0; padding:0; margin-top:0; margin-bottom:20px;" data-token="<?php echo htmlspecialchars($_SESSION['rb_theme_package_token'],ENT_QUOTES,'UTF-8'); ?>" data-install-version-error="<?php echo htmlspecialchars(rb_tp_install_version_message(),ENT_QUOTES,'UTF-8'); ?>">
     <h2 style="margin-top:0;">업로드된 테마 설치 / 업데이트</h2>
     <p style="margin-bottom:20px;">테마 폴더를 선택하고 <strong>내용 확인</strong>을 클릭하세요.<br>설치 기록이 있는 테마는 기존 설정을 유지하며 파일을 업데이트합니다. 설치 기록이 없으면 새로 설치하며, 남아 있는 해당 테마의 기존 설정과 자료는 먼저 백업합니다.</p>
     <div class="tbl_frm01 tbl_wrap">
