@@ -56,6 +56,16 @@ $rb_order_statuses = function_exists('rb_shop_special_order_statuses') ? rb_shop
 //------------------------------------------------------------------------------
 
 
+// 5.6.43 현금영수증 확인 안내. 구 코어에는 신규 라이브러리를 요구하지 않는다.
+$cash_review_notice = '';
+if (is_file(G5_LIB_PATH.'/kcp_cash.lib.php')) {
+    require_once G5_LIB_PATH.'/kcp_cash.lib.php';
+    if (function_exists('kcp_cash_pending_notice')) {
+        $cash_review_notice = kcp_cash_pending_notice(isset($od['od_cash_info']) ? $od['od_cash_info'] : '');
+    }
+}
+if ($cash_review_notice !== '') echo '<div class="local_desc01 local_desc"><p>'.$cash_review_notice.'</p></div>';
+
 $pg_anchor = '<ul class="anchor">
 <li><a href="#anc_sodr_list">'.get_text($rb_order_labels['item_list']).'</a></li>
 <li><a href="#anc_sodr_pay">주문결제 내역</a></li>
@@ -1288,7 +1298,9 @@ if ($is_nicepay_vbank_pg_cancel) {
                     <th scope="row">현금영수증</th>
                     <td>
                     <?php
-                    if ($od['od_cash']) {
+                    if ($cash_review_notice !== '') {
+                        echo '처리 확인 필요 (상단 안내 참고)';
+                    } else if ($od['od_cash']) {
                         if($od['od_pg'] == 'lg') {
                             require G5_SHOP_PATH.'/settle_lg.inc.php';
 
