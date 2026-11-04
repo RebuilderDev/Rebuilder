@@ -1,5 +1,7 @@
 <?php
 if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
+// 5.6.44 KCP REST 지원. 구 코어의 기본 결제 방식도 유지한다.
+if (is_file(G5_LIB_PATH.'/kcp_rest.lib.php')) include_once(G5_LIB_PATH.'/kcp_rest.lib.php');
 rb_shop_native_order_security();
 
 require_once(G5_SHOP_PATH.'/settle_'.$default['de_pg_service'].'.inc.php');
@@ -1517,7 +1519,7 @@ function forderform_check(f)
                     if(typeof f.kakaopay_direct !== "undefined") f.kakaopay_direct.value = "Y";
                 } else {
                     if(typeof f.payco_direct !== "undefined") f.payco_direct.value = "Y";
-                    <?php if($default['de_card_test']) { ?>
+                    <?php if($default['de_card_test'] && (!function_exists('kcp_rest_enabled') || !kcp_rest_enabled())) { ?>
                     f.site_cd.value      = "S6729";
                     <?php } ?>
                 }

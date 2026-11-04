@@ -68,7 +68,12 @@ for ($i=0; $row=sql_fetch_array($result); $i++)
     else {
         $ss_name = 'ss_secret_comment_'.$bo_table.'_'.$list[$i]['wr_id'];
 
-        if(!get_session($ss_name))
+        // 5.6.45부터 게시물별 인증을 사용하며, 구 코어는 기존 세션을 유지한다.
+        $rb_comment_secret_auth = function_exists('g5_has_secret_auth')
+            ? g5_has_secret_auth($bo_table, $list[$i])
+            : get_session($ss_name);
+
+        if (!$rb_comment_secret_auth)
             $list[$i]['content'] = '<a href="'.G5_BBS_URL.'/password.php?w=sc&amp;bo_table='.$bo_table.'&amp;wr_id='.$list[$i]['wr_id'].$qstr.'" class="s_cmt">댓글내용 확인</a>';
         else {
             $list[$i]['content'] = conv_content($row['wr_content'], 0, 'wr_content');

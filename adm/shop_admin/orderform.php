@@ -1043,6 +1043,13 @@ if ($is_nicepay_vbank_pg_cancel) {
     </div>
 </section>
 
+<?php
+// 5.6.44 PG 승인정보. 공식 패치를 하지 않은 코어에는 새 파일을 요구하지 않는다.
+if (is_file(G5_ADMIN_PATH.'/shop_admin/pgapproval.inc.php') && is_file(G5_LIB_PATH.'/shop_pg_approval.lib.php')) {
+    include_once(G5_ADMIN_PATH.'/shop_admin/pgapproval.inc.php');
+}
+?>
+
 <section class="">
     <h2 class="h2_frm">결제상세정보</h2>
     <?php echo $pg_anchor; ?>
