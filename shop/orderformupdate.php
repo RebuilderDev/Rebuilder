@@ -71,7 +71,7 @@ if(($od_settle_case != '무통장') && $default['de_pg_service'] == 'lg' && !$_P
 }
 
 // 토스 v2 대응
-if(($od_settle_case != '무통장') && $default['de_pg_service'] == 'toss' && !$_POST['paymentKey']){
+if(($od_settle_case != '무통장') && $default['de_pg_service'] == 'toss' && (!isset($_POST['paymentKey']) || !is_string($_POST['paymentKey']) || $_POST['paymentKey'] === '')){
     if(function_exists('add_order_post_log')) add_order_post_log('결제등록 요청 후 주문해 주십시오.');
     alert('결제등록 요청 후 주문해 주십시오.');
 }
@@ -664,7 +664,7 @@ $od_receipt_time = isset($od_receipt_time) ? $od_receipt_time : '';
 $od_app_no = isset($od_app_no) ? $od_app_no : '';
 
 // 주문금액과 결제금액이 일치하는지 체크
-if($tno) {
+if((string)$tno !== '') {
     if((int)$order_price !== (int)$pg_price) {
         $cancel_msg = '결제금액 불일치';
 
@@ -761,7 +761,7 @@ $sql = " insert {$g5['g5_shop_order_table']}
                 od_misu           = '$od_misu',
                 od_pg             = '$od_pg',
                 $rb_pg_columns
-                od_tno            = '$od_tno',
+                od_tno            = '".sql_real_escape_string((string)$od_tno)."',
                 od_app_no         = '$od_app_no',
                 od_escrow         = '$od_escrow',
                 od_tax_flag       = '$od_tax_flag',
@@ -789,7 +789,7 @@ $exists_order = sql_fetch($exists_sql);
 
 // 주문정보 입력 오류시 결제 취소
 if(! $result || ! (isset($exists_order['od_id']) && $od_id && $exists_order['od_id'] === $od_id)) {
-    if($tno) {
+    if((string)$tno !== '') {
         $cancel_msg = '주문정보 입력 오류';
         include G5_SHOP_PATH.'/cancel_pg.inc.php';
     }
@@ -888,7 +888,7 @@ if ($cart_status === "주문" && $can_memo) {
 
 // 주문정보 입력 오류시 결제 취소
 if(!$result) {
-    if($tno) {
+    if((string)$tno !== '') {
         $cancel_msg = '주문상태 변경 오류';
         include G5_SHOP_PATH.'/cancel_pg.inc.php';
     }
@@ -1010,7 +1010,7 @@ if ($coupon_duplicate) {
     sql_query(" delete from {$g5['g5_shop_coupon_log_table']} where od_id = '$od_id' ", false);
 
     // PG 결제 취소
-    if ($tno) {
+    if ((string)$tno !== '') {
         $cancel_msg = '쿠폰 이중사용 감지';
         include G5_SHOP_PATH.'/cancel_pg.inc.php';
     }

@@ -399,7 +399,7 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
             $disp_receipt = true;
         } else if($od['od_settle_case'] == '가상계좌' || $od['od_settle_case'] == '계좌이체') {
             $app_no_subj = '거래번호';
-            $app_no = $od['od_tno'];
+            $app_no = htmlspecialchars((string)$od['od_tno'], ENT_QUOTES, 'UTF-8');
 
 			if( function_exists('shop_is_taxsave') && $misu_price == 0 && shop_is_taxsave($od, true) === 2 ){
 				$disp_receipt = true;
@@ -739,9 +739,10 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
 	                            $LGD_MERTKEY  = $config['cf_lg_mert_key'];
 	                            $LGD_HASHDATA = md5($LGD_MID.$LGD_TID.$LGD_MERTKEY);
 
-	                            $hp_receipt_script = 'showReceiptByTID(\''.$LGD_MID.'\', \''.$LGD_TID.'\', \''.$LGD_HASHDATA.'\');';
+	                            $lg_receipt_args = array_map('json_encode', array($LGD_MID, $LGD_TID, $LGD_HASHDATA));
+	                            $hp_receipt_script = htmlspecialchars('showReceiptByTID('.implode(',', $lg_receipt_args).');', ENT_QUOTES, 'UTF-8');
                             } else if($od['od_pg'] == 'toss') {
-	                            $hp_receipt_script = 'window.open(\'https://dashboard.tosspayments.com/receipt/phone?transactionId='.$od['od_tno'].'&ref=PX\',\'receipt\',\'width=430,height=700\');';
+	                            $hp_receipt_script = 'window.open(\'https://dashboard.tosspayments.com/receipt/phone?transactionId='.rawurlencode((string)$od['od_tno']).'&ref=PX\',\'receipt\',\'width=430,height=700\');';
 	                        } else if($od['od_pg'] == 'inicis') {
 	                            $hp_receipt_script = 'window.open(\'https://iniweb.inicis.com/DefaultWebApp/mall/cr/cm/mCmReceipt_head.jsp?noTid='.$od['od_tno'].'&noMethod=1\',\'receipt\',\'width=430,height=700\');';
 	                        } else if($od['od_pg'] == 'nicepay') {
@@ -762,9 +763,10 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
 	                            $LGD_MERTKEY  = $config['cf_lg_mert_key'];
 	                            $LGD_HASHDATA = md5($LGD_MID.$LGD_TID.$LGD_MERTKEY);
 
-	                            $card_receipt_script = 'showReceiptByTID(\''.$LGD_MID.'\', \''.$LGD_TID.'\', \''.$LGD_HASHDATA.'\');';
+	                            $lg_receipt_args = array_map('json_encode', array($LGD_MID, $LGD_TID, $LGD_HASHDATA));
+	                            $card_receipt_script = htmlspecialchars('showReceiptByTID('.implode(',', $lg_receipt_args).');', ENT_QUOTES, 'UTF-8');
                             } else if($od['od_pg'] == 'toss') {
-	                            $card_receipt_script = 'window.open(\'https://dashboard.tosspayments.com/receipt/redirection?transactionId='.$od['od_tno'].'&ref=PX\',\'receipt\',\'width=430,height=700\');';
+	                            $card_receipt_script = 'window.open(\'https://dashboard.tosspayments.com/receipt/redirection?transactionId='.rawurlencode((string)$od['od_tno']).'&ref=PX\',\'receipt\',\'width=430,height=700\');';
 	                        } else if($od['od_pg'] == 'inicis') {
 	                            $card_receipt_script = 'window.open(\'https://iniweb.inicis.com/DefaultWebApp/mall/cr/cm/mCmReceipt_head.jsp?noTid='.$od['od_tno'].'&noMethod=1\',\'receipt\',\'width=430,height=700\');';
 	                        } else if($od['od_pg'] == 'nicepay') {
@@ -929,7 +931,7 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
         <tbody>
         <tr>
             <th scope="col"><label for="e_trade_no">KCP 거래번호</label></th>
-            <td><input type="text" name="e_trade_no" value="<?php echo $od['od_tno']; ?>"></td>
+            <td><input type="text" name="e_trade_no" value="<?php echo htmlspecialchars((string)$od['od_tno'], ENT_QUOTES, 'UTF-8'); ?>"></td>
         </tr>
         <tr>
             <th scope="col"><label for="deposit_no">입금계좌</label></th>
