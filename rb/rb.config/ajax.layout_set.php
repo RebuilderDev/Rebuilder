@@ -32,15 +32,15 @@ $modules_by_layout = array();
 $sections_by_layout = array();
 
 if (!empty($layouts)) {
-    $layout_ids = array_map(function($id) {
-        return "'" . sql_real_escape_string($id) . "'";
-    }, $layouts);
-    $layout_ids_str = implode(',', $layout_ids);
+    // Pin the cache generation before loading any layout rows.
+    rb_layout_cache_generation(false);
+    $theme_sql = sql_real_escape_string($theme_name);
+    $module_scope = rb_layout_scope_sql('md', $layouts, $layout_name);
+    $section_scope = rb_layout_scope_sql('sec', $layouts, $layout_name);
 
     $all_modules_sql = "SELECT * FROM rb_module
-        WHERE md_layout IN ({$layout_ids_str})
-        AND md_theme = '{$theme_name}'
-        AND md_layout_name = '{$layout_name}'
+        WHERE md_theme = '{$theme_sql}'
+        AND {$module_scope}
         ORDER BY md_layout, md_order_id, md_id ASC";
 
     $modules_result = sql_query($all_modules_sql);
@@ -49,9 +49,8 @@ if (!empty($layouts)) {
     }
 
     $all_sections_sql = "SELECT * FROM rb_section
-        WHERE sec_layout IN ({$layout_ids_str})
-        AND sec_theme = '{$theme_name}'
-        AND sec_layout_name = '{$layout_name}'
+        WHERE sec_theme = '{$theme_sql}'
+        AND {$section_scope}
         ORDER BY sec_layout, sec_order_id, sec_id ASC";
 
     $sections_result = sql_query($all_sections_sql);
@@ -94,34 +93,7 @@ foreach ($layouts as $layout_no) {
     $sql_cnts     = array('cnt' => count($layout_rows_mod));
     $sql_cnts_sec = array('cnt' => count($layout_rows_sec));
 
-    // build one list with common order
-    $items = array();
-
-    foreach ($layout_rows_mod as $r) {
-        $items[] = array(
-            'type'  => 'mod',
-            'order' => (int)$r['md_order_id'],
-            'id'    => (int)$r['md_id'],
-            'row'   => $r
-        );
-    }
-
-    foreach ($layout_rows_sec as $r) {
-        $items[] = array(
-            'type'  => 'sec',
-            'order' => (int)$r['sec_order_id'],
-            'id'    => (int)$r['sec_id'],
-            'row'   => $r
-        );
-    }
-
-    // sort by common order, then by id for stability
-    usort($items, function($a, $b){
-        if ($a['order'] === $b['order']) {
-            return $a['id'] <=> $b['id'];
-        }
-        return $a['order'] <=> $b['order'];
-    });
+    $items = rb_layout_render_items($layout_rows_mod, $layout_rows_sec);
 
     // start output buffer content
     $rb_module_table = "rb_module";
@@ -598,7 +570,7 @@ foreach ($layouts as $layout_no) {
             $output .= "<?php } ?>\n";
             // 레벨처리 추가 }
 
-        } else {
+        } elseif ($it['type'] === 'sec') {
             $row_sec = $it['row'];
             $sec_title_color_pc = !empty($row_sec['sec_title_color']) ? $row_sec['sec_title_color'] : '#25282b';
             $sec_title_size_pc = !empty($row_sec['sec_title_size']) ? $row_sec['sec_title_size'] : '26';
@@ -695,12 +667,10 @@ foreach ($layouts as $layout_no) {
                       </div>
                     <?php } ?>
 
-                </div>
-            </div>
-
-
             <?php
             $output .= ob_get_clean();
+        } else {
+            $output .= "</div></div>\n";
         }
     }
 

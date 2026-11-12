@@ -1,6 +1,126 @@
 /* global $, jQuery */
 (function (window, $) {
     'use strict';
+
+    // A scrollbar can change the available width without a window resize.
+    var viewport = document.documentElement;
+    function rbSyncViewportWidth() {
+        var width = viewport.clientWidth;
+        var widthValue = width + 'px';
+        if (viewport.style.getPropertyValue('--vw') === widthValue) return;
+        viewport.style.setProperty('--vw', widthValue);
+        viewport.style.setProperty('--scrollbar-width', (window.innerWidth - width) + 'px');
+    }
+
+    // Keep the member menu outside the clipping containers of builder modules.
+    var moduleSideview = null;
+    var restoringSideviewFocus = false;
+
+    function rbModuleSideviewTrigger(target) {
+        var trigger = target.closest && target.closest('.sv_wrap > .sv_member, .sv_wrap > .sv_guest');
+        return trigger && trigger.closest('.rb_layout_box .rb-module-wrap') ? trigger : null;
+    }
+
+    function rbCloseModuleSideview(restoreFocus) {
+        if (!moduleSideview) return;
+        var state = moduleSideview;
+        moduleSideview = null;
+        state.menu.classList.remove('sv_on');
+        if (state.style === null) state.menu.removeAttribute('style');
+        else state.menu.setAttribute('style', state.style);
+        if (state.marker.parentNode) state.marker.parentNode.replaceChild(state.menu, state.marker);
+        state.layer.remove();
+
+        if (restoreFocus === true && state.trigger.isConnected && document.activeElement !== state.trigger) {
+            restoringSideviewFocus = true;
+            state.trigger.focus({ preventScroll: true });
+            state.menu.classList.remove('sv_on');
+            restoringSideviewFocus = false;
+        }
+    }
+
+    function rbOpenModuleSideview(trigger) {
+        if (moduleSideview && moduleSideview.trigger === trigger) return;
+        rbCloseModuleSideview();
+
+        var menu = trigger.nextElementSibling;
+        if (!menu || !menu.classList.contains('sv')) return;
+
+        var layer = document.createElement('span');
+        layer.className = 'sv_wrap rb-module-sideview';
+        Object.assign(layer.style, { position: 'fixed', left: '0', top: '0', zIndex: '1000' });
+        var marker = document.createComment('');
+        menu.parentNode.insertBefore(marker, menu);
+        moduleSideview = { trigger: trigger, menu: menu, marker: marker, layer: layer, style: menu.getAttribute('style') };
+        document.body.appendChild(layer);
+        layer.appendChild(menu);
+
+        var gap = 8;
+        Object.assign(menu.style, {
+            display: 'block', position: 'relative', top: 'auto', left: 'auto', margin: '0', boxSizing: 'border-box',
+            maxWidth: Math.max(0, viewport.clientWidth - gap * 2) + 'px',
+            maxHeight: Math.max(0, viewport.clientHeight - gap * 2) + 'px'
+        });
+        if (menu.scrollHeight > menu.clientHeight || menu.scrollWidth > menu.clientWidth) {
+            menu.style.overflow = 'auto';
+        }
+
+        var anchor = trigger.getBoundingClientRect();
+        var size = menu.getBoundingClientRect();
+        var top = anchor.bottom + gap;
+        if (top + size.height > viewport.clientHeight - gap && anchor.top - size.height - gap >= gap) {
+            top = anchor.top - size.height - gap;
+        }
+        layer.style.left = Math.max(gap, Math.min(anchor.left, viewport.clientWidth - size.width - gap)) + 'px';
+        layer.style.top = Math.max(gap, Math.min(top, viewport.clientHeight - size.height - gap)) + 'px';
+    }
+
+    function rbHandleModuleSideview(event) {
+        if (restoringSideviewFocus || (moduleSideview && moduleSideview.layer.contains(event.target))) return;
+
+        var trigger = rbModuleSideviewTrigger(event.target);
+        if (trigger) rbOpenModuleSideview(trigger);
+        else rbCloseModuleSideview();
+    }
+
+    document.addEventListener('pointerdown', function (event) {
+        if (moduleSideview && !moduleSideview.layer.contains(event.target) && !moduleSideview.trigger.contains(event.target)) {
+            rbCloseModuleSideview();
+        }
+    });
+    document.addEventListener('click', rbHandleModuleSideview);
+    document.addEventListener('focusin', rbHandleModuleSideview);
+    document.addEventListener('scroll', function (event) {
+        if (moduleSideview && !moduleSideview.layer.contains(event.target)) rbCloseModuleSideview();
+    }, true);
+    window.addEventListener('resize', rbCloseModuleSideview);
+    window.addEventListener('pagehide', rbCloseModuleSideview);
+
+    document.addEventListener('keydown', function (event) {
+        if (!moduleSideview) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            rbCloseModuleSideview(true);
+        } else if (event.key === 'Tab') {
+            var links = moduleSideview.menu.querySelectorAll('a[href]:not([tabindex="-1"])');
+            if (!links.length) return;
+            if (event.target === moduleSideview.trigger && !event.shiftKey) {
+                event.preventDefault();
+                links[0].focus();
+            } else if (event.shiftKey && event.target === links[0]) {
+                event.preventDefault();
+                rbCloseModuleSideview(true);
+            } else if (!event.shiftKey && event.target === links[links.length - 1]) {
+                rbCloseModuleSideview(true);
+            }
+        }
+    });
+
+    window.addEventListener('load', rbSyncViewportWidth);
+    if (typeof window.ResizeObserver === 'function') {
+        new window.ResizeObserver(rbSyncViewportWidth).observe(viewport);
+    }
+
     if (!$) return; // jQuery 없으면 그냥 리턴
 
     // 브라우저 Back으로 페이지가 복원될 때 팝업 쿠키 상태를 다시 반영합니다.

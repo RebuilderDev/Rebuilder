@@ -3,6 +3,32 @@ if (!defined('_GNUBOARD_')) {
     exit;
 }
 
+if (!function_exists('rb_layout_is_content')) {
+    function rb_layout_is_content($layout_no)
+    {
+        return is_string($layout_no) && isset($layout_no[6]) && strpos($layout_no, 'rb_co_') === 0;
+    }
+}
+
+if (!function_exists('rb_layout_cache_generation')) {
+    function rb_layout_cache_generation($is_shop)
+    {
+        static $generations = array();
+        $prefix = $is_shop ? 'rb_layout_shop' : 'rb_layout';
+        if (!isset($generations[$prefix])) {
+            $generations[$prefix] = '';
+            $file = @fopen(G5_DATA_PATH . '/cache/' . $prefix . '.generation', 'rb');
+            if ($file) {
+                if (flock($file, LOCK_SH)) {
+                    $generations[$prefix] = (string) stream_get_contents($file);
+                }
+                fclose($file);
+            }
+        }
+        return $generations[$prefix];
+    }
+}
+
 if (!function_exists('rb_layout_cache_paths')) {
     function rb_layout_cache_paths($layout_no, $is_shop, $theme_name, $layout_name, $is_index = false)
     {
@@ -12,8 +38,11 @@ if (!function_exists('rb_layout_cache_paths')) {
         }
 
         // 테마와 레이아웃 구성이 다른 캐시가 같은 파일을 공유하지 않도록 분리합니다.
-        $connection_version = '|module-connections-v5-banner-themes';
-        $context = substr(sha1((string) $theme_name . '|' . (string) $layout_name . '|' . ($is_index ? 'index' : 'sub') . $connection_version), 0, 12);
+        if (rb_layout_is_content($layout_no)) {
+            $layout_name = '';
+        }
+        $cache_version = '|v7-section-content-layout|' . rb_layout_cache_generation($is_shop);
+        $context = substr(sha1((string) $theme_name . '|' . (string) $layout_name . '|' . ($is_index ? 'index' : 'sub') . $cache_version), 0, 12);
         $prefix = $is_shop ? 'rb_layout_shop_' : 'rb_layout_';
         $base = G5_DATA_PATH . '/cache/' . $prefix . $context . '_' . $safe_layout;
 
@@ -79,24 +108,32 @@ if (!function_exists('rb_layout_cache_write')) {
 }
 
 if (!function_exists('rb_layout_cache_delete_all')) {
-    function rb_layout_cache_delete_all()
+    function rb_layout_cache_delete_all($is_shop = null)
     {
         $cache_dir = G5_DATA_PATH . '/cache';
-        if (!is_dir($cache_dir)) {
+        if (!is_dir($cache_dir) && !@mkdir($cache_dir, G5_DIR_PERMISSION, true) && !is_dir($cache_dir)) {
             return;
         }
 
-        foreach (array('rb_layout_*.php', 'rb_layout_*.hash', 'rb_layout_shop_*.php', 'rb_layout_shop_*.hash') as $pattern) {
-            $files = glob($cache_dir . '/' . $pattern);
-            if (!$files) {
-                continue;
-            }
-
-            foreach ($files as $file) {
+        $prefix = $is_shop === true ? 'rb_layout_shop_' : 'rb_layout_';
+        foreach (array('php', 'hash') as $extension) {
+            foreach (glob($cache_dir . '/' . $prefix . '*.' . $extension) ?: array() as $file) {
+                if ($is_shop === false && strpos(basename($file), 'rb_layout_shop_') === 0) {
+                    continue;
+                }
                 if (is_file($file)) {
                     @unlink($file);
                 }
             }
+        }
+
+        // A render started before the save may still write a cache under its old generation.
+        $generation = uniqid('', true);
+        if ($is_shop !== true) {
+            @file_put_contents($cache_dir . '/rb_layout.generation', $generation, LOCK_EX);
+        }
+        if ($is_shop !== false) {
+            @file_put_contents($cache_dir . '/rb_layout_shop.generation', $generation, LOCK_EX);
         }
     }
 }

@@ -5,6 +5,83 @@ if (!defined('_GNUBOARD_')) {
 
 include_once(__DIR__ . '/layout.cache.php');
 
+if (!function_exists('rb_layout_scope_sql')) {
+    function rb_layout_scope_sql($prefix, array $layouts, $layout_name)
+    {
+        $content_ids = array();
+        $layout_ids = array();
+        foreach ($layouts as $layout_no) {
+            $layout_no = (string) $layout_no;
+            $quoted_id = "'" . sql_real_escape_string($layout_no) . "'";
+            if (rb_layout_is_content($layout_no)) {
+                $content_ids[] = $quoted_id;
+            } else {
+                $layout_ids[] = $quoted_id;
+            }
+        }
+
+        $conditions = array();
+        if ($content_ids) {
+            $conditions[] = "{$prefix}_layout IN (" . implode(',', $content_ids) . ")";
+        }
+        if ($layout_ids) {
+            $name = sql_real_escape_string($layout_name);
+            $conditions[] = "({$prefix}_layout IN (" . implode(',', $layout_ids) . ") AND {$prefix}_layout_name = '{$name}')";
+        }
+
+        return '(' . implode(' OR ', $conditions) . ')';
+    }
+}
+
+if (!function_exists('rb_layout_render_items')) {
+    function rb_layout_render_items(array $modules, array $sections)
+    {
+        $items = array();
+        $section_ids = array();
+        foreach ($sections as $section) {
+            $id = (int) $section['sec_id'];
+            $uid = trim($section['sec_uid'] ?? '');
+            if ($uid !== '' && !isset($section_ids[$uid])) {
+                $section_ids[$uid] = $id;
+            }
+            $items[] = array('type' => 'sec', 'order' => (int) $section['sec_order_id'], 'id' => $id, 'row' => $section);
+        }
+
+        $children = array();
+        foreach ($modules as $module) {
+            $item = array('type' => 'mod', 'order' => (int) $module['md_order_id'], 'id' => (int) $module['md_id'], 'row' => $module);
+            $uid = trim($module['md_sec_uid'] ?? '');
+            if (isset($section_ids[$uid])) {
+                $children[$section_ids[$uid]][] = $item;
+            } else {
+                $items[] = $item;
+            }
+        }
+
+        $sort_items = function ($a, $b) {
+            if ($a['order'] === $b['order']) {
+                return ($a['id'] <=> $b['id']) ?: strcmp($a['type'], $b['type']);
+            }
+            return $a['order'] <=> $b['order'];
+        };
+        usort($items, $sort_items);
+
+        $render_items = array();
+        foreach ($items as $item) {
+            $render_items[] = $item;
+            if ($item['type'] === 'sec') {
+                $section_modules = $children[$item['id']] ?? array();
+                usort($section_modules, $sort_items);
+                foreach ($section_modules as $module_item) {
+                    $render_items[] = $module_item;
+                }
+                $render_items[] = array('type' => 'sec_end');
+            }
+        }
+        return $render_items;
+    }
+}
+
 if (!function_exists('rb_module_has_connection')) {
     function rb_module_has_connection(array $module)
     {

@@ -5,7 +5,17 @@ $mod_type = isset($_POST['mod_type']) ? $_POST['mod_type'] : '';
 $is_shop  = (isset($_POST['is_shop']) && $_POST['is_shop'] == '1') ? 1 : 0;
 
 // helpers
-function run_q($sql){ return sql_query($sql); }
+function run_q($sql)
+{
+    $result = sql_query($sql, false);
+    if (!$result) {
+        // Older tables can keep changes from earlier queries in the same request.
+        rb_layout_cache_delete_all((bool) $GLOBALS['is_shop']);
+        http_response_code(500);
+        exit('Could not save module layout');
+    }
+    return $result;
+}
 function esc($s){ return sql_escape_string($s); } // 그누보드 기본 이스케이프
 function to_int($v){ return (int)$v; }
 function rb_ensure_module_section_columns($table){
@@ -23,6 +33,14 @@ function rb_json_exit($data){
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($data);
     exit;
+}
+
+if (in_array($mod_type, array('mod_sync_state', 'mod_order', 'sec_order', 'sec_move_to_layout', 'mod_update_sec', 'mod_move_to_layout'), true)) {
+    if (empty($is_admin)) {
+        http_response_code(403);
+        rb_json_exit(array('status' => 'error', 'message' => 'Permission denied'));
+    }
+    require_once(__DIR__ . '/../rb.config/layout.cache.php');
 }
 
 /* ===== ca_name ===== */
@@ -83,6 +101,7 @@ if ($mod_type === "mod_order") {
             if ($md_id <= 0) continue;
             run_q("UPDATE {$table} SET md_order_id = {$order_id} WHERE md_id = {$md_id}");
         }
+        rb_layout_cache_delete_all((bool) $is_shop);
         echo "success"; exit;
     }
     echo "Invalid order data"; exit;
@@ -203,6 +222,7 @@ if ($mod_type === "mod_sync_state") {
                          WHERE sec_id = {$sec_id}", false);
         if (!$res) {
             sql_query('ROLLBACK', false);
+            rb_layout_cache_delete_all((bool) $is_shop);
             rb_json_exit(array('status' => 'error', 'message' => 'Section order update failed'));
         }
     }
@@ -227,8 +247,9 @@ if ($mod_type === "mod_sync_state") {
                 WHERE md_id = {$md_id}";
         $res = sql_query($sql, false);
         if (!$res) {
-            sql_query('ROLLBACK', false);
             $db_error = isset($GLOBALS['g5']['connect_db']) ? mysqli_error($GLOBALS['g5']['connect_db']) : 'sql_query failed';
+            sql_query('ROLLBACK', false);
+            rb_layout_cache_delete_all((bool) $is_shop);
             rb_json_exit(array(
                 'status' => 'error',
                 'message' => 'mod_sync_state update failed',
@@ -249,9 +270,11 @@ if ($mod_type === "mod_sync_state") {
 
     if (!sql_query('COMMIT', false)) {
         sql_query('ROLLBACK', false);
+        rb_layout_cache_delete_all((bool) $is_shop);
         rb_json_exit(array('status' => 'error', 'message' => 'Could not commit module save transaction'));
     }
 
+    rb_layout_cache_delete_all((bool) $is_shop);
     rb_json_exit(array('status' => 'success', 'updated' => $updated));
 }
 
@@ -286,6 +309,7 @@ if ($mod_type === "sec_order") {
             }
         }
 
+        rb_layout_cache_delete_all((bool) $is_shop);
         echo "success"; exit;
     }
     echo "Invalid order data"; exit;
@@ -307,6 +331,7 @@ if ($mod_type === "sec_move_to_layout") {
         run_q("UPDATE {$table} SET sec_layout = '".esc($sec_layout)."' WHERE sec_id = {$sec_id}");
     }
 
+    rb_layout_cache_delete_all((bool) $is_shop);
     echo "success"; exit;
 }
 
@@ -343,6 +368,7 @@ if ($mod_type === "mod_update_sec") {
             run_q("UPDATE {$table} SET md_sec_key = '{$key}', md_sec_uid = '{$uid}' WHERE md_id IN ({$in})");
         }
     }
+    rb_layout_cache_delete_all((bool) $is_shop);
     echo "success"; exit;
 }
 
@@ -370,6 +396,7 @@ if ($mod_type === "mod_move_to_layout") {
         run_q("UPDATE {$table} SET md_layout = '".esc($layout)."' WHERE md_id IN ({$in})");
     }
 
+    rb_layout_cache_delete_all((bool) $is_shop);
     echo "success"; exit;
 }
 

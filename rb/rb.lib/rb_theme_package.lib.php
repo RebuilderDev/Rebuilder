@@ -3,6 +3,7 @@ if (!defined('_GNUBOARD_')) exit;
 include_once(__DIR__.'/rb_theme_release.lib.php');
 include_once(__DIR__.'/rb_theme_dependencies.lib.php');
 include_once(__DIR__.'/rb_banner_theme.lib.php');
+include_once(__DIR__.'/../rb.config/layout.cache.php');
 
 /* 패키지 설치는 새 테마의 소스와 디자인 자료만 추가한다. 적용 시 스킨 설정 저장/복원은 별도로 처리한다. */
 function rb_tp_tables()
@@ -428,10 +429,13 @@ function rb_tp_main_data($data)
         $parents=array();
         foreach($data[$moduleTable] as $row) {
             $name=isset($row['md_layout_name'])?(string)$row['md_layout_name']:'';
-            $parents[$name][$row['md_layout'].'-'.$row['md_id']]=(string)$row['md_layout'];
+            $layout=(string)$row['md_layout'];
+            if (rb_layout_is_content($layout)) $name='';
+            $parents[$name][$layout.'-'.$row['md_id']]=$layout;
         }
         $allowed=function($layout,$name,$depth=0) use(&$allowed,$parents) {
             if($depth>30 || preg_match('~\A(?:rb_(?:bo|co|fr|ca|it|ev)_(?:top|btm)(?:_|-|\z)|rb_content_(?:top|btm|bottom)(?:_|-|\z)|rb_(?:sidemenu(?:_shop)?|topvisual)(?:_|-|\z))~',$layout)) return false;
+            if (rb_layout_is_content($layout)) $name='';
             if(isset($parents[$name][$layout])) return $allowed($parents[$name][$layout],$name,$depth+1);
             return !preg_match('~-[0-9]+\z~',$layout);
         };
@@ -453,7 +457,7 @@ function rb_tp_current_layout_data($data)
         foreach(array($moduleTable=>'md',$sectionTable=>'sec') as $table=>$prefix) {
             $data[$table]=array_values(array_filter($data[$table],function($row) use($prefix,$selected) {
                 $name=isset($row[$prefix.'_layout_name'])?(string)$row[$prefix.'_layout_name']:'';
-                return $name===$selected;
+                return $name===$selected || rb_layout_is_content((string)$row[$prefix.'_layout']);
             }));
         }
     }
@@ -551,12 +555,13 @@ function rb_tp_layout_preview($data,$referenceTitles=array())
         $shop=$table==='rb_module_shop';
         if($shop && !rb_tp_shop_enabled()) continue;
         $sectionTable=$shop?'rb_section_shop':'rb_section'; $groups=array();
+        $selected=isset($config[$shop?'co_layout_shop':'co_layout'])?(string)$config[$shop?'co_layout_shop':'co_layout']:'';
         foreach(array($table=>'md',$sectionTable=>'sec') as $source=>$prefix) foreach($data[$source] as $row) {
             $name=isset($row[$prefix.'_layout_name'])?(string)$row[$prefix.'_layout_name']:'';
             $layout=(string)$row[$prefix.'_layout'];
+            if (rb_layout_is_content($layout)) $name=$selected;
             $groups[$name][$layout][$prefix][]=$row;
         }
-        $selected=isset($config[$shop?'co_layout_shop':'co_layout'])?(string)$config[$shop?'co_layout_shop':'co_layout']:'';
         uksort($groups,function($a,$b) use($selected) {
             if((string)$a===$selected) return (string)$b===$selected?0:-1;
             if((string)$b===$selected) return 1;

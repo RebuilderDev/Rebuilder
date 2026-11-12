@@ -4904,7 +4904,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
         } else if (sec_theme == "") {
             alert('테마 정보가 없습니다. 테마 설정 후 이용해주세요.');
             return false;
-        } else if (sec_layout_name == "") {
+        } else if (sec_layout_name == "" && !/^rb_co_.+/.test(sec_layout)) {
             alert('레이아웃 정보가 없습니다. 레이아웃을 먼저 설정해주세요.');
             return false;
         } else {
@@ -5244,7 +5244,7 @@ foreach ($rb_side_panels as $rb_side_panel) {
         } else if (md_theme == "") {
             alert('테마 정보가 없습니다. 테마 설정 후 이용해주세요.');
             return false;
-        } else if (layout_name == "") {
+        } else if (layout_name == "" && !/^rb_co_.+/.test(md_layout)) {
             alert('레이아웃 정보가 없습니다. 레이아웃을 먼저 설정해주세요.');
             return false;
         } else if (md_type == "") {

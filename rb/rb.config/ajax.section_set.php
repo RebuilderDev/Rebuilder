@@ -12,6 +12,10 @@ if ($is_admin) {
 $sec_title        = $_POST['sec_title']        ?? '';
 $sec_layout       = $_POST['sec_layout']       ?? '';
 $sec_layout_name  = $_POST['sec_layout_name']  ?? '';
+$is_content_layout = rb_layout_is_content($sec_layout);
+if ($is_content_layout) {
+    $sec_layout_name = '';
+}
 $sec_theme        = $_POST['sec_theme']        ?? '';
 $sec_id           = $_POST['sec_id']           ?? '';
 $sec_uid          = $_POST['sec_uid']          ?? '';
@@ -154,6 +158,8 @@ if (is_new_sec($sec_id)) {
     $layout_no   = esc($sec_layout);
     $layout_name = esc($sec_layout_name);
     $theme_name  = esc($sec_theme);
+    $module_name_filter = $is_content_layout ? '' : "AND md_layout_name = '{$layout_name}'";
+    $section_name_filter = $is_content_layout ? '' : "AND sec_layout_name = '{$layout_name}'";
 
     $sql_max = "
       SELECT MAX(ordv) AS maxv FROM (
@@ -161,13 +167,13 @@ if (is_new_sec($sec_id)) {
           FROM {$rb_module_tables}
          WHERE md_layout = '{$layout_no}'
            AND md_theme = '{$theme_name}'
-           AND md_layout_name = '{$layout_name}'
+           {$module_name_filter}
         UNION ALL
         SELECT sec_order_id AS ordv
           FROM {$rb_section_tables}
          WHERE sec_layout = '{$layout_no}'
            AND sec_theme = '{$theme_name}'
-           AND sec_layout_name = '{$layout_name}'
+           {$section_name_filter}
       ) t
     ";
     $row_max = sql_fetch($sql_max);

@@ -46,6 +46,10 @@ $md_theme = isset($_POST['md_theme']) ? $_POST['md_theme'] : '';
 $md_sec_key = isset($_POST['md_sec_key']) ? $_POST['md_sec_key'] : '';
 $md_sec_uid = isset($_POST['md_sec_uid']) ? $_POST['md_sec_uid'] : '';
 $md_layout_name = isset($_POST['md_layout_name']) ? $_POST['md_layout_name'] : '';
+$is_content_layout = rb_layout_is_content($md_layout);
+if ($is_content_layout) {
+    $md_layout_name = '';
+}
 $md_cnt = isset($_POST['md_cnt']) ? $_POST['md_cnt'] : '1';
 $md_notice = isset($_POST['md_notice']) ? $_POST['md_notice'] : '0';
 $md_wide_is = isset($_POST['md_wide_is']) ? $_POST['md_wide_is'] : '0';
@@ -136,7 +140,7 @@ if(isset($is_shop) && $is_shop == 1) {
 }
 
 function rb_config_batch() {
-    global $rb_module_tables, $md_theme, $md_layout_name;
+    global $rb_module_tables, $md_theme, $md_layout, $md_layout_name, $is_content_layout;
     global $md_cb_batch, $md_border_batch, $md_shadow_batch, $md_margin_batch, $md_padding_batch;
     global $md_banner_bg, $md_radius, $md_border, $md_border_width, $md_border_color, $md_box_shadow, $md_box_shadow_w, $md_box_shadow_c;
     global $md_margin_top_pc, $md_margin_top_mo, $md_margin_btm_pc, $md_margin_btm_mo;
@@ -199,11 +203,17 @@ function rb_config_batch() {
     }
 
     if ($assignments) {
+        if ($is_content_layout) {
+            $scope = "md_layout = '" . sql_real_escape_string($md_layout) . "'";
+        } else {
+            $scope = "TRIM(md_layout_name) = '" . sql_real_escape_string(trim($md_layout_name)) . "'
+                AND md_layout NOT LIKE 'rb!_co!_%' ESCAPE '!'";
+        }
         $sql = "
             UPDATE `{$rb_module_tables}`
             SET " . implode(",\n            ", $assignments) . "
             WHERE TRIM(md_theme) = '" . sql_real_escape_string(trim($md_theme)) . "'
-            AND TRIM(md_layout_name) = '" . sql_real_escape_string(trim($md_layout_name)) . "'
+            AND {$scope}
         ";
         sql_query($sql);
     }
@@ -244,7 +254,8 @@ if (isset($is_height) && $is_height == "1") {
         if(isset($del) && $del == "true") {
 
             if($is_admin) {
-                $sql = " delete from {$rb_module_tables} where md_id = '{$md_id}' and md_layout = '{$md_layout}' and md_theme = '{$md_theme}' and md_layout_name = '{$md_layout_name}' ";
+                $layout_filter = $is_content_layout ? '' : " and md_layout_name = '{$md_layout_name}'";
+                $sql = " delete from {$rb_module_tables} where md_id = '{$md_id}' and md_layout = '{$md_layout}' and md_theme = '{$md_theme}'{$layout_filter} ";
                 sql_query($sql);
             }
             $data = array(

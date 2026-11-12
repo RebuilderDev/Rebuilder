@@ -69,19 +69,16 @@ if (!function_exists('rb_header_logo_url')) {
         global $rb_builder;
 
         $device = $device === 'mo' ? 'mo' : 'pc';
-        $suffix = $use_white ? '_w' : '';
-        if (defined('G5_THEME_PATH') && rb_tp_state(isset($GLOBALS['config']['cf_theme'])?$GLOBALS['config']['cf_theme']:'')
-            && is_file(G5_THEME_PATH.'/rb.img/logos/'.$device.$suffix.'.png'))
-            return G5_THEME_URL.'/rb.img/logos/'.$device.$suffix.'.png';
+        $logo_name = $device . ($use_white ? '_w' : '');
         $normal_key = 'bu_logo_' . $device;
         $white_key = $normal_key . '_w';
         $has_logo_pair = !empty($rb_builder[$normal_key]) && !empty($rb_builder[$white_key]);
 
-        if ($has_logo_pair) {
-            return G5_URL . '/data/logos/' . $device . $suffix;
+        if ($has_logo_pair && is_file(G5_DATA_PATH . '/logos/' . $logo_name)) {
+            return G5_DATA_URL . '/logos/' . $logo_name;
         }
 
-        return G5_THEME_URL . '/rb.img/logos/' . $device . $suffix . '.png';
+        return G5_THEME_URL . '/rb.img/logos/' . $logo_name . '.png';
     }
 }
 

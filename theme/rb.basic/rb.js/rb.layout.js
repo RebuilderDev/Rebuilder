@@ -275,9 +275,8 @@ $(document).ready(function () {
                 return !!mUid && mUid === secUid && outside;
             });
 
-            if ($cand.length) {
-                $inner.append($cand);
-            }
+            if (!$cand.length) return;
+            $inner.append($cand);
 
             var modules = $inner.children('.rb_layout_box').get();
             modules.sort(function (a, b) {
