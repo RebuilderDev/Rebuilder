@@ -32,9 +32,10 @@ if(sql_num_rows($hresult)) {
         }
 
         // 이벤트 상품
+        $visibility_sql = function_exists('rb_shop_visibility_sql') ? rb_shop_visibility_sql('b') : (function_exists('shop_item_visibility_sql') ? shop_item_visibility_sql('b') : '1=1');
         $sql2 = " select b.*
             from `{$g5['g5_shop_event_item_table']}` a left join `{$g5['g5_shop_item_table']}` b on (a.it_id = b.it_id)
-            where a.ev_id = '{$row['ev_id']}'
+            where a.ev_id = '{$row['ev_id']}' and {$visibility_sql}
             order by it_id desc
             limit 0, 3 ";
         $result2 = sql_query($sql2);

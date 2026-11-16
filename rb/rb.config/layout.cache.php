@@ -41,7 +41,7 @@ if (!function_exists('rb_layout_cache_paths')) {
         if (rb_layout_is_content($layout_no)) {
             $layout_name = '';
         }
-        $cache_version = '|v7-section-content-layout|' . rb_layout_cache_generation($is_shop);
+        $cache_version = '|v8-section-content-layout|' . rb_layout_cache_generation($is_shop);
         $context = substr(sha1((string) $theme_name . '|' . (string) $layout_name . '|' . ($is_index ? 'index' : 'sub') . $cache_version), 0, 12);
         $prefix = $is_shop ? 'rb_layout_shop_' : 'rb_layout_';
         $base = G5_DATA_PATH . '/cache/' . $prefix . $context . '_' . $safe_layout;

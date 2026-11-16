@@ -327,6 +327,7 @@ foreach ($layouts as $layout_no) {
                     $code .= "}\n";
                     $code .= "}\n";
                     $code .= "\$item_limit = \" limit \" . \$row_mod['md_cnt'];\n";
+                    $code .= "\$item_where .= \" and \" . rb_shop_visibility_sql();\n";
                     $code .= "\$item_sql = \" select * from {\$g5['g5_shop_item_table']} \" . \$item_where . \" \" . \$item_order . \" \" . \$item_limit;\n";
                     ?>
                     <div class="rb-module-wrap module_item_wrap md_arrow_<?php echo isset($row_mod['md_arrow_type']) ? $row_mod['md_arrow_type'] : ''; ?>"
@@ -456,6 +457,7 @@ foreach ($layouts as $layout_no) {
                     $code .= "}\n";
                     $code .= "}\n";
                     $code .= "\$item_limit = \" limit \" . \$row_mod['md_cnt'];\n";
+                    $code .= "\$item_where .= \" and \" . rb_shop_visibility_sql();\n";
                     $code .= "\$item_sql = \" select * from {\$g5['g5_shop_item_table']} \" . \$item_where . \" \" . \$item_order . \" \" . \$item_limit;\n";
                     //$code .= "echo \$item_sql;\n";
                     ?>

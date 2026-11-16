@@ -34,7 +34,7 @@ if(defined('_THEME_PREVIEW_') && _THEME_PREVIEW_ === true) {
 }
 
 // 본인인증, 성인인증체크
-if(!$is_admin && $config['cf_cert_use']) {
+if(!$is_admin) {
     $msg = shop_member_cert_check($ca_id, 'list');
     if($msg)
         alert($msg, G5_SHOP_URL);
@@ -147,9 +147,18 @@ var itemlist_ca_id = "<?php echo $ca_id; ?>";
         $from_record = ($page - 1) * $items;
 
         $list = new item_list($skin_file, $ca['ca_list_mod'], $ca['ca_list_row'], $ca['ca_img_width'], $ca['ca_img_height']);
-        $list->set_category($ca['ca_id'], 1);
-        $list->set_category($ca['ca_id'], 2);
-        $list->set_category($ca['ca_id'], 3);
+        $legacy_visibility = !function_exists('shop_item_visibility_sql');
+        if ($legacy_visibility) {
+            $category = sql_real_escape_string($ca['ca_id']);
+            $visibility = rb_shop_visibility_sql();
+            $list_scope = "from {$g5['g5_shop_item_table']} where it_use = '1' and {$visibility}
+                and (ca_id like '{$category}%' or ca_id2 like '{$category}%' or ca_id3 like '{$category}%')";
+            $list->set_query("select * {$list_scope} order by {$order_by} limit {$from_record}, {$items}");
+        } else {
+            $list->set_category($ca['ca_id'], 1);
+            $list->set_category($ca['ca_id'], 2);
+            $list->set_category($ca['ca_id'], 3);
+        }
         $list->set_is_page(true);
         $list->set_order_by($order_by);
         $list->set_from_record($from_record);
@@ -165,6 +174,10 @@ var itemlist_ca_id = "<?php echo $ca_id; ?>";
 
         // where 된 전체 상품수
         $total_count = $list->total_count;
+        if ($legacy_visibility) {
+            $row = sql_fetch("select count(*) as cnt {$list_scope}");
+            $total_count = (int)$row['cnt'];
+        }
         // 전체 페이지 계산
         $total_page  = ceil($total_count / $items);
     }

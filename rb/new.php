@@ -4,7 +4,7 @@ include_once('./_common.php');
 $g5['title'] = '새글';
 include_once('../_head.php');
 
-$sql_common = " from {$g5['board_new_table']} a, {$g5['board_table']} b, {$g5['group_table']} c where a.bo_table = b.bo_table and b.gr_id = c.gr_id and b.bo_use_search = 1 ";
+$sql_common = " from {$g5['board_new_table']} a, {$g5['board_table']} b, {$g5['group_table']} c where a.bo_table = b.bo_table and b.gr_id = c.gr_id and b.bo_use_search = 1 and a.bo_table in (".rb_visible_board_ids().") ";
 
 $gr_id = isset($_GET['gr_id']) ? substr(preg_replace('#[^a-z0-9_]#i', '', $_GET['gr_id']), 0, 10) : '';
 if ($gr_id) {
@@ -58,6 +58,10 @@ for ($i=0; $row=sql_fetch_array($result); $i++) {
         $comment_link = "";
         $row2 = sql_fetch(" select * from {$tmp_write_table} where wr_id = '{$row['wr_id']}' ");
         $list[$i] = $row2;
+        if (strpos((string)$row2['wr_option'], 'secret') !== false) {
+            $list[$i]['wr_content'] = $list[$i]['wr_link1'] = $list[$i]['wr_link2'] = '';
+            $list[$i]['wr_file'] = 0;
+        }
 
         $name = get_sideview($row2['mb_id'], get_text(cut_str($row2['wr_name'], $config['cf_cut_name'])), $row2['wr_email'], $row2['wr_homepage']);
         // 당일인 경우 시간으로 표시함

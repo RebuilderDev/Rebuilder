@@ -79,11 +79,11 @@ function rb_hn_ready($shop = null) {
 }
 function rb_hn_boards() {
     global $g5;
-    return (array)rb_hn_cached('boards', 'boards', function() use ($g5) {
+    return (array)rb_hn_cached('boards-v2', 'boards', function() use ($g5) {
         $table = rb_hn_table($g5['board_table']);
         $groups = rb_hn_table($g5['group_table']);
         if (!$table || !$groups) return array();
-        $result = sql_query("SELECT b.bo_table, b.bo_list_level, b.bo_read_level, b.bo_admin, b.gr_id, g.gr_use_access, g.gr_admin FROM {$table} b LEFT JOIN {$groups} g ON g.gr_id=b.gr_id", false);
+        $result = sql_query("SELECT b.bo_table, b.bo_list_level, b.bo_read_level, b.bo_use_cert, b.bo_admin, b.gr_id, g.gr_use_access, g.gr_admin FROM {$table} b LEFT JOIN {$groups} g ON g.gr_id=b.gr_id", false);
         $rows = array();
         if ($result) while ($row = sql_fetch_array($result)) $rows[$row['bo_table']] = $row;
         return $rows;
@@ -92,11 +92,11 @@ function rb_hn_boards() {
 // 2.2.7.8: 실제 그룹과 소속 게시판을 공유 캐시에 보관한다. 빈 그룹도 이름 중복 검사에 포함한다.
 function rb_hn_groups() {
     global $g5;
-    return (array)rb_hn_cached('groups-v1', 'boards', function() use ($g5) {
+    return (array)rb_hn_cached('groups-v2', 'boards', function() use ($g5) {
         $groups = rb_hn_table($g5['group_table']);
         $boards = rb_hn_table($g5['board_table']);
         if (!$groups || !$boards) return array();
-        $result = sql_query("SELECT g.gr_id, g.gr_subject, g.gr_use_access, g.gr_admin, b.bo_table, b.bo_list_level, b.bo_read_level, b.bo_admin FROM {$groups} g LEFT JOIN {$boards} b ON b.gr_id=g.gr_id", false);
+        $result = sql_query("SELECT g.gr_id, g.gr_subject, g.gr_use_access, g.gr_admin, b.bo_table, b.bo_list_level, b.bo_read_level, b.bo_use_cert, b.bo_admin FROM {$groups} g LEFT JOIN {$boards} b ON b.gr_id=g.gr_id", false);
         $rows = array();
         if ($result) while ($row = sql_fetch_array($result)) {
             $id = $row['gr_id'];
@@ -252,7 +252,11 @@ function rb_hn_shop_resolve($path, $query, $root) {
     }
     return array('kind'=>$kind,'id'=>(string)$id,'category'=>'','filters'=>$filters);
 }
-function rb_hn_shop_latest($target, $cutoff, $end) {
+function rb_hn_shop_latest($target, $cutoff, $end, $visibility = null) {
+    if ($visibility === null) {
+        $visibility = function_exists('rb_shop_visibility_sql') ? rb_shop_visibility_sql('i')
+            : (function_exists('shop_item_visibility_sql') ? shop_item_visibility_sql('i') : '1=1');
+    }
     global $g5;
     if (empty($g5['g5_shop_item_table']) || empty($g5['g5_shop_category_table'])) return null;
     $name = $g5['g5_shop_item_table']; $table = rb_hn_table($name); $categories = rb_hn_table($g5['g5_shop_category_table']);
@@ -263,8 +267,8 @@ function rb_hn_shop_latest($target, $cutoff, $end) {
         if (!rb_hn_indexed($name, $index)) return null;
         $column = $seo ? 'it_seo_title' : 'it_id';
         // SEO 주소의 실제 상품과 동일하게 ID 역순 1건을 선택한다.
-        $row = sql_fetch("SELECT i.it_time AS dt, i.it_use, c.ca_use FROM {$table} i FORCE INDEX ({$index}) JOIN {$categories} c ON c.ca_id=i.ca_id WHERE i.{$column}='{$id}' ORDER BY i.it_id DESC LIMIT 1", false);
-        return !empty($row['it_use']) && !empty($row['ca_use']) && isset($row['dt']) ? $row['dt'] : null;
+        $row = sql_fetch("SELECT i.it_time AS dt, i.it_use, c.ca_use, ({$visibility}) AS visible FROM {$table} i FORCE INDEX ({$index}) JOIN {$categories} c ON c.ca_id=i.ca_id WHERE i.{$column}='{$id}' ORDER BY i.it_id DESC LIMIT 1", false);
+        return !empty($row['it_use']) && !empty($row['ca_use']) && !empty($row['visible']) && isset($row['dt']) ? $row['dt'] : null;
     }
     if (!rb_hn_indexed($name, 'rb_header_new_item')) return null;
     $where = '';
@@ -279,16 +283,23 @@ function rb_hn_shop_latest($target, $cutoff, $end) {
         if ($filters['qcaid'] !== '') $where .= " AND i.ca_id LIKE '".sql_real_escape_string($filters['qcaid'])."%'";
         if ($filters['qfrom'] !== '' && $filters['qto'] !== '') $where .= ' AND i.it_price BETWEEN '.(float)$filters['qfrom'].' AND '.(float)$filters['qto'];
     }
-    $row = sql_fetch("SELECT i.it_time AS dt FROM {$table} i FORCE INDEX (rb_header_new_item) JOIN {$categories} c ON c.ca_id=i.ca_id AND c.ca_use=1 WHERE i.it_use=1 AND i.it_time>='{$cutoff}' AND i.it_time<='{$end}'{$where} ORDER BY i.it_time DESC LIMIT 1", false);
+    $row = sql_fetch("SELECT i.it_time AS dt FROM {$table} i FORCE INDEX (rb_header_new_item) JOIN {$categories} c ON c.ca_id=i.ca_id AND c.ca_use=1 WHERE i.it_use=1 AND ({$visibility}) AND i.it_time>='{$cutoff}' AND i.it_time<='{$end}'{$where} ORDER BY i.it_time DESC LIMIT 1", false);
     return isset($row['dt']) ? $row['dt'] : null;
 }
 function rb_hn_board_allowed($board) {
-    global $member, $is_admin, $g5;
-    $id = isset($member['mb_id']) ? $member['mb_id'] : '';
-    if ($is_admin === 'super' || ($id !== '' && ($id === $board['bo_admin'] || $id === $board['gr_admin']))) return true;
+    global $member, $config, $g5;
+    $id = (string)($member['mb_id'] ?? '');
+    $manage_group = $id !== '' && ($id === (string)($config['cf_admin'] ?? '') || $id === (string)$board['gr_admin']);
+    $manage_board = $id !== '' && $id === (string)$board['bo_admin'];
     $level = isset($member['mb_level']) ? (int)$member['mb_level'] : 1;
     if ($level < (int)$board['bo_list_level'] || $level < (int)$board['bo_read_level']) return false;
-    if (empty($board['gr_use_access'])) return true;
+    $cert = $board['bo_use_cert'] ?? '';
+    if ($cert && !empty($config['cf_cert_use']) && !$manage_group && !$manage_board) {
+        if ($id === '' || (!empty($member['mb_certify']) && strlen((string)($member['mb_dupinfo'] ?? '')) === 64)) return false;
+        if ($cert === 'cert' && empty($member['mb_certify'])) return false;
+        if ($cert === 'adult' && empty($member['mb_adult'])) return false;
+    }
+    if (empty($board['gr_use_access']) || $manage_group) return true;
     if ($id === '') return false;
     static $groups = null;
     if ($groups === null) {
@@ -348,9 +359,10 @@ function rb_header_new_icon($link) {
         $latest = rb_hn_group_latest($target['id'], $options['days'], $cutoff, $end);
         return $latest && $latest >= $cutoff && $latest <= $end ? rb_hn_badge($options) : '';
     }
-    $key = 'latest-v2|'.json_encode(array($target['kind'],$target['id'],$target['category'],$options['days'],$target['kind']==='qa' ? 'admin' : '',isset($target['filters']) ? $target['filters'] : array()));
+    $visibility = ($target['kind'] === 'board' || $target['kind'] === 'qa') ? '' : (function_exists('rb_shop_visibility_sql') ? rb_shop_visibility_sql('i') : (function_exists('shop_item_visibility_sql') ? shop_item_visibility_sql('i') : '1=1'));
+    $key = 'latest-v3|'.hash('sha256', $visibility).'|'.json_encode(array($target['kind'],$target['id'],$target['category'],$options['days'],$target['kind']==='qa' ? 'admin' : '',isset($target['filters']) ? $target['filters'] : array()));
     $tag = $target['kind'] === 'board' ? 'board|'.$target['id'] : ($target['kind'] === 'qa' ? 'qa' : 'shop');
-    $latest = rb_hn_cached($key, $tag, function() use ($target, $g5, $cutoff, $now) {
+    $latest = rb_hn_cached($key, $tag, function() use ($target, $g5, $cutoff, $now, $visibility) {
         $category = sql_real_escape_string($target['category']); $end = date('Y-m-d H:i:s', $now);
         if ($target['kind'] === 'board') {
             $name = $g5['board_new_table'];
@@ -365,7 +377,7 @@ function rb_header_new_icon($link) {
             }
             $row = sql_fetch("SELECT n.bn_datetime AS dt FROM {$table} n FORCE INDEX (rb_header_new_board){$join} WHERE n.bo_table='{$id}' AND n.wr_id=n.wr_parent AND n.bn_datetime>='{$cutoff}' AND n.bn_datetime<='{$end}'{$where} ORDER BY n.bn_datetime DESC LIMIT 1", false);
         } elseif ($target['kind'] !== 'qa') {
-            return rb_hn_shop_latest($target, $cutoff, $end);
+            return rb_hn_shop_latest($target, $cutoff, $end, $visibility);
         } else {
             $name = $g5['qa_content_table'];
             if (!rb_hn_indexed($name, 'rb_header_new_qa_type')) return null;

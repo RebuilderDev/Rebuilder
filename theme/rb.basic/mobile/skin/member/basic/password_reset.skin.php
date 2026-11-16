@@ -9,6 +9,9 @@ add_stylesheet('<link rel="stylesheet" href="' . $member_skin_url . '/style.css"
 <div id="pw_reset" class="new_win">
     <div class="new_win_con">
         <form name="fpasswordreset" action="<?php echo $action_url; ?>" onsubmit="return fpasswordreset_submit(this);" method="post" autocomplete="off">
+            <?php if (isset($password_reset_token)) { ?>
+            <input type="hidden" name="token" value="<?php echo htmlspecialchars($password_reset_token, ENT_QUOTES, 'UTF-8'); ?>">
+            <?php } ?>
             <fieldset id="info_fs">
                 <p>새로운 비밀번호를 입력해주세요.</p>
                 <label for="mb_id" class="sound_only">아이디</label>
@@ -28,12 +31,11 @@ add_stylesheet('<link rel="stylesheet" href="' . $member_skin_url . '/style.css"
 
 <script>
 function fpasswordreset_submit(f) {
-    if ($("#mb_pw").val() == $("#mb_pw2").val()) {
-        alert("비밀번호 변경되었습니다. 다시 로그인해 주세요.");
-    } else {
+    if (f.mb_password.value !== f.mb_password_re.value) {
         alert("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.");
         return false;
     }
+    return true;
 }
 </script>
 <!-- } 비밀번호 재설정 끝 -->

@@ -9,6 +9,9 @@ if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipi
 <!-- 기존 회원 본인인증 시작 { -->
 <div class="member_cert_refresh">
     <form name="fcertrefreshform" id="member_cert_refresh" action="<?php echo $action_url ?>" onsubmit="return fcertrefreshform_submit(this);" method="POST" autocomplete="off">
+        <?php if (isset($cert_refresh_token)) { ?>
+        <input type="hidden" name="token" value="<?php echo htmlspecialchars($cert_refresh_token, ENT_QUOTES, 'UTF-8'); ?>">
+        <?php } ?>
     <input type="hidden" name="w" value="<?php echo $w ?>">
 	<input type="hidden" name="url" value="<?php echo $urlencode ?>">
 	<input type="hidden" name="cert_type" value="<?php echo $member['mb_certify']; ?>">

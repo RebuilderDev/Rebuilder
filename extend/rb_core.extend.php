@@ -10,7 +10,7 @@ include_once(G5_PATH.'/rb/rb.lib/rb_header_new.lib.php');
 //ini_set('display_startup_errors', 1);
 //error_reporting(E_ALL);
 
-define('RB_VER',  '2.2.7.12'); // 버전
+define('RB_VER',  '2.2.7.13'); // 버전
 define('RB_TABLE_PREFIX', 'rb_'); // 리빌더 접두사
 
 // 헤더 배경색을 실제 표시색으로 합성한 뒤 검정/흰색 중 대비가 높은 색을 선택한다.
@@ -1619,10 +1619,13 @@ function rb_latest($bo_table, $skin_dir='', $rows=10, $subject_len=40, $cache_ti
         }
     }
 
+    $board = get_board_db($bo_table, true);
+    if (!$board || !rb_board_can_read($board)) return '';
+    $use_cache = G5_USE_CACHE && rb_board_can_share_latest($board);
     $caches = false;
 
-    if(G5_USE_CACHE) {
-        $cache_file_name = "latest-{$bo_table}-{$skin_dir}-{$md_sca}-{$md_order}-{$rows}-{$subject_len}-{$is_notice}-".g5_cache_secret_key();
+    if ($use_cache) {
+        $cache_file_name = "latest-{$bo_table}-rb-access-v2-{$skin_dir}-{$md_sca}-{$md_order}-{$rows}-{$subject_len}-{$is_notice}-".g5_cache_secret_key();
         $caches = g5_get_cache($cache_file_name, (int) $time_unit * (int) $cache_time);
         $cache_list = isset($caches['list']) ? $caches['list'] : array();
         g5_latest_cache_data($bo_table, $cache_list);
@@ -1631,11 +1634,6 @@ function rb_latest($bo_table, $skin_dir='', $rows=10, $subject_len=40, $cache_ti
     if( $caches === false ){
 
         $list = array();
-
-        $board = get_board_db($bo_table, true);
-        if( ! $board ){
-            return '';
-        }
 
         $bo_subject = get_text($board['bo_subject']);
         $tmp_write_table = $g5['write_prefix'] . $bo_table;
@@ -1663,6 +1661,7 @@ function rb_latest($bo_table, $skin_dir='', $rows=10, $subject_len=40, $cache_ti
                 $row['wr_email'] = '';
                 if (strstr($row['wr_option'], 'secret')){
                     $row['wr_content'] = $row['wr_link1'] = $row['wr_link2'] = '';
+                    $row['wr_file'] = 0;
                     $row['file'] = array('count'=>0);
                 }
                 $list[$i] = get_list($row, $board, $latest_skin_url, $subject_len);
@@ -1688,6 +1687,7 @@ function rb_latest($bo_table, $skin_dir='', $rows=10, $subject_len=40, $cache_ti
                 $row['wr_email'] = '';
                 if (strstr($row['wr_option'], 'secret')){
                     $row['wr_content'] = $row['wr_link1'] = $row['wr_link2'] = '';
+                    $row['wr_file'] = 0;
                     $row['file'] = array('count'=>0);
                 }
                 $list[$i] = get_list($row, $board, $latest_skin_url, $subject_len);
@@ -1700,7 +1700,7 @@ function rb_latest($bo_table, $skin_dir='', $rows=10, $subject_len=40, $cache_ti
 
         g5_latest_cache_data($bo_table, $list);
 
-        if(G5_USE_CACHE) {
+        if ($use_cache) {
             $caches = array(
                 'list' => $list,
                 'bo_subject' => sql_escape_string($bo_subject),
@@ -1766,7 +1766,7 @@ function rb_latest_tabs($skin_dir = '', $json_list = '', $rows = 10, $subject_le
         }
 
         $board = get_board_db($bo_table, true);
-        if (!$board) continue;
+        if (!$board || !rb_board_can_read($board)) continue;
 
         $bo_subject = get_text($board['bo_subject']);
 
@@ -1808,6 +1808,7 @@ function rb_latest_tabs($skin_dir = '', $json_list = '', $rows = 10, $subject_le
             $row['wr_email'] = '';
             if (strstr($row['wr_option'], 'secret')) {
                 $row['wr_content'] = $row['wr_link1'] = $row['wr_link2'] = '';
+                $row['wr_file'] = 0;
                 $row['file'] = array('count'=>0);
             }
             $list[$i] = get_list($row, $board, $latest_skin_url, $subject_len);

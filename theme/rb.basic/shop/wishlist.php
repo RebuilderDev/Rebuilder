@@ -22,7 +22,8 @@ include_once('./_head.php');
 
         <?php
         $sql  = " select a.wi_id, a.wi_time, b.* from {$g5['g5_shop_wish_table']} a left join {$g5['g5_shop_item_table']} b on ( a.it_id = b.it_id ) ";
-        $sql .= " where a.mb_id = '{$member['mb_id']}' and b.it_id != '' order by a.wi_id desc ";
+        $visibility_sql = function_exists('rb_shop_visibility_sql') ? rb_shop_visibility_sql('b') : (function_exists('shop_item_visibility_sql') ? shop_item_visibility_sql('b') : '1=1');
+        $sql .= " where a.mb_id = '{$member['mb_id']}' and b.it_id != '' and {$visibility_sql} order by a.wi_id desc ";
         $result = sql_query($sql);
         for ($i=0; $row = sql_fetch_array($result); $i++) {
 

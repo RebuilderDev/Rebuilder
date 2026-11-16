@@ -207,3 +207,95 @@ function rb_member_consent_sql($marketing, $thirdparty, $log)
     }
     return $sql;
 }
+
+// Check the target board before reading a feed, a module, or its cache.
+function rb_board_can_read($board)
+{
+    global $g5, $member, $config;
+    if (empty($board['bo_table'])) return false;
+    if (function_exists('g5_board_visible')) return g5_board_visible($board, true);
+
+    $level = (int)($member['mb_level'] ?? 1);
+    if ($level < (int)($board['bo_list_level'] ?? 1) || $level < (int)($board['bo_read_level'] ?? 1)) return false;
+    $group = get_group($board['gr_id'], true);
+    $id = (string)($member['mb_id'] ?? '');
+    $super = $id !== '' && $id === (string)($config['cf_admin'] ?? '');
+    $group_admin = $id !== '' && $id === (string)($group['gr_admin'] ?? '');
+    if (!empty($group['gr_use_access']) && !$super && !$group_admin) {
+        if ($id === '') return false;
+        static $memberships = array();
+        $key = $id.'|'.$board['gr_id'];
+        if (!isset($memberships[$key])) {
+            $gr_id = sql_real_escape_string($board['gr_id']);
+            $mb_id = sql_real_escape_string($id);
+            $row = sql_fetch("select gr_id from {$g5['group_member_table']} where gr_id = '$gr_id' and mb_id = '$mb_id'");
+            $memberships[$key] = !empty($row['gr_id']);
+        }
+        if (!$memberships[$key]) return false;
+    }
+
+    $board_admin = $id !== '' && $id === (string)($board['bo_admin'] ?? '');
+    $cert = $board['bo_use_cert'] ?? '';
+    if (!$cert || empty($config['cf_cert_use']) || $super || $group_admin || $board_admin) return true;
+    if ($id === '' || (!empty($member['mb_certify']) && strlen((string)($member['mb_dupinfo'] ?? '')) === 64)) return false;
+    if ($cert === 'cert') return !empty($member['mb_certify']);
+    if ($cert === 'adult') return !empty($member['mb_adult']);
+    return true;
+}
+
+function rb_board_can_share_latest($board)
+{
+    global $config;
+    if (function_exists('g5_board_public')) return g5_board_public($board);
+    $group = get_group($board['gr_id'], true);
+    return empty($group['gr_use_access']) && (int)$board['bo_list_level'] <= 1
+        && (int)$board['bo_read_level'] <= 1
+        && (empty($board['bo_use_cert']) || empty($config['cf_cert_use']));
+}
+
+function rb_visible_board_ids()
+{
+    global $g5;
+    if (function_exists('g5_visible_board_ids')) return g5_visible_board_ids(true);
+
+    $ids = array();
+    $result = sql_query("select * from {$g5['board_table']}");
+    while ($board = sql_fetch_array($result)) {
+        if (rb_board_can_read($board)) $ids[] = "'".sql_real_escape_string($board['bo_table'])."'";
+    }
+    return $ids ? implode(',', $ids) : "''";
+}
+
+// Use the same category rules on core versions that lack the visibility library.
+function rb_shop_visibility_sql($alias = '')
+{
+    if (function_exists('shop_item_visibility_sql')) return shop_item_visibility_sql($alias);
+
+    global $g5, $member, $config;
+    if (!empty($member['mb_id']) && $member['mb_id'] === ($config['cf_admin'] ?? '')) return '1=1';
+    if ($alias === '') $alias = $g5['g5_shop_item_table'];
+    if (!preg_match('/^[a-zA-Z0-9_]+$/D', $alias)) return '1=0';
+    $cert = !empty($member['mb_id']) && !empty($member['mb_certify']);
+    $adult = !empty($member['mb_id']) && !empty($member['mb_adult']);
+    $refresh = $cert && strlen((string)($member['mb_dupinfo'] ?? '')) === 64;
+    $deny = array();
+    if (!$cert || $refresh) $deny[] = 'rb_visible_category.ca_cert_use <> 0';
+    if (!$adult || $refresh) $deny[] = 'rb_visible_category.ca_adult_use <> 0';
+    if (!$deny) return '1=1';
+    return "not exists (select 1 from {$g5['g5_shop_category_table']} rb_visible_category"
+        ." where rb_visible_category.ca_id in ({$alias}.ca_id, {$alias}.ca_id2, {$alias}.ca_id3)"
+        ." and (".implode(' or ', $deny)."))";
+}
+
+function rb_shop_item_visible($it_id)
+{
+    if (function_exists('shop_item_visible')) return shop_item_visible($it_id);
+    $visibility = rb_shop_visibility_sql();
+    if ($visibility === '1=1') return true;
+
+    global $g5;
+    $id = sql_real_escape_string((string)$it_id);
+    $row = sql_fetch("select it_id from {$g5['g5_shop_item_table']} where it_id = '$id' and {$visibility}");
+    return !empty($row['it_id']);
+}
+

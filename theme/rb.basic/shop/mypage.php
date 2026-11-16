@@ -412,11 +412,12 @@ if (!function_exists('rb_mypage_get_type_order_title')) {
                 <div class="swiper-container swiper-container-list-item-mywish">
                 <div class="swiper-wrapper swiper-wrapper-list-item-mywish">
                 <?php
+                $visibility_sql = function_exists('rb_shop_visibility_sql') ? rb_shop_visibility_sql('b') : (function_exists('shop_item_visibility_sql') ? shop_item_visibility_sql('b') : '1=1');
                 $sql = " select *
                            from {$g5['g5_shop_wish_table']} a,
                                 {$g5['g5_shop_item_table']} b
                           where a.mb_id = '{$member['mb_id']}'
-                            and a.it_id  = b.it_id
+                            and a.it_id  = b.it_id and {$visibility_sql}
                           order by a.wi_id desc
                           limit 0, 8 ";
                 $result = sql_query($sql);

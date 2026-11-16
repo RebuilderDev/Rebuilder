@@ -8,6 +8,9 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
 <div id="scrap_do" class="new_win">
     <h1 id="win_title">스크랩하기</h1>
     <form name="f_scrap_popin" action="./scrap_popin_update.php" method="post">
+        <?php if (isset($scrap_token)) { ?>
+        <input type="hidden" name="token" value="<?php echo htmlspecialchars($scrap_token, ENT_QUOTES, 'UTF-8'); ?>">
+        <?php } ?>
     <input type="hidden" name="bo_table" value="<?php echo $bo_table ?>">
     <input type="hidden" name="wr_id" value="<?php echo $wr_id ?>">
 

@@ -8,7 +8,8 @@ $category_groups = get_shop_category_menu_groups($ca_id);
 foreach ($category_groups as $category_group) {
     foreach ($category_group['categories'] as $row) {
 
-        $row2 = sql_fetch(" select count(*) as cnt from {$g5['g5_shop_item_table']} where (ca_id like '{$row['ca_id']}%' or ca_id2 like '{$row['ca_id']}%' or ca_id3 like '{$row['ca_id']}%') and it_use = '1'  ");
+        $visibility_sql = function_exists('rb_shop_visibility_sql') ? rb_shop_visibility_sql() : (function_exists('shop_item_visibility_sql') ? shop_item_visibility_sql() : '1=1');
+        $row2 = sql_fetch(" select count(*) as cnt from {$g5['g5_shop_item_table']} where (ca_id like '{$row['ca_id']}%' or ca_id2 like '{$row['ca_id']}%' or ca_id3 like '{$row['ca_id']}%') and it_use = '1' and {$visibility_sql} ");
 
         $current_attr = '';
         if ($row['ca_id'] === $ca_id) {

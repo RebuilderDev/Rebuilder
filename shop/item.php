@@ -15,6 +15,8 @@ if (! (isset($it['it_id']) && $it['it_id']))
     alert('자료가 없습니다.');
 
 $it_id = $_REQUEST['it_id'] = $it['it_id'];
+$item_visibility_sql = rb_shop_visibility_sql();
+$item_relation_visibility_sql = rb_shop_visibility_sql('b');
 
 if( isset($row['it_seo_title']) && ! $row['it_seo_title'] ){
     shop_seo_title_update($row['it_id']);
@@ -56,6 +58,8 @@ if(!$is_admin) {
     $msg = shop_member_cert_check($it_id, 'item');
     if($msg)
         alert($msg, G5_SHOP_URL);
+    if (!rb_shop_item_visible($it_id))
+        alert('본인확인 또는 성인인증 후 이용해 주십시오.', G5_SHOP_URL);
 }
 
 // 오늘 본 상품 저장 시작
@@ -165,7 +169,7 @@ else
 
 
 // 이전 상품보기
-$sql = " select it_id, it_name from {$g5['g5_shop_item_table']} where it_id > '$it_id' and SUBSTRING(ca_id,1,4) = '".substr($it['ca_id'],0,4)."' and it_use = '1' order by it_id asc limit 1 ";
+$sql = " select it_id, it_name from {$g5['g5_shop_item_table']} where it_id > '$it_id' and SUBSTRING(ca_id,1,4) = '".substr($it['ca_id'],0,4)."' and it_use = '1' and {$item_visibility_sql} order by it_id asc limit 1 ";
 $row = sql_fetch($sql);
 if (isset($row['it_id']) && $row['it_id']) {
     $prev_title = '이전상품<span class="sound_only"> '.$row['it_name'].'</span>';
@@ -178,7 +182,7 @@ if (isset($row['it_id']) && $row['it_id']) {
 }
 
 // 다음 상품보기
-$sql = " select it_id, it_name from {$g5['g5_shop_item_table']} where it_id < '$it_id' and SUBSTRING(ca_id,1,4) = '".substr($it['ca_id'],0,4)."' and it_use = '1' order by it_id desc limit 1 ";
+$sql = " select it_id, it_name from {$g5['g5_shop_item_table']} where it_id < '$it_id' and SUBSTRING(ca_id,1,4) = '".substr($it['ca_id'],0,4)."' and it_use = '1' and {$item_visibility_sql} order by it_id desc limit 1 ";
 $row = sql_fetch($sql);
 if (isset($row['it_id']) && $row['it_id']) {
     $next_title = '다음 상품<span class="sound_only"> '.$row['it_name'].'</span>';
@@ -205,7 +209,7 @@ $item_qa_count = $row['cnt'];
 
 // 관련상품의 개수를 얻음
 if($default['de_rel_list_use']) {
-    $sql = " select count(*) as cnt from {$g5['g5_shop_item_relation_table']} a left join {$g5['g5_shop_item_table']} b on (a.it_id2=b.it_id) where a.it_id = '{$it['it_id']}' and  b.it_use='1' ";
+    $sql = " select count(*) as cnt from {$g5['g5_shop_item_relation_table']} a left join {$g5['g5_shop_item_table']} b on (a.it_id2=b.it_id) where a.it_id = '{$it['it_id']}' and  b.it_use='1' and {$item_relation_visibility_sql} ";
     $row = sql_fetch($sql);
     $item_relation_count = $row['cnt'];
 }

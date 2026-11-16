@@ -3,7 +3,6 @@
     <div class="rb-ttl">접속자 <span class="rb-small">현재접속 <strong><?php echo rb_nf($connect_now) ?></strong></span></div>
     <div class="rb-m-btn-wrap">
       <a class="btn rb-badge rb-set-btn" href="<?php echo G5_ADMIN_URL ?>/visit_list.php">집계</a>
-      <a class="btn rb-badge" href="<?php echo G5_BBS_URL ?>/current_connect.php" target="_blank">현재</a>
     </div>
     <button class="rb-close" type="button" aria-label="삭제">×</button>
   </div>

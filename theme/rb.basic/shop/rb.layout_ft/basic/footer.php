@@ -32,7 +32,7 @@ $rb_footer_console_link = rb_console_footer_link_enabled($rb_footer_console_conf
                     <a href="<?php echo G5_BBS_URL ?>/qalist.php">1:1 문의</a>
                     <a href="<?php echo G5_BBS_URL ?>/faq.php">FAQ</a>
                     <a href="<?php echo G5_URL ?>/rb/new.php">새글</a>
-                    <a href="<?php echo G5_BBS_URL ?>/current_connect.php">접속자 <?php echo connect("theme/rb.connect"); ?></a>
+                    <a>접속자 <?php echo connect("theme/rb.connect"); ?></a>
                 </ul>
                 <div class="cb"></div>
             </div>
