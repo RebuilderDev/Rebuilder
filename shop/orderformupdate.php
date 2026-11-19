@@ -659,7 +659,8 @@ $od_kcp_site_cd = ($od_pg === 'kcp' && isset($g_conf_site_cd))
 $od_lg_mid = ($od_pg === 'lg' && isset($LGD_MID))
     ? sql_escape_string($LGD_MID) : '';
 
-$tno = isset($tno) ? $tno : '';
+// 무통장 주문에는 PG 거래번호가 없다. 해당 주문의 결제 결과만 취소에 사용한다.
+$tno = (string)$od_tno;
 $od_receipt_time = isset($od_receipt_time) ? $od_receipt_time : '';
 $od_app_no = isset($od_app_no) ? $od_app_no : '';
 
@@ -857,6 +858,32 @@ $sql = "update {$g5['g5_shop_cart_table']}
            and ct_select = '1' ";
 $result = sql_query($sql, false);
 
+// PC와 모바일 주문이 같은 회원의 포인트를 동시에 차감하지 않도록 같은 잠금을 사용한다.
+if ($result && $is_member && $od_receipt_point) {
+    $point_lock_key = 'g5pt_order_'.md5($member['mb_id']);
+    $lock_row = sql_fetch(" select get_lock('$point_lock_key', 5) as lk ");
+    $point_charged = false;
+    if (!empty($lock_row['lk'])) {
+        try {
+            if ((int)get_point_sum($member['mb_id']) >= $od_receipt_point) {
+                $point_charged = insert_point($member['mb_id'], -$od_receipt_point, "주문번호 $od_id 결제") > 0;
+            }
+        } finally {
+            sql_query(" do release_lock('$point_lock_key') ");
+        }
+    }
+
+    if (!$point_charged) {
+        $cancel_msg = '주문 포인트 차감 실패';
+        if ($tno !== '') {
+            include G5_SHOP_PATH.'/cancel_pg.inc.php';
+        }
+        sql_query(" update {$g5['g5_shop_cart_table']} set od_id = '$tmp_cart_id', ct_status = '쇼핑' where od_id = '$od_id' ");
+        sql_query(" delete from {$g5['g5_shop_order_table']} where od_id = '$od_id' ");
+        if (function_exists('add_order_post_log')) add_order_post_log($cancel_msg);
+        alert('포인트를 차감할 수 없어 주문이 취소되었습니다. 잔액을 확인한 후 다시 주문해 주세요.', G5_SHOP_URL.'/orderform.php');
+    }
+}
 
 /* 리빌더 { */
 $can_memo = function_exists('memo_auto_send');
@@ -906,10 +933,6 @@ if(!$result) {
 
 if (!empty($_POST['inicis_pro']) && function_exists('inicis_pro_audit_order_saved'))
     inicis_pro_audit_order_saved($od_id, $od_tno, 'order', 'web');
-
-// 회원이면서 포인트를 사용했다면 테이블에 사용을 추가
-if ($is_member && $od_receipt_point)
-    insert_point($member['mb_id'], (-1) * $od_receipt_point, "주문번호 $od_id 결제");
 
 $od_memo = nl2br(htmlspecialchars2(stripslashes($od_memo))) . "&nbsp;";
 

@@ -5,7 +5,7 @@ include_once(G5_EDITOR_LIB);
 
 auth_check_menu($auth, $sub_menu, "w");
 
-$ca_id = isset($_GET['ca_id']) ? preg_replace('/[^0-9a-z]/i', '', $_GET['ca_id']) : '';
+$ca_id = isset($_GET['ca_id']) && is_string($_GET['ca_id']) ? preg_replace('/[^0-9a-z]/i', '', $_GET['ca_id']) : '';
 $ca = array(
 'ca_skin_dir'=>'',
 'ca_mobile_skin_dir'=>'',
@@ -39,6 +39,9 @@ if ($w == "")
 {
     if ($is_admin != 'super' && !$ca_id)
         alert("최고관리자만 1단계 분류를 추가할 수 있습니다.");
+
+    if ($ca_id && !rb_shop_admin_category_owner_check($ca_id))
+        alert("분류를 관리할 권한이 없습니다.");
 
     $len = strlen($ca_id);
     if ($len == 10)
@@ -95,6 +98,9 @@ else if ($w == "u")
     $ca = sql_fetch($sql);
     if (! (isset($ca['ca_id']) && $ca['ca_id']))
         alert("자료가 없습니다.");
+
+    if (!rb_shop_admin_category_owner_check($ca_id))
+        alert("분류를 관리할 권한이 없습니다.");
 
     $html_title = $ca['ca_name'] . " 수정";
     $ca['ca_name'] = get_text($ca['ca_name']);

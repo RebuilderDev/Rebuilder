@@ -11,10 +11,17 @@ if( function_exists('filter_input_include_path') ){
     $ca_include_head = filter_input_include_path($ca_include_head);
     $ca_include_tail = filter_input_include_path($ca_include_tail);
 }
-$ca_id = isset($_REQUEST['ca_id']) ? preg_replace('/[^0-9a-z]/i', '', $_REQUEST['ca_id']) : '';
+$ca_id = isset($_REQUEST['ca_id']) && is_string($_REQUEST['ca_id']) ? preg_replace('/[^0-9a-z]/i', '', $_REQUEST['ca_id']) : '';
 
 if( ! $ca_id ){
     alert('', G5_SHOP_URL);
+}
+
+if ($is_admin != 'super') {
+    if ($w == 'u' && !rb_shop_admin_category_owner_check($ca_id))
+        alert('분류를 관리할 권한이 없습니다.');
+    if ($w == '' && (strlen($ca_id) <= 2 || !rb_shop_admin_category_owner_check(substr($ca_id, 0, -2))))
+        alert('분류를 관리할 권한이 없습니다.');
 }
 
 if ($file = $ca_include_head) {
@@ -79,7 +86,9 @@ for($i=0;$i<=10;$i++){
 }
 
 foreach( $check_str_keys as $key=>$val ){
-    if( $val === 'int' ){
+    if ($key === 'ca_mb_id' && $is_admin != 'super') {
+        $value = sql_real_escape_string($member['mb_id']);
+    } else if( $val === 'int' ){
         $value = isset($_POST[$key]) ? (int) $_POST[$key] : 0;
     } else {
         $value = isset($_POST[$key]) ? addslashes(clean_xss_tags(stripslashes($_POST[$key]), 1, 1)) : '';
@@ -213,6 +222,8 @@ else if ($w == "u")
                 set ca_name = '$ca_name',
                     $sql_common
               where ca_id = '$ca_id' ";
+    if ($is_admin != 'super')
+        $sql .= " and ca_mb_id = '".sql_real_escape_string($member['mb_id'])."' ";
     sql_query($sql);
 
     // 하위분류를 똑같은 설정으로 반영
@@ -222,7 +233,7 @@ else if ($w == "u")
                     set $sql_common
                   where SUBSTRING(ca_id,1,$len) = '$ca_id' ";
         if ($is_admin != 'super')
-            $sql .= " and ca_mb_id = '{$member['mb_id']}' ";
+            $sql .= " and ca_mb_id = '".sql_real_escape_string($member['mb_id'])."' ";
         sql_query($sql);
     }
     run_event('shop_admin_category_updated', $ca_id);

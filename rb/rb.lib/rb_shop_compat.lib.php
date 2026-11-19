@@ -143,6 +143,23 @@ function rb_shop_toss_providers()
         : array('TOSSPAY', 'NAVERPAY', 'SAMSUNGPAY', 'APPLEPAY', 'LPAY', 'KAKAOPAY', 'PINPAY', 'PAYCO', 'SSG');
 }
 
+function rb_shop_admin_category_owner_check($ca_id)
+{
+    if (function_exists('shop_admin_category_owner_check')) {
+        return shop_admin_category_owner_check($ca_id);
+    }
+
+    global $g5, $is_admin, $member;
+    if ($is_admin === 'super') return true;
+    if (!is_string($ca_id) || !preg_match('/\A[0-9a-z]+\z/i', $ca_id) ||
+        !isset($member['mb_id']) || $member['mb_id'] === '') {
+        return false;
+    }
+
+    $row = sql_fetch(" select ca_mb_id from {$g5['g5_shop_category_table']} where ca_id = '".sql_real_escape_string($ca_id)."' ");
+    return isset($row['ca_mb_id']) && $row['ca_mb_id'] === $member['mb_id'];
+}
+
 function rb_shop_category_path($ca_id, $separator = ' &gt; ')
 {
     if (function_exists('get_shop_category_path')) return get_shop_category_path($ca_id, $separator);
