@@ -32,11 +32,10 @@ function rbcfg_dirs($directory, $shop = false) {
     }
     return $options;
 }
-function rbcfg_fields($shop_enabled) {
+function rbcfg_fields($shop_enabled, $shop_header_ready) {
     $widths = array(''=>'기본값 (1400px)', '1400'=>'1400px', '1280'=>'1280px', '1024'=>'1024px', '960'=>'960px', '750'=>'750px');
     $groups = array('common'=>array(
         'co_color'=>rbcfg_field('강조컬러 설정 (공용)', 'color', '#aa20ff', array('help'=>'버튼, 뱃지, 오버 등 강조되는 컬러를 설정할 수 있습니다.')),
-        'co_header'=>rbcfg_field('헤더컬러 설정 (공용)', 'color', '#ffffff', array('help'=>'헤더 배경색의 실제 밝기를 자동으로 계산합니다.<br>밝은 배경에는 강조컬러와 기본 로고, 어두운 배경에는 흰색 텍스트와 흰색 로고가 적용됩니다.<br>투명도가 포함된 색상도 화면에 표시되는 색상을 기준으로 판별합니다.')),
         'co_main_bg'=>rbcfg_field('메인 배경컬러 설정', 'color', '#ffffff', array('help'=>'메인페이지 백그라운드 컬러를 설정할 수 있습니다.')),
         'co_sub_bg'=>rbcfg_field('서브 배경컬러 설정', 'color', '#ffffff', array('help'=>'서브페이지 전체 백그라운드 컬러를 설정할 수 있습니다.')),
         'co_gap_pc'=>rbcfg_field('모듈간격 설정 (공용)', 'number', '0', array('min'=>0, 'max'=>30, 'step'=>5, 'unit'=>'px', 'help'=>'각 모듈들의 간격을 일괄 설정할 수 있습니다.<br>설정된 간격은 모바일 및 모바일 헤더 영역에 동일하게 적용 됩니다.<br>삽입된 모듈간의 간격을 일괄 조정할 수 있어요. 설정된 간격은 모바일 및 모바일 헤더 영역에 동일하게 적용 되요.')),
@@ -49,6 +48,10 @@ function rbcfg_fields($shop_enabled) {
         if ($scope === 'market' && !$shop_enabled) continue;
         $suffix = $scope === 'market' ? '_shop' : '';
         $fields = array();
+        if (!$suffix || $shop_header_ready) {
+            $header_label = !$suffix && $shop_enabled && !$shop_header_ready ? '헤더 배경색 (공용)' : '헤더 배경색';
+            $fields['co_header'.$suffix] = rbcfg_field($header_label, 'color', '#ffffff', array('help'=>'헤더 배경색의 실제 밝기를 자동으로 계산합니다.<br>밝은 배경에는 강조컬러와 기본 로고, 어두운 배경에는 흰색 텍스트와 흰색 로고가 적용됩니다.<br>투명도가 포함된 색상도 화면에 표시되는 색상을 기준으로 판별합니다.'));
+        }
         foreach (array('co_layout'=>'메인 레이아웃', 'co_layout_hd'=>'헤더 레이아웃', 'co_layout_ft'=>'푸터 레이아웃') as $key=>$label) {
             $fields[$key.$suffix] = rbcfg_field($label, 'select', $key==='co_layout_hd' && $suffix ? 'basic_row' : 'basic', array('options'=>rbcfg_dirs(str_replace('co_', 'rb.', $key), (bool)$suffix), 'help'=>$key==='co_layout' ? '메인, 헤더, 푸터 레이아웃을 설정 합니다.<br>레아아웃 세트는 자유롭게 추가할 수 있습니다.' : ''));
         }
@@ -108,7 +111,10 @@ function rbcfg_save_theme($theme, $values, $stored) {
     $values['co_ip'] = isset($_SERVER['REMOTE_ADDR']) ? (string)$_SERVER['REMOTE_ADDR'] : '';
     rbcfg_check_columns('rb_config', $values);
     if (!empty($stored['co_id'])) {
-        rbcfg_q('UPDATE rb_config SET '.rbcfg_set($values)." WHERE co_theme='".sql_real_escape_string($theme)."'");
+        $header_snapshot = isset($values['co_header']) && !isset($values['co_header_shop'])
+            && rb_core_table_has_column('rb_config', 'co_header_shop')
+            ? 'co_header_shop = COALESCE(co_header_shop, co_header), ' : '';
+        rbcfg_q('UPDATE rb_config SET '.$header_snapshot.rbcfg_set($values)." WHERE co_theme='".sql_real_escape_string($theme)."'");
     } else {
         // Required legacy columns have no DB default on some installations.
         $values += array('co_theme'=>$theme, 'co_sub_width'=>'1400', 'co_main_width'=>'1400', 'co_tb_width'=>'1400', 'co_footer'=>'0');
@@ -179,9 +185,13 @@ function rbcfg_render_rows($fields, $values) {
 $rbcfg_shop = defined('G5_USE_SHOP') && G5_USE_SHOP;
 $rbcfg_theme = isset($config['cf_theme']) ? (string)$config['cf_theme'] : '';
 if ($rbcfg_theme === '' || !defined('G5_THEME_PATH')) alert('빌더에서 사용할 테마를 먼저 적용해 주세요.', G5_ADMIN_URL.'/theme.php');
-$rbcfg_groups = rbcfg_fields($rbcfg_shop);
+$rbcfg_shop_header_ready = rb_core_table_has_column('rb_config', 'co_header_shop');
+$rbcfg_groups = rbcfg_fields($rbcfg_shop, $rbcfg_shop_header_ready);
 $rbcfg_stored = sql_fetch("SELECT * FROM rb_config WHERE co_theme='".sql_real_escape_string($rbcfg_theme)."' LIMIT 1", false);
 if (!is_array($rbcfg_stored)) $rbcfg_stored = array();
+if ($rbcfg_shop_header_ready && array_key_exists('co_header', $rbcfg_stored) && !isset($rbcfg_stored['co_header_shop'])) {
+    $rbcfg_stored['co_header_shop'] = $rbcfg_stored['co_header'];
+}
 $rbcfg_aos_table = (defined('RB_TABLE_PREFIX') ? RB_TABLE_PREFIX : 'rb_').'aos';
 $rbcfg_aos_ready = (bool)sql_query('SELECT ra_type FROM `'.$rbcfg_aos_table.'` LIMIT 0', false);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -235,6 +245,7 @@ $pg_anchor .= '<li><a href="#config_tools">사이트 관리</a></li></ul>';
                 $aos_fields = rbcfg_aos_fields((bool)$suffix); rbcfg_render_rows($aos_fields, rbcfg_values($aos_fields, $aos_current));
             } ?>
         </tbody></table></div>
+        <?php if ($scope === 'market' && !$rbcfg_shop_header_ready) { ?><div class="local_desc01 local_desc"><p>마켓 헤더 배경색은 빌더설정의 DB업데이트 후 따로 설정할 수 있습니다.</p></div><?php } ?>
         <?php if ($scope !== 'common' && !$rbcfg_aos_ready) { ?><div class="local_desc01 local_desc"><p>AOS 설정은 빌더설정의 DB업데이트 후 사용할 수 있습니다.</p></div><?php } ?>
 </section>
 <?php } ?>

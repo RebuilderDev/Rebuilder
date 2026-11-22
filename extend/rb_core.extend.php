@@ -18,6 +18,9 @@ if (!function_exists('rb_header_color_info')) {
     function rb_header_color_info($color)
     {
         $hex = strtolower(ltrim(trim((string) $color), '#'));
+        if ($hex === 'transparent') {
+            $hex = '00000000';
+        }
 
         if (strlen($hex) === 3 || strlen($hex) === 4) {
             $expanded = '';
@@ -61,6 +64,25 @@ if (!function_exists('rb_header_color_info')) {
             'text' => $text,
         );
     }
+}
+
+function rb_header_background(array $settings, $is_shop)
+{
+    if ($is_shop && isset($settings['co_header_shop'])) {
+        return (string) $settings['co_header_shop'];
+    }
+    return (string) ($settings['co_header'] ?? '');
+}
+
+function rb_header_apply_background($is_shop)
+{
+    global $rb_core, $rb_config;
+
+    $color = rb_header_background((array) $rb_config, $is_shop);
+    $info = rb_header_color_info($color);
+    $rb_core['header'] = $color ? 'co_header_'.str_replace('#', '', $color) : '';
+    $rb_core['header_txt'] = $info['text'];
+    $rb_core['header_logo_white'] = ($info['text'] === 'white') ? 1 : 0;
 }
 
 if (!function_exists('rb_header_logo_url')) {
@@ -333,10 +355,7 @@ $rb_core['layout'] = !empty($rb_config['co_layout']) ? $rb_config['co_layout'] :
 $rb_core['layout_hd'] = !empty($rb_config['co_layout_hd']) ? $rb_config['co_layout_hd'] : ''; // 레이아웃(헤더)
 $rb_core['layout_ft'] = !empty($rb_config['co_layout_ft']) ? $rb_config['co_layout_ft'] : ''; // 레이아웃(푸터)
 $rb_core['color'] = !empty($rb_config['co_color']) ? 'co_'.$rb_config['co_color'] : ''; // 강조컬러
-$rb_core['header'] = !empty($rb_config['co_header']) ? 'co_header_'.$rb_config['co_header'] : ''; // 헤더스타일
-$rb_header_color_info = rb_header_color_info(isset($rb_config['co_header']) ? $rb_config['co_header'] : '');
-$rb_core['header_txt'] = $rb_header_color_info['text']; // 헤더 대비색
-$rb_core['header_logo_white'] = $rb_header_color_info['text'] === 'white' ? 1 : 0; // 헤더 로고 종류
+rb_header_apply_background(defined('_SHOP_'));
 $rb_core['font'] = !empty($rb_config['co_font']) ? $rb_config['co_font'] : ''; // 폰트스타일
 $rb_core['sub_width'] = !empty($rb_config['co_sub_width']) ? $rb_config['co_sub_width'] : "1400"; // 서브가로사이즈
 $rb_core['main_width'] = !empty($rb_config['co_main_width']) ? $rb_config['co_main_width'] : "1400"; // 메인가로사이즈
@@ -622,7 +641,6 @@ $rb_core['layout_ft_shop'] = !empty($rb_config['co_layout_ft_shop']) ? $rb_confi
 //$rb_core['padding_top_shop'] = !empty($rb_config['co_main_padding_top_shop']) ? $rb_config['co_main_padding_top_shop'] : "0";
 
 $rb_core['color'] = str_replace('#', '', $rb_core['color']); // # 제거 2.1.4
-$rb_core['header'] = str_replace('#', '', $rb_core['header']); // # 제거 2.1.4
 
 if(isset($rb_core['tb_width']) && $rb_core['tb_width'] == "100") {
     $tb_width_inner = "100%";

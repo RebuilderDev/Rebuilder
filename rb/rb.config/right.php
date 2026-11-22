@@ -156,16 +156,33 @@ foreach ($rb_side_panels as $rb_side_panel) {
 
 
 
+                    <?php
+                    $rb_header_is_shop = defined('_SHOP_');
+                    $rb_header_shop_ready = rb_core_table_has_column('rb_config', 'co_header_shop');
+                    $rb_header_can_edit = !$rb_header_is_shop || $rb_header_shop_ready;
+                    $rb_header_value = rb_header_background((array) $rb_config, $rb_header_is_shop);
+                    ?>
                     <ul class="rb_config_sec">
-                        <h6 class="font-B">헤더컬러 설정 (공용)</h6>
+                        <h6 class="font-B"><?php
+                        if ($rb_header_is_shop) {
+                            echo '마켓 헤더 배경색';
+                        } elseif (defined('G5_USE_SHOP') && G5_USE_SHOP && !$rb_header_shop_ready) {
+                            echo '헤더 배경색 (공용)';
+                        } else {
+                            echo '커뮤니티 헤더 배경색';
+                        }
+                        ?></h6>
                         <h6 class="font-R rb_config_sub_txt">헤더 배경색의 실제 밝기를 자동으로 계산합니다.<br>밝은 배경에는 강조컬러와 기본 로고, 어두운 배경에는 흰색 텍스트와 흰색 로고가 적용됩니다.<br>투명도가 포함된 색상도 화면에 표시되는 색상을 기준으로 판별합니다.</h6>
                         <div class="config_wrap">
 
                             <ul>
 
                                 <div class="color_set_wrap square" style="position: relative;">
-                                    <input type="text" class="coloris coloris2 mod_co_header" name="co_header" value="<?php echo !empty($rb_config['co_header']) ? $rb_config['co_header'] : ''; ?>">
+                                    <input type="text" class="coloris coloris2 mod_co_header" name="co_header" aria-label="헤더 배경색" value="<?php echo htmlspecialchars($rb_header_value === '0' ? '' : $rb_header_value, ENT_QUOTES, 'UTF-8'); ?>"<?php if (!$rb_header_can_edit) { ?> disabled<?php } ?>>
                                 </div>
+                                <?php if (defined('G5_USE_SHOP') && G5_USE_SHOP && !$rb_header_shop_ready) { ?>
+                                <p class="rb_config_sub_txt">관리자 → 빌더설정 → DB업데이트 후 마켓 헤더 배경색을 따로 설정할 수 있습니다.</p>
+                                <?php } ?>
 
                                 <div class="cb"></div>
                             </ul>
@@ -4588,7 +4605,10 @@ foreach ($rb_side_panels as $rb_side_panel) {
                 "subtitle_csrf": window.RB_WIDGET_CSRF || '',
                 <?php } ?>
                 "co_color": co_color,
+                "is_shop": <?php echo $rb_header_is_shop ? '1' : '0'; ?>,
+                <?php if ($rb_header_can_edit) { ?>
                 "co_header": co_header,
+                <?php } ?>
                 <?php if ($rb_new_ready) { foreach (array('use','days','tpl','color','size','font') as $rb_new_key) { $rb_new_post_field='co_header_new_'.$rb_new_key.$rb_new_suffix; ?>
                 "<?php echo $rb_new_post_field; ?>": <?php if ($rb_new_key==='use') { ?>$('#<?php echo $rb_new_post_field; ?>').is(':checked') ? 1 : 0<?php } elseif ($rb_new_key==='tpl') { ?>$('input[name="<?php echo $rb_new_post_field; ?>"]:checked').val()<?php } else { ?>$('#<?php echo $rb_new_post_field; ?>').val()<?php } ?>,
                 <?php } } ?>

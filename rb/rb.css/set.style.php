@@ -3,7 +3,6 @@ include_once('../../common.php');
 header("Content-Type: text/css");
 $rb_color_code = isset($_GET['rb_color_code']) ? htmlspecialchars($_GET['rb_color_code']) : htmlspecialchars($rb_config['co_color']);
 
-$rb_header_color = !empty($rb_config['co_header']) ? $rb_config['co_header'] : '';
 $rb_main_width = !empty($rb_core['main_width']) ? $rb_core['main_width'].'px' : '';
 $rb_sub_width = !empty($rb_core['sub_width']) ? $rb_core['sub_width'].'px' : '';
 $rb_tb_width = !empty($tb_width_inner) ? $tb_width_inner : '';
@@ -24,6 +23,12 @@ $rb_padding_btm_shop = isset($rb_core['padding_btm_shop']) && $rb_core['padding_
 
 $is_index = isset($_GET['rb_is_index']) ? $_GET['rb_is_index'] : 0;
 $is_shop = isset($_GET['rb_is_shop']) ? $_GET['rb_is_shop'] : 0;
+$rb_header_color = rb_header_background((array) $rb_config, $is_shop == 1);
+if ($rb_header_color !== '' && $rb_header_color !== '0') {
+    $rb_header_color = rb_header_color_info($rb_header_color)['color'];
+} else {
+    $rb_header_color = '';
+}
 
 $rb_gap_num   = (int)str_replace('px', '', $rb_gap);
 $rb_gap_minus = $rb_gap_num / 2;

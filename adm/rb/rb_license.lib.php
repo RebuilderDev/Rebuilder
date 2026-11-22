@@ -853,7 +853,12 @@ function rb_license_apply_schema_tables($schema, &$changed)
                     || !isset($info['columns'][$target_column], $info['columns'][$source_column])) {
                     return '['.$table.'] 컬럼 승계 정보를 확인할 수 없습니다.';
                 }
-                if (!sql_query('UPDATE `'.$table.'` SET `'.$target_column.'`=`'.$source_column.'`', false)) {
+                $copy_sql = 'UPDATE `'.$table.'` SET `'.$target_column.'`=`'.$source_column.'`';
+                // Nullable columns may have been edited between ALTER TABLE and the backfill.
+                if (preg_match('/\bDEFAULT\s+NULL$/iD', trim($info['columns'][$target_column]))) {
+                    $copy_sql .= ' WHERE `'.$target_column.'` IS NULL';
+                }
+                if (!sql_query($copy_sql, false)) {
                     return rb_license_db_failure_message('['.$table.'] ['.$target_column.'] 기존값 승계 실패');
                 }
             }

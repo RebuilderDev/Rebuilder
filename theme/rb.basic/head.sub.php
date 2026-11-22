@@ -636,6 +636,10 @@ if ($font === '') {
     $font = 'Pretendard';
 }
 
+// 마켓 공통 파일은 common.php 이후에 _SHOP_을 정의할 수 있습니다.
+if (function_exists('rb_header_apply_background')) {
+    rb_header_apply_background(defined('_SHOP_'));
+}
 $rb_header_use_white_logo = !empty($rb_core['header_logo_white']);
 $rb_header_logo_mo_url = function_exists('rb_header_logo_url')
     ? rb_header_logo_url('mo', $rb_header_use_white_logo)

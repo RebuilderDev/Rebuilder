@@ -553,7 +553,9 @@ if (!defined('_GNUBOARD_')) exit; // 개별 페이지 접근 불가
     $rb_core_headers = isset($rb_core['header']) ? $rb_core['header'] : '';
     $rb_core_header_txt = isset($rb_core['header_txt']) ? $rb_core['header_txt'] : 'black';
     $rb_config_colors = isset($rb_config['co_color']) ? $rb_config['co_color'] : '';
-    $rb_config_headers = isset($rb_config['co_header']) ? $rb_config['co_header'] : '';
+    $rb_config_headers = function_exists('rb_header_background')
+        ? rb_header_background((array) $rb_config, defined('_SHOP_'))
+        : ($rb_config['co_header'] ?? '');
     $rb_mobile_menu_icon_color_disable = !empty($rb_builder['bu_mobile_menu_icon_color_disable']) ? 1 : 0;
 
     $index_css = '';

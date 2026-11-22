@@ -767,6 +767,10 @@ function rb_tp_export_archive($theme, $name, $zipfile, $identity, $delivery)
     foreach (rb_tp_tables() as $table=>$def) $data[$table] = !rb_tp_shop_enabled() && in_array($table,array('rb_module_shop','rb_section_shop'),true)
         ? array() : rb_tp_rows("SELECT * FROM `$table` WHERE `{$def[0]}` = ".rb_tp_q($theme));
     $data=rb_tp_main_settings(rb_tp_current_layout_data($data));
+    foreach ($data['rb_config'] as &$settings) {
+        if (!isset($settings['co_header_shop'])) unset($settings['co_header_shop']);
+    }
+    unset($settings);
     foreach (array('rb_module','rb_module_shop','rb_section','rb_section_shop') as $table) {
         $module = strpos($table, 'rb_module') === 0; $prefix = $module ? 'md' : 'sec';
         foreach ($data[$table] as &$row) {
