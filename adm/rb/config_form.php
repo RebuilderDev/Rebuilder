@@ -49,8 +49,7 @@ function rbcfg_fields($shop_enabled, $shop_header_ready) {
         $suffix = $scope === 'market' ? '_shop' : '';
         $fields = array();
         if (!$suffix || $shop_header_ready) {
-            $header_label = !$suffix && $shop_enabled && !$shop_header_ready ? '헤더 배경색 (공용)' : '헤더 배경색';
-            $fields['co_header'.$suffix] = rbcfg_field($header_label, 'color', '#ffffff', array('help'=>'헤더 배경색의 실제 밝기를 자동으로 계산합니다.<br>밝은 배경에는 강조컬러와 기본 로고, 어두운 배경에는 흰색 텍스트와 흰색 로고가 적용됩니다.<br>투명도가 포함된 색상도 화면에 표시되는 색상을 기준으로 판별합니다.'));
+            $fields['co_header'.$suffix] = rbcfg_field('헤더 배경컬러', 'color', '#ffffff', array('help'=>'헤더 배경컬러의 실제 밝기를 자동으로 계산합니다.<br>밝은 배경에는 강조컬러와 기본 로고, 어두운 배경에는 흰색 텍스트와 흰색 로고가 적용됩니다.<br>투명도가 포함된 색상도 화면에 표시되는 색상을 기준으로 판별합니다.'));
         }
         foreach (array('co_layout'=>'메인 레이아웃', 'co_layout_hd'=>'헤더 레이아웃', 'co_layout_ft'=>'푸터 레이아웃') as $key=>$label) {
             $fields[$key.$suffix] = rbcfg_field($label, 'select', $key==='co_layout_hd' && $suffix ? 'basic_row' : 'basic', array('options'=>rbcfg_dirs(str_replace('co_', 'rb.', $key), (bool)$suffix), 'help'=>$key==='co_layout' ? '메인, 헤더, 푸터 레이아웃을 설정 합니다.<br>레아아웃 세트는 자유롭게 추가할 수 있습니다.' : ''));
@@ -245,7 +244,7 @@ $pg_anchor .= '<li><a href="#config_tools">사이트 관리</a></li></ul>';
                 $aos_fields = rbcfg_aos_fields((bool)$suffix); rbcfg_render_rows($aos_fields, rbcfg_values($aos_fields, $aos_current));
             } ?>
         </tbody></table></div>
-        <?php if ($scope === 'market' && !$rbcfg_shop_header_ready) { ?><div class="local_desc01 local_desc"><p>마켓 헤더 배경색은 빌더설정의 DB업데이트 후 따로 설정할 수 있습니다.</p></div><?php } ?>
+        <?php if ($scope === 'market' && !$rbcfg_shop_header_ready) { ?><div class="local_desc01 local_desc"><p>헤더 배경컬러는 빌더설정의 DB업데이트 후 따로 설정할 수 있습니다.</p></div><?php } ?>
         <?php if ($scope !== 'common' && !$rbcfg_aos_ready) { ?><div class="local_desc01 local_desc"><p>AOS 설정은 빌더설정의 DB업데이트 후 사용할 수 있습니다.</p></div><?php } ?>
 </section>
 <?php } ?>

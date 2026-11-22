@@ -30,7 +30,7 @@ if($mod_type == 1) { //환경설정
         if (!is_string($_POST['co_header'])
             || ($co_header !== '' && $co_header !== '0'
                 && !preg_match('/^(?:#?(?:[a-f0-9]{3,4}|[a-f0-9]{6}|[a-f0-9]{8})|transparent)$/iD', $co_header))) {
-            echo json_encode(array('status'=>'error', 'message'=>'헤더 배경색을 확인해 주세요.'));
+            echo json_encode(array('status'=>'error', 'message'=>'헤더 배경컬러을 확인해 주세요.'));
             exit;
         }
         $co_header = $co_header === '' ? '0' : $co_header;
@@ -142,7 +142,7 @@ if($mod_type == "del_sec") { //섹션삭제
             if($is_admin) {
                 $rb_header_shop_ready = rb_core_table_has_column('rb_config', 'co_header_shop');
                 if ($rb_header_is_shop && $co_header !== null && !$rb_header_shop_ready) {
-                    echo json_encode(array('status'=>'error', 'message'=>'관리자모드의 빌더설정에서 DB 업데이트 후 마켓 헤더 배경색을 설정해 주세요.'));
+                    echo json_encode(array('status'=>'error', 'message'=>'관리자모드의 빌더설정에서 DB 업데이트 후 마켓 헤더 배경컬러을 설정해 주세요.'));
                     exit;
                 }
 
