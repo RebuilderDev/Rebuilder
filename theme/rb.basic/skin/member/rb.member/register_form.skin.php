@@ -8,6 +8,8 @@ add_javascript('<script src="'.G5_THEME_URL.'/rb.js/rb.member-consent-state.js">
 if ($config['cf_cert_use'] && ($config['cf_cert_simple'] || $config['cf_cert_ipin'] || $config['cf_cert_hp']))
     add_javascript('<script src="'.G5_JS_URL.'/certify.js"></script>', 0);
 
+$rb_consent_dialogs = array();
+
 $rb_sms_cert_use = (function_exists('rb_sms_cert_is_enabled') && rb_sms_cert_is_enabled()) ? 1 : 0;
 $rb_sms_cert_config = function_exists('rb_sms_cert_get_config') ? rb_sms_cert_get_config(false) : array();
 $rb_sms_cert_required = ($rb_sms_cert_use && !empty($rb_sms_cert_config['sms_cert_required'])) ? 1 : 0;
@@ -474,12 +476,16 @@ $rb_notification_parent_checked = $rb_notification_site_checked;
                         <ul>
                         <input type="checkbox" name="mb_open" value="1" id="reg_mb_open" <?php echo ($w=='' || $member['mb_open'])?'checked':''; ?> class="selec_chk" data-rb-saved-checked="<?php echo ($w=='' || !empty($member['mb_open'])) ? '1' : '0'; ?>" autocomplete="off">
                         <label for="reg_mb_open">프로필 정보공개 / 쪽지수신 동의</label>
-                        <button type="button" class="js-open-consent" data-title="프로필 정보공개 / 쪽지수신 동의" data-template="#tpl_profile_open" data-check="#reg_mb_open" aria-controls="consentDialog">자세히보기</button>
+                        <a id="rb-consent-link-profile-open" href="#rb-consent-profile-open" class="js-open-consent" aria-controls="rb-consent-profile-open" aria-haspopup="dialog">자세히보기</a>
                         <input type="hidden" name="mb_open_default" value="<?php echo $member['mb_open'] ?>">
                         </ul>
-                        <template id="tpl_profile_open">
+                        <?php ob_start(); ?>
                             프로필 정보를 공개해야만 쪽지를 발송하거나, 다른 사용자에게 쪽지를 수신할 수 있습니다.
-                        </template>
+                        <?php $rb_consent_dialogs['profile-open'] = array(
+                            'title' => '프로필 정보공개 / 쪽지수신 동의',
+                            'check' => '#reg_mb_open',
+                            'body' => ob_get_clean(),
+                        ); ?>
 
                     <?php if($config['cf_open_modify']) { ?>
                     <div class="help_t_text">
@@ -502,7 +508,7 @@ $rb_notification_parent_checked = $rb_notification_site_checked;
                         <ul>
                             <input type="checkbox" name="rb_notification_agree" value="1" id="reg_rb_notification_agree" <?php echo $rb_notification_parent_checked ? 'checked' : ''; ?> class="selec_chk parent-notification" data-rb-saved-checked="<?php echo $rb_notification_parent_checked ? '1' : '0'; ?>" autocomplete="off">
                             <label for="reg_rb_notification_agree">알림수신 동의</label>
-                            <button type="button" class="js-open-consent" data-title="알림수신 동의" data-template="#tpl_notification" data-check="#reg_rb_notification_agree" data-check-group=".child-notification" aria-controls="consentDialog">자세히보기</button>
+                            <a id="rb-consent-link-notification" href="#rb-consent-notification" class="js-open-consent" aria-controls="rb-consent-notification" aria-haspopup="dialog">자세히보기</a>
                         </ul>
                         <div id="desc_notification" class="sound_only">선택한 항목의 알림 수신에 대한 안내입니다.</div>
                         <div class="desc_sub">
@@ -539,10 +545,15 @@ $rb_notification_parent_checked = $rb_notification_site_checked;
                                 <label for="reg_rb_notify_other">기타 알림</label>
                             </ul>
                         </div>
-                        <template id="tpl_notification">
+                        <?php ob_start(); ?>
                             사이트 내 활동 및 소식 알림을 받으실 수 있습니다.<br>
                             운영자가 발송하는 공지 알림은 수신을 거부할 수 없습니다.
-                        </template>
+                        <?php $rb_consent_dialogs['notification'] = array(
+                            'title' => '알림수신 동의',
+                            'check' => '#reg_rb_notification_agree',
+                            'group' => '.child-notification',
+                            'body' => ob_get_clean(),
+                        ); ?>
                     </div>
 
 
@@ -578,7 +589,7 @@ $rb_notification_parent_checked = $rb_notification_site_checked;
                                 <ul class="">
                                         <input type="checkbox" name="mb_marketing_agree" value="1" id="reg_mb_marketing_agree" aria-describedby="desc_marketing" <?php echo !empty($member['mb_marketing_agree']) ? 'checked' : ''; ?> class="selec_chk marketing-sync" data-rb-saved-checked="<?php echo !empty($member['mb_marketing_agree']) ? '1' : '0'; ?>" autocomplete="off">
                                         <label for="reg_mb_marketing_agree">(선택) 마케팅 목적의 개인정보 수집 및 이용</label>
-                                        <button type="button" class="js-open-consent" data-title="마케팅 목적의 개인정보 수집 및 이용" data-template="#tpl_marketing" data-check="#reg_mb_marketing_agree" aria-controls="consentDialog">자세히보기</button>
+                                        <a id="rb-consent-link-marketing" href="#rb-consent-marketing" class="js-open-consent" aria-controls="rb-consent-marketing" aria-haspopup="dialog">자세히보기</a>
                                 </ul>
                                 <input type="hidden" name="mb_marketing_agree_default" value="<?php echo isset($member['mb_marketing_agree']) ? htmlspecialchars((string)$member['mb_marketing_agree'], ENT_QUOTES, 'UTF-8') : ''; ?>">
                                 <div id="desc_marketing" class="sound_only">마케팅 목적의 개인정보 수집·이용에 대한 안내입니다. 자세히보기를 눌러 전문을 확인할 수 있습니다.</div>
@@ -587,17 +598,21 @@ $rb_notification_parent_checked = $rb_notification_site_checked;
                                         echo "<span class='help_text'>(동의일자: ".$member['mb_marketing_date'].")</span>";
                                     }
                                     ?>
-                                <template id="tpl_marketing">
+                                <?php ob_start(); ?>
                                     * 목적: 서비스 마케팅 및 프로모션<br>
                                     * 항목: 이름, 이메일<?php echo (!empty($config['cf_use_hp']) || (!empty($config["cf_cert_use"]) && (!empty($config['cf_cert_hp']) || !empty($config['cf_cert_simple'])))) ? ", 휴대폰 번호" : ""; ?><br>
                                     * 보유기간: 회원 탈퇴 시까지<br>
                                     동의를 거부하셔도 서비스 기본 이용은 가능하나, 맞춤형 혜택 제공은 제한될 수 있습니다.
-                                </template>
+                                <?php $rb_consent_dialogs['marketing'] = array(
+                                    'title' => '마케팅 목적의 개인정보 수집 및 이용',
+                                    'check' => '#reg_mb_marketing_agree',
+                                    'body' => ob_get_clean(),
+                                ); ?>
 
                                 <ul class="">
                                     <input type="checkbox" name="mb_promotion_agree" value="1" id="reg_mb_promotion_agree" aria-describedby="desc_promotion" <?php echo (!empty($member['mb_mailling']) || !empty($member['mb_sms'])) ? 'checked' : ''; ?> class="selec_chk marketing-sync parent-promo" data-rb-saved-checked="<?php echo (!empty($member['mb_mailling']) || !empty($member['mb_sms'])) ? '1' : '0'; ?>" autocomplete="off">
                                     <label for="reg_mb_promotion_agree">(선택) 광고성 정보 수신 동의</label>
-                                    <button type="button" class="js-open-consent" data-title="광고성 정보 수신 동의" data-template="#tpl_promotion" data-check="#reg_mb_promotion_agree" data-check-group=".child-promo" aria-controls="consentDialog">자세히보기</button>
+                                    <a id="rb-consent-link-promotion" href="#rb-consent-promotion" class="js-open-consent" aria-controls="rb-consent-promotion" aria-haspopup="dialog">자세히보기</a>
                                 </ul>
                                 <div id="desc_promotion" class="sound_only">광고성 정보(이메일/SMS·카카오톡) 수신 동의의 상위 항목입니다. 자세히보기를 눌러 전문을 확인할 수 있습니다.</div>
 
@@ -629,10 +644,15 @@ $rb_notification_parent_checked = $rb_notification_site_checked;
                                     ?>
 
                                 <?php } ?>
-                                <template id="tpl_promotion">
+                                <?php ob_start(); ?>
                                     수집·이용에 동의한 개인정보를 이용하여 이메일/SMS/ 등으로 오전 8시~오후 9시에 광고성 정보를 전송할 수 있습니다.<br>
                                     동의는 언제든지 마이페이지에서 철회할 수 있습니다.
-                                </template>
+                                <?php $rb_consent_dialogs['promotion'] = array(
+                                    'title' => '광고성 정보 수신 동의',
+                                    'check' => '#reg_mb_promotion_agree',
+                                    'group' => '.child-promo',
+                                    'body' => ob_get_clean(),
+                                ); ?>
 
                                 <!-- (선택) 개인정보 제3자 제공 동의 -->
                                 <!-- SMS 사용시에만 -->
@@ -652,7 +672,7 @@ $rb_notification_parent_checked = $rb_notification_site_checked;
                                 <ul class="">
                                     <input type="checkbox" name="mb_thirdparty_agree" value="1" id="reg_mb_thirdparty_agree" aria-describedby="desc_thirdparty" <?php echo !empty($member['mb_thirdparty_agree']) ? 'checked' : ''; ?> class="selec_chk marketing-sync" data-rb-saved-checked="<?php echo !empty($member['mb_thirdparty_agree']) ? '1' : '0'; ?>" autocomplete="off">
                                     <label for="reg_mb_thirdparty_agree">(선택) 개인정보 제3자 제공 동의</label>
-                                    <button type="button" class="js-open-consent" data-title="개인정보 제3자 제공 동의" data-template="#tpl_thirdparty" data-check="#reg_mb_thirdparty_agree" aria-controls="consentDialog">자세히보기</button>
+                                    <a id="rb-consent-link-thirdparty" href="#rb-consent-thirdparty" class="js-open-consent" aria-controls="rb-consent-thirdparty" aria-haspopup="dialog">자세히보기</a>
                                 </ul>
 
                                 <input type="hidden" name="mb_thirdparty_agree_default" value="<?php echo isset($member['mb_thirdparty_agree']) ? htmlspecialchars((string)$member['mb_thirdparty_agree'], ENT_QUOTES, 'UTF-8') : ''; ?>">
@@ -664,12 +684,16 @@ $rb_notification_parent_checked = $rb_notification_site_checked;
                                     }
                                     ?>
 
-                                <template id="tpl_thirdparty">
+                                <?php ob_start(); ?>
                                     * 목적: 상품/서비스, 사은/판촉행사, 이벤트 등의 마케팅 안내(카카오톡 등)<br>
                                     * 항목: 이름, 휴대폰 번호<br>
                                     * 제공받는 자: <?php echo implode(', ', $usedCompanies); ?><br>
                                     * 보유기간: 제공 목적 서비스 기간 또는 동의 철회 시까지
-                                </template>
+                                <?php $rb_consent_dialogs['thirdparty'] = array(
+                                    'title' => '개인정보 제3자 제공 동의',
+                                    'check' => '#reg_mb_thirdparty_agree',
+                                    'body' => ob_get_clean(),
+                                ); ?>
                                 <?php } ?>
 
                         </div>
