@@ -14,6 +14,7 @@ $rb_sms_cert_required = ($rb_sms_cert_use && !empty($rb_sms_cert_config['sms_cer
 $rb_sms_cert_member_verified = ($w == 'u' && isset($member['mb_certify']) && $member['mb_certify'] === 'hp') ? 1 : 0;
 $rb_sms_cert_render = ($rb_sms_cert_use && ($w == '' || $w == 'u')) ? 1 : 0;
 $rb_sms_cert_show = ($rb_sms_cert_render && ($w == '' || ($w == 'u' && !$rb_sms_cert_member_verified))) ? 1 : 0;
+$rb_sms_code_required = $rb_sms_cert_show && $rb_sms_cert_required;
 $rb_sms_cert_initial_hidden = ($rb_sms_cert_render && !$rb_sms_cert_show) ? 1 : 0;
 $rb_notification_preference = function_exists('rb_notification_get_preference')
     ? rb_notification_get_preference(isset($member['mb_id']) ? $member['mb_id'] : '')
@@ -283,7 +284,7 @@ $rb_notification_parent_checked = $rb_notification_site_checked;
                     <?php } ?>
                     <?php if ($rb_sms_cert_render) { ?>
                     <div class="input_wrap mt-5 rb_sms_cert_wrap"<?php echo $rb_sms_cert_initial_hidden ? ' style="display:none;"' : ''; ?>>
-                        <input type="text" id="rb_sms_cert_code" <?php echo $rb_sms_cert_required ? 'required' : ''; ?> class="input full_input <?php echo $rb_sms_cert_required ? 'required' : ''; ?>" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="인증번호"<?php echo $rb_sms_cert_initial_hidden ? ' disabled' : ''; ?>>
+                        <input type="text" id="rb_sms_cert_code" <?php echo $rb_sms_code_required ? 'required' : ''; ?> class="input full_input <?php echo $rb_sms_code_required ? 'required' : ''; ?>" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="인증번호"<?php echo $rb_sms_cert_initial_hidden ? ' disabled' : ''; ?>>
                         <span id="rb_sms_cert_time" class="font-B"></span>
                         <button type="button" class="btn_frmline" id="rb_sms_cert_send">인증번호 발송</button>
                         <button type="button" class="btn_frmline" id="rb_sms_cert_resend" style="display:none;">재발송</button>
@@ -818,7 +819,8 @@ $rb_notification_parent_checked = $rb_notification_site_checked;
         function rbSmsCertSetUiVisible(visible) {
             $rbSmsWrap.css('display', visible ? '' : 'none');
             $rbSmsMsg.css('display', visible ? '' : 'none');
-            $rbSmsCode.prop('disabled', !visible);
+            var required = visible && <?php echo $rb_sms_cert_required ? 'true' : 'false'; ?>;
+            $rbSmsCode.prop('disabled', !visible).prop('required', required).toggleClass('required', required);
         }
 
         function rbSmsCertResetState() {
