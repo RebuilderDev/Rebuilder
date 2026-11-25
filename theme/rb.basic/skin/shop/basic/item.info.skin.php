@@ -215,7 +215,7 @@ if ($default['de_rel_list_use']) {
                     <?php if( !$option_item ){ ?>
                     <li>
                         <div class="opt_name">
-                            <span class="sit_opt_subj"><?php echo $it['it_name']; ?></span>
+                            <span class="sit_opt_subj"><?php echo get_text($it['it_name']); ?></span>
                         </div>
                         <div class="opt_count">
                             <?php if(function_exists('rb_file_is_item') && rb_file_is_item($it)) { ?>

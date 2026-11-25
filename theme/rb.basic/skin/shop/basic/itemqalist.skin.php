@@ -76,7 +76,7 @@ alert('서비스 준비중 입니다.');
         <div class="sqa_img">
             <a href="<?php echo $it_href; ?>">
                 <?php echo get_it_image($row['it_id'], 50, 50); ?>
-                <span><?php echo $row['it_name']; ?></span>
+                <span><?php echo get_text($row['it_name']); ?></span>
             </a>
         </div>
 

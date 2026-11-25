@@ -49,7 +49,7 @@ if ($rb_is_media_item && function_exists('rb_media_get_items')) {
                 </li>
             </div>
 
-	        <h2 id="sit_title"><?php echo stripslashes($it['it_name']); ?> <span class="sound_only">요약정보 및 구매</span></h2>
+	        <h2 id="sit_title"><?php echo get_text(stripslashes($it['it_name'])); ?> <span class="sound_only">요약정보 및 구매</span></h2>
 	        <p id="sit_desc"><?php echo $it['it_basic']; ?></p>
 
 	        <div class="rb_price_v_wrap">
@@ -111,7 +111,7 @@ if ($rb_is_media_item && function_exists('rb_media_get_items')) {
                                     objectType: 'feed',
 
                                     content: {
-                                        title: "<?php echo str_replace(array('%27', '&#034;' , '\"'), '', stripslashes($it['it_name'])); ?>",
+                                        title: "<?php echo str_replace(array('%27', '&#034;' , '\"'), '', get_text(stripslashes($it['it_name']))); ?>",
                                         description: "<?php echo str_replace(array('%27', '&#034;' , '\"'), '', stripslashes($it['it_basic'])); ?>",
                                         imageUrl: imageUrl,
                                         link: {
@@ -324,11 +324,11 @@ if ($rb_is_media_item && function_exists('rb_media_get_items')) {
 	                <li class="sit_opt_list">
 	                    <input type="hidden" name="io_type[<?php echo $it_id; ?>][]" value="0">
 	                    <input type="hidden" name="io_id[<?php echo $it_id; ?>][]" value="">
-	                    <input type="hidden" name="io_value[<?php echo $it_id; ?>][]" value="<?php echo $it['it_name']; ?>">
+	                    <input type="hidden" name="io_value[<?php echo $it_id; ?>][]" value="<?php echo get_text($it['it_name']); ?>">
 	                    <input type="hidden" class="io_price" value="0">
 	                    <input type="hidden" class="io_stock" value="<?php echo $it['it_stock_qty']; ?>">
 	                    <div class="opt_name">
-	                        <span class="sit_opt_subj"><?php echo $it['it_name']; ?></span>
+	                        <span class="sit_opt_subj"><?php echo get_text($it['it_name']); ?></span>
 	                    </div>
 	                    <div class="opt_count">
 	                        <?php if ($rb_fixed_qty_item) { ?>

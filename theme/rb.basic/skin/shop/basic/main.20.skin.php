@@ -136,7 +136,7 @@ foreach((array) $list as $row){
                 <?php if (isset($rb_skin['md_thumb_is']) && $rb_skin['md_thumb_is']) { ?>
                 <div class="rb_shop_list_item_img">
                     <a href="<?php echo $item_link_href ?>">
-                    <?php echo rb_it_image($row['it_id'], $this->img_width, $this->img_height, '', '', stripslashes($row['it_name'])); ?>
+                    <?php echo rb_it_image($row['it_id'], $this->img_width, $this->img_height, '', '', get_text(stripslashes($row['it_name']))); ?>
                     </a>
 
                     <div class="sit_icon_li">
@@ -174,7 +174,7 @@ foreach((array) $list as $row){
                 <?php if (isset($rb_skin['md_subject_is']) && $rb_skin['md_subject_is']) { ?>
                 <div class="rb_shop_list_item_name" <?php if (!$rb_skin['md_ca_is']) { ?>style="margin-top:0px;"<?php } ?>>
                     <a href="<?php echo $item_link_href ?>" class="font-B cut2">
-                    <?php echo stripslashes($row['it_name']); ?>
+                    <?php echo get_text(stripslashes($row['it_name'])); ?>
                     </a>
                 </div>
                 <?php } ?>

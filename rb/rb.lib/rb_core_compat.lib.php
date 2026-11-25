@@ -298,4 +298,63 @@ function rb_shop_item_visible($it_id)
     $row = sql_fetch("select it_id from {$g5['g5_shop_item_table']} where it_id = '$id' and {$visibility}");
     return !empty($row['it_id']);
 }
+// Per-member form tokens for the builder's own handlers, including older cores.
+function rb_get_form_token($name, $member_id)
+{
+    if (function_exists('g5_get_form_token')) return g5_get_form_token($name, $member_id);
 
+    $token = get_random_token_string(32);
+    set_session('ss_form_token_'.$name, array('token' => $token, 'bind' => (string)$member_id, 'time' => G5_SERVER_TIME));
+    return $token;
+}
+
+function rb_peek_form_token($name, $member_id, $token, $ttl = 1800)
+{
+    if (function_exists('g5_peek_form_token')) return g5_peek_form_token($name, $member_id, $token, $ttl);
+
+    $saved = get_session('ss_form_token_'.$name);
+    return is_array($saved) && isset($saved['token'], $saved['bind'], $saved['time'])
+        && (string)$member_id !== '' && $saved['bind'] === (string)$member_id
+        && is_string($token) && $token !== '' && is_string($saved['token']) && $saved['token'] !== ''
+        && abs(G5_SERVER_TIME - (int)$saved['time']) <= $ttl
+        && hash_equals($saved['token'], $token);
+}
+
+function rb_check_form_token($name, $member_id, $token, $ttl = 1800)
+{
+    if (function_exists('g5_check_form_token')) return g5_check_form_token($name, $member_id, $token, $ttl);
+
+    $valid = rb_peek_form_token($name, $member_id, $token, $ttl);
+    set_session('ss_form_token_'.$name, '');
+    return $valid;
+}
+
+function rb_set_member_reconfirm($member_id)
+{
+    if (function_exists('g5_set_member_reconfirm')) {
+        g5_set_member_reconfirm($member_id);
+        return;
+    }
+    set_session('ss_member_reconfirm', array('mb_id' => (string)$member_id, 'time' => G5_SERVER_TIME));
+}
+
+function rb_check_member_reconfirm($member_id)
+{
+    if (function_exists('g5_check_member_reconfirm')) return g5_check_member_reconfirm($member_id);
+
+    $saved = get_session('ss_member_reconfirm');
+    return (string)$member_id !== '' && is_array($saved) && isset($saved['mb_id'], $saved['time'])
+        && $saved['mb_id'] === (string)$member_id && (int)$saved['time'] <= G5_SERVER_TIME
+        && G5_SERVER_TIME - (int)$saved['time'] <= 600;
+}
+
+function rb_admin_board_owner_check($board)
+{
+    if (function_exists('admin_board_owner_check')) return admin_board_owner_check($board['bo_table']);
+
+    global $is_admin, $member;
+    if ($is_admin === 'super') return true;
+    if (empty($board['gr_id']) || empty($member['mb_id'])) return false;
+    $group = get_group($board['gr_id']);
+    return isset($group['gr_admin']) && (string)$group['gr_admin'] === (string)$member['mb_id'];
+}

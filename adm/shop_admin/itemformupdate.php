@@ -343,7 +343,7 @@ for($i=0; $i<$count_ii_article; $i++) {
 }
 $it_info_value = addslashes(serialize($value_array));
 
-$it_name = isset($_POST['it_name']) ? addslashes(strip_tags(clean_xss_attributes(trim(stripslashes($_POST['it_name']))))) : '';
+$it_name = isset($_POST['it_name']) ? addslashes(rb_shop_admin_clean_item_text('it_name', $_POST['it_name'], true)) : '';
 
 // KVE-2019-0708
 $check_sanitize_keys = array(
@@ -383,7 +383,7 @@ $check_sanitize_keys = array(
 );
 
 foreach( $check_sanitize_keys as $key ){
-    $$key = isset($_POST[$key]) ? addslashes(strip_tags(clean_xss_attributes(stripslashes($_POST[$key])))) : '';
+    $$key = isset($_POST[$key]) ? addslashes(rb_shop_admin_clean_item_text($key, $_POST[$key], true)) : '';
 }
 
 // 예약·콘텐츠·미디어 상품은 배송상품이 아니다.
@@ -397,7 +397,7 @@ if (in_array((int) $it_types, array(1, 2, 3), true)) {
     $it_sc_qty = '0';
 }
 
-$it_basic = preg_replace('#<script(.*?)>(.*?)<\/script>#is', '', $it_basic);
+$it_basic = addslashes(rb_shop_admin_clean_item_text('it_basic', isset($it_basic) ? $it_basic : '', true));
 $it_explan = isset($_POST['it_explan']) ? $_POST['it_explan'] : '';
 
 if ($it_name == "")

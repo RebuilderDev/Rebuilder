@@ -1258,12 +1258,12 @@ if (is_file(G5_ADMIN_PATH.'/shop_admin/pgapproval.inc.php') && is_file(G5_LIB_PA
                     <?php if ($od['od_invoice']) { ?>
                     <tr>
                         <th scope="row">배송회사</th>
-                        <td><?php echo $od['od_delivery_company']; ?> <?php echo get_delivery_inquiry($od['od_delivery_company'], $od['od_invoice'], 'dvr_link'); ?></td>
+                        <td><?php echo get_text($od['od_delivery_company']); ?> <?php echo get_delivery_inquiry($od['od_delivery_company'], function_exists('g5_peek_form_token') ? $od['od_invoice'] : urlencode((string)$od['od_invoice']), 'dvr_link'); ?></td>
                     </tr>
 
                     <tr>
                         <th scope="row">운송장번호</th>
-                        <td><?php echo $od['od_invoice']; ?></td>
+                        <td><?php echo get_text($od['od_invoice']); ?></td>
                     </tr>
                     <tr>
                         <th scope="row">배송일시</th>
@@ -1532,7 +1532,7 @@ if (is_file(G5_ADMIN_PATH.'/shop_admin/pgapproval.inc.php') && is_file(G5_LIB_PA
                         <br>
                         <?php } ?>
 
-                        <input type="text" name="od_invoice" value="<?php echo $od['od_invoice']; ?>" id="od_invoice" class="frm_input">
+                        <input type="text" name="od_invoice" value="<?php echo get_text($od['od_invoice']); ?>" id="od_invoice" class="frm_input">
                     </td>
                 </tr>
                 <tr>
@@ -1540,7 +1540,7 @@ if (is_file(G5_ADMIN_PATH.'/shop_admin/pgapproval.inc.php') && is_file(G5_LIB_PA
                     <td>
                         <input type="checkbox" id="od_delivery_chk" value="<?php echo $default['de_delivery_company']; ?>" onclick="chk_delivery_company()">
                         <label for="od_delivery_chk">기본 배송회사로 설정</label><br>
-                        <input type="text" name="od_delivery_company" id="od_delivery_company" value="<?php echo $od['od_delivery_company']; ?>" class="frm_input">
+                        <input type="text" name="od_delivery_company" id="od_delivery_company" value="<?php echo get_text($od['od_delivery_company']); ?>" class="frm_input">
                     </td>
                 </tr>
                 <tr>

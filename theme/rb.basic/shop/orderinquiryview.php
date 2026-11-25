@@ -531,11 +531,11 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
 	                <?php if ($rows['ct_invoice'] && $rows['ct_delivery_company']) { ?>
 	                <tr>
 	                    <th scope="row">배송회사</th>
-	                    <td><?php echo $rows['ct_delivery_company']; ?> <?php echo get_delivery_inquiry($rows['ct_delivery_company'], $rows['ct_invoice'], 'dvr_link'); ?></td>
+	                    <td><?php echo get_text($rows['ct_delivery_company']); ?> <?php echo get_delivery_inquiry($rows['ct_delivery_company'], function_exists('g5_peek_form_token') ? $rows['ct_invoice'] : urlencode((string)$rows['ct_invoice']), 'dvr_link'); ?></td>
 	                </tr>
 	                <tr>
 	                    <th scope="row">운송장번호</th>
-	                    <td><?php echo $rows['ct_invoice']; ?></td>
+	                    <td><?php echo get_text($rows['ct_invoice']); ?></td>
 	                </tr>
 	                <tr>
 	                    <th scope="row">배송일시</th>
@@ -563,11 +563,11 @@ $price_calc = "((" . $price_base . " * ct_qty) + COALESCE(ct_date_extra_price, 0
 	                <?php if ($od['od_invoice'] && $od['od_delivery_company']) { ?>
 	                <tr>
 	                    <th scope="row">배송회사</th>
-	                    <td><?php echo $od['od_delivery_company']; ?> <?php echo get_delivery_inquiry($od['od_delivery_company'], $od['od_invoice'], 'dvr_link'); ?></td>
+	                    <td><?php echo get_text($od['od_delivery_company']); ?> <?php echo get_delivery_inquiry($od['od_delivery_company'], function_exists('g5_peek_form_token') ? $od['od_invoice'] : urlencode((string)$od['od_invoice']), 'dvr_link'); ?></td>
 	                </tr>
 	                <tr>
 	                    <th scope="row">운송장번호</th>
-	                    <td><?php echo $od['od_invoice']; ?></td>
+	                    <td><?php echo get_text($od['od_invoice']); ?></td>
 	                </tr>
 	                <tr>
 	                    <th scope="row">배송일시</th>

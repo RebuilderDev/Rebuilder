@@ -106,6 +106,9 @@ $rb_notification_parent_checked = $rb_notification_site_checked;
 
         <form id="fregisterform" name="fregisterform" action="<?php echo $register_action_url ?>" onsubmit="return fregisterform_submit(this);" method="post" enctype="multipart/form-data" autocomplete="off">
             <input type="hidden" name="w" value="<?php echo $w ?>">
+            <?php if (!empty($member_update_token)) { ?>
+                <input type="hidden" name="member_update_token" value="<?php echo get_text($member_update_token); ?>">
+            <?php } ?>
             <input type="hidden" name="url" value="<?php echo $urlencode ?>">
             <input type="hidden" name="agree" value="<?php echo $agree ?>">
             <input type="hidden" name="agree2" value="<?php echo $agree2 ?>">

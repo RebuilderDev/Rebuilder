@@ -7,10 +7,55 @@ if(!$is_member)
 $ad_id = isset($_REQUEST['ad_id']) ? (int) $_REQUEST['ad_id'] : 0;
 
 if($w == 'd') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST')
+        alert('올바른 방법으로 이용해 주십시오.', G5_SHOP_URL.'/orderaddress.php');
+    check_request_origin(G5_SHOP_URL.'/orderaddress.php');
+
+    $ad_id = isset($_POST['ad_id']) && is_scalar($_POST['ad_id']) ? (int) $_POST['ad_id'] : 0;
+    $delete_token = $_POST['token'] ?? '';
+    if ($ad_id < 1 || !rb_check_form_token('orderaddress_delete', $member['mb_id'], $delete_token, 3600))
+        alert('배송지 목록을 다시 열어 주십시오.', G5_SHOP_URL.'/orderaddress.php');
     $sql = " delete from {$g5['g5_shop_order_address_table']} where mb_id = '{$member['mb_id']}' and ad_id = '$ad_id' ";
     sql_query($sql);
     goto_url($_SERVER['SCRIPT_NAME']);
 }
+
+// The same POST handler works with the older mobile address template.
+$orderaddress_delete_token = rb_get_form_token('orderaddress_delete', $member['mb_id']);
+$delete_script = <<<'JS'
+<script>
+document.addEventListener('click', function (event) {
+    var link = event.target.closest('a.del_address');
+    if (!link) return;
+
+    var url = new URL(link.href);
+    var addressId = url.searchParams.get('ad_id');
+    if (url.origin !== location.origin || url.pathname !== location.pathname ||
+        url.searchParams.get('w') !== 'd' || !/^[0-9]+$/.test(addressId)) {
+        return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (!window.confirm('배송지 목록을 삭제하시겠습니까?')) return;
+
+    var form = document.createElement('form');
+    form.method = 'post';
+    form.action = location.pathname;
+    var fields = {w: 'd', ad_id: addressId, token: RB_ORDERADDRESS_DELETE_TOKEN};
+    Object.keys(fields).forEach(function (name) {
+        var field = document.createElement('input');
+        field.type = 'hidden';
+        field.name = name;
+        field.value = fields[name];
+        form.appendChild(field);
+    });
+    document.body.appendChild(form);
+    form.submit();
+}, true);
+</script>
+JS;
+add_javascript(str_replace('RB_ORDERADDRESS_DELETE_TOKEN', json_encode($orderaddress_delete_token), $delete_script), 0);
 
 $sql_common = " from {$g5['g5_shop_order_address_table']} where mb_id = '{$member['mb_id']}' ";
 
@@ -146,10 +191,6 @@ $(function() {
         }
 
         window.close();
-    });
-
-    $(".del_address").on("click", function() {
-        return confirm("배송지 목록을 삭제하시겠습니까?");
     });
 
     // 전체선택 부분

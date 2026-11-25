@@ -366,3 +366,18 @@ function rb_shop_easypay_buttons($mobile = false)
     try { return rb_legacy_shop_easypay_buttons($mobile); }
     finally { $default = $original; }
 }
+
+function rb_shop_admin_clean_item_text($key, $value, $is_slashed = false)
+{
+    if (function_exists('shop_admin_clean_item_text')) {
+        return shop_admin_clean_item_text($key, $value, $is_slashed);
+    }
+    if (!is_scalar($value)) return '';
+
+    $value = $is_slashed ? stripslashes((string)$value) : (string)$value;
+    if ($key === 'it_basic') {
+        return (string)preg_replace('#<script(.*?)>(.*?)</script>#is', '', $value);
+    }
+    if ($key === 'it_name') $value = trim($value);
+    return strip_tags(clean_xss_attributes($value));
+}

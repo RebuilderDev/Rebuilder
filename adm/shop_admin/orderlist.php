@@ -420,9 +420,9 @@ if( function_exists('pg_setting_check') ){
         </td>
         <td headers="delino" class="delino">
             <?php if ($od_status == '준비') { ?>
-                <input type="text" name="od_invoice[<?php echo $i; ?>]" value="<?php echo $row['od_invoice']; ?>" class="frm_input" size="10">
+                <input type="text" name="od_invoice[<?php echo $i; ?>]" value="<?php echo get_text($row['od_invoice']); ?>" class="frm_input" size="10">
             <?php } else {
-                echo ($row['od_invoice'] ? $row['od_invoice'] : '-');
+                echo ($row['od_invoice'] ? get_text($row['od_invoice']) : '-');
             } ?>
         </td>
         <td headers="delicom">
@@ -431,7 +431,7 @@ if( function_exists('pg_setting_check') ){
                     <?php echo get_delivery_company($delivery_company); ?>
                 </select>
             <?php } else {
-                echo ($row['od_delivery_company'] ? $row['od_delivery_company'] : '-');
+                echo ($row['od_delivery_company'] ? get_text($row['od_delivery_company']) : '-');
             } ?>
         </td>
         <td headers="delidate">

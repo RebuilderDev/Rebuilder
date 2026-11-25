@@ -18,7 +18,7 @@ add_stylesheet('<link rel="stylesheet" href="'.$member_skin_url.'/style.css">', 
             <?php } ?>
             <a href="<?php echo $list[$i]['opener_href'] ?>" class="scrap_cate" target="_blank" onclick="opener.document.location.href='<?php echo $list[$i]['opener_href'] ?>'; return false;"><?php echo $list[$i]['bo_subject'] ?></a>
             <span class="scrap_datetime"><?php echo $list[$i]['ms_datetime'] ?></span>
-            <a href="<?php echo $list[$i]['del_href'];  ?>" onclick="del(this.href); return false;" class="scrap_del"><img src="<?php echo G5_THEME_URL ?>/rb.img/icon/icon_close.svg"></a>
+            <a href="<?php echo $list[$i]['del_href'];  ?>" onclick="if (typeof del_post === 'function' &amp;&amp; /[?&amp;]token=/.test(this.href)) { del_post(this.href); } else { del(this.href); } return false;" class="scrap_del"><img src="<?php echo G5_THEME_URL ?>/rb.img/icon/icon_close.svg"></a>
         </li>
         <?php }  ?>
 
